@@ -1,8 +1,11 @@
 # Iknos — Rust collector + API
 
 **Date:** 2026-08-09
-**Status:** approved
-**Supersedes:** the Node/Prisma architecture described in the IKN project summary
+**Status:** SUPERSEDED by `2026-08-10-iknos-nestjs-api-design.md`
+**Kept because:** the storage reasoning in §4.2 (day partitioning over FULLTEXT) and the
+ingestion semantics in §5 carried over unchanged to the NestJS design. This document records
+why those choices were made, and why Rust was considered and then dropped — the reason was
+mental load across concurrent projects, not anything the architecture turned up.
 
 ---
 

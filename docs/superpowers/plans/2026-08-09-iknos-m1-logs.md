@@ -1,6 +1,12 @@
 # Iknos M1 — Logs End to End: Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **SUPERSEDED — DO NOT EXECUTE.** This plan targets the Rust backend, which was dropped on
+> 2026-08-10 in favour of NestJS. It is kept only for the task decomposition and the test
+> cases, which are language-independent and worth lifting into the replacement plan: the
+> rotation decision table (Task 17), the line-framing cases including the split-codepoint one
+> (Task 15), the durability pair proving a failed batch advances no offset (Task 18), and the
+> partition-planning cases (Task 22). Everything else is Rust-specific.
+> The current design is `docs/superpowers/specs/2026-08-10-iknos-nestjs-api-design.md`.
 
 **Goal:** Ship a deployed Iknos that tails every PM2 log file on ks-b into MySQL and serves it back through an authenticated Logs page with search, filters and live tail.
 
