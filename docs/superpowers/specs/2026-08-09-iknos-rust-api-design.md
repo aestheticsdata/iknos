@@ -335,8 +335,23 @@ to `/login`. Real validation happens in Rust on every call.
 Two PM2 processes on ks-b: `iknos` (the Rust binary) and `iknos-web` (Next). PM2 runs
 non-Node binaries natively; the ecosystem entry sets `interpreter: "none"`.
 
-Build on the host — `cargo build --release`. No cross-compilation, no Docker, consistent with
-the rest of the fleet. The deploy script builds, reloads PM2, and never migrates.
+The binary is built on **vps-debian** (which otherwise only runs database backups) and moved
+to ks-b. Neither the Mac nor ks-b compiles anything: macOS produces a Mach-O binary Linux
+cannot execute at all, and ks-b's RAM is better spent running things than running rustc.
+
+Build against `x86_64-unknown-linux-musl`, not glibc. A glibc-linked binary refuses to start
+on any machine with an older glibc than the one that built it, which couples the two servers'
+distro versions together forever. musl produces a fully static binary and removes the
+coupling — available here because with `rustls` rather than OpenSSL nothing in the dependency
+tree needs a C toolchain.
+
+Deployment ships the artifact through the developer's laptop, which avoids granting SSH keys
+between the two servers. Installation is `mv`, never `cp`: rename is atomic and succeeds even
+though the old binary is executing, where `cp` fails with `ETXTBSY`. Keeping the previous
+binary alongside makes rollback one command — there is no need for PFA's release-directory
+scheme, which exists only because `node_modules` must match the code it was installed for.
+
+The deploy script builds, ships, reloads PM2, and never migrates.
 
 nginx terminates TLS, routes `/api/` and `/health` to the Rust port and `/` to the Next port,
 and disables buffering on `/api/logs/stream` so SSE actually streams. That last line is the
