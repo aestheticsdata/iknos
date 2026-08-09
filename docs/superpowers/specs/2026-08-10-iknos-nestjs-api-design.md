@@ -3,6 +3,7 @@
 **Date:** 2026-08-10
 **Status:** approved
 **Supersedes:** `2026-08-09-iknos-rust-api-design.md`
+**Companion:** `2026-08-09-iknos-ui-design.md` — the UI, and the routes the mockup added to §6
 
 ---
 
@@ -100,7 +101,15 @@ The deploy script never migrates, same rule as PFA.
 ### 4.1 Tables for the logs milestone
 
 Four models ship in M1 — `Service`, `User`, `IngestOffset`, `LogEntry`. The rest arrive with
-their feature, each as an additive migration owned by the ticket that needs it.
+their feature, each as an additive migration owned by the ticket that needs it. `IKN-21` follows
+that rule for its own column: `app_user.recovery_passphrase_hash`, nullable, so accounts created
+by CLI before it exists stay valid and simply have no way back in.
+
+`app_user` carries one column that is not obvious from the product: `singleton BOOLEAN UNIQUE
+DEFAULT TRUE`, Zeus's trick for making "there is exactly one account" a guarantee InnoDB
+enforces rather than a `count()` the register route hopes it won the race for. It is in the
+first migration, not IKN-21's, because the CLI ships before registration does and could
+otherwise create the second row that makes the constraint impossible to add.
 
 `LogEntry`: `ts` (DATETIME(3)), `service`, `level` (SMALLINT), `levelName`, `logger`,
 `message` (TEXT), `traceId`, `httpMethod`, `route`, `statusCode`, `durationMs`, `clientIp`,
@@ -197,15 +206,48 @@ browser on one origin so the cookie and CSRF header behave.
 Auth is PFA's, adapted: `iknos.sid` cookie (httpOnly, Secure, SameSite=Lax, signed), opaque
 32-byte id, Redis-backed session under `iknos:sess:` with a sliding TTL, one active session
 per user, CSRF token minted in-session and compared in constant time on every unsafe verb,
-bcryptjs hashes, accounts created by CLI, 5 login attempts per minute per IP.
+bcryptjs hashes, 5 login attempts per minute per IP.
 
 Two deliberate departures from PFA: a **2h** TTL rather than 10 minutes, because a dashboard
 lives in a background tab; and a global `SessionGuard` registered with `APP_GUARD` with an
 `@Public()` decorator for the exceptions, so a controller added later is protected by default
 rather than by remembering.
 
-Routes for M1: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/csrf`, `GET /api/me`,
-`GET /api/services`, `GET /api/logs`, `GET /api/logs/stream`, `GET /health`.
+**This is Zeus's auth, not a new design.** Zeus is the same kind of thing on the same box — an
+internal single-account console with no mail server — and it already settled every question
+here. Iknos copies its shape rather than re-deriving it: one account enforced by a `UNIQUE`
+column, first-run registration that seals itself the moment it succeeds, and a recovery
+passphrase hashed independently of the password.
+
+There is **no environment flag for registration**. It is open while `app_user` is empty and
+closed forever after, which is a state the database enforces rather than a variable someone has
+to remember to set — and cannot accidentally re-open by editing a `.env`. Accounts can equally
+be created by CLI; the seal does not care which door was used.
+
+Recovery is that passphrase: ks-b has no mail infrastructure, so a reset link is not an option
+and pretending otherwise would leave the only account on the host unrecoverable. Every recovery
+failure — wrong passphrase, unknown address, no passphrase on file — answers identically, with
+the rate limit as the one deliberate exception. See `2026-08-09-iknos-ui-design.md` §5.7.
+
+Routes for M1:
+
+```
+POST /api/auth/login          POST /api/auth/logout        GET  /api/csrf
+GET  /api/auth/bootstrap      POST /api/auth/register      POST /api/auth/recover
+POST /api/auth/password       GET  /api/me                 GET  /api/services
+GET  /health                  GET  /api/logs               GET  /api/logs/stream
+GET  /api/logs/histogram      GET  /api/logs/trace/:traceId GET /api/search
+GET  /api/collector/status    GET  /api/collector/storage
+```
+
+`bootstrap`, `register`, `recover` and `password` are the mockup's auth screens made real
+(IKN-21); `bootstrap` returns `{ sealed }` and is what lets the register page show the sealed
+state before anyone submits. `histogram`, `trace`, `search` and the two `collector` routes are
+what the mockup's chrome needs: the volume chart, the trace timeline, the ⌘K palette, and Iknos
+observing itself.
+
+Every list response carries `meta.tookMs`. The status bar shows it (`q 38ms`), which makes a
+query that has quietly become slow visible without anyone going looking.
 
 `GET /api/logs` **rejects any request without both `from` and `to`** — a forgotten range must
 be a loud 400, not a silent full scan. Pagination is a keyset cursor on `(ts, id)`, never
@@ -224,6 +266,11 @@ decision.
 
 Next middleware still only checks for cookie *presence* and redirects, because it runs on the
 Edge runtime where no Redis client works. Real validation happens in Nest on every call.
+
+What the pages look like and which route feeds which panel is `2026-08-09-iknos-ui-design.md`.
+One rule from it belongs here because it constrains the API: the app is **service-scoped**, so
+every list route takes a `service` filter and the front never fetches the fleet and filters in
+the browser.
 
 ## 8. Deployment — now identical to the other apps
 
@@ -253,18 +300,29 @@ Migrations are applied by hand over SSH. The deploy script never migrates.
 ## 10. Milestones
 
 **M1 — walking skeleton (logs).** Epic `IKN-17`. In order: `IKN-3`, `IKN-18`, `IKN-6`,
-`IKN-7`, `IKN-19`, `IKN-11`, `IKN-5`, `IKN-12`, `IKN-4`.
+`IKN-21`, `IKN-7`, `IKN-19`, `IKN-11`, `IKN-24`, `IKN-5`, `IKN-12`, `IKN-22`, `IKN-4`.
 
-**M2 — metrics and health.** `IKN-2`, `IKN-8`, `IKN-20`, `IKN-13`.
+**M2 — metrics and health.** `IKN-2`, `IKN-8`, `IKN-20`, `IKN-13`, `IKN-23`, `IKN-25`.
 **M3 — issues and alerts.** `IKN-9`, `IKN-10`, `IKN-14`, `IKN-15`.
 **M4 — security views.** `IKN-16`.
 
+M1 grew by three tickets when the mockup arrived: `IKN-21` (registration and recovery),
+`IKN-24` (collector status and storage) and `IKN-22` (⌘K and keyboard navigation). All three
+are chrome that every later view inherits, which is exactly the kind of thing that is cheap now
+and expensive to retrofit.
+
 ## 11. Out of scope
 
-Notification channels, distributed traces, HTTP ingestion from other hosts, per-user roles.
+Notification channels, distributed tracing, HTTP ingestion from other hosts, per-user roles.
 The log schema and table layout keep each of these additive.
+
+"Distributed tracing" means spans emitted by instrumented code. The trace view built from log
+rows sharing a `trace.id` is not that, costs one query, and is in M1 — see
+`2026-08-09-iknos-ui-design.md` §8.3.
 
 ## 12. Open items
 
 1. MySQL version and native InnoDB partitioning on ks-b — confirm before the first migration.
 2. Whether `prisma migrate diff` reports drift on the partitioned table (§4.2).
+3. Whether the deploy script writes a release marker per service. Without one, the service
+   header chip and the issues `RELEASE` column show `—` (UI spec §8.7).
