@@ -1,16 +1,20 @@
-# Rust
-/target/
-**/*.rs.bk
-
-# Note: .sqlx/ is intentionally NOT ignored — `cargo sqlx prepare` output is
-# committed so CI can compile without a reachable database.
-
-# Node / Next
+# Node / pnpm
 node_modules/
+.pnpm-store/
+
+# Build output
+dist/
 .next/
 out/
-.pnpm-store/
 *.tsbuildinfo
+
+# Prisma 7 requires an explicit generator output. It is build output, not source:
+# `prisma generate` reproduces it, and committing it makes every schema change a
+# thousand-line diff.
+prisma/generated/
+
+# Tests
+coverage/
 
 # Environment
 .env
