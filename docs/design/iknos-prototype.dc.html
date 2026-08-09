@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;overflow:hidden;background:#0A0F14;font-family:'IBM Plex Sans',system-ui,sans-serif}
+a{color:#86B99A}a:hover{color:#CBD8D0}
+@keyframes ikPulse{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes ikIn{from{opacity:0;transform:translateY(6px) scale(.99)}to{opacity:1;transform:none}}
+@keyframes ikFade{from{opacity:0}to{opacity:1}}
+</style>
+</helmet>
+
+<div style="position:relative;display:block">
+<div style="position:relative;width:100%;height:100vh;min-height:660px;background:#8FA5B0;color:#131E24;font:400 12.5px/1.5 'IBM Plex Sans',system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased">
+
+  <div style="height:38px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:#171E27;border-bottom:1px solid #27313D;color:#CBD8D0;font-family:'JetBrains Mono',monospace">
+    <span style="font-weight:700;letter-spacing:.14em;font-size:12px">IKNOS</span>
+    <span style="font-size:10.5px;color:#86B99A;background:#1B2530;border:1px solid #33404E;border-radius:3px;padding:1px 6px">ks-b</span>
+    <span style="font-size:11px;color:#77899B">services<span style="color:#33404E">&nbsp;/&nbsp;</span><span style="color:#CBD8D0">{{ service }}</span></span>
+    <div style="flex:1;display:flex;justify-content:center">
+      <div onClick="{{ openCmd }}" style="width:392px;display:flex;align-items:center;gap:8px;height:22px;background:#0C1117;border:1px solid #27313D;border-radius:4px;padding:0 8px;font-size:10.5px;color:#5E7286;cursor:pointer" style-hover="border-color:#4A5F72;color:#8FA99A"><span style="color:#77899B">⌘K</span><span>search services, routes, issues, traces…</span></div>
+    </div>
+    <div style="display:flex;border:1px solid #27313D;border-radius:4px;overflow:hidden;font-size:10.5px">
+      <sc-for list="{{ ranges }}" as="rg" hint-placeholder-count="4">
+        <span onClick="{{ rg.on }}" style="padding:2px 8px;background:{{ rg.bg }};color:{{ rg.fg }};cursor:pointer">{{ rg.k }}</span>
+      </sc-for>
+    </div>
+    <span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#77899B"><span style="width:6px;height:6px;border-radius:50%;background:#86B99A;animation:ikPulse 2s ease-in-out infinite"></span><span style="color:#86B99A">collector</span> lag 0.4s</span>
+    <span style="font-size:10.5px;color:#CBD8D0">{{ clock }}</span>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <div style="position:relative;width:172px;flex:none;background:#171E27;border-right:1px solid #27313D;display:flex;flex-direction:column;padding:10px 0;font-family:'JetBrains Mono',monospace">
+      <div style="font-size:9px;letter-spacing:.16em;color:#5E7286;padding:0 12px 7px">SERVICES · PM2</div>
+      <sc-for list="{{ services }}" as="s" hint-placeholder-count="4">
+        <div onClick="{{ s.on }}" style="display:flex;align-items:center;gap:7px;margin:0 6px;padding:4px 8px;border-radius:4px;background:{{ s.bg }};cursor:pointer" style-hover="background:#1C2634">
+          <span style="width:6px;height:6px;border-radius:50%;background:{{ s.dot }};flex:none"></span>
+          <span style="flex:1;font-size:11px;color:{{ s.fg }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.n }}</span>
+          <svg viewBox="0 0 40 12" preserveAspectRatio="none" style="width:34px;height:12px;flex:none;display:block"><polyline points="{{ s.pts }}" fill="none" stroke="{{ s.spark }}" stroke-width="1.1"></polyline></svg>
+        </div>
+      </sc-for>
+      <div style="font-size:9px;letter-spacing:.16em;color:#5E7286;padding:16px 12px 6px">VIEWS</div>
+      <sc-for list="{{ views }}" as="v" hint-placeholder-count="5">
+        <div onClick="{{ v.on }}" style="display:flex;align-items:center;gap:8px;padding:5px 12px;background:{{ v.bg }};border-left:2px solid {{ v.edge }};color:{{ v.fg }};font-size:11.5px;cursor:pointer" style-hover="background:#1C2634;color:#CBD8D0">
+          <span style="flex:1">{{ v.n }}</span>
+          <span style="color:{{ v.kfg }};background:{{ v.kbg }};border-radius:3px;padding:0 5px;font-size:10px">{{ v.k }}</span>
+        </div>
+      </sc-for>
+      <div style="flex:1"></div>
+      <div style="margin:0 8px;padding:8px 10px;background:#0C1117;border:1px solid #24303C;border-radius:4px">
+        <div style="font-size:9px;letter-spacing:.12em;color:#5E7286;margin-bottom:6px">INGEST · 60m</div>
+        <svg viewBox="0 0 128 24" preserveAspectRatio="none" style="width:100%;height:24px;display:block"><polyline points="{{ ingestPts }}" fill="none" stroke="#86B99A" stroke-width="1.2"></polyline></svg>
+        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#77899B;margin-top:6px"><span>10 460 ev</span><span>4.2 GB</span></div>
+      </div>
+
+      <div onClick="{{ toggleUserMenu }}" style="margin:9px 8px 0;padding:6px 8px;display:flex;align-items:center;gap:8px;border:1px solid {{ userBd }};border-radius:5px;background:{{ userBg }};cursor:pointer" style-hover="background:#1C2634;border-color:#4A5F72">
+        <span style="width:20px;height:20px;flex:none;border-radius:4px;background:#24303C;color:#86B99A;font-size:9px;font-weight:700;letter-spacing:.06em;display:flex;align-items:center;justify-content:center">CO</span>
+        <span style="flex:1;font-size:11px;color:#CBD8D0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">cosmokaat</span>
+        <span style="font-size:9px;color:#5E7286;line-height:1">⌃<br>⌄</span>
+      </div>
+
+      <sc-if value="{{ userMenu }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:8px;bottom:52px;width:244px;background:#1E2733;border:1px solid #4A5F72;border-radius:7px;box-shadow:0 18px 44px rgba(0,0,0,.55);padding:11px 0 5px;z-index:15;animation:ikIn .14s cubic-bezier(.2,.7,.3,1)">
+          <div style="padding:0 12px 3px;font-size:9px;letter-spacing:.16em;color:#5E7286">SIGNED IN</div>
+          <div style="padding:0 12px 9px;font-size:11.5px;color:#CBD8D0">cosmokaat@protonmail.com</div>
+          <div onClick="{{ settingsAction }}" style="display:flex;align-items:center;gap:9px;padding:6px 12px;font-size:12px;color:#CBD8D0;cursor:pointer" style-hover="background:#24303C">
+            <span style="width:14px;text-align:center;color:#8FA99A">⚙</span>settings
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:6px 12px;font-size:12px;color:#6E8092;cursor:default">
+            <span style="width:14px;text-align:center;color:#5E7286">⚿</span>change password
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:6px 12px;font-size:12px;color:#6E8092;cursor:default">
+            <span style="width:14px;text-align:center;color:#5E7286">⛨</span>set recovery passphrase
+          </div>
+          <div style="height:1px;background:#33404E;margin:6px 0"></div>
+          <div onClick="{{ logout }}" style="display:flex;align-items:center;gap:9px;padding:6px 12px;font-size:12px;color:#CBD8D0;cursor:pointer" style-hover="background:#2A1E20;color:#E4736B">
+            <span style="width:14px;text-align:center;color:#8FA99A">⇥</span>log out
+            <span style="flex:1"></span>
+            <span style="font-size:9.5px;color:#3F5061">⌘⇧L</span>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:11px;padding:11px 12px;background:#8FA5B0;overflow-y:auto">
+
+      <div style="flex:none;display:flex;align-items:center;gap:12px;background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;padding:9px 13px">
+        <span style="font:600 18px 'JetBrains Mono',monospace;color:#131E24">{{ service }}</span>
+        <span style="font:400 10.5px 'JetBrains Mono',monospace;color:#3F535F">{{ svcMeta }}</span>
+        <div style="display:flex;gap:5px;flex:1">
+          <sc-for list="{{ chips }}" as="c" hint-placeholder-count="5">
+            <span style="font:400 10.5px 'JetBrains Mono',monospace;color:{{ c.fg }};background:{{ c.bg }};border:1px solid {{ c.bd }};border-radius:4px;padding:2px 7px">{{ c.t }}</span>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:5px">
+          <sc-for list="{{ health }}" as="h" hint-placeholder-count="3">
+            <div onClick="{{ h.on }}" style="display:flex;align-items:center;gap:6px;background:{{ h.bg }};border:1px solid {{ h.bd }};border-radius:5px;padding:3px 8px;cursor:pointer" style-hover="filter:brightness(1.06)">
+              <span style="width:6px;height:6px;border-radius:50%;background:{{ h.dot }}"></span>
+              <span style="font:500 10.5px 'JetBrains Mono',monospace;color:{{ h.fg }}">{{ h.t }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{ showSignals }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:11px">
+          <div style="background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+            <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#556A76">THROUGHPUT</span>
+            <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'JetBrains Mono',monospace;color:#131E24">41.2</span><span style="font:400 11px 'JetBrains Mono',monospace;color:#3F535F">req/s</span><span style="font:400 10.5px 'JetBrains Mono',monospace;color:#3C6B52;margin-left:auto">▲ 6%</span></div>
+            <svg viewBox="0 0 120 26" preserveAspectRatio="none" style="width:100%;height:26px;display:block"><path d="{{ areaReq }}" fill="#C2D4CB" opacity="0.7"></path><polyline points="{{ lineReq }}" fill="none" stroke="#3C6B52" stroke-width="1.3"></polyline></svg>
+          </div>
+          <div style="background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+            <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#556A76">ERROR RATE</span>
+            <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'JetBrains Mono',monospace;color:#8E2F2A">1.8</span><span style="font:400 11px 'JetBrains Mono',monospace;color:#3F535F">%</span><span style="font:400 10.5px 'JetBrains Mono',monospace;color:#8E2F2A;margin-left:auto">▲ 1.4 pt</span></div>
+            <div style="display:flex;align-items:flex-end;gap:1.5px;height:26px">
+              <sc-for list="{{ errBars }}" as="h" hint-placeholder-count="30"><div style="flex:1;height:{{ h.v }}px;background:{{ h.c }}"></div></sc-for>
+            </div>
+          </div>
+          <div style="background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+            <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#556A76">p95 LATENCY</span>
+            <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'JetBrains Mono',monospace;color:#131E24">412</span><span style="font:400 11px 'JetBrains Mono',monospace;color:#3F535F">ms</span><span style="font:400 10.5px 'JetBrains Mono',monospace;color:#8E2F2A;margin-left:auto">▲ 210ms</span></div>
+            <svg viewBox="0 0 120 26" preserveAspectRatio="none" style="width:100%;height:26px;display:block"><line x1="0" y1="10" x2="120" y2="10" stroke="#93A8B3" stroke-width="1" stroke-dasharray="2 3"></line><polyline points="{{ lineP95 }}" fill="none" stroke="#8A6118" stroke-width="1.3"></polyline></svg>
+          </div>
+          <div style="background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+            <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#556A76">NODE RUNTIME</span>
+            <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'JetBrains Mono',monospace;color:#131E24">318</span><span style="font:400 11px 'JetBrains Mono',monospace;color:#3F535F">MB heap</span></div>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <div style="display:flex;align-items:center;gap:6px;font:400 10px 'JetBrains Mono',monospace;color:#3F535F"><span style="width:50px">event loop</span><span style="flex:1;height:4px;background:#A3B6BF;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:18%;height:100%;background:#3C6B52"></span></span><span>4.1ms</span></div>
+              <div style="display:flex;align-items:center;gap:6px;font:400 10px 'JetBrains Mono',monospace;color:#3F535F"><span style="width:50px">db pool</span><span style="flex:1;height:4px;background:#A3B6BF;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:100%;height:100%;background:#8E2F2A"></span></span><span style="color:#8E2F2A">10/10</span></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showRoutes }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:none;background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;overflow:hidden">
+          <div style="display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid #A3B6BF"><span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#131E24;flex:1">Routes · last hour</span><span style="font:400 10.5px 'JetBrains Mono',monospace;color:#556A76">sorted by p95 ▼</span></div>
+          <div style="display:flex;padding:5px 12px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#556A76;background:#AEBFC7;border-bottom:1px solid #A3B6BF">
+            <span style="flex:1">ROUTE</span><span style="width:66px;text-align:right">RATE</span><span style="width:62px;text-align:right">p50</span><span style="width:70px;text-align:right">p95</span><span style="width:70px;text-align:right">p99</span><span style="width:62px;text-align:right">ERR</span><span style="width:88px;text-align:right">SHARE</span>
+          </div>
+          <sc-for list="{{ routes }}" as="r" hint-placeholder-count="6">
+            <div onClick="{{ r.on }}" style="display:flex;align-items:center;padding:5.5px 12px 5.5px 9px;font:400 11.5px 'JetBrains Mono',monospace;border-bottom:1px solid #A9BAC3;border-left:3px solid {{ r.edge }};background:{{ r.bg }};cursor:pointer" style-hover="background:#AEBFC7">
+              <span style="flex:1;color:#131E24;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#556A76">{{ r.m }}</span> {{ r.p }}</span>
+              <span style="width:66px;text-align:right;color:#3F535F">{{ r.rate }}</span>
+              <span style="width:62px;text-align:right;color:#3F535F">{{ r.p50 }}</span>
+              <span style="width:70px;text-align:right;color:{{ r.p95c }}">{{ r.p95 }}</span>
+              <span style="width:70px;text-align:right;color:#3F535F">{{ r.p99 }}</span>
+              <span style="width:62px;text-align:right;color:{{ r.errc }}">{{ r.err }}</span>
+              <span style="width:88px;display:flex;justify-content:flex-end;padding-left:14px"><span style="width:100%;height:5px;background:#A3B6BF;border-radius:2px;overflow:hidden;display:block"><span style="display:block;height:100%;background:{{ r.barc }};width:{{ r.share }}%"></span></span></span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showRouteDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;min-height:0;display:flex;gap:11px">
+          <div style="flex:1;min-width:0;background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+            <div style="flex:none;display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #A3B6BF">
+              <span style="font:500 12px 'JetBrains Mono',monospace;color:#131E24;flex:1">{{ routeDetail.title }}</span>
+              <span style="font:400 10.5px 'JetBrains Mono',monospace;color:#556A76">latency percentiles · last hour</span>
+              <div style="display:flex;gap:10px;font:400 10px 'JetBrains Mono',monospace">
+                <span style="display:flex;align-items:center;gap:4px;color:#3F535F"><span style="width:10px;height:2px;background:#3C6B52;display:block"></span>p50</span>
+                <span style="display:flex;align-items:center;gap:4px;color:#3F535F"><span style="width:10px;height:2px;background:#8A6118;display:block"></span>p95</span>
+                <span style="display:flex;align-items:center;gap:4px;color:#3F535F"><span style="width:10px;height:2px;background:#8E2F2A;display:block"></span>p99</span>
+              </div>
+            </div>
+            <div style="flex:1;min-height:0;padding:10px 12px">
+              <svg viewBox="0 0 300 74" preserveAspectRatio="none" style="width:100%;height:100%;display:block">
+                <line x1="0" y1="18.5" x2="300" y2="18.5" stroke="#A3B6BF" stroke-width="0.6" stroke-dasharray="3 4"></line>
+                <line x1="0" y1="37" x2="300" y2="37" stroke="#A3B6BF" stroke-width="0.6" stroke-dasharray="3 4"></line>
+                <line x1="0" y1="55.5" x2="300" y2="55.5" stroke="#A3B6BF" stroke-width="0.6" stroke-dasharray="3 4"></line>
+                <polyline points="{{ routeDetail.lineP99 }}" fill="none" stroke="#8E2F2A" stroke-width="0.9" vector-effect="non-scaling-stroke"></polyline>
+                <polyline points="{{ routeDetail.lineP95 }}" fill="none" stroke="#8A6118" stroke-width="1.1" vector-effect="non-scaling-stroke"></polyline>
+                <polyline points="{{ routeDetail.lineP50 }}" fill="none" stroke="#3C6B52" stroke-width="0.9" vector-effect="non-scaling-stroke"></polyline>
+              </svg>
+            </div>
+            <div style="flex:none;display:flex;justify-content:space-between;padding:0 12px 8px;font:400 9.5px 'JetBrains Mono',monospace;color:#556A76"><span>01:14</span><span>01:29</span><span>01:44</span><span>01:59</span><span>02:14</span></div>
+          </div>
+
+          <div style="width:296px;flex:none;display:flex;flex-direction:column;gap:11px">
+            <div style="flex:none;background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;padding:10px 12px">
+              <div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#556A76;margin-bottom:8px">LATENCY DISTRIBUTION</div>
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <sc-for list="{{ routeDetail.buckets }}" as="b" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'JetBrains Mono',monospace;color:#3F535F">
+                    <span style="width:64px">{{ b.l }}</span>
+                    <span style="flex:1;height:6px;background:#A3B6BF;border-radius:2px;overflow:hidden;display:block"><span style="display:block;height:100%;background:{{ b.c }};width:{{ b.w }}%"></span></span>
+                    <span style="width:30px;text-align:right">{{ b.w }}%</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:none;background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;padding:10px 12px">
+              <div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#556A76;margin-bottom:8px">STATUS CODES</div>
+              <div style="display:flex;height:9px;border-radius:3px;overflow:hidden;margin-bottom:8px">
+                <sc-for list="{{ routeDetail.codes }}" as="c" hint-placeholder-count="3">
+                  <div style="width:{{ c.v }}%;background:{{ c.c }}"></div>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:12px">
+                <sc-for list="{{ routeDetail.codes }}" as="c" hint-placeholder-count="3">
+                  <span style="display:flex;align-items:center;gap:5px;font:400 10.5px 'JetBrains Mono',monospace;color:#3F535F"><span style="width:6px;height:6px;border-radius:1px;background:{{ c.c }}"></span>{{ c.l }} <span style="color:#131E24">{{ c.v }}%</span></span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1;min-height:0;background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:7px">
+              <div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#556A76">SUMMARY</div>
+              <div style="display:flex;justify-content:space-between;font:400 11px 'JetBrains Mono',monospace;color:#3F535F"><span>throughput</span><span style="color:#131E24">{{ routeDetail.rate }}</span></div>
+              <div style="display:flex;justify-content:space-between;font:400 11px 'JetBrains Mono',monospace;color:#3F535F"><span>p50</span><span style="color:#131E24">{{ routeDetail.p50 }}</span></div>
+              <div style="display:flex;justify-content:space-between;font:400 11px 'JetBrains Mono',monospace;color:#3F535F"><span>p95</span><span style="color:{{ routeDetail.p95c }}">{{ routeDetail.p95 }}</span></div>
+              <div style="display:flex;justify-content:space-between;font:400 11px 'JetBrains Mono',monospace;color:#3F535F"><span>p99</span><span style="color:#131E24">{{ routeDetail.p99 }}</span></div>
+              <div style="display:flex;justify-content:space-between;font:400 11px 'JetBrains Mono',monospace;color:#3F535F"><span>error rate</span><span style="color:{{ routeDetail.errc }}">{{ routeDetail.err }}</span></div>
+              <div style="flex:1"></div>
+              <div style="font:400 10px/1.6 'JetBrains Mono',monospace;color:#556A76;padding-top:7px;border-top:1px solid #A3B6BF">scraped from /metrics every 15s · histogram buckets from prom-client</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showIssuesFull }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;min-height:0;background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+          <div style="flex:none;display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #A3B6BF">
+            <div style="display:flex;border:1px solid #93A8B3;border-radius:5px;overflow:hidden">
+              <sc-for list="{{ iFilters }}" as="ff" hint-placeholder-count="3">
+                <span onClick="{{ ff.on }}" style="display:flex;align-items:center;gap:6px;padding:3px 10px;background:{{ ff.bg }};color:{{ ff.fg }};font:500 11px 'JetBrains Mono',monospace;cursor:pointer" style-hover="filter:brightness(1.05)">{{ ff.k }}<span style="font-size:10px;color:#556A76">{{ ff.n }}</span></span>
+              </sc-for>
+            </div>
+            <span style="font:400 10.5px 'JetBrains Mono',monospace;color:#556A76;flex:1">{{ issueTotal }} · grouped by fingerprint, stable across deploys</span>
+            <span style="font:400 10.5px 'JetBrains Mono',monospace;color:#556A76">sort</span>
+            <div style="display:flex;border:1px solid #93A8B3;border-radius:5px;overflow:hidden">
+              <sc-for list="{{ iSorts }}" as="ss" hint-placeholder-count="3">
+                <span onClick="{{ ss.on }}" style="padding:3px 9px;background:{{ ss.bg }};color:{{ ss.fg }};font:400 10.5px 'JetBrains Mono',monospace;cursor:pointer" style-hover="filter:brightness(1.05)">{{ ss.k }}</span>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex:none;display:flex;align-items:center;padding:5px 12px 5px 9px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#556A76;background:#AEBFC7;border-bottom:1px solid #A3B6BF">
+            <span style="width:12px"></span><span style="width:82px">FINGERPRINT</span><span style="flex:1">ERROR</span><span style="width:118px">SERVICE</span><span style="width:130px">EVENTS · 48h</span><span style="width:66px;text-align:right">COUNT</span><span style="width:86px;text-align:right">FIRST SEEN</span><span style="width:78px;text-align:right">LAST SEEN</span><span style="width:78px;text-align:right">RELEASE</span>
+          </div>
+          <div style="flex:1;min-height:0;overflow-y:auto">
+            <sc-for list="{{ issuesFull }}" as="i" hint-placeholder-count="6">
+              <div onClick="{{ i.on }}" style="display:flex;align-items:center;padding:7px 12px 7px 9px;border-bottom:1px solid #A9BAC3;background:{{ i.bg }};cursor:pointer" style-hover="background:#AEBFC7">
+                <span style="width:12px;display:flex"><span style="width:6px;height:6px;border-radius:50%;background:{{ i.dot }}"></span></span>
+                <span style="width:82px;font:500 10.5px 'JetBrains Mono',monospace;color:#3F535F">{{ i.fp }}</span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;padding-right:14px">
+                  <span style="font:500 11.5px 'JetBrains Mono',monospace;color:#131E24;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ i.type }}</span>
+                  <span style="font:400 10.2px 'JetBrains Mono',monospace;color:#3F535F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ i.msg }} · {{ i.file }}</span>
+                </span>
+                <span style="width:118px;font:400 11px 'JetBrains Mono',monospace;color:#3F535F">{{ i.svc }}</span>
+                <span style="width:130px;padding-right:16px"><svg viewBox="0 0 120 22" preserveAspectRatio="none" style="width:100%;height:22px;display:block"><polyline points="{{ i.pts }}" fill="none" stroke="{{ i.spark }}" stroke-width="1.2" vector-effect="non-scaling-stroke"></polyline></svg></span>
+                <span style="width:66px;text-align:right;font:500 12px 'JetBrains Mono',monospace;color:{{ i.cc }}">{{ i.count }}</span>
+                <span style="width:86px;text-align:right;font:400 10.5px 'JetBrains Mono',monospace;color:#556A76">{{ i.first }}</span>
+                <span style="width:78px;text-align:right;font:400 10.5px 'JetBrains Mono',monospace;color:#3F535F">{{ i.last }}</span>
+                <span style="width:78px;text-align:right;font:400 10.5px 'JetBrains Mono',monospace;color:#556A76">{{ i.rel }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showBottom }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;min-height:0;display:flex;gap:11px">
+
+        <sc-if value="{{ showLog }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:#10151C;border:1px solid #1B242E;border-radius:8px;overflow:hidden;box-shadow:0 2px 14px rgba(10,18,24,.34),inset 0 0 0 1px rgba(143,169,154,.07);font-family:'JetBrains Mono',monospace">
+            <div style="flex:none;display:flex;align-items:center;gap:8px;padding:7px 10px;background:#171E27;border-bottom:1px solid #24303C">
+              <span style="color:#4E8266;font-size:11px">▸</span>
+              <div style="flex:1;display:flex;align-items:center;gap:6px;height:23px;background:#0C1117;border:1px solid #33404E;border-radius:4px;padding:0 8px;font-size:11px">
+                <sc-for list="{{ tokens }}" as="t" hint-placeholder-count="3">
+                  <span onClick="{{ t.toggle }}" style="display:flex;align-items:center;gap:5px;color:{{ t.fg }};opacity:{{ t.op }};border:1px solid {{ t.bd }};border-radius:3px;padding:0 5px;cursor:pointer" style-hover="opacity:1;border-color:#4A5F72">{{ t.label }}<span style="color:#5E7286;font-size:10px">{{ t.mark }}</span></span>
+                </sc-for>
+                
+              </div>
+              <span onClick="{{ toggleLive }}" style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:{{ liveFg }};background:{{ liveBg }};border:1px solid {{ liveBd }};border-radius:4px;padding:2px 8px;font-weight:500;cursor:pointer">{{ liveLabel }}</span>
+              <span onClick="{{ goLogs }}" style="font-size:10.5px;color:#5E7286;cursor:pointer" style-hover="color:#CBD8D0">⌘L fullscreen</span>
+            </div>
+
+            <div style="flex:none;padding:7px 10px 5px;border-bottom:1px solid #1E2733">
+              <div style="display:flex;align-items:flex-end;gap:1px;height:34px">
+                <sc-for list="{{ hist }}" as="b" hint-placeholder-count="72">
+                  <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;opacity:{{ b.o }}">
+                    <div style="height:{{ b.e }}px;background:#C1504A"></div>
+                    <div style="height:{{ b.w }}px;background:#C89A3E"></div>
+                    <div style="height:{{ b.i }}px;background:#3E5A50"></div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#55697C;margin-top:4px"><span>01:59:38</span><span>02:04</span><span>02:09</span><span style="color:#7FA8C4">▲ 02:14:37 · +18 err</span></div>
+            </div>
+
+            <div style="flex:none;display:flex;padding:4px 10px;font-size:9px;letter-spacing:.13em;color:#5E7286;border-bottom:1px solid #1E2733;background:#141A22">
+              <span style="width:86px">TIME</span><span style="width:42px">LVL</span><span style="width:104px">SERVICE</span><span style="width:176px">ROUTE</span><span style="width:32px">ST</span><span style="flex:1">MESSAGE</span><span style="width:72px">TRACE</span><span style="width:54px;text-align:right">DUR</span>
+            </div>
+
+            <div style="flex:1;min-height:0;overflow-y:auto">
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="16">
+                <div>
+                  <div onClick="{{ r.on }}" style="display:flex;align-items:center;padding:{{ rowPad }} 10px {{ rowPad }} 8px;font-size:11px;background:{{ r.bg }};border-left:2px solid {{ r.edge }};cursor:pointer" style-hover="background:#1A2330">
+                    <span style="width:84px;color:#77899B">{{ r.t }}</span>
+                    <span style="width:42px;color:{{ r.lc }}">{{ r.lvl }}</span>
+                    <span style="width:104px;color:#8FA99A">{{ r.svc }}</span>
+                    <span style="width:176px;color:#8FA99A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.route }}</span>
+                    <span style="width:32px;color:{{ r.sc }}">{{ r.st }}</span>
+                    <span style="flex:1;color:{{ r.mc }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.msg }}</span>
+                    <span onClick="{{ r.onTrace }}" style="width:72px;color:#7FA8C4;text-decoration:{{ r.traceLine }};cursor:pointer">{{ r.trace }}</span>
+                    <span style="width:54px;text-align:right;color:#77899B">{{ r.dur }}</span>
+                  </div>
+                  <sc-if value="{{ r.open }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:#0C1117;border-left:2px solid {{ r.openEdge }};padding:7px 10px 8px 12px;display:flex;gap:16px;align-items:flex-start;animation:ikFade .16s ease-out">
+                      <pre style="margin:0;font:400 10.2px/1.55 'JetBrains Mono',monospace;color:#77899B;flex:none">{{ r.json }}</pre>
+                      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+                        <div style="font-size:9px;letter-spacing:.14em;color:#5E7286">{{ r.stackLabel }}</div>
+                        <pre style="margin:0;font:400 10.2px/1.55 'JetBrains Mono',monospace;color:#8FA99A">{{ r.stack }}</pre>
+                        <div style="display:flex;gap:6px;margin-top:2px">
+                          <span onClick="{{ r.onTrace }}" style="font-size:10.5px;color:#CBD8D0;border:1px solid #33404E;border-radius:3px;padding:2px 8px;cursor:pointer" style-hover="background:#1E2733;border-color:#4A5F72">⌥⏎ trace · 3 events</span>
+                          <span onClick="{{ r.onIssue }}" style="font-size:10.5px;color:#CBD8D0;border:1px solid #33404E;border-radius:3px;padding:2px 8px;cursor:pointer" style-hover="background:#1E2733;border-color:#4A5F72">⌘I issue {{ r.trace }} ↗</span>
+                          <span onClick="{{ copyNd }}" style="font-size:10.5px;color:#8FA99A;border:1px solid #24303C;border-radius:3px;padding:2px 8px;cursor:pointer" style-hover="color:#CBD8D0;border-color:#4A5F72">⌘C copy NDJSON</span>
+                        </div>
+                      </div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="display:flex;flex-direction:{{ railDir }};gap:11px;width:{{ railW }};flex:{{ railFlex }};min-height:0;min-width:0">
+
+          <sc-if value="{{ showAlerts }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:{{ cardFlex }};min-width:0;background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;overflow:hidden;height:{{ cardH }}">
+              <div style="display:flex;align-items:center;padding:7px 11px;border-bottom:1px solid #A3B6BF"><span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#131E24;flex:1">Alerts</span><span style="font:400 10px 'JetBrains Mono',monospace;color:#556A76">evaluated by the collector</span></div>
+              <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="2">
+                <div onClick="{{ a.on }}" style="padding:9px 11px;border-bottom:1px solid #A9BAC3;background:{{ a.bg }};border-left:3px solid {{ a.edge }};cursor:pointer" style-hover="filter:brightness(1.04)">
+                  <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#DFE9E4;background:{{ a.badge }};border-radius:3px;padding:2px 6px">{{ a.state }}</span><span style="font:400 10.5px 'JetBrains Mono',monospace;color:{{ a.fg }}">for {{ a.since }}</span></div>
+                  <div style="font:400 11px 'JetBrains Mono',monospace;color:#131E24">{{ a.rule }}</div>
+                  <div style="font:400 10.5px 'JetBrains Mono',monospace;color:#3F535F;margin-top:3px">{{ a.svc }} · now <span style="color:{{ a.fg }};font-weight:500">{{ a.value }}</span></div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showIssues }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;min-height:0;min-width:0;background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;overflow-y:auto;display:flex;flex-direction:column">
+              <div style="display:flex;align-items:center;padding:7px 11px;border-bottom:1px solid #A3B6BF"><span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#131E24;flex:1">Issues · fingerprints</span><span style="font:400 10px 'JetBrains Mono',monospace;color:#556A76">unresolved</span></div>
+              <sc-for list="{{ issues }}" as="i" hint-placeholder-count="4">
+                <div onClick="{{ i.on }}" style="display:flex;flex-direction:column;gap:4px;padding:8px 11px;border-bottom:1px solid #A9BAC3;background:{{ i.bg }};cursor:pointer" style-hover="background:#AEBFC7">
+                  <div style="display:flex;align-items:center;gap:7px">
+                    <span style="width:6px;height:6px;border-radius:50%;background:{{ i.dot }};flex:none"></span>
+                    <span style="font:500 10.5px 'JetBrains Mono',monospace;color:#3F535F;background:#AEBFC7;border:1px solid #A3B6BF;border-radius:3px;padding:0 5px;flex:none">{{ i.fp }}</span>
+                    <span style="flex:1"></span>
+                    <span style="font:500 11.5px 'JetBrains Mono',monospace;color:{{ i.cc }}">{{ i.count }}</span>
+                    <span style="font:400 10px 'JetBrains Mono',monospace;color:#556A76">{{ i.last }}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="flex:1;min-width:0;font:400 11px 'JetBrains Mono',monospace;color:#131E24;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ i.type }}</span>
+                    <svg viewBox="0 0 60 14" preserveAspectRatio="none" style="width:52px;height:14px;flex:none;display:block"><polyline points="{{ i.pts }}" fill="none" stroke="{{ i.spark }}" stroke-width="1.2"></polyline></svg>
+                  </div>
+                  <div style="font:400 10.2px/1.35 'JetBrains Mono',monospace;color:#3F535F;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">{{ i.msg }}</div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ railHasMore }}" hint-placeholder-val="{{ true }}">
+                <div onClick="{{ openIssuesView }}" style="padding:7px 11px;font:400 10.5px 'JetBrains Mono',monospace;color:#3F535F;cursor:pointer;background:#AEBFC7" style-hover="color:#131E24">{{ railMore }}</div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showStorage }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:none;background:#BFCDD4;border:1px solid #93A8B3;border-radius:8px;padding:10px 12px">
+              <div style="font:500 11px 'IBM Plex Sans',sans-serif;color:#131E24;margin-bottom:8px">Storage &amp; retention</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'JetBrains Mono',monospace;color:#3F535F"><span style="width:52px;color:#131E24">logs</span><span style="flex:1;height:5px;background:#A3B6BF;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:72%;height:100%;background:#3C6B52"></span></span><span style="width:56px;text-align:right">4.2 GB</span><span style="width:26px;text-align:right;color:#556A76">14d</span></div>
+                <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'JetBrains Mono',monospace;color:#3F535F"><span style="width:52px;color:#131E24">metrics</span><span style="flex:1;height:5px;background:#A3B6BF;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:28%;height:100%;background:#4E7B96"></span></span><span style="width:56px;text-align:right">812 MB</span><span style="width:26px;text-align:right;color:#556A76">30d</span></div>
+                <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'JetBrains Mono',monospace;color:#3F535F"><span style="width:52px;color:#131E24">issues</span><span style="flex:1;height:5px;background:#A3B6BF;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:9%;height:100%;background:#8A6118"></span></span><span style="width:56px;text-align:right">64 MB</span><span style="width:26px;text-align:right;color:#556A76">∞</span></div>
+              </div>
+              <div style="margin-top:9px;padding-top:8px;border-top:1px solid #A3B6BF;font:400 10px/1.6 'JetBrains Mono',monospace;color:#556A76">mysql 5.1/20 GB · nightly purge 03:00 · hourly rollup +00:07</div>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="height:26px;flex:none;display:flex;align-items:center;background:#1E2733;border-top:1px solid #33404E;font:400 10.5px 'JetBrains Mono',monospace;color:#8FA99A">
+    <span style="background:#86B99A;color:#10151C;font-weight:700;letter-spacing:.1em;padding:0 10px;height:100%;display:flex;align-items:center">{{ mode }}</span>
+    <span style="padding:0 10px;border-right:1px solid #33404E;height:100%;display:flex;align-items:center;color:#CBD8D0">{{ service }}</span>
+    <span style="padding:0 10px;border-right:1px solid #33404E;height:100%;display:flex;align-items:center">tail <span style="color:{{ liveDotFg }}">&nbsp;{{ liveWord }}</span></span>
+    <span style="padding:0 10px;border-right:1px solid #33404E;height:100%;display:flex;align-items:center">{{ evCount }} ev / {{ range }}</span>
+    <span style="padding:0 10px;border-right:1px solid #33404E;height:100%;display:flex;align-items:center">q <span style="color:#AFC0BA">&nbsp;38ms</span></span>
+    <span onClick="{{ openAlert }}" style="padding:0 10px;border-right:1px solid #33404E;height:100%;display:flex;align-items:center;color:#E4736B;cursor:pointer" style-hover="background:#22191C">1 active alert</span>
+    <span style="flex:1"></span>
+    <span style="padding:0 10px;color:#77899B">j/k move · ⏎ expand · ⌥⏎ trace · / filter · ⌘K palette</span>
+  </div>
+
+  <sc-if value="{{ showLogin }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:#10151C;display:flex;flex-direction:column;z-index:40;animation:ikFade .18s ease-out;font-family:'JetBrains Mono',monospace">
+
+      <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+        <div style="position:absolute;inset:0;background:radial-gradient(760px 520px at 50% 42%,rgba(134,185,154,.10),rgba(16,21,28,0) 68%)"></div>
+        <div style="position:absolute;inset:0;background:radial-gradient(900px 600px at 88% 96%,rgba(127,168,196,.07),rgba(16,21,28,0) 70%)"></div>
+        <div style="position:absolute;left:24px;bottom:34px;font:700 208px/0.8 'JetBrains Mono',monospace;letter-spacing:.04em;color:transparent;-webkit-text-stroke:1.5px rgba(143,169,154,.11);white-space:nowrap;user-select:none">IKNOS</div>
+      </div>
+
+      <div style="position:relative;height:38px;flex:none;display:flex;align-items:center;gap:14px;padding:0 14px;background:rgba(20,26,34,.82);border-bottom:1px solid #1E2733">
+        <span style="font:700 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#CBD8D0">IKNOS</span>
+        <span style="font:400 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#5E7286">{{ authCrumb }}</span>
+        <span style="flex:1"></span>
+        <span style="font:400 10.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#5E7286">KS-B.INTERNAL</span>
+        <span style="width:7px;height:7px;border-radius:50%;background:#86B99A;animation:ikPulse 2.4s ease-in-out infinite"></span>
+      </div>
+
+      <div style="position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center">
+        <div style="width:{{ authW }};display:flex;flex-direction:column">
+
+          <div style="font:400 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#5E7286;margin-bottom:7px">{{ authKicker }}</div>
+          <div style="margin-bottom:20px">
+            <span style="font:700 25px 'JetBrains Mono',monospace;letter-spacing:-.01em;color:#DFE9E4">{{ authTitle }}</span>
+          </div>
+
+          <div style="background:rgba(23,30,39,.94);border:1px solid #27313D;border-radius:9px;padding:20px 22px;box-shadow:0 24px 70px rgba(0,0,0,.55);backdrop-filter:blur(3px)">
+
+            <sc-if value="{{ pgLogin }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column">
+                <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:13px">
+                  <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#5E7286">IDENTITY · EMAIL</span>
+                  <div style="display:flex;align-items:center;height:32px;background:#0C1117;border:1px solid #33404E;border-radius:5px;padding:0 10px;font:400 12px 'JetBrains Mono',monospace;color:#CBD8D0">{{ email }}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:18px">
+                  <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#5E7286">PASSWORD</span>
+                  <div style="display:flex;align-items:center;height:32px;background:#0C1117;border:1px solid #4A5F72;border-radius:5px;padding:0 10px;font:400 12px 'JetBrains Mono',monospace;color:#CBD8D0">{{ pw }}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:13px;margin-bottom:16px">
+                  <span onClick="{{ onSignIn }}" style="height:32px;display:flex;align-items:center;padding:0 16px;background:{{ signBg }};color:{{ signFg }};border-radius:5px;font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.08em;cursor:pointer" style-hover="filter:brightness(1.1)">{{ signLabel }}</span>
+                  <span style="font:400 10.5px 'JetBrains Mono',monospace;color:#5E7286">OR</span>
+                  <span onClick="{{ goSignup }}" style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ regFg }};cursor:pointer" style-hover="filter:brightness(1.2)">REGISTER</span>
+                </div>
+                <div style="border-top:1px solid #27313D;padding-top:13px">
+                  <span onClick="{{ goRecover }}" style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#86B99A;cursor:pointer" style-hover="color:#CBD8D0">RECOVER ACCOUNT →</span>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pgSignupAny }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column">
+                <sc-if value="{{ pgSealed }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:4px;padding:9px 11px;margin-bottom:16px;background:#141C25;border:1px solid #24303C;border-left:2px solid #E0AE55;border-radius:5px">
+                    <span style="font:500 11px 'JetBrains Mono',monospace;color:#DFE9E4">registration is disabled on this host</span>
+                    <span style="font:400 10.5px/1.6 'JetBrains Mono',monospace;color:#8FA99A"><span style="color:#CBD8D0">IKNOS_ALLOW_SIGNUP=false</span> · accounts are provisioned on the server. if you are locked out, use recovery.</span>
+                  </div>
+                </sc-if>
+                <div style="display:flex;flex-direction:column;opacity:{{ suOpacity }}">
+                <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:13px">
+                  <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#5E7286">IDENTITY · EMAIL</span>
+                  <div style="display:flex;align-items:center;height:32px;background:#0C1117;border:1px solid #33404E;border-radius:5px;padding:0 10px;font:400 12px 'JetBrains Mono',monospace;color:#4A5F72">you@domain.tld</div>
+                </div>
+                <div style="display:flex;gap:12px;margin-bottom:9px">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+                    <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#5E7286">PASSWORD</span>
+                    <div style="display:flex;align-items:center;height:32px;background:#0C1117;border:1px solid #33404E;border-radius:5px;padding:0 10px;font:400 12px 'JetBrains Mono',monospace;color:#4A5F72">12+ chars</div>
+                  </div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+                    <div style="display:flex;align-items:center"><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#5E7286;flex:1">CONFIRM</span><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8FA99A;border:1px solid #33404E;border-radius:3px;padding:1px 6px;cursor:pointer" style-hover="color:#CBD8D0;border-color:#4A5F72">SHOW</span></div>
+                    <div style="height:32px;background:#0C1117;border:1px solid #33404E;border-radius:5px"></div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px">
+                  <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#5E7286">STRENGTH</span>
+                  <div style="display:flex;gap:3px">
+                    <div style="flex:1;height:3px;background:#4E8266"></div>
+                    <div style="flex:1;height:3px;background:#4E8266"></div>
+                    <div style="flex:1;height:3px;background:#4E8266"></div>
+                    <div style="flex:1;height:3px;background:#24303C"></div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:9px">
+                  <div style="display:flex;align-items:center"><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#5E7286;flex:1">RECOVERY PASSPHRASE</span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#5E7286;margin-right:8px">20+ CHARS</span><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8FA99A;border:1px solid #33404E;border-radius:3px;padding:1px 6px;cursor:pointer" style-hover="color:#CBD8D0;border-color:#4A5F72">SHOW</span></div>
+                  <div style="height:32px;background:#0C1117;border:1px solid #33404E;border-radius:5px"></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px">
+                  <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#5E7286">CONFIRM PASSPHRASE</span>
+                  <div style="height:32px;background:#0C1117;border:1px solid #33404E;border-radius:5px"></div>
+                </div>
+                <div style="font:400 10px/1.6 'JetBrains Mono',monospace;color:#5E7286;margin-bottom:16px">the only way back in if you lose your password — there is no recovery email. write it down.</div>
+                <div style="display:flex;align-items:center;gap:13px">
+                  <span onClick="{{ suAction }}" style="height:32px;display:flex;align-items:center;padding:0 16px;background:{{ suBtnBg }};color:{{ suBtnFg }};border-radius:5px;font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.08em;cursor:{{ suCursor }}" style-hover="filter:brightness(1.1)">REGISTER</span>
+                  <span style="font:400 10.5px 'JetBrains Mono',monospace;color:#5E7286">OR</span>
+                  <span onClick="{{ goLogin }}" style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#86B99A;cursor:pointer" style-hover="color:#CBD8D0">SIGN IN</span>
+                </div>
+                </div>
+              </div>
+            </sc-if>
+
+
+            <sc-if value="{{ pgRecover }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column">
+                <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:11px">
+                  <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#5E7286">IDENTITY · EMAIL</span>
+                  <div style="display:flex;align-items:center;height:32px;background:#0C1117;border:1px solid #33404E;border-radius:5px;padding:0 10px;font:400 12px 'JetBrains Mono',monospace;color:#4A5F72">you@domain.tld</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:11px">
+                  <div style="display:flex;align-items:center"><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#5E7286;flex:1">RECOVERY PASSPHRASE</span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#5E7286;margin-right:8px">20+ CHARS</span><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8FA99A;border:1px solid #33404E;border-radius:3px;padding:1px 6px;cursor:pointer" style-hover="color:#CBD8D0;border-color:#4A5F72">SHOW</span></div>
+                  <div style="height:32px;background:#0C1117;border:1px solid #33404E;border-radius:5px"></div>
+                </div>
+                <div style="display:flex;gap:12px;margin-bottom:13px">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+                    <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#5E7286">NEW PASSWORD</span>
+                    <div style="display:flex;align-items:center;height:32px;background:#0C1117;border:1px solid #33404E;border-radius:5px;padding:0 10px;font:400 12px 'JetBrains Mono',monospace;color:#4A5F72">12+ chars</div>
+                  </div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+                    <div style="display:flex;align-items:center"><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#5E7286;flex:1">CONFIRM</span><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8FA99A;border:1px solid #33404E;border-radius:3px;padding:1px 6px;cursor:pointer" style-hover="color:#CBD8D0;border-color:#4A5F72">SHOW</span></div>
+                    <div style="height:32px;background:#0C1117;border:1px solid #33404E;border-radius:5px"></div>
+                  </div>
+                </div>
+                <div style="font:400 10px/1.6 'JetBrains Mono',monospace;color:#5E7286;margin-bottom:16px">the passphrase you chose when you registered. an account without one can only be reset by the owner, in the database.</div>
+                <div style="display:flex;align-items:center;gap:13px">
+                  <span onClick="{{ onReset }}" style="height:32px;display:flex;align-items:center;padding:0 16px;background:#86B99A;color:#10151C;border-radius:5px;font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.08em;cursor:pointer" style-hover="filter:brightness(1.1)">RESET</span>
+                  <span style="font:400 10.5px 'JetBrains Mono',monospace;color:#5E7286">OR</span>
+                  <span onClick="{{ goLogin }}" style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#86B99A;cursor:pointer" style-hover="color:#CBD8D0">SIGN IN</span>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pgAbout }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ legal }}" as="l" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:18px;padding:9px 0;border-bottom:1px solid #1E2733">
+                    <span style="width:88px;flex:none;font:400 11.5px 'JetBrains Mono',monospace;color:#5E7286">{{ l.k }}</span>
+                    <span style="flex:1;font:400 11.5px 'JetBrains Mono',monospace;color:#CBD8D0">{{ l.v }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+          </div>
+
+          <div style="font:400 10.5px/1.75 'JetBrains Mono',monospace;color:#4A5F72;margin-top:16px">a self-hosted monitor for the apps on ks-b — ECS logs, Prometheus metrics, grouped errors and alerts. no SaaS, no agent, no lock-in.</div>
+          <div style="display:flex;align-items:center;gap:16px;margin-top:12px">
+            <span onClick="{{ goAbout }}" style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ aboutFg }};cursor:pointer" style-hover="color:#CBD8D0">{{ aboutLabel }}</span>
+            <span style="font:400 10px 'JetBrains Mono',monospace;color:#33404E">httpOnly cookie · rolling session · CSRF · bcrypt</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:absolute;inset:0;background:rgba(6,10,14,.66);display:flex;align-items:center;justify-content:center;animation:ikFade .12s ease-out;z-index:20">
+      <div onClick="{{ stop }}" style="width:{{ modalW }};max-height:640px;background:#171E27;border:1px solid #33404E;border-radius:10px;box-shadow:0 28px 80px rgba(0,0,0,.55);overflow:hidden;display:flex;flex-direction:column;animation:ikIn .16s cubic-bezier(.2,.7,.3,1);font-family:'JetBrains Mono',monospace;color:#CBD8D0">
+        <div style="flex:none;display:flex;align-items:center;gap:9px;padding:10px 13px;background:#1E2733;border-bottom:1px solid #33404E">
+          <span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#10151C;background:{{ modalTagBg }};border-radius:3px;padding:2px 7px">{{ modalTag }}</span>
+          <span style="font-size:12.5px;color:#DFE9E4;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ modalTitle }}</span>
+          <span onClick="{{ closeModal }}" style="font-size:12px;color:#77899B;border:1px solid #33404E;border-radius:4px;padding:1px 7px;cursor:pointer" style-hover="color:#CBD8D0;border-color:#4A5F72">esc</span>
+        </div>
+        <div style="flex:1;min-height:0;overflow:hidden;padding:13px">{{ modalBody }}</div>
+        <div style="flex:none;display:flex;align-items:center;gap:8px;padding:10px 13px;background:#141A22;border-top:1px solid #27313D">
+          <span style="font-size:10.5px;color:#5E7286;flex:1">{{ modalHint }}</span>
+          <sc-for list="{{ modalActions }}" as="a" hint-placeholder-count="2">
+            <span onClick="{{ a.on }}" style="font-size:11px;color:{{ a.fg }};background:{{ a.bg }};border:1px solid {{ a.bd }};border-radius:5px;padding:4px 11px;cursor:pointer;font-weight:500" style-hover="filter:brightness(1.15)">{{ a.t }}</span>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;right:16px;bottom:38px;background:#1E2733;border:1px solid #4A5F72;border-left:3px solid #86B99A;border-radius:6px;padding:8px 13px;font:400 11px 'JetBrains Mono',monospace;color:#CBD8D0;box-shadow:0 12px 32px rgba(0,0,0,.45);animation:ikIn .18s ease-out;z-index:30">{{ toast }}</div>
+  </sc-if>
+
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;signupEnabled&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Auth&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;compact&quot;,&quot;comfortable&quot;],&quot;default&quot;:&quot;compact&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;options&quot;:[&quot;#86B99A&quot;,&quot;#7FA8C4&quot;,&quot;#C2D4CB&quot;,&quot;#E0AE55&quot;],&quot;default&quot;:&quot;#86B99A&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;}}">
+class Component extends DCLogic {
+  state = {
+    service: 'pfa', view: 'service', range: '1h', live: true,
+    open: null, sel: 0, modal: null, issueIdx: 0, alertIdx: 0,
+    tokens: { svc: true, level: false, text: false }, toast: null,
+    authed: true, routeIdx: 0, issueFilter: 'unresolved', issueSort: 'last',
+    email: 'cosmokaat@protonmail.com', pw: '••••••••••••', signing: false, userMenu: false,
+    authPage: 'login'
+  };
+
+  rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  poly(vals, w, h, pad) {
+    const min = Math.min(...vals), max = Math.max(...vals), span = (max - min) || 1;
+    return vals.map((v, i) => ((i / (vals.length - 1)) * w).toFixed(1) + ',' + (h - pad - ((v - min) / span) * (h - pad * 2)).toFixed(1)).join(' ');
+  }
+
+  series(seed, n, base, jitter, tail) {
+    const r = this.rng(seed), out = [];
+    for (let i = 0; i < n; i++) {
+      let v = base + (r() - 0.5) * jitter + Math.sin(i / 3.1) * jitter * 0.35;
+      if (tail && i > n - 7) v += (i - (n - 7)) * tail;
+      out.push(Math.max(0.5, v));
+    }
+    return out;
+  }
+
+  componentDidMount() {
+    this.onKey = (e) => {
+      const k = e.key;
+      if (k === 'Escape') { this.setState({ modal: null, userMenu: false }); return; }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && k.toLowerCase() === 'l') { e.preventDefault(); this.setState({ authed: false, userMenu: false, modal: null, authPage: 'login' }); return; }
+      if ((e.metaKey || e.ctrlKey) && k.toLowerCase() === 'k') { e.preventDefault(); this.setState({ modal: 'cmd' }); return; }
+      if (!this.state.authed) {
+        const ok = this.state.authPage === 'login' || (this.state.authPage === 'signup' && (this.props.signupEnabled ?? false));
+        if (k === 'Enter' && ok) { e.preventDefault(); this.setState({ signing: true }); setTimeout(() => this.setState({ signing: false, authed: true }), 700); }
+        return;
+      }
+      if (this.state.modal) return;
+      const n = this.visibleRows().length;
+      if (k === 'j' || k === 'ArrowDown') { e.preventDefault(); this.setState(s => ({ sel: Math.min(n - 1, s.sel + 1) })); }
+      else if (k === 'k' || k === 'ArrowUp') { e.preventDefault(); this.setState(s => ({ sel: Math.max(0, s.sel - 1) })); }
+      else if (k === 'Enter') { e.preventDefault(); if (e.altKey) this.setState({ modal: 'trace' }); else this.setState(s => ({ open: s.open === s.sel ? null : s.sel })); }
+      else if (k === '/') { e.preventDefault(); this.setState({ modal: 'cmd' }); }
+    };
+    window.addEventListener('keydown', this.onKey);
+  }
+
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); }
+
+  flash(msg) {
+    this.setState({ toast: msg, modal: null });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: null }), 2600);
+  }
+
+  ALL() {
+    return [
+      ['02:14:37.912', 'ERRO', 'pfa', 'POST /api/exports', '500', 'err', 'Unhandled rejection in exportQueue — acquire connection timeout', '4f2ab91c', '8014ms', 1],
+      ['02:14:37.908', 'WARN', 'pfa', '—', '—', 'none', 'mariadb pool exhausted (10/10) · waited 812ms', '4f2ab91c', '812ms', 1],
+      ['02:14:37.106', 'INFO', 'pfa', 'GET /api/dossiers/8821', '200', 'ok', 'request completed', '9c0e17d4', '41ms', 0],
+      ['02:14:36.884', 'INFO', 'iknos-collector', '—', '—', 'none', 'scrape pfa:/metrics · 412 series', '—', '38ms', 0],
+      ['02:14:36.512', 'INFO', 'pfa', 'GET /api/auth/session', '200', 'ok', 'session refreshed · rolling +30m', '71ba3f60', '12ms', 0],
+      ['02:14:36.204', 'WARN', 'iknos-ui', 'GET /issues', '200', 'ok', 'slow server component render', 'b83c1e05', '1204ms', 0],
+      ['02:14:35.998', 'INFO', 'pfa', 'POST /api/documents/912/preview', '201', 'ok', 'pdf rendered · 3 pages', '2d47c9aa', '318ms', 0],
+      ['02:14:35.771', 'DEBU', 'iknos-collector', '—', '—', 'none', 'offset 4182993 · inode 2621511 persisted', '—', '2ms', 0],
+      ['02:14:35.442', 'INFO', 'pfa', 'GET /api/dossiers', '200', 'ok', 'request completed · 24 rows', '5e10ff23', '27ms', 0],
+      ['02:14:34.980', 'ERRO', 'pfa', 'POST /api/exports', '500', 'err', 'ConnectionAcquireTimeoutError · pool timeout', '7c2f01bd', '8007ms', 1],
+      ['02:14:34.612', 'INFO', 'nginx', 'GET /assets/app.4f2b.css', '304', 'warn', 'cache hit', '—', '1ms', 0],
+      ['02:14:34.115', 'INFO', 'pfa', 'POST /api/auth/login', '401', 'warn', 'invalid credentials · 3rd attempt', 'a90b4417', '96ms', 0],
+      ['02:14:33.902', 'INFO', 'iknos-collector', '—', '—', 'none', 'health pfa ok · mysql 3ms · redis 1ms', '—', '6ms', 0],
+      ['02:14:33.480', 'INFO', 'pfa', 'GET /api/dossiers/8815', '200', 'ok', 'request completed', '33cc82e1', '44ms', 0],
+      ['02:14:33.041', 'INFO', 'pfa', 'GET /api/dossiers/8802', '200', 'ok', 'request completed', 'e71a04bc', '38ms', 0],
+      ['02:14:32.774', 'WARN', 'pfa', 'POST /api/exports', '—', 'none', 'retry 2/3 · backoff 2000ms', '7c2f01bd', '—', 1],
+      ['02:14:32.219', 'INFO', 'iknos-collector', '—', '—', 'none', 'hourly rollup 01:00 → 02:00 written', '—', '412ms', 0],
+      ['02:14:31.905', 'INFO', 'pfa', 'GET /api/dossiers/8799', '200', 'ok', 'request completed', '0b39d7fa', '29ms', 0],
+      ['02:14:31.480', 'DEBU', 'pfa', '—', '—', 'none', 'prisma · adapter-mariadb pool acquire 3ms', '—', '3ms', 0],
+      ['02:14:31.002', 'INFO', 'nginx', 'GET /assets/app.9c1d.js', '200', 'ok', 'served · 412 KB', '—', '4ms', 0],
+      ['02:14:30.774', 'ERRO', 'iknos-ui', 'GET /issues', '500', 'err', 'PrismaClientKnownRequestError P2028', 'b83c1e05', '204ms', 1],
+      ['02:14:30.310', 'INFO', 'pfa', 'GET /health', '200', 'ok', 'mysql ok · redis ok · disk 62%', '—', '6ms', 0],
+      ['02:14:29.884', 'INFO', 'pfa', 'GET /api/dossiers/8790', '200', 'ok', 'request completed', 'c41f9d02', '31ms', 0],
+      ['02:14:29.402', 'WARN', 'pfa', 'GET /api/exports/44', '404', 'warn', 'export expired · retention 14d', '9ab30f71', '11ms', 0]
+    ];
+  }
+
+  visibleRows() {
+    const t = this.state.tokens, svc = this.state.service;
+    return this.ALL().filter(a => {
+      if (t.svc && a[2] !== svc) return false;
+      if (t.level && a[1] !== 'WARN' && a[1] !== 'ERRO') return false;
+      if (t.text && !(a[6] + a[3]).toLowerCase().includes('export')) return false;
+      return true;
+    });
+  }
+
+  ISSUES() {
+    return [
+      ['4f2ab91c', 'ConnectionAcquireTimeoutError', 'pool timeout after 8000ms', '1 204', '2m ago', 51, 'hot', 'src/queue/export.ts:142', 'unresolved', 'pfa', '6d ago', 'v2.19.0'],
+      ['8d1e7740', 'TypeError', "reading 'siret' of undefined", '318', '14m ago', 57, 'warn', 'src/dossiers/normalize.ts:88', 'unresolved', 'pfa', '11d ago', 'v2.18.4'],
+      ['b83c1e05', 'PrismaClientKnownRequestError', 'P2028 transaction already closed', '47', '1h ago', 63, 'mid', 'app/issues/page.tsx:31', 'unresolved', 'iknos-ui', '3d ago', 'v0.4.1'],
+      ['2ac59f13', 'RangeError', 'Maximum call stack size exceeded', '9', '6h ago', 67, 'ok', 'src/pdf/render.ts:204', 'unresolved', 'pfa', '2d ago', 'v2.19.0'],
+      ['91d0ea38', 'ZodError', 'invalid siret · expected 14 digits', '806', '3m ago', 71, 'warn', 'src/dossiers/schema.ts:24', 'unresolved', 'pfa', '21d ago', 'v2.17.0'],
+      ['5c7b1120', 'FetchError', 'ECONNREFUSED 127.0.0.1:6379 · redis', '62', '4h ago', 73, 'mid', 'src/session/store.ts:19', 'unresolved', 'iknos-ui', '9d ago', 'v0.4.0'],
+      ['e02f4a9d', 'SyntaxError', 'unexpected token in NDJSON line · skipped', '2 471', '1m ago', 79, 'ok', 'src/tail/parse.ts:66', 'ignored', 'iknos-collector', '28d ago', 'v0.4.1'],
+      ['a41c9e20', 'TypeError', 'cannot read properties of null (reading pm2)', '14', '2d ago', 83, 'ok', 'src/host/pm2.ts:41', 'resolved', 'iknos-collector', '30d ago', 'v0.3.2'],
+      ['d8b30172', 'PayloadTooLargeError', 'request entity too large · 12 MB', '5', '3d ago', 89, 'ok', 'app/api/documents/route.ts:12', 'resolved', 'pfa', '18d ago', 'v2.18.0']
+    ];
+  }
+
+  ROUTES() {
+    return [
+      ['POST', '/api/exports', '0.6/s', '210ms', '8014ms', '#8E2F2A', '8110ms', '31.4%', '#8E2F2A', 4, '#8E2F2A', 61, 88, 92, 8, 31],
+      ['POST', '/api/documents/:id/preview', '2.2/s', '180ms', '412ms', '#8A6118', '702ms', '1.1%', '#3F535F', 14, '#8A6118', 44, 60, 71, 3, 1],
+      ['GET', '/api/dossiers', '9.1/s', '31ms', '140ms', '#131E24', '380ms', '0.4%', '#3F535F', 38, '#3C6B52', 18, 34, 52, 2, 0],
+      ['GET', '/api/dossiers/:id', '18.4/s', '22ms', '96ms', '#131E24', '210ms', '0.2%', '#3F535F', 72, '#3C6B52', 14, 26, 41, 1, 0],
+      ['GET', '/api/auth/session', '6.8/s', '8ms', '19ms', '#131E24', '44ms', '0.0%', '#3F535F', 26, '#3C6B52', 8, 14, 22, 0, 0],
+      ['GET', '/health', '2.0/s', '3ms', '6ms', '#131E24', '9ms', '0.0%', '#3F535F', 8, '#3C6B52', 5, 8, 12, 0, 0]
+    ];
+  }
+
+  ALERTS() {
+    return [
+      ['FIRING', 'rate(http_5xx[5m]) > 1%', 'pfa', '3.1%', '00:04:12', '#8E2F2A', '#C4A9A6', '#AE9490', '#8E2F2A'],
+      ['PENDING', 'pm2_restarts_total[1h] > 2', 'iknos-ui', '3', '00:01:38', '#8A6118', 'transparent', '#8A6118', '#8A6118']
+    ];
+  }
+
+  el(tag, style, children) { return React.createElement(tag, { style }, children); }
+
+  modalBody(kind) {
+    const R = React.createElement;
+    const mono = { fontFamily: "'JetBrains Mono',monospace" };
+    const label = (t) => R('div', { style: { ...mono, fontSize: 9, letterSpacing: '.16em', color: '#5E7286', margin: '0 0 6px' } }, t);
+    const pre = (t, c) => R('pre', { style: { ...mono, margin: 0, fontSize: 10.6, lineHeight: 1.65, color: c || '#8FA99A', whiteSpace: 'pre-wrap' } }, t);
+
+    if (kind === 'trace') {
+      const steps = [
+        ['02:14:37.104', 'pfa', 'POST /api/exports', 'request received', '#8FA99A'],
+        ['02:14:37.106', 'pfa', 'exportQueue.enqueue', 'job 8812 queued', '#8FA99A'],
+        ['02:14:37.908', 'pfa', 'prisma.$connect', 'pool exhausted (10/10) · waited 812ms', '#E0AE55'],
+        ['02:14:37.912', 'pfa', 'POST /api/exports', 'acquire connection timeout · 500', '#E4736B'],
+        ['02:14:38.001', 'iknos-collector', 'fingerprint', 'grouped into issue 4f2ab91c', '#7FA8C4']
+      ];
+      return R('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
+        R('div', { style: { display: 'flex', gap: 16 } },
+          R('div', { style: { ...mono, fontSize: 10.5, color: '#77899B' } }, 'trace.id ', R('span', { style: { color: '#7FA8C4' } }, '4f2ab91c7d3e0a55')),
+          R('div', { style: { ...mono, fontSize: 10.5, color: '#77899B' } }, 'span 5 · total ', R('span', { style: { color: '#E4736B' } }, '8014ms'))
+        ),
+        R('div', { style: { display: 'flex', flexDirection: 'column', gap: 3 } }, steps.map((s, i) =>
+          R('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '6px 9px', background: i === 3 ? '#22191C' : '#141A22', border: '1px solid ' + (i === 3 ? '#8E3C38' : '#24303C'), borderRadius: 5 } },
+            R('span', { style: { ...mono, fontSize: 10.5, color: '#77899B', width: 90 } }, s[0]),
+            R('span', { style: { ...mono, fontSize: 10.5, color: '#8FA99A', width: 116 } }, s[1]),
+            R('span', { style: { ...mono, fontSize: 10.8, color: '#CBD8D0', width: 176 } }, s[2]),
+            R('span', { style: { ...mono, fontSize: 10.8, color: s[4], flex: 1 } }, s[3]),
+            R('span', { style: { display: 'block', height: 5, borderRadius: 3, background: s[4], width: [8, 10, 96, 120, 6][i], opacity: .8 } })
+          )
+        ))
+      );
+    }
+
+    if (kind === 'issue') {
+      const it = this.ISSUES()[this.state.issueIdx];
+      const bars = [];
+      const r = this.rng(90 + this.state.issueIdx);
+      for (let i = 0; i < 48; i++) bars.push(Math.max(2, Math.round((i > 40 ? 10 + r() * 22 : 2 + r() * 9))));
+      return R('div', { style: { display: 'flex', flexDirection: 'column', gap: 11 } },
+        R('div', { style: { display: 'flex', gap: 8 } }, [
+          ['fingerprint', it[0]], ['occurrences', it[3]], ['last seen', it[4]], ['first seen', '6d ago'], ['service', this.state.service]
+        ].map((p, i) => R('div', { key: i, style: { flex: 1, background: '#141A22', border: '1px solid #24303C', borderRadius: 6, padding: '7px 9px' } },
+          R('div', { style: { ...mono, fontSize: 8.5, letterSpacing: '.14em', color: '#5E7286', marginBottom: 4 } }, p[0].toUpperCase()),
+          R('div', { style: { ...mono, fontSize: 12, color: '#CBD8D0' } }, p[1])
+        ))),
+        R('div', null, label('OCCURRENCES · 48h'),
+          R('div', { style: { display: 'flex', alignItems: 'flex-end', gap: 2, height: 54, background: '#141A22', border: '1px solid #24303C', borderRadius: 6, padding: '6px 8px' } },
+            bars.map((h, i) => R('div', { key: i, style: { flex: 1, height: h, background: i > 40 ? '#C1504A' : '#3E5A50' } })))
+        ),
+        R('div', null, label('LATEST STACK · ' + it[7]), pre('at ' + it[1] + ' (' + it[7] + ')\nat async processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async POST (app/api/exports/route.ts:38:3)'))
+      );
+    }
+
+    if (kind === 'alert') {
+      const a = this.ALERTS()[this.state.alertIdx];
+      const hist = [];
+      const r = this.rng(120);
+      for (let i = 0; i < 60; i++) hist.push(i > 52 ? '#C1504A' : (r() > 0.88 ? '#8A6118' : '#24303C'));
+      return R('div', { style: { display: 'flex', flexDirection: 'column', gap: 11 } },
+        R('div', { style: { background: '#141A22', border: '1px solid #24303C', borderRadius: 6, padding: '9px 11px' } },
+          R('div', { style: { ...mono, fontSize: 12.5, color: '#CBD8D0' } }, a[1]),
+          R('div', { style: { ...mono, fontSize: 10.5, color: '#77899B', marginTop: 5 } }, 'evaluated every 15s by iknos-collector · for ' + a[4] + ' · nothing is pushed anywhere in v1')
+        ),
+        R('div', { style: { display: 'flex', gap: 8 } }, [['state', a[0]], ['service', a[2]], ['current', a[3]], ['threshold', a[0] === 'FIRING' ? '1%' : '2']].map((p, i) =>
+          R('div', { key: i, style: { flex: 1, background: '#141A22', border: '1px solid #24303C', borderRadius: 6, padding: '7px 9px' } },
+            R('div', { style: { ...mono, fontSize: 8.5, letterSpacing: '.14em', color: '#5E7286', marginBottom: 4 } }, p[0].toUpperCase()),
+            R('div', { style: { ...mono, fontSize: 12, color: i === 2 ? '#E4736B' : '#CBD8D0' } }, p[1])
+          ))),
+        R('div', null, label('STATE HISTORY · 6h'),
+          R('div', { style: { display: 'flex', gap: 2 } }, hist.map((c, i) => R('div', { key: i, style: { flex: 1, height: 16, background: c, borderRadius: 1 } }))))
+      );
+    }
+
+    const items = [
+      ['service', 'pfa', 'switch service'], ['service', 'iknos-ui', 'switch service'],
+      ['issue', '4f2ab91c ConnectionAcquireTimeoutError', 'open issue'],
+      ['route', 'POST /api/exports', 'filter logs'], ['view', 'logs · fullscreen', 'go']
+    ];
+    return R('div', { style: { display: 'flex', flexDirection: 'column', gap: 3 } },
+      R('div', { style: { display: 'flex', alignItems: 'center', gap: 8, background: '#0C1117', border: '1px solid #33404E', borderRadius: 6, padding: '8px 11px', marginBottom: 6 } },
+        R('span', { style: { ...mono, fontSize: 12, color: '#CBD8D0' } }, 'export'),
+        R('span', { style: { width: 6, height: 14, background: '#86B99A' } })),
+      items.map((it, i) => R('div', {
+        key: i,
+        onClick: () => {
+          if (it[0] === 'service') this.setState({ service: it[1], modal: null, sel: 0, open: null });
+          else if (it[0] === 'issue') this.setState({ modal: 'issue', issueIdx: 0 });
+          else if (it[0] === 'view') this.setState({ view: 'logs', modal: null });
+          else this.flash('filter applied · ' + it[1]);
+        },
+        style: { display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 5, background: i === 0 ? '#1E2733' : 'transparent', cursor: 'pointer' }
+      },
+        R('span', { style: { ...mono, fontSize: 9, letterSpacing: '.1em', color: '#5E7286', width: 54 } }, it[0].toUpperCase()),
+        R('span', { style: { ...mono, fontSize: 12, color: '#CBD8D0', flex: 1 } }, it[1]),
+        R('span', { style: { ...mono, fontSize: 10, color: '#5E7286' } }, it[2])
+      ))
+    );
+  }
+
+  renderVals() {
+    const st = this.state, dense = (this.props.density ?? 'compact') === 'compact';
+    const accent = this.props.accent ?? '#86B99A';
+    const ap = st.authPage, signupOn = this.props.signupEnabled ?? false;
+    const set = (o) => this.setState(o);
+
+    const svcList = [
+      ['pfa', '#E4736B'], ['iknos-ui', '#E0AE55'], ['iknos-collector', accent], ['nginx', accent]
+    ];
+    const services = svcList.map((s, i) => ({
+      n: s[0], dot: s[1], bg: st.service === s[0] ? '#1E2733' : 'transparent',
+      fg: st.service === s[0] ? '#CBD8D0' : '#8FA99A',
+      spark: st.service === s[0] ? s[1] : '#55697C',
+      pts: this.poly(this.series(3 + i * 6, 20, 8, 6, i === 0 ? 2.4 : 0), 40, 12, 1.5),
+      on: () => set({ service: s[0], sel: 0, open: null })
+    }));
+
+    const viewDefs = [['service', 'S'], ['logs', 'L'], ['metrics', 'M'], ['issues', '12'], ['alerts', '2']];
+    const views = viewDefs.map(v => ({
+      n: v[0], k: v[1],
+      bg: st.view === v[0] ? '#1E2733' : 'transparent',
+      edge: st.view === v[0] ? accent : 'transparent',
+      fg: st.view === v[0] ? '#CBD8D0' : '#8FA99A',
+      kbg: v[1] === '2' ? '#33232A' : v[1] === '12' ? '#24303C' : 'transparent',
+      kfg: v[1] === '2' ? '#E4736B' : v[1] === '12' ? '#AFC0BA' : '#5E7286',
+      on: () => set({ view: v[0], modal: null })
+    }));
+
+    const ranges = ['15m', '1h', '24h', '7d'].map(k => ({
+      k, bg: st.range === k ? '#24303C' : 'transparent', fg: st.range === k ? '#CBD8D0' : '#77899B',
+      on: () => set({ range: k })
+    }));
+
+    const L = { ERRO: '#E4736B', WARN: '#E0AE55', INFO: '#8FA99A', DEBU: '#55697C' };
+    const S = { ok: '#8FA99A', warn: '#E0AE55', err: '#E4736B', none: '#55697C' };
+    const vis = this.visibleRows();
+    if (st.sel >= vis.length && vis.length) setTimeout(() => this.setState({ sel: 0 }), 0);
+
+    const rows = vis.map((a, i) => {
+      const selected = i === st.sel, open = st.open === i;
+      return {
+        t: a[0], lvl: a[1], lc: L[a[1]], svc: a[2], route: a[3], st: a[4], sc: S[a[5]],
+        msg: a[6], trace: a[7], dur: a[8],
+        mc: a[9] ? '#DFE9E4' : '#AFC0BA',
+        bg: selected ? '#1C2634' : (a[9] ? '#22191C' : 'transparent'),
+        edge: selected ? accent : (a[9] ? '#8E3C38' : 'transparent'),
+        traceLine: a[7] === '—' ? 'none' : 'underline dotted',
+        open,
+        openEdge: a[9] ? '#8E3C38' : '#33404E',
+        json: '{ "log.level": "' + ({ ERRO: 'error', WARN: 'warn', INFO: 'info', DEBU: 'debug' })[a[1]] + '", "trace.id": "' + a[7] + '",\n  "url.path": "' + (a[3].split(' ')[1] || '—') + '",\n  "http.response.status_code": ' + (a[4] === '—' ? 'null' : a[4]) + ',\n  "event.duration": ' + (parseInt(a[8]) || 0) * 1000000 + ', "process.pid": 20481 }',
+        stackLabel: a[1] === 'ERRO' ? 'STACK · frame 1/14' : 'CONTEXT',
+        stack: a[1] === 'ERRO'
+          ? 'at ExportQueue.run (src/queue/export.ts:142:19)\nat async POST (app/api/exports/route.ts:38:3)'
+          : 'service.name ' + a[2] + '\nprocess.pid 20481 · host ks-b\npm2 id 3 · node 22.4.1',
+        on: () => set({ sel: i, open: open ? null : i }),
+        onTrace: () => set({ modal: 'trace' }),
+        onIssue: () => set({ modal: 'issue', issueIdx: 0 })
+      };
+    });
+
+    const tokDefs = [
+      ['svc', 'service:', st.service, accent],
+      ['level', 'level>=', 'warn', '#E0AE55'],
+      ['text', '', 'export', '#CBD8D0']
+    ];
+    const tokens = tokDefs.map(t => {
+      const on = st.tokens[t[0]];
+      return {
+        label: t[1] + t[2], fg: on ? t[3] : '#5E7286', op: on ? 1 : 0.55,
+        bd: on ? '#33404E' : 'transparent', mark: on ? '×' : '+',
+        toggle: () => set({ tokens: { ...st.tokens, [t[0]]: !on }, sel: 0, open: null })
+      };
+    });
+
+    const r0 = this.rng(11), hist = [];
+    for (let i = 0; i < 72; i++) {
+      hist.push({
+        i: 5 + Math.round(r0() * 15 + Math.sin(i / 5) * 4),
+        w: r0() > 0.78 ? 2 + Math.round(r0() * 4) : 0,
+        e: i > 60 ? Math.round(3 + r0() * (i - 58) * 1.6) : (r0() > 0.94 ? 2 : 0),
+        o: i > 60 ? 1 : 0.75
+      });
+    }
+
+    const eb = this.rng(41), errBars = [];
+    for (let i = 0; i < 30; i++) errBars.push({ v: i > 23 ? 12 + Math.round(eb() * 18) : 2 + Math.round(eb() * 7), c: i > 23 ? '#8E2F2A' : '#8FAB9C' });
+
+    const unresolved = this.ISSUES().map((a, i) => ({ a, i })).filter(o => o.a[8] === 'unresolved');
+    const issues = unresolved.slice(0, 4).map(o => o.a).map((a, k) => ({
+      i: unresolved[k].i,
+      fp: a[0], type: a[1], msg: a[2] + ' · ' + a[7], count: a[3], last: a[4],
+      dot: a[6] === 'hot' ? '#8E2F2A' : a[6] === 'warn' ? '#8A6118' : a[6] === 'mid' ? '#4E7B96' : '#3C6B52',
+      bg: st.issueIdx === unresolved[k].i && st.modal === 'issue' ? '#AEBFC7' : (a[6] === 'hot' ? '#C4A9A6' : 'transparent'),
+      spark: a[6] === 'hot' ? '#8E2F2A' : '#5C7886',
+      cc: a[6] === 'hot' ? '#7E2C28' : a[6] === 'ok' ? '#3A4E59' : '#131E24',
+      pts: this.poly(this.series(a[5], 24, 6, 4, a[6] === 'hot' ? 3 : 0), 60, 16, 2),
+      on: () => set({ modal: 'issue', issueIdx: unresolved[k].i })
+    }));
+    const railMore = unresolved.length - 4;
+
+    const alerts = this.ALERTS().map((a, i) => ({
+      state: a[0], rule: a[1], svc: a[2], value: a[3], since: a[4],
+      fg: a[5], bg: a[6], edge: a[7], badge: a[8],
+      on: () => set({ modal: 'alert', alertIdx: i })
+    }));
+
+    const routes = this.ROUTES().map((r, i) => ({
+      m: r[0], p: r[1], rate: r[2], p50: r[3], p95: r[4], p95c: r[5], p99: r[6], err: r[7], errc: r[8],
+      share: r[9], barc: r[10],
+      bg: st.routeIdx === i ? '#AEBFC7' : (i === 0 ? '#C4A9A6' : 'transparent'),
+      edge: st.routeIdx === i ? r[10] : 'transparent',
+      on: () => set({ routeIdx: i })
+    }));
+
+    const rt = this.ROUTES()[st.routeIdx];
+    const pc = (seed, base, tail) => this.poly(this.series(seed, 40, base, base * 0.5, tail), 300, 74, 4);
+    const routeDetail = {
+      title: rt[0] + ' ' + rt[1],
+      p50: rt[3], p95: rt[4], p99: rt[6], rate: rt[2], err: rt[7],
+      errc: rt[8], p95c: rt[5],
+      lineP50: pc(200 + st.routeIdx, rt[11], 0),
+      lineP95: pc(220 + st.routeIdx, rt[12], st.routeIdx === 0 ? 3 : 0),
+      lineP99: pc(240 + st.routeIdx, rt[13], st.routeIdx === 0 ? 4 : 0),
+      buckets: [
+        { l: '< 50ms', w: st.routeIdx > 1 ? 68 : 12, c: '#3C6B52' },
+        { l: '50–200ms', w: st.routeIdx > 1 ? 24 : 21, c: '#4E7B96' },
+        { l: '200ms–1s', w: st.routeIdx > 1 ? 7 : 28, c: '#8A6118' },
+        { l: '> 1s', w: st.routeIdx > 1 ? 1 : 39, c: '#8E2F2A' }
+      ],
+      codes: [
+        { l: '2xx', v: 100 - rt[14] - rt[15], c: '#3C6B52' },
+        { l: '4xx', v: rt[14], c: '#8A6118' },
+        { l: '5xx', v: rt[15], c: '#8E2F2A' }
+      ]
+    };
+
+    const iFilters = ['unresolved', 'resolved', 'ignored'].map(k => ({
+      k, n: this.ISSUES().filter(a => a[8] === k).length + '',
+      bg: st.issueFilter === k ? '#BFCDD4' : 'transparent',
+      fg: st.issueFilter === k ? '#131E24' : '#3F535F',
+      on: () => set({ issueFilter: k })
+    }));
+    const iSorts = [['last', 'last seen'], ['count', 'events'], ['first', 'first seen']].map(s => ({
+      k: s[1], bg: st.issueSort === s[0] ? '#8FA5B0' : 'transparent',
+      fg: st.issueSort === s[0] ? '#131E24' : '#556A76',
+      on: () => set({ issueSort: s[0] })
+    }));
+    const num = (x) => parseInt(x.replace(/\s/g, ''), 10);
+    const ago = (x) => { const n = parseFloat(x); return x.includes('m ago') ? n : x.includes('h ago') ? n * 60 : n * 1440; };
+    const issuesFull = this.ISSUES()
+      .map((a, i) => ({ a, i }))
+      .filter(o => o.a[8] === st.issueFilter)
+      .sort((x, y) => st.issueSort === 'count' ? num(y.a[3]) - num(x.a[3]) : st.issueSort === 'first' ? ago(y.a[10]) - ago(x.a[10]) : ago(x.a[4]) - ago(y.a[4]))
+      .map(o => {
+        const a = o.a, hot = a[6] === 'hot';
+        return {
+          fp: a[0], type: a[1], msg: a[2], file: a[7], svc: a[9], count: a[3], last: a[4], first: a[10], rel: a[11],
+          dot: hot ? '#8E2F2A' : a[6] === 'warn' ? '#8A6118' : a[6] === 'mid' ? '#4E7B96' : '#3C6B52',
+          bg: hot ? '#C4A9A6' : 'transparent',
+          cc: hot ? '#7E2C28' : '#131E24',
+          spark: hot ? '#8E2F2A' : '#5C7886',
+          pts: this.poly(this.series(a[5], 40, 6, 4, hot ? 2 : 0), 120, 22, 2),
+          on: () => set({ modal: 'issue', issueIdx: o.i })
+        };
+      });
+
+    const health = [
+      { t: 'mysql 3ms', dot: '#3C6B52', bg: '#9CBCAA', bd: '#86A895', fg: '#131E24', on: () => this.flash('probe /health · mysql 3ms · redis 1ms · disk 62%') },
+      { t: 'redis 1ms', dot: '#3C6B52', bg: '#9CBCAA', bd: '#86A895', fg: '#131E24', on: () => this.flash('probe /health · redis 1ms') },
+      { t: '/health 502', dot: '#8E2F2A', bg: '#C4A9A6', bd: '#AE9490', fg: '#7E2C28', on: () => set({ modal: 'alert', alertIdx: 0 }) }
+    ];
+
+    const chips = [
+      ['pm2 id 3', '#3F535F', '#AEBFC7', '#A3B6BF'], ['node 22.4.1', '#3F535F', '#AEBFC7', '#A3B6BF'],
+      ['v2.19.0 · a41c9e2', '#3F535F', '#AEBFC7', '#A3B6BF'], ['up 6d 04h', '#3F535F', '#AEBFC7', '#A3B6BF'],
+      ['restarts 3', '#7E2C28', '#C4A9A6', '#AE9490']
+    ].map(c => ({ t: c[0], fg: c[1], bg: c[2], bd: c[3] }));
+
+    const v = st.view;
+    const modalTitles = {
+      trace: 'trace 4f2ab91c7d3e0a55 · POST /api/exports',
+      issue: this.ISSUES()[st.issueIdx][1] + ' · ' + this.ISSUES()[st.issueIdx][2],
+      alert: this.ALERTS()[st.alertIdx][1],
+      cmd: 'Command palette'
+    };
+    const modalTags = { trace: 'TRACE', issue: 'ISSUE', alert: 'ALERT', cmd: '⌘K' };
+    const modalTagBgs = { trace: '#7FA8C4', issue: '#E4736B', alert: '#E0AE55', cmd: accent };
+    const modalHints = {
+      trace: 'correlated through trace.id · 5 spans',
+      issue: 'grouped by fingerprint · stable across deploys',
+      alert: 'nothing is pushed anywhere in v1 — you come and look',
+      cmd: '↑↓ navigate · ⏎ open · esc close'
+    };
+    const actions = {
+      trace: [['copy trace id', '#CBD8D0', '#24303C', '#33404E', () => this.flash('trace id copied to clipboard')], ['open in logs', '#10151C', accent, accent, () => this.setState({ view: 'logs', modal: null })]],
+      issue: [['ignore', '#CBD8D0', '#24303C', '#33404E', () => this.flash('issue 4f2ab91c ignored')], ['resolve', '#10151C', accent, accent, () => this.flash('issue resolved · will reopen on next occurrence')]],
+      alert: [['silence 1h', '#CBD8D0', '#24303C', '#33404E', () => this.flash('alert silenced for 1h')], ['acknowledge', '#10151C', accent, accent, () => this.flash('alert acknowledged')]],
+      cmd: [['close', '#CBD8D0', '#24303C', '#33404E', () => this.setState({ modal: null })]]
+    };
+    const modalActions = (actions[st.modal] || []).map(a => ({ t: a[0], fg: a[1], bg: a[2], bd: a[3], on: a[4] }));
+
+    return {
+      service: st.service, range: st.range, clock: '02:14:38', mode: st.modal ? 'MODAL' : 'NORMAL',
+      svcMeta: 'ECS · pino + @elastic/ecs-pino-format',
+      services, views, ranges, chips, health, rows, tokens, hist, errBars, issues, alerts,
+      rowPad: dense ? '3px' : '5px',
+      evCount: vis.length ? (vis.length * 436).toLocaleString('en-US').replace(/,/g, ' ') : '0',
+      routes, routeDetail, iFilters, iSorts, issuesFull,
+      railMore: railMore + ' more unresolved · open Issues →',
+      railHasMore: railMore > 0,
+      openIssuesView: () => set({ view: 'issues', issueFilter: 'unresolved' }),
+      issueTotal: issuesFull.length + ' issues · ' + st.issueFilter,
+      showSignals: v === 'service' || v === 'metrics',
+      showRoutes: v === 'metrics',
+      showRouteDetail: v === 'metrics',
+      showIssuesFull: v === 'issues',
+      showBottom: v === 'service' || v === 'logs' || v === 'alerts',
+      showLog: v === 'service' || v === 'logs',
+      showIssues: v === 'service' || v === 'alerts',
+      showAlerts: v === 'service' || v === 'alerts',
+      showStorage: v === 'alerts',
+      showLogin: !st.authed,
+      pgLogin: ap === 'login', pgSignupAny: ap === 'signup', pgSealed: ap === 'signup' && !signupOn,
+      suOpacity: signupOn ? 1 : 0.42,
+      suBtnBg: signupOn ? accent : '#24303C',
+      suBtnFg: signupOn ? '#10151C' : '#5E7286',
+      suCursor: signupOn ? 'pointer' : 'not-allowed',
+      suAction: signupOn ? () => { this.setState({ signing: true }); setTimeout(() => this.setState({ signing: false, authed: true, view: 'service' }), 700); } : () => {},
+      pgRecover: ap === 'recover', pgAbout: ap === 'about',
+      authW: ap === 'signup' ? '520px' : ap === 'about' ? '480px' : '420px',
+      authCrumb: ap === 'about' ? 'ABOUT' : 'AUTH',
+      authKicker: { login: 'IKNOS', signup: 'NEW ACCOUNT', recover: 'RECOVERY', about: 'ABOUT' }[ap],
+      authTitle: { login: 'sign in', signup: 'create an account', recover: 'reset your password', about: 'legal notice' }[ap],
+      regFg: signupOn ? '#86B99A' : '#4A5F72',
+      aboutLabel: ap === 'about' ? '‹ BACK TO SIGN IN' : 'ABOUT IKNOS →',
+      aboutFg: ap === 'about' ? '#86B99A' : '#4E8266',
+      goAbout: () => set({ authPage: st.authPage === 'about' ? 'login' : 'about' }),
+      legal: [
+        { k: 'service', v: 'Iknos — self-hosted monitoring' },
+        { k: 'host', v: 'OVH SAS' },
+        { k: 'office', v: '2 rue Kellermann, 59100 Roubaix, France' },
+        { k: 'ape', v: '2620Z' },
+        { k: 'vat', v: 'FR 22 424 761 419' }
+      ],
+      goLogin: () => set({ authPage: 'login' }),
+      goSignup: () => set({ authPage: 'signup' }),
+      goRecover: () => set({ authPage: 'recover' }),
+
+      onReset: () => { this.setState({ authPage: 'login' }); this.flash('password reset · sign in with the new one'); },
+      email: st.email, pw: st.pw,
+      signLabel: st.signing ? 'verifying…' : 'Sign in',
+      signBg: st.signing ? '#33404E' : accent,
+      signFg: st.signing ? '#8FA99A' : '#10151C',
+      onSignIn: () => { this.setState({ signing: true }); setTimeout(() => this.setState({ signing: false, authed: true, view: 'service', userMenu: false }), 700); },
+      userMenu: st.userMenu,
+      userBg: st.userMenu ? '#1C2634' : 'transparent',
+      userBd: st.userMenu ? '#4A5F72' : '#27313D',
+      toggleUserMenu: () => set({ userMenu: !st.userMenu }),
+      settingsAction: () => { this.setState({ userMenu: false }); this.flash('settings · not in v1 scope'); },
+      logout: () => set({ authed: false, userMenu: false, modal: null, authPage: 'login' }),
+      railDir: 'column',
+      railW: v === 'service' ? '296px' : v === 'alerts' ? '100%' : '0px',
+      railFlex: v === 'service' ? 'none' : v === 'alerts' ? '1' : 'none',
+      cardFlex: 'none',
+      cardH: 'fit-content',
+      liveLabel: st.live ? '● LIVE' : '❙❙ PAUSED',
+      liveFg: st.live ? '#10151C' : '#CBD8D0',
+      liveBg: st.live ? accent : 'transparent',
+      liveBd: st.live ? accent : '#33404E',
+      liveWord: st.live ? 'on' : 'off',
+      liveDotFg: st.live ? accent : '#E0AE55',
+      toggleLive: () => set({ live: !st.live }),
+      goLogs: () => set({ view: 'logs' }),
+      openCmd: () => set({ modal: 'cmd' }),
+      openAlert: () => set({ modal: 'alert', alertIdx: 0 }),
+      copyNd: () => this.flash('NDJSON line copied to clipboard'),
+      closeModal: () => set({ modal: null }),
+      stop: (e) => e.stopPropagation(),
+      modalOpen: !!st.modal,
+      modalW: st.modal === 'cmd' ? '560px' : st.modal === 'trace' ? '860px' : '760px',
+      modalTitle: modalTitles[st.modal] || '',
+      modalTag: modalTags[st.modal] || '',
+      modalTagBg: modalTagBgs[st.modal] || accent,
+      modalHint: modalHints[st.modal] || '',
+      modalBody: st.modal ? this.modalBody(st.modal) : null,
+      modalActions,
+      toast: st.toast,
+      ingestPts: this.poly(this.series(101, 30, 20, 12, 0), 128, 24, 2),
+      areaReq: 'M0,26 L' + this.poly(this.series(21, 34, 40, 14, 0), 120, 26, 3).split(' ').join(' L') + ' L120,26 Z',
+      lineReq: this.poly(this.series(21, 34, 40, 14, 0), 120, 26, 3),
+      lineP95: this.poly(this.series(29, 34, 180, 60, 34), 120, 26, 3)
+    };
+  }
+}
+
+</script>
+</body>
+</html>

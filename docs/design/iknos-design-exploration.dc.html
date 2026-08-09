@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#D3CEC0;font-family:'IBM Plex Sans',system-ui,sans-serif}
+a{color:#414833}a:hover{color:#582F0E}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(51,61,41,.14);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#333D29;color:#C2C5AA;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'IBM Plex Sans',sans-serif;color:#2B3223}
+.dv-brief{margin:0 0 22px;max-width:900px;font:400 11.5px/1.75 'JetBrains Mono',monospace;color:#4C543C}
+.dv-brief b{color:#2B3223;font-weight:500}
+.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(51,61,41,.12);color:#2B3223;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11.5px/1.3 'IBM Plex Sans',sans-serif;color:rgba(43,50,35,.62)}
+.dv-opt:target .dv-oid{background:#582F0E;color:#F6F3EA}
+.dv-next{margin:24px 0 0;font:12px/1.6 'IBM Plex Sans',sans-serif;color:rgba(43,50,35,.55)}
+@keyframes ikPulse{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes ikBlink{0%,48%{opacity:1}49%,100%{opacity:0}}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t3">
+<div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Sortir du marron — même écran que <a class="dv-oid" href="#2a">2a</a>, deux familles de neutres</span></div>
+<p class="dv-brief"><b>Ce que je pense —</b> je pousserais <a class="dv-oid" href="#3a">3a</a>. Le marron partait, il fallait un neutre qui laisse le vert être la couleur de la marque : l’ardoise froide fait exactement ça, et les niveaux (ambre / rouge) restent lisibles sans virer terre cuite.<br><b><a class="dv-oid" href="#3b">3b</a> —</b> le bleu nuit est plus reposant sur de longues sessions et donne un contraste très net aux erreurs, mais il prend le dessus : le vert n’est plus l’identité, il devient juste le « tout va bien ». C’est aussi le registre de 90 % des dashboards.<br><b>Inchangé —</b> structure, densité et logique sombre/clair de <a class="dv-oid" href="#2a">2a</a>. Seuls les neutres et les couleurs d’état bougent.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="3a">
+<div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Vert + ardoise froide — le vert reste l’identité, le gris ne lui fait pas concurrence</div>
+<x-import component-from-global-scope="ChromeWindow" from="./browser-window.jsx" width="{{ winW }}" height="{{ winH }}" url="{{ urlC }}" tabs="{{ tabsC }}" hint-size="1440px,984px">
+<div data-screen-label="3a Vert + ardoise froide — le vert reste l’identité, le gris ne lui fait pas concurrence" style="width:1440px;height:900px;background:#E3E9E1;color:#232A26;font:400 12.5px/1.5 'IBM Plex Sans',system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased">
+
+  <div style="height:38px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:#1C2022;border-bottom:1px solid #2E3437;color:#C9D2C4;font-family:'JetBrains Mono','IBM Plex Mono',monospace">
+    <span style="font-weight:700;letter-spacing:.14em;font-size:12px">IKNOS</span>
+    <span style="font-size:10.5px;color:#9DB394;background:#232819;border:1px solid #3A4144;border-radius:3px;padding:1px 6px">ks-b</span>
+    <span style="font-size:11px;color:#7E8A82">services<span style="color:#3A4144">&nbsp;/&nbsp;</span><span style="color:#C9D2C4">pfa</span></span>
+    <div style="flex:1;display:flex;justify-content:center">
+      <div style="width:392px;display:flex;align-items:center;gap:8px;height:22px;background:#0F1213;border:1px solid #2E3437;border-radius:4px;padding:0 8px;font-size:10.5px;color:#626D68"><span style="color:#7E8A82">⌘K</span><span>jump to service · route · issue · trace</span></div>
+    </div>
+    <div style="display:flex;border:1px solid #2E3437;border-radius:4px;overflow:hidden;font-size:10.5px">
+      <span style="padding:2px 8px;color:#7E8A82">15m</span>
+      <span style="padding:2px 8px;background:#2A3033;color:#C9D2C4">1h</span>
+      <span style="padding:2px 8px;color:#7E8A82">24h</span>
+      <span style="padding:2px 8px;color:#7E8A82">7d</span>
+    </div>
+    <span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#7E8A82"><span style="width:6px;height:6px;border-radius:50%;background:#9DB394;animation:ikPulse 2s ease-in-out infinite"></span><span style="color:#9DB394">collector</span> lag 0.4s</span>
+    <span style="font-size:10.5px;color:#C9D2C4">02:14:38</span>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <div style="width:172px;flex:none;background:#1C2022;border-right:1px solid #2E3437;display:flex;flex-direction:column;padding:10px 0;font-family:'JetBrains Mono','IBM Plex Mono',monospace">
+      <div style="font-size:9px;letter-spacing:.16em;color:#626D68;padding:0 12px 7px">SERVICES · PM2</div>
+      <sc-for list="{{ gServices }}" as="s" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:7px;margin:0 6px;padding:4px 8px;border-radius:4px;background:{{ s.mixBg }}">
+          <span style="width:6px;height:6px;border-radius:50%;background:{{ s.dot }};flex:none"></span>
+          <span style="flex:1;font-size:11px;color:{{ s.mixFg }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.n }}</span>
+          <svg viewBox="0 0 40 12" preserveAspectRatio="none" style="width:34px;height:12px;flex:none;display:block"><polyline points="{{ s.pts }}" fill="none" stroke="{{ s.mixSpark }}" stroke-width="1.1"></polyline></svg>
+        </div>
+      </sc-for>
+      <div style="font-size:9px;letter-spacing:.16em;color:#626D68;padding:16px 12px 6px">VIEWS</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;background:#23282A;border-left:2px solid #9DB394;color:#C9D2C4;font-size:11.5px"><span style="flex:1">service</span><span style="color:#7E8A82;font-size:10px">S</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#93A492;font-size:11.5px" style-hover="background:#21272A;color:#C9D2C4"><span style="flex:1">logs</span><span style="color:#626D68;font-size:10px">L</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#93A492;font-size:11.5px" style-hover="background:#21272A;color:#C9D2C4"><span style="flex:1">metrics</span><span style="color:#626D68;font-size:10px">M</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#93A492;font-size:11.5px" style-hover="background:#21272A;color:#C9D2C4"><span style="flex:1">issues</span><span style="background:#2A3033;color:#B4BFAE;border-radius:3px;padding:0 5px;font-size:10px">12</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#93A492;font-size:11.5px" style-hover="background:#21272A;color:#C9D2C4"><span style="flex:1">alerts</span><span style="background:#3A2426;color:#DFA24B;border-radius:3px;padding:0 5px;font-size:10px">2</span></div>
+      <div style="flex:1"></div>
+      <div style="margin:0 8px;padding:8px 10px;background:#0F1213;border:1px solid #2A3033;border-radius:4px">
+        <div style="font-size:9px;letter-spacing:.12em;color:#626D68;margin-bottom:6px">INGEST · 60m</div>
+        <svg viewBox="0 0 128 24" preserveAspectRatio="none" style="width:100%;height:24px;display:block"><polyline points="{{ ingestPts }}" fill="none" stroke="#9DB394" stroke-width="1.2"></polyline></svg>
+        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#7E8A82;margin-top:6px"><span>10 460 ev</span><span>4.2 GB</span></div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:11px;padding:11px 12px;background:#E3E9E1">
+
+      <div style="flex:none;display:flex;align-items:center;gap:12px;background:#EFF3ED;border:1px solid #CDD6CB;border-radius:8px;padding:9px 13px">
+        <span style="font:600 18px 'IBM Plex Mono',monospace;color:#232A26">pfa</span>
+        <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#6E7A72">ECS · pino + @elastic/ecs-pino-format</span>
+        <div style="display:flex;gap:5px;flex:1">
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#4E5A52;background:#E7ECE5;border:1px solid #DAE1D7;border-radius:4px;padding:2px 7px">pm2 id 3</span>
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#4E5A52;background:#E7ECE5;border:1px solid #DAE1D7;border-radius:4px;padding:2px 7px">node 22.4.1</span>
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#4E5A52;background:#E7ECE5;border:1px solid #DAE1D7;border-radius:4px;padding:2px 7px">v2.19.0 · a41c9e2</span>
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#4E5A52;background:#E7ECE5;border:1px solid #DAE1D7;border-radius:4px;padding:2px 7px">up 6d 04h</span>
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#9B3A33;background:#F6E3E0;border:1px solid #E8CFC9;border-radius:4px;padding:2px 7px">restarts 3</span>
+        </div>
+        <div style="display:flex;gap:5px">
+          <div style="display:flex;align-items:center;gap:6px;background:#E1EADF;border:1px solid #C4D2C2;border-radius:5px;padding:3px 8px"><span style="width:6px;height:6px;border-radius:50%;background:#5F7A5A"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#33443A">mysql 3ms</span></div>
+          <div style="display:flex;align-items:center;gap:6px;background:#E1EADF;border:1px solid #C4D2C2;border-radius:5px;padding:3px 8px"><span style="width:6px;height:6px;border-radius:50%;background:#5F7A5A"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#33443A">redis 1ms</span></div>
+          <div style="display:flex;align-items:center;gap:6px;background:#F6E3E0;border:1px solid #E8CFC9;border-radius:5px;padding:3px 8px"><span style="width:6px;height:6px;border-radius:50%;background:#B4453D"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#9B3A33">/health 502</span></div>
+        </div>
+      </div>
+
+      <div style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:11px">
+        <div style="background:#EFF3ED;border:1px solid #CDD6CB;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#909B95">THROUGHPUT</span>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'IBM Plex Mono',monospace;color:#232A26">41.2</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#6E7A72">req/s</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#5F7A5A;margin-left:auto">▲ 6%</span></div>
+          <svg viewBox="0 0 120 26" preserveAspectRatio="none" style="width:100%;height:26px;display:block"><path d="{{ areaReq }}" fill="#C9D2C4" opacity="0.55"></path><polyline points="{{ lineReq }}" fill="none" stroke="#5F7A5A" stroke-width="1.3"></polyline></svg>
+        </div>
+        <div style="background:#EFF3ED;border:1px solid #CDD6CB;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#909B95">ERROR RATE</span>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'IBM Plex Mono',monospace;color:#9B3A33">1.8</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#6E7A72">%</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#B4453D;margin-left:auto">▲ 1.4 pt</span></div>
+          <div style="display:flex;align-items:flex-end;gap:1.5px;height:26px">
+            <sc-for list="{{ gErrBars }}" as="h" hint-placeholder-count="30"><div style="flex:1;height:{{ h.v }}px;background:{{ h.c }}"></div></sc-for>
+          </div>
+        </div>
+        <div style="background:#EFF3ED;border:1px solid #CDD6CB;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#909B95">p95 LATENCY</span>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'IBM Plex Mono',monospace;color:#232A26">412</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#6E7A72">ms</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#B4453D;margin-left:auto">▲ 210ms</span></div>
+          <svg viewBox="0 0 120 26" preserveAspectRatio="none" style="width:100%;height:26px;display:block"><line x1="0" y1="10" x2="120" y2="10" stroke="#CDD6CB" stroke-width="1" stroke-dasharray="2 3"></line><polyline points="{{ lineP95 }}" fill="none" stroke="#B8862B" stroke-width="1.3"></polyline></svg>
+        </div>
+        <div style="background:#EFF3ED;border:1px solid #CDD6CB;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#909B95">RUNTIME NODE</span>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'IBM Plex Mono',monospace;color:#232A26">318</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#6E7A72">MB heap</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;align-items:center;gap:6px;font:400 10px 'IBM Plex Mono',monospace;color:#6E7A72"><span style="width:50px">event loop</span><span style="flex:1;height:4px;background:#DAE1D7;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:18%;height:100%;background:#5F7A5A"></span></span><span>4.1ms</span></div>
+            <div style="display:flex;align-items:center;gap:6px;font:400 10px 'IBM Plex Mono',monospace;color:#6E7A72"><span style="width:50px">pool db</span><span style="flex:1;height:4px;background:#DAE1D7;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:100%;height:100%;background:#B4453D"></span></span><span style="color:#9B3A33">10/10</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-height:0;display:flex;gap:11px">
+
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:#15181A;border:1px solid #2E3437;border-radius:8px;overflow:hidden;font-family:'JetBrains Mono','IBM Plex Mono',monospace">
+          <div style="flex:none;display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1C2022;border-bottom:1px solid #2A3033">
+            <span style="color:#5F7A5A;font-size:11px">▸</span>
+            <div style="flex:1;display:flex;align-items:center;gap:6px;height:23px;background:#0F1213;border:1px solid #3A4144;border-radius:4px;padding:0 8px;font-size:11px">
+              <span style="color:#98A6A2">service<span style="color:#626D68">:</span><span style="color:#9DB394">pfa</span></span>
+              <span style="color:#98A6A2">level<span style="color:#626D68">&gt;=</span><span style="color:#D9A441">warn</span></span>
+              <span style="color:#C9D2C4">exportQueue</span>
+              <span style="width:6px;height:13px;background:#9DB394;animation:ikBlink 1.1s step-end infinite"></span>
+            </div>
+            <span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#15181A;background:#9DB394;border-radius:4px;padding:2px 8px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#15181A;animation:ikPulse 1.4s ease-in-out infinite"></span>LIVE</span>
+            <span style="font-size:10.5px;color:#626D68">⌘L fullscreen</span>
+          </div>
+
+          <div style="flex:none;padding:7px 10px 5px;border-bottom:1px solid #23282A">
+            <div style="display:flex;align-items:flex-end;gap:1px;height:34px">
+              <sc-for list="{{ hist }}" as="b" hint-placeholder-count="72">
+                <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;opacity:{{ b.o }}">
+                  <div style="height:{{ b.e }}px;background:#C9524C"></div>
+                  <div style="height:{{ b.w }}px;background:#B8862B"></div>
+                  <div style="height:{{ b.i }}px;background:#4E5E52"></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#5C6663;margin-top:4px"><span>01:59:38</span><span>02:04</span><span>02:09</span><span style="color:#98A6A2">▲ 02:14:37 · +18 err</span></div>
+          </div>
+
+          <div style="flex:none;display:flex;padding:4px 10px;font-size:9px;letter-spacing:.13em;color:#626D68;border-bottom:1px solid #23282A;background:#191D1F">
+            <span style="width:86px">TIME</span><span style="width:42px">LVL</span><span style="width:104px">SERVICE</span><span style="width:176px">ROUTE</span><span style="width:32px">ST</span><span style="flex:1">MESSAGE</span><span style="width:72px">TRACE</span><span style="width:54px;text-align:right">DUR</span>
+          </div>
+
+          <div style="flex:1;min-height:0;overflow:hidden">
+            <div style="display:flex;align-items:center;padding:3.5px 10px 3.5px 8px;font-size:11px;background:#241A1A;border-left:2px solid #C9524C">
+              <span style="width:84px;color:#93A492">02:14:37.912</span>
+              <span style="width:42px;color:#E0665B;font-weight:500">ERRO</span>
+              <span style="width:104px;color:#B4BFAE">pfa</span>
+              <span style="width:176px;color:#9DB394;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">POST /api/exports</span>
+              <span style="width:32px;color:#E0665B">500</span>
+              <span style="flex:1;color:#E2E8DE;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Unhandled rejection in exportQueue — acquire connection timeout</span>
+              <span style="width:72px;color:#98A6A2">4f2ab91c</span>
+              <span style="width:54px;text-align:right;color:#C9524C">8014ms</span>
+            </div>
+            <div style="background:#0F1213;border-left:2px solid #C9524C;padding:7px 10px 8px 12px;display:flex;gap:16px;align-items:flex-start">
+              <pre style="margin:0;font:400 10.2px/1.55 'JetBrains Mono',monospace;color:#7E8A82;flex:none">{ <span style="color:#98A6A2">"log.level"</span>: <span style="color:#E0665B">"error"</span>, <span style="color:#98A6A2">"trace.id"</span>: <span style="color:#9DB394">"4f2ab91c7d3e0a55"</span>,
+  <span style="color:#98A6A2">"error.type"</span>: <span style="color:#9DB394">"ConnectionAcquireTimeoutError"</span>,
+  <span style="color:#98A6A2">"event.duration"</span>: <span style="color:#D9A441">8014331000</span>, <span style="color:#98A6A2">"process.pid"</span>: <span style="color:#D9A441">20481</span> }</pre>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+                <pre style="margin:0;font:400 10.2px/1.55 'JetBrains Mono',monospace;color:#93A492">at ExportQueue.run (<span style="color:#C9D2C4">src/queue/export.ts</span>:<span style="color:#D9A441">142</span>:19)
+at async POST (<span style="color:#C9D2C4">app/api/exports/route.ts</span>:<span style="color:#D9A441">38</span>:3)</pre>
+                <div style="display:flex;gap:6px">
+                  <span style="font-size:10.5px;color:#C9D2C4;border:1px solid #3A4144;border-radius:3px;padding:1px 7px">⌥⏎ trace · 3 events</span>
+                  <span style="font-size:10.5px;color:#C9D2C4;border:1px solid #3A4144;border-radius:3px;padding:1px 7px">⌘I issue 4f2ab91c ↗</span>
+                  <span style="font-size:10.5px;color:#93A492;border:1px solid #2A3033;border-radius:3px;padding:1px 7px">⌘C NDJSON</span>
+                </div>
+              </div>
+            </div>
+            <sc-for list="{{ gRows }}" as="r" hint-placeholder-count="13">
+              <div style="display:flex;align-items:center;padding:3px 10px 3px 8px;font-size:11px;background:{{ r.bg }};border-left:2px solid {{ r.edge }}" style-hover="background:#1F2426">
+                <span style="width:84px;color:#7E8A82">{{ r.t }}</span>
+                <span style="width:42px;color:{{ r.lc }}">{{ r.lvl }}</span>
+                <span style="width:104px;color:#93A492">{{ r.svc }}</span>
+                <span style="width:176px;color:#93A492;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.route }}</span>
+                <span style="width:32px;color:{{ r.sc }}">{{ r.st }}</span>
+                <span style="flex:1;color:#B4BFAE;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.msg }}</span>
+                <span style="width:72px;color:#7E8A82">{{ r.trace }}</span>
+                <span style="width:54px;text-align:right;color:#7E8A82">{{ r.dur }}</span>
+              </div>
+            </sc-for>
+            <sc-for list="{{ gRows2 }}" as="r" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;padding:3px 10px 3px 8px;font-size:11px;background:{{ r.bg }};border-left:2px solid {{ r.edge }}" style-hover="background:#1F2426">
+                <span style="width:84px;color:#7E8A82">{{ r.t }}</span>
+                <span style="width:42px;color:{{ r.lc }}">{{ r.lvl }}</span>
+                <span style="width:104px;color:#93A492">{{ r.svc }}</span>
+                <span style="width:176px;color:#93A492;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.route }}</span>
+                <span style="width:32px;color:{{ r.sc }}">{{ r.st }}</span>
+                <span style="flex:1;color:#B4BFAE;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.msg }}</span>
+                <span style="width:72px;color:#7E8A82">{{ r.trace }}</span>
+                <span style="width:54px;text-align:right;color:#7E8A82">{{ r.dur }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="width:296px;flex:none;display:flex;flex-direction:column;gap:11px;min-height:0">
+          <div style="flex:none;background:#EFF3ED;border:1px solid #CDD6CB;border-radius:8px;overflow:hidden">
+            <div style="display:flex;align-items:center;padding:7px 11px;border-bottom:1px solid #DAE1D7"><span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#232A26;flex:1">Alerts</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#909B95">collector</span></div>
+            <div style="padding:9px 11px;border-bottom:1px solid #E4E9E1;background:#F9EBE9;border-left:3px solid #B4453D">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><span style="font:700 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#EFF3ED;background:#B4453D;border-radius:3px;padding:2px 6px">FIRING</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#9B3A33">00:04:12</span></div>
+              <div style="font:400 11px 'IBM Plex Mono',monospace;color:#232A26">rate(http_5xx[5m]) &gt; 1%</div>
+              <div style="font:400 10.5px 'IBM Plex Mono',monospace;color:#6E7A72;margin-top:3px">pfa · now <span style="color:#9B3A33;font-weight:500">3.1%</span></div>
+              <div style="display:flex;gap:1.5px;margin-top:6px"><sc-for list="{{ gAlertHist }}" as="a" hint-placeholder-count="36"><div style="flex:1;height:10px;background:{{ a.c }};border-radius:1px"></div></sc-for></div>
+            </div>
+            <div style="padding:9px 11px;border-left:3px solid #B8862B">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><span style="font:700 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#EFF3ED;background:#B8862B;border-radius:3px;padding:2px 6px">PENDING</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#8A6A22">00:01:38</span></div>
+              <div style="font:400 11px 'IBM Plex Mono',monospace;color:#232A26">pm2_restarts_total[1h] &gt; 2</div>
+              <div style="font:400 10.5px 'IBM Plex Mono',monospace;color:#6E7A72;margin-top:3px">iknos-ui · now <span style="color:#8A6A22;font-weight:500">3</span></div>
+            </div>
+          </div>
+
+          <div style="flex:1;min-height:0;background:#EFF3ED;border:1px solid #CDD6CB;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;padding:7px 11px;border-bottom:1px solid #DAE1D7"><span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#232A26;flex:1">Issues · fingerprints</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#909B95">1h</span></div>
+            <sc-for list="{{ gIssues }}" as="i" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:4px;padding:8px 11px;border-bottom:1px solid #E4E9E1;background:{{ i.bg }}" style-hover="background:#E7ECE5">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <span style="width:6px;height:6px;border-radius:50%;background:{{ i.dot }};flex:none"></span>
+                  <span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4E5A52;background:#E7ECE5;border:1px solid #DAE1D7;border-radius:3px;padding:0 5px;flex:none">{{ i.fp }}</span>
+                  <span style="flex:1"></span>
+                  <span style="font:500 11.5px 'IBM Plex Mono',monospace;color:{{ i.cc }}">{{ i.count }}</span>
+                  <span style="font:400 10px 'IBM Plex Mono',monospace;color:#909B95">{{ i.last }}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font:400 11px 'IBM Plex Mono',monospace;color:#232A26;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ i.type }}</span>
+                  <svg viewBox="0 0 60 14" preserveAspectRatio="none" style="width:52px;height:14px;flex:none;display:block"><polyline points="{{ i.pts }}" fill="none" stroke="{{ i.spark }}" stroke-width="1.2"></polyline></svg>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:26px;flex:none;display:flex;align-items:center;background:#23282A;border-top:1px solid #3A4144;font:400 10.5px 'JetBrains Mono',monospace;color:#93A492">
+    <span style="background:#9DB394;color:#15181A;font-weight:700;letter-spacing:.1em;padding:0 10px;height:100%;display:flex;align-items:center">NORMAL</span>
+    <span style="padding:0 10px;border-right:1px solid #3A4144;height:100%;display:flex;align-items:center;color:#C9D2C4">pfa</span>
+    <span style="padding:0 10px;border-right:1px solid #3A4144;height:100%;display:flex;align-items:center">tail <span style="color:#9DB394">&nbsp;on</span></span>
+    <span style="padding:0 10px;border-right:1px solid #3A4144;height:100%;display:flex;align-items:center">10 460 ev / 1h</span>
+    <span style="padding:0 10px;border-right:1px solid #3A4144;height:100%;display:flex;align-items:center">q <span style="color:#B4BFAE">&nbsp;38ms</span></span>
+    <span style="padding:0 10px;border-right:1px solid #3A4144;height:100%;display:flex;align-items:center;color:#DFA24B">1 active alert</span>
+    <span style="flex:1"></span>
+    <span style="padding:0 10px;color:#7E8A82">j/k move · ⏎ expand · ⌥⏎ trace · / filter · ⌘K palette</span>
+  </div>
+</div>
+</x-import>
+</div>
+
+<div class="dv-opt" id="3b">
+<div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>Bleu nuit + vert signal — surfaces bleutées, le vert ne sert plus qu’à dire « ça va »</div>
+<x-import component-from-global-scope="ChromeWindow" from="./browser-window.jsx" width="{{ winW }}" height="{{ winH }}" url="{{ urlC }}" tabs="{{ tabsC }}" hint-size="1440px,984px">
+<div data-screen-label="3b Bleu nuit + vert signal — surfaces bleutées, le vert ne sert plus qu’à dire « ça va »" style="width:1440px;height:900px;background:#9FB2BB;color:#131E24;font:400 12.5px/1.5 'IBM Plex Sans',system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased">
+
+  <div style="height:38px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:#171E27;border-bottom:1px solid #27313D;color:#C2D4CB;font-family:'JetBrains Mono','IBM Plex Mono',monospace">
+    <span style="font-weight:700;letter-spacing:.14em;font-size:12px">IKNOS</span>
+    <span style="font-size:10.5px;color:#86B99A;background:#232819;border:1px solid #33404E;border-radius:3px;padding:1px 6px">ks-b</span>
+    <span style="font-size:11px;color:#77899B">services<span style="color:#33404E">&nbsp;/&nbsp;</span><span style="color:#C2D4CB">pfa</span></span>
+    <div style="flex:1;display:flex;justify-content:center">
+      <div style="width:392px;display:flex;align-items:center;gap:8px;height:22px;background:#0C1117;border:1px solid #27313D;border-radius:4px;padding:0 8px;font-size:10.5px;color:#5E7286"><span style="color:#77899B">⌘K</span><span>jump to service · route · issue · trace</span></div>
+    </div>
+    <div style="display:flex;border:1px solid #27313D;border-radius:4px;overflow:hidden;font-size:10.5px">
+      <span style="padding:2px 8px;color:#77899B">15m</span>
+      <span style="padding:2px 8px;background:#24303C;color:#C2D4CB">1h</span>
+      <span style="padding:2px 8px;color:#77899B">24h</span>
+      <span style="padding:2px 8px;color:#77899B">7d</span>
+    </div>
+    <span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#77899B"><span style="width:6px;height:6px;border-radius:50%;background:#86B99A;animation:ikPulse 2s ease-in-out infinite"></span><span style="color:#86B99A">collector</span> lag 0.4s</span>
+    <span style="font-size:10.5px;color:#C2D4CB">02:14:38</span>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <div style="width:172px;flex:none;background:#171E27;border-right:1px solid #27313D;display:flex;flex-direction:column;padding:10px 0;font-family:'JetBrains Mono','IBM Plex Mono',monospace">
+      <div style="font-size:9px;letter-spacing:.16em;color:#5E7286;padding:0 12px 7px">SERVICES · PM2</div>
+      <sc-for list="{{ bServices }}" as="s" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:7px;margin:0 6px;padding:4px 8px;border-radius:4px;background:{{ s.mixBg }}">
+          <span style="width:6px;height:6px;border-radius:50%;background:{{ s.dot }};flex:none"></span>
+          <span style="flex:1;font-size:11px;color:{{ s.mixFg }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.n }}</span>
+          <svg viewBox="0 0 40 12" preserveAspectRatio="none" style="width:34px;height:12px;flex:none;display:block"><polyline points="{{ s.pts }}" fill="none" stroke="{{ s.mixSpark }}" stroke-width="1.1"></polyline></svg>
+        </div>
+      </sc-for>
+      <div style="font-size:9px;letter-spacing:.16em;color:#5E7286;padding:16px 12px 6px">VIEWS</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;background:#1E2733;border-left:2px solid #86B99A;color:#C2D4CB;font-size:11.5px"><span style="flex:1">service</span><span style="color:#77899B;font-size:10px">S</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8FA99A;font-size:11.5px" style-hover="background:#1C2634;color:#C2D4CB"><span style="flex:1">logs</span><span style="color:#5E7286;font-size:10px">L</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8FA99A;font-size:11.5px" style-hover="background:#1C2634;color:#C2D4CB"><span style="flex:1">metrics</span><span style="color:#5E7286;font-size:10px">M</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8FA99A;font-size:11.5px" style-hover="background:#1C2634;color:#C2D4CB"><span style="flex:1">issues</span><span style="background:#24303C;color:#AFC0BA;border-radius:3px;padding:0 5px;font-size:10px">12</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8FA99A;font-size:11.5px" style-hover="background:#1C2634;color:#C2D4CB"><span style="flex:1">alerts</span><span style="background:#33232A;color:#E0A05B;border-radius:3px;padding:0 5px;font-size:10px">2</span></div>
+      <div style="flex:1"></div>
+      <div style="margin:0 8px;padding:8px 10px;background:#0C1117;border:1px solid #24303C;border-radius:4px">
+        <div style="font-size:9px;letter-spacing:.12em;color:#5E7286;margin-bottom:6px">INGEST · 60m</div>
+        <svg viewBox="0 0 128 24" preserveAspectRatio="none" style="width:100%;height:24px;display:block"><polyline points="{{ ingestPts }}" fill="none" stroke="#86B99A" stroke-width="1.2"></polyline></svg>
+        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#77899B;margin-top:6px"><span>10 460 ev</span><span>4.2 GB</span></div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:11px;padding:11px 12px;background:#9FB2BB">
+
+      <div style="flex:none;display:flex;align-items:center;gap:12px;background:#AFC0C8;border:1px solid #8CA1AC;border-radius:8px;padding:9px 13px">
+        <span style="font:600 18px 'IBM Plex Mono',monospace;color:#131E24">pfa</span>
+        <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#3F535F">ECS · pino + @elastic/ecs-pino-format</span>
+        <div style="display:flex;gap:5px;flex:1">
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#4A5F6B;background:#A5B7C0;border:1px solid #99ADB7;border-radius:4px;padding:2px 7px">pm2 id 3</span>
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#4A5F6B;background:#A5B7C0;border:1px solid #99ADB7;border-radius:4px;padding:2px 7px">node 22.4.1</span>
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#4A5F6B;background:#A5B7C0;border:1px solid #99ADB7;border-radius:4px;padding:2px 7px">v2.19.0 · a41c9e2</span>
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#4A5F6B;background:#A5B7C0;border:1px solid #99ADB7;border-radius:4px;padding:2px 7px">up 6d 04h</span>
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#9C3D38;background:#C0A5A2;border:1px solid #AE9490;border-radius:4px;padding:2px 7px">restarts 3</span>
+        </div>
+        <div style="display:flex;gap:5px">
+          <div style="display:flex;align-items:center;gap:6px;background:#9CBCAA;border:1px solid #86A895;border-radius:5px;padding:3px 8px"><span style="width:6px;height:6px;border-radius:50%;background:#4E8266"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#2E4A3C">mysql 3ms</span></div>
+          <div style="display:flex;align-items:center;gap:6px;background:#9CBCAA;border:1px solid #86A895;border-radius:5px;padding:3px 8px"><span style="width:6px;height:6px;border-radius:50%;background:#4E8266"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#2E4A3C">redis 1ms</span></div>
+          <div style="display:flex;align-items:center;gap:6px;background:#C0A5A2;border:1px solid #AE9490;border-radius:5px;padding:3px 8px"><span style="width:6px;height:6px;border-radius:50%;background:#C1504A"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#9C3D38">/health 502</span></div>
+        </div>
+      </div>
+
+      <div style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:11px">
+        <div style="background:#AFC0C8;border:1px solid #8CA1AC;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#556A76">THROUGHPUT</span>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'IBM Plex Mono',monospace;color:#131E24">41.2</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#3F535F">req/s</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#4E8266;margin-left:auto">▲ 6%</span></div>
+          <svg viewBox="0 0 120 26" preserveAspectRatio="none" style="width:100%;height:26px;display:block"><path d="{{ areaReq }}" fill="#C2D4CB" opacity="0.55"></path><polyline points="{{ lineReq }}" fill="none" stroke="#4E8266" stroke-width="1.3"></polyline></svg>
+        </div>
+        <div style="background:#AFC0C8;border:1px solid #8CA1AC;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#556A76">ERROR RATE</span>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'IBM Plex Mono',monospace;color:#9C3D38">1.8</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#3F535F">%</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#C1504A;margin-left:auto">▲ 1.4 pt</span></div>
+          <div style="display:flex;align-items:flex-end;gap:1.5px;height:26px">
+            <sc-for list="{{ bErrBars }}" as="h" hint-placeholder-count="30"><div style="flex:1;height:{{ h.v }}px;background:{{ h.c }}"></div></sc-for>
+          </div>
+        </div>
+        <div style="background:#AFC0C8;border:1px solid #8CA1AC;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#556A76">p95 LATENCY</span>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'IBM Plex Mono',monospace;color:#131E24">412</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#3F535F">ms</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#C1504A;margin-left:auto">▲ 210ms</span></div>
+          <svg viewBox="0 0 120 26" preserveAspectRatio="none" style="width:100%;height:26px;display:block"><line x1="0" y1="10" x2="120" y2="10" stroke="#8CA1AC" stroke-width="1" stroke-dasharray="2 3"></line><polyline points="{{ lineP95 }}" fill="none" stroke="#C89A3E" stroke-width="1.3"></polyline></svg>
+        </div>
+        <div style="background:#AFC0C8;border:1px solid #8CA1AC;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#556A76">RUNTIME NODE</span>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'IBM Plex Mono',monospace;color:#131E24">318</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#3F535F">MB heap</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;align-items:center;gap:6px;font:400 10px 'IBM Plex Mono',monospace;color:#3F535F"><span style="width:50px">event loop</span><span style="flex:1;height:4px;background:#99ADB7;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:18%;height:100%;background:#4E8266"></span></span><span>4.1ms</span></div>
+            <div style="display:flex;align-items:center;gap:6px;font:400 10px 'IBM Plex Mono',monospace;color:#3F535F"><span style="width:50px">pool db</span><span style="flex:1;height:4px;background:#99ADB7;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:100%;height:100%;background:#C1504A"></span></span><span style="color:#9C3D38">10/10</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-height:0;display:flex;gap:11px">
+
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:#10151C;border:1px solid #27313D;border-radius:8px;overflow:hidden;font-family:'JetBrains Mono','IBM Plex Mono',monospace">
+          <div style="flex:none;display:flex;align-items:center;gap:8px;padding:7px 10px;background:#171E27;border-bottom:1px solid #24303C">
+            <span style="color:#4E8266;font-size:11px">▸</span>
+            <div style="flex:1;display:flex;align-items:center;gap:6px;height:23px;background:#0C1117;border:1px solid #33404E;border-radius:4px;padding:0 8px;font-size:11px">
+              <span style="color:#7FA8C4">service<span style="color:#5E7286">:</span><span style="color:#86B99A">pfa</span></span>
+              <span style="color:#7FA8C4">level<span style="color:#5E7286">&gt;=</span><span style="color:#E0AE55">warn</span></span>
+              <span style="color:#C2D4CB">exportQueue</span>
+              <span style="width:6px;height:13px;background:#86B99A;animation:ikBlink 1.1s step-end infinite"></span>
+            </div>
+            <span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#10151C;background:#86B99A;border-radius:4px;padding:2px 8px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#10151C;animation:ikPulse 1.4s ease-in-out infinite"></span>LIVE</span>
+            <span style="font-size:10.5px;color:#5E7286">⌘L fullscreen</span>
+          </div>
+
+          <div style="flex:none;padding:7px 10px 5px;border-bottom:1px solid #1E2733">
+            <div style="display:flex;align-items:flex-end;gap:1px;height:34px">
+              <sc-for list="{{ hist }}" as="b" hint-placeholder-count="72">
+                <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;opacity:{{ b.o }}">
+                  <div style="height:{{ b.e }}px;background:#C1504A"></div>
+                  <div style="height:{{ b.w }}px;background:#C89A3E"></div>
+                  <div style="height:{{ b.i }}px;background:#3E5A50"></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#55697C;margin-top:4px"><span>01:59:38</span><span>02:04</span><span>02:09</span><span style="color:#7FA8C4">▲ 02:14:37 · +18 err</span></div>
+          </div>
+
+          <div style="flex:none;display:flex;padding:4px 10px;font-size:9px;letter-spacing:.13em;color:#5E7286;border-bottom:1px solid #1E2733;background:#141A22">
+            <span style="width:86px">TIME</span><span style="width:42px">LVL</span><span style="width:104px">SERVICE</span><span style="width:176px">ROUTE</span><span style="width:32px">ST</span><span style="flex:1">MESSAGE</span><span style="width:72px">TRACE</span><span style="width:54px;text-align:right">DUR</span>
+          </div>
+
+          <div style="flex:1;min-height:0;overflow:hidden">
+            <div style="display:flex;align-items:center;padding:3.5px 10px 3.5px 8px;font-size:11px;background:#22191C;border-left:2px solid #C1504A">
+              <span style="width:84px;color:#8FA99A">02:14:37.912</span>
+              <span style="width:42px;color:#E4736B;font-weight:500">ERRO</span>
+              <span style="width:104px;color:#AFC0BA">pfa</span>
+              <span style="width:176px;color:#86B99A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">POST /api/exports</span>
+              <span style="width:32px;color:#E4736B">500</span>
+              <span style="flex:1;color:#DFE9E4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Unhandled rejection in exportQueue — acquire connection timeout</span>
+              <span style="width:72px;color:#7FA8C4">4f2ab91c</span>
+              <span style="width:54px;text-align:right;color:#C1504A">8014ms</span>
+            </div>
+            <div style="background:#0C1117;border-left:2px solid #C1504A;padding:7px 10px 8px 12px;display:flex;gap:16px;align-items:flex-start">
+              <pre style="margin:0;font:400 10.2px/1.55 'JetBrains Mono',monospace;color:#77899B;flex:none">{ <span style="color:#7FA8C4">"log.level"</span>: <span style="color:#E4736B">"error"</span>, <span style="color:#7FA8C4">"trace.id"</span>: <span style="color:#86B99A">"4f2ab91c7d3e0a55"</span>,
+  <span style="color:#7FA8C4">"error.type"</span>: <span style="color:#86B99A">"ConnectionAcquireTimeoutError"</span>,
+  <span style="color:#7FA8C4">"event.duration"</span>: <span style="color:#E0AE55">8014331000</span>, <span style="color:#7FA8C4">"process.pid"</span>: <span style="color:#E0AE55">20481</span> }</pre>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+                <pre style="margin:0;font:400 10.2px/1.55 'JetBrains Mono',monospace;color:#8FA99A">at ExportQueue.run (<span style="color:#C2D4CB">src/queue/export.ts</span>:<span style="color:#E0AE55">142</span>:19)
+at async POST (<span style="color:#C2D4CB">app/api/exports/route.ts</span>:<span style="color:#E0AE55">38</span>:3)</pre>
+                <div style="display:flex;gap:6px">
+                  <span style="font-size:10.5px;color:#C2D4CB;border:1px solid #33404E;border-radius:3px;padding:1px 7px">⌥⏎ trace · 3 events</span>
+                  <span style="font-size:10.5px;color:#C2D4CB;border:1px solid #33404E;border-radius:3px;padding:1px 7px">⌘I issue 4f2ab91c ↗</span>
+                  <span style="font-size:10.5px;color:#8FA99A;border:1px solid #24303C;border-radius:3px;padding:1px 7px">⌘C NDJSON</span>
+                </div>
+              </div>
+            </div>
+            <sc-for list="{{ bRows }}" as="r" hint-placeholder-count="13">
+              <div style="display:flex;align-items:center;padding:3px 10px 3px 8px;font-size:11px;background:{{ r.bg }};border-left:2px solid {{ r.edge }}" style-hover="background:#1A2330">
+                <span style="width:84px;color:#77899B">{{ r.t }}</span>
+                <span style="width:42px;color:{{ r.lc }}">{{ r.lvl }}</span>
+                <span style="width:104px;color:#8FA99A">{{ r.svc }}</span>
+                <span style="width:176px;color:#8FA99A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.route }}</span>
+                <span style="width:32px;color:{{ r.sc }}">{{ r.st }}</span>
+                <span style="flex:1;color:#AFC0BA;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.msg }}</span>
+                <span style="width:72px;color:#77899B">{{ r.trace }}</span>
+                <span style="width:54px;text-align:right;color:#77899B">{{ r.dur }}</span>
+              </div>
+            </sc-for>
+            <sc-for list="{{ bRows2 }}" as="r" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;padding:3px 10px 3px 8px;font-size:11px;background:{{ r.bg }};border-left:2px solid {{ r.edge }}" style-hover="background:#1A2330">
+                <span style="width:84px;color:#77899B">{{ r.t }}</span>
+                <span style="width:42px;color:{{ r.lc }}">{{ r.lvl }}</span>
+                <span style="width:104px;color:#8FA99A">{{ r.svc }}</span>
+                <span style="width:176px;color:#8FA99A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.route }}</span>
+                <span style="width:32px;color:{{ r.sc }}">{{ r.st }}</span>
+                <span style="flex:1;color:#AFC0BA;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.msg }}</span>
+                <span style="width:72px;color:#77899B">{{ r.trace }}</span>
+                <span style="width:54px;text-align:right;color:#77899B">{{ r.dur }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="width:296px;flex:none;display:flex;flex-direction:column;gap:11px;min-height:0">
+          <div style="flex:none;background:#AFC0C8;border:1px solid #8CA1AC;border-radius:8px;overflow:hidden">
+            <div style="display:flex;align-items:center;padding:7px 11px;border-bottom:1px solid #99ADB7"><span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#131E24;flex:1">Alerts</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#556A76">collector</span></div>
+            <div style="padding:9px 11px;border-bottom:1px solid #A0B4BE;background:#C4A9A6;border-left:3px solid #C1504A">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><span style="font:700 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#AFC0C8;background:#C1504A;border-radius:3px;padding:2px 6px">FIRING</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#9C3D38">00:04:12</span></div>
+              <div style="font:400 11px 'IBM Plex Mono',monospace;color:#131E24">rate(http_5xx[5m]) &gt; 1%</div>
+              <div style="font:400 10.5px 'IBM Plex Mono',monospace;color:#3F535F;margin-top:3px">pfa · now <span style="color:#9C3D38;font-weight:500">3.1%</span></div>
+              <div style="display:flex;gap:1.5px;margin-top:6px"><sc-for list="{{ bAlertHist }}" as="a" hint-placeholder-count="36"><div style="flex:1;height:10px;background:{{ a.c }};border-radius:1px"></div></sc-for></div>
+            </div>
+            <div style="padding:9px 11px;border-left:3px solid #C89A3E">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><span style="font:700 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#AFC0C8;background:#C89A3E;border-radius:3px;padding:2px 6px">PENDING</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#8A6A22">00:01:38</span></div>
+              <div style="font:400 11px 'IBM Plex Mono',monospace;color:#131E24">pm2_restarts_total[1h] &gt; 2</div>
+              <div style="font:400 10.5px 'IBM Plex Mono',monospace;color:#3F535F;margin-top:3px">iknos-ui · now <span style="color:#8A6A22;font-weight:500">3</span></div>
+            </div>
+          </div>
+
+          <div style="flex:1;min-height:0;background:#AFC0C8;border:1px solid #8CA1AC;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;padding:7px 11px;border-bottom:1px solid #99ADB7"><span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#131E24;flex:1">Issues · fingerprints</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#556A76">1h</span></div>
+            <sc-for list="{{ bIssues }}" as="i" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:4px;padding:8px 11px;border-bottom:1px solid #A0B4BE;background:{{ i.bg }}" style-hover="background:#A5B7C0">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <span style="width:6px;height:6px;border-radius:50%;background:{{ i.dot }};flex:none"></span>
+                  <span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#4A5F6B;background:#A5B7C0;border:1px solid #99ADB7;border-radius:3px;padding:0 5px;flex:none">{{ i.fp }}</span>
+                  <span style="flex:1"></span>
+                  <span style="font:500 11.5px 'IBM Plex Mono',monospace;color:{{ i.cc }}">{{ i.count }}</span>
+                  <span style="font:400 10px 'IBM Plex Mono',monospace;color:#556A76">{{ i.last }}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font:400 11px 'IBM Plex Mono',monospace;color:#131E24;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ i.type }}</span>
+                  <svg viewBox="0 0 60 14" preserveAspectRatio="none" style="width:52px;height:14px;flex:none;display:block"><polyline points="{{ i.pts }}" fill="none" stroke="{{ i.spark }}" stroke-width="1.2"></polyline></svg>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:26px;flex:none;display:flex;align-items:center;background:#1E2733;border-top:1px solid #33404E;font:400 10.5px 'JetBrains Mono',monospace;color:#8FA99A">
+    <span style="background:#86B99A;color:#10151C;font-weight:700;letter-spacing:.1em;padding:0 10px;height:100%;display:flex;align-items:center">NORMAL</span>
+    <span style="padding:0 10px;border-right:1px solid #33404E;height:100%;display:flex;align-items:center;color:#C2D4CB">pfa</span>
+    <span style="padding:0 10px;border-right:1px solid #33404E;height:100%;display:flex;align-items:center">tail <span style="color:#86B99A">&nbsp;on</span></span>
+    <span style="padding:0 10px;border-right:1px solid #33404E;height:100%;display:flex;align-items:center">10 460 ev / 1h</span>
+    <span style="padding:0 10px;border-right:1px solid #33404E;height:100%;display:flex;align-items:center">q <span style="color:#AFC0BA">&nbsp;38ms</span></span>
+    <span style="padding:0 10px;border-right:1px solid #33404E;height:100%;display:flex;align-items:center;color:#E0A05B">1 active alert</span>
+    <span style="flex:1"></span>
+    <span style="padding:0 10px;color:#77899B">j/k move · ⏎ expand · ⌥⏎ trace · / filter · ⌘K palette</span>
+  </div>
+</div>
+</x-import>
+</div>
+
+</div>
+<p class="dv-next">À essayer ensuite : « garde <a class="dv-oid" href="#3a">3a</a> et refroidis encore le vert » · « <a class="dv-oid" href="#3a">3a</a> avec les erreurs de <a class="dv-oid" href="#3b">3b</a> » · « décline <a class="dv-oid" href="#3a">3a</a> sur l’écran Issues »</p>
+</section>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Mix de <a class="dv-oid" href="#1a">1a</a> + <a class="dv-oid" href="#1b">1b</a> — coque sombre, plan de travail clair</span></div>
+<p class="dv-brief"><b>Le principe —</b> le châssis (barre haute, rail de navigation, ligne d'état) reste sombre : c'est l'outil, il ne bouge jamais. Le plan de travail est clair : c'est la donnée qu'on lit longtemps. Et le flux de logs redevient une fenêtre sombre encastrée — le seul endroit où l'on est vraiment « dans le terminal ».<br>
+<b>Les deux esprits —</b> barre de requête à tokens, histogramme, table dense et ligne d'état à la tmux (de <a class="dv-oid" href="#1a">1a</a>) · en-tête de service, cartes de signaux, issues et alertes en panneaux (de <a class="dv-oid" href="#1b">1b</a>) — sur un seul écran, sans changer de page.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Écran Service pfa — signaux clairs en haut, terminal encastré en bas</div>
+<x-import component-from-global-scope="ChromeWindow" from="./browser-window.jsx" width="{{ winW }}" height="{{ winH }}" url="{{ urlC }}" tabs="{{ tabsC }}" hint-size="1440px,984px">
+<div data-screen-label="2a Mix" style="width:1440px;height:900px;background:#E2E7D4;color:#2B3223;font:400 12.5px/1.5 'IBM Plex Sans',system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased">
+
+  <div style="height:38px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:#1B1F16;border-bottom:1px solid #333D29;color:#C2C5AA;font-family:'JetBrains Mono','IBM Plex Mono',monospace">
+    <span style="font-weight:700;letter-spacing:.14em;font-size:12px">IKNOS</span>
+    <span style="font-size:10.5px;color:#A4AC86;background:#232819;border:1px solid #3A4230;border-radius:3px;padding:1px 6px">ks-b</span>
+    <span style="font-size:11px;color:#6E7758">services<span style="color:#414833">&nbsp;/&nbsp;</span><span style="color:#C2C5AA">pfa</span></span>
+    <div style="flex:1;display:flex;justify-content:center">
+      <div style="width:392px;display:flex;align-items:center;gap:8px;height:22px;background:#0F120B;border:1px solid #333D29;border-radius:4px;padding:0 8px;font-size:10.5px;color:#545C42"><span style="color:#6E7758">⌘K</span><span>jump to service · route · issue · trace</span></div>
+    </div>
+    <div style="display:flex;border:1px solid #333D29;border-radius:4px;overflow:hidden;font-size:10.5px">
+      <span style="padding:2px 8px;color:#6E7758">15m</span>
+      <span style="padding:2px 8px;background:#2A3020;color:#C2C5AA">1h</span>
+      <span style="padding:2px 8px;color:#6E7758">24h</span>
+      <span style="padding:2px 8px;color:#6E7758">7d</span>
+    </div>
+    <span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#6E7758"><span style="width:6px;height:6px;border-radius:50%;background:#A4AC86;animation:ikPulse 2s ease-in-out infinite"></span><span style="color:#A4AC86">collector</span> lag 0.4s</span>
+    <span style="font-size:10.5px;color:#C2C5AA">02:14:38</span>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <div style="width:172px;flex:none;background:#1B1F16;border-right:1px solid #333D29;display:flex;flex-direction:column;padding:10px 0;font-family:'JetBrains Mono','IBM Plex Mono',monospace">
+      <div style="font-size:9px;letter-spacing:.16em;color:#545C42;padding:0 12px 7px">SERVICES · PM2</div>
+      <sc-for list="{{ services }}" as="s" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:7px;margin:0 6px;padding:4px 8px;border-radius:4px;background:{{ s.mixBg }}">
+          <span style="width:6px;height:6px;border-radius:50%;background:{{ s.dot }};flex:none"></span>
+          <span style="flex:1;font-size:11px;color:{{ s.mixFg }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.n }}</span>
+          <svg viewBox="0 0 40 12" preserveAspectRatio="none" style="width:34px;height:12px;flex:none;display:block"><polyline points="{{ s.pts }}" fill="none" stroke="{{ s.mixSpark }}" stroke-width="1.1"></polyline></svg>
+        </div>
+      </sc-for>
+      <div style="font-size:9px;letter-spacing:.16em;color:#545C42;padding:16px 12px 6px">VIEWS</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;background:#262C1E;border-left:2px solid #A4AC86;color:#C2C5AA;font-size:11.5px"><span style="flex:1">service</span><span style="color:#6E7758;font-size:10px">S</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8A9370;font-size:11.5px" style-hover="background:#20251A;color:#C2C5AA"><span style="flex:1">logs</span><span style="color:#545C42;font-size:10px">L</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8A9370;font-size:11.5px" style-hover="background:#20251A;color:#C2C5AA"><span style="flex:1">metrics</span><span style="color:#545C42;font-size:10px">M</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8A9370;font-size:11.5px" style-hover="background:#20251A;color:#C2C5AA"><span style="flex:1">issues</span><span style="background:#2A3020;color:#B6AD90;border-radius:3px;padding:0 5px;font-size:10px">12</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8A9370;font-size:11.5px" style-hover="background:#20251A;color:#C2C5AA"><span style="flex:1">alerts</span><span style="background:#3D2110;color:#D98A4E;border-radius:3px;padding:0 5px;font-size:10px">2</span></div>
+      <div style="flex:1"></div>
+      <div style="margin:0 8px;padding:8px 10px;background:#0F120B;border:1px solid #2A3020;border-radius:4px">
+        <div style="font-size:9px;letter-spacing:.12em;color:#545C42;margin-bottom:6px">INGEST · 60m</div>
+        <svg viewBox="0 0 128 24" preserveAspectRatio="none" style="width:100%;height:24px;display:block"><polyline points="{{ ingestPts }}" fill="none" stroke="#A4AC86" stroke-width="1.2"></polyline></svg>
+        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#6E7758;margin-top:6px"><span>10 460 ev</span><span>4.2 GB</span></div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:11px;padding:11px 12px;background:#E2E7D4">
+
+      <div style="flex:none;display:flex;align-items:center;gap:12px;background:#EFF3E2;border:1px solid #C9D2B2;border-radius:8px;padding:9px 13px">
+        <span style="font:600 18px 'IBM Plex Mono',monospace;color:#2B3223">pfa</span>
+        <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#7C8768">ECS · pino + @elastic/ecs-pino-format</span>
+        <div style="display:flex;gap:5px;flex:1">
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#5C6448;background:#E6EBD5;border:1px solid #D6DEC0;border-radius:4px;padding:2px 7px">pm2 id 3</span>
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#5C6448;background:#E6EBD5;border:1px solid #D6DEC0;border-radius:4px;padding:2px 7px">node 22.4.1</span>
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#5C6448;background:#E6EBD5;border:1px solid #D6DEC0;border-radius:4px;padding:2px 7px">v2.19.0 · a41c9e2</span>
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#5C6448;background:#E6EBD5;border:1px solid #D6DEC0;border-radius:4px;padding:2px 7px">up 6d 04h</span>
+          <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#8F4416;background:#F0DDCB;border:1px solid #E4C6AA;border-radius:4px;padding:2px 7px">restarts 3</span>
+        </div>
+        <div style="display:flex;gap:5px">
+          <div style="display:flex;align-items:center;gap:6px;background:#E4E7D6;border:1px solid #CBD2B4;border-radius:5px;padding:3px 8px"><span style="width:6px;height:6px;border-radius:50%;background:#656D4A"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#3E4630">mysql 3ms</span></div>
+          <div style="display:flex;align-items:center;gap:6px;background:#E4E7D6;border:1px solid #CBD2B4;border-radius:5px;padding:3px 8px"><span style="width:6px;height:6px;border-radius:50%;background:#656D4A"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#3E4630">redis 1ms</span></div>
+          <div style="display:flex;align-items:center;gap:6px;background:#F0DDCB;border:1px solid #E4C6AA;border-radius:5px;padding:3px 8px"><span style="width:6px;height:6px;border-radius:50%;background:#B4551F"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#8F4416">/health 502</span></div>
+        </div>
+      </div>
+
+      <div style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:11px">
+        <div style="background:#EFF3E2;border:1px solid #C9D2B2;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#949E7C">THROUGHPUT</span>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'IBM Plex Mono',monospace;color:#2B3223">41.2</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#7C8768">req/s</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#656D4A;margin-left:auto">▲ 6%</span></div>
+          <svg viewBox="0 0 120 26" preserveAspectRatio="none" style="width:100%;height:26px;display:block"><path d="{{ areaReq }}" fill="#C2C5AA" opacity="0.55"></path><polyline points="{{ lineReq }}" fill="none" stroke="#656D4A" stroke-width="1.3"></polyline></svg>
+        </div>
+        <div style="background:#EFF3E2;border:1px solid #C9D2B2;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#949E7C">ERROR RATE</span>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'IBM Plex Mono',monospace;color:#8F4416">1.8</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#7C8768">%</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#B4551F;margin-left:auto">▲ 1.4 pt</span></div>
+          <div style="display:flex;align-items:flex-end;gap:1.5px;height:26px">
+            <sc-for list="{{ errBars }}" as="h" hint-placeholder-count="30"><div style="flex:1;height:{{ h.v }}px;background:{{ h.c }}"></div></sc-for>
+          </div>
+        </div>
+        <div style="background:#EFF3E2;border:1px solid #C9D2B2;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#949E7C">p95 LATENCY</span>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'IBM Plex Mono',monospace;color:#2B3223">412</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#7C8768">ms</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#B4551F;margin-left:auto">▲ 210ms</span></div>
+          <svg viewBox="0 0 120 26" preserveAspectRatio="none" style="width:100%;height:26px;display:block"><line x1="0" y1="10" x2="120" y2="10" stroke="#C9D2B2" stroke-width="1" stroke-dasharray="2 3"></line><polyline points="{{ lineP95 }}" fill="none" stroke="#936639" stroke-width="1.3"></polyline></svg>
+        </div>
+        <div style="background:#EFF3E2;border:1px solid #C9D2B2;border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#949E7C">RUNTIME NODE</span>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 20px 'IBM Plex Mono',monospace;color:#2B3223">318</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#7C8768">MB heap</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;align-items:center;gap:6px;font:400 10px 'IBM Plex Mono',monospace;color:#7C8768"><span style="width:50px">event loop</span><span style="flex:1;height:4px;background:#D6DEC0;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:18%;height:100%;background:#656D4A"></span></span><span>4.1ms</span></div>
+            <div style="display:flex;align-items:center;gap:6px;font:400 10px 'IBM Plex Mono',monospace;color:#7C8768"><span style="width:50px">pool db</span><span style="flex:1;height:4px;background:#D6DEC0;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:100%;height:100%;background:#B4551F"></span></span><span style="color:#8F4416">10/10</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-height:0;display:flex;gap:11px">
+
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:#171A12;border:1px solid #333D29;border-radius:8px;overflow:hidden;font-family:'JetBrains Mono','IBM Plex Mono',monospace">
+          <div style="flex:none;display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1B1F16;border-bottom:1px solid #2A3020">
+            <span style="color:#656D4A;font-size:11px">▸</span>
+            <div style="flex:1;display:flex;align-items:center;gap:6px;height:23px;background:#0F120B;border:1px solid #3A4230;border-radius:4px;padding:0 8px;font-size:11px">
+              <span style="color:#A68A64">service<span style="color:#545C42">:</span><span style="color:#A4AC86">pfa</span></span>
+              <span style="color:#A68A64">level<span style="color:#545C42">&gt;=</span><span style="color:#C79449">warn</span></span>
+              <span style="color:#C2C5AA">exportQueue</span>
+              <span style="width:6px;height:13px;background:#A4AC86;animation:ikBlink 1.1s step-end infinite"></span>
+            </div>
+            <span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#171A12;background:#A4AC86;border-radius:4px;padding:2px 8px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#171A12;animation:ikPulse 1.4s ease-in-out infinite"></span>LIVE</span>
+            <span style="font-size:10.5px;color:#545C42">⌘L fullscreen</span>
+          </div>
+
+          <div style="flex:none;padding:7px 10px 5px;border-bottom:1px solid #262C1E">
+            <div style="display:flex;align-items:flex-end;gap:1px;height:34px">
+              <sc-for list="{{ hist }}" as="b" hint-placeholder-count="72">
+                <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;opacity:{{ b.o }}">
+                  <div style="height:{{ b.e }}px;background:#C2652E"></div>
+                  <div style="height:{{ b.w }}px;background:#936639"></div>
+                  <div style="height:{{ b.i }}px;background:#4A5438"></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#4C543C;margin-top:4px"><span>01:59:38</span><span>02:04</span><span>02:09</span><span style="color:#A68A64">▲ 02:14:37 · +18 err</span></div>
+          </div>
+
+          <div style="flex:none;display:flex;padding:4px 10px;font-size:9px;letter-spacing:.13em;color:#545C42;border-bottom:1px solid #262C1E;background:#181C13">
+            <span style="width:86px">TIME</span><span style="width:42px">LVL</span><span style="width:104px">SERVICE</span><span style="width:176px">ROUTE</span><span style="width:32px">ST</span><span style="flex:1">MESSAGE</span><span style="width:72px">TRACE</span><span style="width:54px;text-align:right">DUR</span>
+          </div>
+
+          <div style="flex:1;min-height:0;overflow:hidden">
+            <div style="display:flex;align-items:center;padding:3.5px 10px 3.5px 8px;font-size:11px;background:#241A12;border-left:2px solid #C2652E">
+              <span style="width:84px;color:#8A9370">02:14:37.912</span>
+              <span style="width:42px;color:#E07B3C;font-weight:500">ERRO</span>
+              <span style="width:104px;color:#B6AD90">pfa</span>
+              <span style="width:176px;color:#A4AC86;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">POST /api/exports</span>
+              <span style="width:32px;color:#E07B3C">500</span>
+              <span style="flex:1;color:#E4E0CB;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Unhandled rejection in exportQueue — acquire connection timeout</span>
+              <span style="width:72px;color:#A68A64">4f2ab91c</span>
+              <span style="width:54px;text-align:right;color:#C2652E">8014ms</span>
+            </div>
+            <div style="background:#0F120B;border-left:2px solid #C2652E;padding:7px 10px 8px 12px;display:flex;gap:16px;align-items:flex-start">
+              <pre style="margin:0;font:400 10.2px/1.55 'JetBrains Mono',monospace;color:#6E7758;flex:none">{ <span style="color:#A68A64">"log.level"</span>: <span style="color:#E07B3C">"error"</span>, <span style="color:#A68A64">"trace.id"</span>: <span style="color:#A4AC86">"4f2ab91c7d3e0a55"</span>,
+  <span style="color:#A68A64">"error.type"</span>: <span style="color:#A4AC86">"ConnectionAcquireTimeoutError"</span>,
+  <span style="color:#A68A64">"event.duration"</span>: <span style="color:#C79449">8014331000</span>, <span style="color:#A68A64">"process.pid"</span>: <span style="color:#C79449">20481</span> }</pre>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+                <pre style="margin:0;font:400 10.2px/1.55 'JetBrains Mono',monospace;color:#8A9370">at ExportQueue.run (<span style="color:#C2C5AA">src/queue/export.ts</span>:<span style="color:#C79449">142</span>:19)
+at async POST (<span style="color:#C2C5AA">app/api/exports/route.ts</span>:<span style="color:#C79449">38</span>:3)</pre>
+                <div style="display:flex;gap:6px">
+                  <span style="font-size:10.5px;color:#C2C5AA;border:1px solid #3A4230;border-radius:3px;padding:1px 7px">⌥⏎ trace · 3 events</span>
+                  <span style="font-size:10.5px;color:#C2C5AA;border:1px solid #3A4230;border-radius:3px;padding:1px 7px">⌘I issue 4f2ab91c ↗</span>
+                  <span style="font-size:10.5px;color:#8A9370;border:1px solid #2A3020;border-radius:3px;padding:1px 7px">⌘C NDJSON</span>
+                </div>
+              </div>
+            </div>
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="13">
+              <div style="display:flex;align-items:center;padding:3px 10px 3px 8px;font-size:11px;background:{{ r.bg }};border-left:2px solid {{ r.edge }}" style-hover="background:#1E2318">
+                <span style="width:84px;color:#6E7758">{{ r.t }}</span>
+                <span style="width:42px;color:{{ r.lc }}">{{ r.lvl }}</span>
+                <span style="width:104px;color:#8A9370">{{ r.svc }}</span>
+                <span style="width:176px;color:#8A9370;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.route }}</span>
+                <span style="width:32px;color:{{ r.sc }}">{{ r.st }}</span>
+                <span style="flex:1;color:#B6AD90;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.msg }}</span>
+                <span style="width:72px;color:#6E7758">{{ r.trace }}</span>
+                <span style="width:54px;text-align:right;color:#6E7758">{{ r.dur }}</span>
+              </div>
+            </sc-for>
+            <sc-for list="{{ rows2 }}" as="r" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;padding:3px 10px 3px 8px;font-size:11px;background:{{ r.bg }};border-left:2px solid {{ r.edge }}" style-hover="background:#1E2318">
+                <span style="width:84px;color:#6E7758">{{ r.t }}</span>
+                <span style="width:42px;color:{{ r.lc }}">{{ r.lvl }}</span>
+                <span style="width:104px;color:#8A9370">{{ r.svc }}</span>
+                <span style="width:176px;color:#8A9370;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.route }}</span>
+                <span style="width:32px;color:{{ r.sc }}">{{ r.st }}</span>
+                <span style="flex:1;color:#B6AD90;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.msg }}</span>
+                <span style="width:72px;color:#6E7758">{{ r.trace }}</span>
+                <span style="width:54px;text-align:right;color:#6E7758">{{ r.dur }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="width:296px;flex:none;display:flex;flex-direction:column;gap:11px;min-height:0">
+          <div style="flex:none;background:#EFF3E2;border:1px solid #C9D2B2;border-radius:8px;overflow:hidden">
+            <div style="display:flex;align-items:center;padding:7px 11px;border-bottom:1px solid #D6DEC0"><span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#2B3223;flex:1">Alerts</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#949E7C">collector</span></div>
+            <div style="padding:9px 11px;border-bottom:1px solid #E2E8D2;background:#FBEFE4;border-left:3px solid #B4551F">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><span style="font:700 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#EFF3E2;background:#B4551F;border-radius:3px;padding:2px 6px">FIRING</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#8F4416">00:04:12</span></div>
+              <div style="font:400 11px 'IBM Plex Mono',monospace;color:#2B3223">rate(http_5xx[5m]) &gt; 1%</div>
+              <div style="font:400 10.5px 'IBM Plex Mono',monospace;color:#7C8768;margin-top:3px">pfa · now <span style="color:#8F4416;font-weight:500">3.1%</span></div>
+              <div style="display:flex;gap:1.5px;margin-top:6px"><sc-for list="{{ alertHistA }}" as="a" hint-placeholder-count="36"><div style="flex:1;height:10px;background:{{ a.c }};border-radius:1px"></div></sc-for></div>
+            </div>
+            <div style="padding:9px 11px;border-left:3px solid #936639">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><span style="font:700 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#EFF3E2;background:#936639;border-radius:3px;padding:2px 6px">PENDING</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#7A6034">00:01:38</span></div>
+              <div style="font:400 11px 'IBM Plex Mono',monospace;color:#2B3223">pm2_restarts_total[1h] &gt; 2</div>
+              <div style="font:400 10.5px 'IBM Plex Mono',monospace;color:#7C8768;margin-top:3px">iknos-ui · now <span style="color:#7A6034;font-weight:500">3</span></div>
+            </div>
+          </div>
+
+          <div style="flex:1;min-height:0;background:#EFF3E2;border:1px solid #C9D2B2;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;padding:7px 11px;border-bottom:1px solid #D6DEC0"><span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#2B3223;flex:1">Issues · fingerprints</span><span style="font:400 10px 'IBM Plex Mono',monospace;color:#949E7C">1h</span></div>
+            <sc-for list="{{ issues }}" as="i" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:4px;padding:8px 11px;border-bottom:1px solid #E2E8D2;background:{{ i.bg }}" style-hover="background:#E6EBD5">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <span style="width:6px;height:6px;border-radius:50%;background:{{ i.dot }};flex:none"></span>
+                  <span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#5C6448;background:#E6EBD5;border:1px solid #D6DEC0;border-radius:3px;padding:0 5px;flex:none">{{ i.fp }}</span>
+                  <span style="flex:1"></span>
+                  <span style="font:500 11.5px 'IBM Plex Mono',monospace;color:{{ i.cc }}">{{ i.count }}</span>
+                  <span style="font:400 10px 'IBM Plex Mono',monospace;color:#949E7C">{{ i.last }}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;min-width:0;font:400 11px 'IBM Plex Mono',monospace;color:#2B3223;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ i.type }}</span>
+                  <svg viewBox="0 0 60 14" preserveAspectRatio="none" style="width:52px;height:14px;flex:none;display:block"><polyline points="{{ i.pts }}" fill="none" stroke="{{ i.spark }}" stroke-width="1.2"></polyline></svg>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:26px;flex:none;display:flex;align-items:center;background:#262C1E;border-top:1px solid #3A4230;font:400 10.5px 'JetBrains Mono',monospace;color:#8A9370">
+    <span style="background:#A4AC86;color:#171A12;font-weight:700;letter-spacing:.1em;padding:0 10px;height:100%;display:flex;align-items:center">NORMAL</span>
+    <span style="padding:0 10px;border-right:1px solid #3A4230;height:100%;display:flex;align-items:center;color:#C2C5AA">pfa</span>
+    <span style="padding:0 10px;border-right:1px solid #3A4230;height:100%;display:flex;align-items:center">tail <span style="color:#A4AC86">&nbsp;on</span></span>
+    <span style="padding:0 10px;border-right:1px solid #3A4230;height:100%;display:flex;align-items:center">10 460 ev / 1h</span>
+    <span style="padding:0 10px;border-right:1px solid #3A4230;height:100%;display:flex;align-items:center">q <span style="color:#B6AD90">&nbsp;38ms</span></span>
+    <span style="padding:0 10px;border-right:1px solid #3A4230;height:100%;display:flex;align-items:center;color:#D98A4E">1 active alert</span>
+    <span style="flex:1"></span>
+    <span style="padding:0 10px;color:#6E7758">j/k move · ⏎ expand · ⌥⏎ trace · / filter · ⌘K palette</span>
+  </div>
+</div>
+</x-import>
+</div>
+
+</div>
+<p class="dv-next">À essayer ensuite : « inverse <a class="dv-oid" href="#2a">2a</a> — coque claire, panneaux sombres » · « agrandis le terminal de <a class="dv-oid" href="#2a">2a</a>, réduis les cartes » · « décline <a class="dv-oid" href="#2a">2a</a> en écran Issues »</p>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Iknos — deux directions d'UI</span></div>
+<p class="dv-brief"><b>Cadre —</b> fenêtre 1440×900 (MBP 13", Safari/Chrome fullscreen), densité 11–12px, aucun scroll : tout l'écran de travail tient d'un coup.<br>
+<b>Palette Warm Neutral —</b> sage #A4AC86 = ok/info · toffee #936639 = warn · ember (dérivé de saddle brown) = error · camel #A68A64 = accents · charcoal/ebony = fonds et filets.<br>
+<b>Geek assumé —</b> monospace partout où il y a de la donnée, raccourcis clavier visibles, ECS brut lisible, zéro illustration, zéro dégradé.<br>
+<b>Les deux idées —</b> <a class="dv-oid" href="#1a">1a</a> poste de travail terminal (logs d'abord, clavier) · <a class="dv-oid" href="#1b">1b</a> console d'instruments (service d'abord, panneaux et mesures).</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Terminal — écran Logs : requête, facettes, flux, ligne d'état à la tmux</div>
+<x-import component-from-global-scope="ChromeWindow" from="./browser-window.jsx" width="{{ winW }}" height="{{ winH }}" url="{{ urlA }}" tabs="{{ tabsA }}" hint-size="1440px,984px">
+<div data-screen-label="1a Terminal" style="width:1440px;height:900px;background:#14170F;color:#C2C5AA;font:400 12px/1.45 'JetBrains Mono','IBM Plex Mono',monospace;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased">
+
+  <div style="height:38px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:#1B1F16;border-bottom:1px solid #333D29">
+    <span style="font-weight:700;letter-spacing:.14em;color:#C2C5AA;font-size:12px">IKNOS</span>
+    <span style="color:#414833">/</span>
+    <span style="font-size:10.5px;color:#A4AC86;background:#232819;border:1px solid #3A4230;border-radius:3px;padding:1px 6px">ks-b</span>
+    <span style="font-size:10.5px;color:#6E7758;background:#232819;border:1px solid #333D29;border-radius:3px;padding:1px 6px">4 procs</span>
+    <div style="flex:1;display:flex;justify-content:center">
+      <div style="width:392px;display:flex;align-items:center;gap:8px;height:22px;background:#0F120B;border:1px solid #333D29;border-radius:4px;padding:0 8px;font-size:10.5px;color:#545C42">
+        <span style="color:#6E7758">⌘K</span><span>jump to service · route · issue · trace</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;font-size:10.5px;color:#6E7758">
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;background:#A4AC86;animation:ikPulse 2s ease-in-out infinite"></span><span style="color:#A4AC86">collector</span> lag 0.4s</span>
+      <span>cpu <span style="color:#B6AD90">34%</span></span>
+      <span>mem <span style="color:#B6AD90">61%</span></span>
+      <span>disk <span style="color:#B5813F">62%</span></span>
+      <span style="color:#C2C5AA">02:14:38</span>
+    </div>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <div style="width:168px;flex:none;background:#1B1F16;border-right:1px solid #333D29;display:flex;flex-direction:column;padding:10px 0">
+      <div style="font-size:9px;letter-spacing:.16em;color:#545C42;padding:0 12px 6px">OBSERVE</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;background:#262C1E;border-left:2px solid #A4AC86;color:#C2C5AA;font-size:12px"><span style="flex:1">logs</span><span style="color:#6E7758;font-size:10px">L</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8A9370;font-size:12px" style-hover="background:#20251A;color:#C2C5AA"><span style="flex:1">metrics</span><span style="color:#545C42;font-size:10px">M</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8A9370;font-size:12px" style-hover="background:#20251A;color:#C2C5AA"><span style="flex:1">issues</span><span style="background:#2A3020;color:#B6AD90;border-radius:3px;padding:0 5px;font-size:10px">12</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8A9370;font-size:12px" style-hover="background:#20251A;color:#C2C5AA"><span style="flex:1">alerts</span><span style="background:#3D2110;color:#D98A4E;border-radius:3px;padding:0 5px;font-size:10px">2</span></div>
+      <div style="font-size:9px;letter-spacing:.16em;color:#545C42;padding:16px 12px 6px">SYSTEM</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8A9370;font-size:12px"><span style="flex:1">collector</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-left:2px solid transparent;color:#8A9370;font-size:12px"><span style="flex:1">retention</span></div>
+      <div style="flex:1"></div>
+      <div style="margin:0 10px;padding:8px 10px;background:#0F120B;border:1px solid #2A3020;border-radius:4px">
+        <div style="font-size:9px;letter-spacing:.12em;color:#545C42;margin-bottom:6px">INGEST · 60m</div>
+        <svg viewBox="0 0 128 26" preserveAspectRatio="none" style="width:100%;height:26px;display:block">
+          <polyline points="{{ ingestPts }}" fill="none" stroke="#A4AC86" stroke-width="1.2"></polyline>
+        </svg>
+        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#6E7758;margin-top:6px"><span>10 460 ev</span><span>4.2 GB</span></div>
+      </div>
+    </div>
+
+    <div style="width:192px;flex:none;background:#181C13;border-right:1px solid #333D29;padding:10px 0;overflow:hidden">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 10px 7px"><span style="font-size:9px;letter-spacing:.16em;color:#545C42">SERVICE</span><span style="font-size:9px;color:#414833">4</span></div>
+      <sc-for list="{{ facetService }}" as="f" hint-placeholder-count="4">
+        <div style="position:relative;display:flex;align-items:center;gap:6px;padding:2.5px 10px;font-size:11px;color:#A4AC86">
+          <div style="position:absolute;left:0;top:1px;bottom:1px;background:#232B1A;width:{{ f.w }}%"></div>
+          <span style="position:relative;width:6px;height:6px;border-radius:1px;background:{{ f.dot }}"></span>
+          <span style="position:relative;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ f.n }}</span>
+          <span style="position:relative;color:#6E7758;font-size:10px">{{ f.c }}</span>
+        </div>
+      </sc-for>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;padding:12px 10px 7px"><span style="font-size:9px;letter-spacing:.16em;color:#545C42">LEVEL</span><span style="font-size:9px;color:#414833">≥ warn</span></div>
+      <sc-for list="{{ facetLevel }}" as="f" hint-placeholder-count="4">
+        <div style="position:relative;display:flex;align-items:center;gap:6px;padding:2.5px 10px;font-size:11px;color:#A4AC86">
+          <div style="position:absolute;left:0;top:1px;bottom:1px;background:#232B1A;width:{{ f.w }}%"></div>
+          <span style="position:relative;width:6px;height:6px;border-radius:1px;background:{{ f.dot }}"></span>
+          <span style="position:relative;flex:1">{{ f.n }}</span>
+          <span style="position:relative;color:#6E7758;font-size:10px">{{ f.c }}</span>
+        </div>
+      </sc-for>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;padding:12px 10px 7px"><span style="font-size:9px;letter-spacing:.16em;color:#545C42">STATUS</span><span style="font-size:9px;color:#414833">5xx</span></div>
+      <sc-for list="{{ facetStatus }}" as="f" hint-placeholder-count="4">
+        <div style="position:relative;display:flex;align-items:center;gap:6px;padding:2.5px 10px;font-size:11px;color:#A4AC86">
+          <div style="position:absolute;left:0;top:1px;bottom:1px;background:#232B1A;width:{{ f.w }}%"></div>
+          <span style="position:relative;width:6px;height:6px;border-radius:1px;background:{{ f.dot }}"></span>
+          <span style="position:relative;flex:1">{{ f.n }}</span>
+          <span style="position:relative;color:#6E7758;font-size:10px">{{ f.c }}</span>
+        </div>
+      </sc-for>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;padding:12px 10px 7px"><span style="font-size:9px;letter-spacing:.16em;color:#545C42">ROUTE</span><span style="font-size:9px;color:#414833">top 4</span></div>
+      <sc-for list="{{ facetRoute }}" as="f" hint-placeholder-count="4">
+        <div style="position:relative;display:flex;align-items:center;gap:6px;padding:2.5px 10px;font-size:10.5px;color:#8A9370">
+          <div style="position:absolute;left:0;top:1px;bottom:1px;background:#232B1A;width:{{ f.w }}%"></div>
+          <span style="position:relative;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ f.n }}</span>
+          <span style="position:relative;color:#6E7758;font-size:10px">{{ f.c }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:#14170F">
+
+      <div style="height:42px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid #262C1E">
+        <span style="color:#656D4A">▸</span>
+        <div style="flex:1;display:flex;align-items:center;gap:6px;height:26px;background:#0F120B;border:1px solid #3A4230;border-radius:4px;padding:0 8px;font-size:11.5px">
+          <span style="color:#A68A64">service<span style="color:#545C42">:</span><span style="color:#A4AC86">pfa</span></span>
+          <span style="color:#A68A64">level<span style="color:#545C42">&gt;=</span><span style="color:#B5813F">warn</span></span>
+          <span style="color:#A68A64">status<span style="color:#545C42">:</span><span style="color:#C2652E">5xx</span></span>
+          <span style="color:#C2C5AA">exportQueue</span>
+          <span style="width:7px;height:14px;background:#A4AC86;animation:ikBlink 1.1s step-end infinite"></span>
+        </div>
+        <div style="display:flex;border:1px solid #333D29;border-radius:4px;overflow:hidden;font-size:10.5px">
+          <span style="padding:3px 8px;color:#6E7758">5m</span>
+          <span style="padding:3px 8px;background:#2A3020;color:#C2C5AA">15m</span>
+          <span style="padding:3px 8px;color:#6E7758">1h</span>
+          <span style="padding:3px 8px;color:#6E7758">24h</span>
+        </div>
+        <span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#14170F;background:#A4AC86;border-radius:4px;padding:3px 8px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#14170F;animation:ikPulse 1.4s ease-in-out infinite"></span>LIVE</span>
+        <span style="font-size:10.5px;color:#545C42">⇧⏎ run</span>
+      </div>
+
+      <div style="flex:none;padding:8px 12px 6px;border-bottom:1px solid #262C1E">
+        <div style="display:flex;align-items:flex-end;gap:1px;height:52px">
+          <sc-for list="{{ hist }}" as="b" hint-placeholder-count="72">
+            <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:0;opacity:{{ b.o }}">
+              <div style="height:{{ b.e }}px;background:#C2652E"></div>
+              <div style="height:{{ b.w }}px;background:#936639"></div>
+              <div style="height:{{ b.i }}px;background:#4A5438"></div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#4C543C;margin-top:5px">
+          <span>01:59:38</span><span>02:04</span><span>02:09</span><span style="color:#A68A64">▲ 02:14:37 · +18 err</span>
+        </div>
+      </div>
+
+      <div style="flex:none;display:flex;align-items:center;gap:0;padding:5px 12px;font-size:9px;letter-spacing:.13em;color:#545C42;border-bottom:1px solid #262C1E;background:#181C13">
+        <span style="width:92px">TIME</span><span style="width:44px">LVL</span><span style="width:112px">SERVICE</span><span style="width:212px">ROUTE</span><span style="width:34px">ST</span><span style="flex:1">MESSAGE</span><span style="width:78px">TRACE</span><span style="width:56px;text-align:right">DUR</span>
+      </div>
+
+      <div style="flex:1;min-height:0;overflow:hidden">
+
+        <div style="display:flex;align-items:center;padding:3.5px 12px 3.5px 10px;font-size:11.5px;background:#241A12;border-left:2px solid #C2652E">
+          <span style="width:90px;color:#8A9370">02:14:37.912</span>
+          <span style="width:44px;color:#E07B3C;font-weight:500">ERRO</span>
+          <span style="width:112px;color:#B6AD90">pfa</span>
+          <span style="width:212px;color:#A4AC86">POST /api/exports</span>
+          <span style="width:34px;color:#E07B3C">500</span>
+          <span style="flex:1;color:#E4E0CB;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Unhandled rejection in exportQueue — acquire connection timeout</span>
+          <span style="width:78px;color:#A68A64">4f2ab91c</span>
+          <span style="width:56px;text-align:right;color:#C2652E">8014ms</span>
+        </div>
+
+        <div style="background:#0F120B;border-left:2px solid #C2652E;padding:8px 12px 8px 14px">
+          <div style="display:flex;gap:18px;align-items:flex-start">
+            <pre style="margin:0;font:400 10.8px/1.6 'JetBrains Mono',monospace;color:#6E7758;flex:none">{
+  <span style="color:#A68A64">"@timestamp"</span>: <span style="color:#A4AC86">"2026-08-09T02:14:37.912Z"</span>,
+  <span style="color:#A68A64">"log.level"</span>: <span style="color:#E07B3C">"error"</span>,
+  <span style="color:#A68A64">"service.name"</span>: <span style="color:#A4AC86">"pfa"</span>,
+  <span style="color:#A68A64">"trace.id"</span>: <span style="color:#A4AC86">"4f2ab91c7d3e0a55"</span>,
+  <span style="color:#A68A64">"http.request.method"</span>: <span style="color:#A4AC86">"POST"</span>,
+  <span style="color:#A68A64">"url.path"</span>: <span style="color:#A4AC86">"/api/exports"</span>,
+  <span style="color:#A68A64">"http.response.status_code"</span>: <span style="color:#B5813F">500</span>,
+  <span style="color:#A68A64">"event.duration"</span>: <span style="color:#B5813F">8014331000</span>,
+  <span style="color:#A68A64">"error.type"</span>: <span style="color:#A4AC86">"ConnectionAcquireTimeoutError"</span>,
+  <span style="color:#A68A64">"error.message"</span>: <span style="color:#A4AC86">"pool timeout after 8000ms"</span>,
+  <span style="color:#A68A64">"process.pid"</span>: <span style="color:#B5813F">20481</span>
+}</pre>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:7px">
+              <div style="font-size:9px;letter-spacing:.14em;color:#545C42">STACK · frame 1/14</div>
+              <pre style="margin:0;font:400 10.5px/1.65 'JetBrains Mono',monospace;color:#8A9370">at ExportQueue.run (<span style="color:#C2C5AA">src/queue/export.ts</span>:<span style="color:#B5813F">142</span>:19)
+at async processTicksAndRejections (node:internal/…:<span style="color:#B5813F">95</span>:5)
+at async POST (<span style="color:#C2C5AA">app/api/exports/route.ts</span>:<span style="color:#B5813F">38</span>:3)</pre>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+                <span style="font-size:10.5px;color:#6E7758">trace <span style="color:#A68A64">4f2ab91c</span> · 3 correlated events · pfa → iknos-collector</span>
+              </div>
+              <div style="display:flex;gap:6px;margin-top:2px">
+                <span style="font-size:10.5px;color:#C2C5AA;border:1px solid #3A4230;border-radius:3px;padding:2px 8px">⌥⏎ open trace</span>
+                <span style="font-size:10.5px;color:#C2C5AA;border:1px solid #3A4230;border-radius:3px;padding:2px 8px">⌘I issue 4f2ab91c ↗</span>
+                <span style="font-size:10.5px;color:#8A9370;border:1px solid #2A3020;border-radius:3px;padding:2px 8px">⌘C copy NDJSON</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="13">
+          <div style="display:flex;align-items:center;padding:3.5px 12px 3.5px 10px;font-size:11.5px;background:{{ r.bg }};border-left:2px solid {{ r.edge }}" style-hover="background:#1E2318">
+            <span style="width:90px;color:#6E7758">{{ r.t }}</span>
+            <span style="width:44px;color:{{ r.lc }}">{{ r.lvl }}</span>
+            <span style="width:112px;color:#8A9370">{{ r.svc }}</span>
+            <span style="width:212px;color:#8A9370;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.route }}</span>
+            <span style="width:34px;color:{{ r.sc }}">{{ r.st }}</span>
+            <span style="flex:1;color:#B6AD90;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.msg }}</span>
+            <span style="width:78px;color:#6E7758">{{ r.trace }}</span>
+            <span style="width:56px;text-align:right;color:#6E7758">{{ r.dur }}</span>
+          </div>
+        </sc-for>
+
+      </div>
+
+      <div style="height:26px;flex:none;display:flex;align-items:center;gap:0;background:#262C1E;border-top:1px solid #3A4230;font-size:10.5px;color:#8A9370">
+        <span style="background:#A4AC86;color:#14170F;font-weight:700;letter-spacing:.1em;padding:0 10px;height:100%;display:flex;align-items:center">NORMAL</span>
+        <span style="padding:0 10px;border-right:1px solid #3A4230;height:100%;display:flex;align-items:center;color:#C2C5AA">logs</span>
+        <span style="padding:0 10px;border-right:1px solid #3A4230;height:100%;display:flex;align-items:center">tail <span style="color:#A4AC86">&nbsp;on</span></span>
+        <span style="padding:0 10px;border-right:1px solid #3A4230;height:100%;display:flex;align-items:center">10 460 ev / 15m</span>
+        <span style="padding:0 10px;border-right:1px solid #3A4230;height:100%;display:flex;align-items:center">q <span style="color:#B6AD90">&nbsp;38ms</span></span>
+        <span style="flex:1"></span>
+        <span style="padding:0 10px;color:#6E7758">j/k move · ⏎ expand · ⌥⏎ trace · / filter · ⌘K palette</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Instruments — écran Service : signaux, routes, issues, alertes, tail encastré</div>
+<x-import component-from-global-scope="ChromeWindow" from="./browser-window.jsx" width="{{ winW }}" height="{{ winH }}" url="{{ urlB }}" tabs="{{ tabsB }}" hint-size="1440px,984px">
+<div data-screen-label="1b Instruments" style="width:1440px;height:900px;background:#E9E5D9;color:#2B3223;font:400 12.5px/1.5 'IBM Plex Sans',system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased">
+
+  <div style="height:44px;flex:none;display:flex;align-items:center;gap:12px;padding:0 14px;background:#F6F3EA;border-bottom:1px solid #D2CCB8">
+    <span style="font:700 13px 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#582F0E">IKNOS</span>
+    <span style="font:400 12px 'IBM Plex Mono',monospace;color:#8A9077">ks-b<span style="color:#C0B99F">&nbsp;/&nbsp;</span>services<span style="color:#C0B99F">&nbsp;/&nbsp;</span><span style="color:#2B3223;font-weight:500">pfa</span></span>
+    <div style="flex:1;display:flex;justify-content:center">
+      <div style="width:360px;height:26px;display:flex;align-items:center;gap:8px;background:#EFEBE0;border:1px solid #D2CCB8;border-radius:5px;padding:0 10px;font-size:11.5px;color:#8A9077"><span style="font-family:'IBM Plex Mono',monospace">⌘K</span><span>search services, routes, issues, traces…</span></div>
+    </div>
+    <div style="display:flex;background:#EFEBE0;border:1px solid #D2CCB8;border-radius:5px;overflow:hidden;font:500 11px 'IBM Plex Mono',monospace">
+      <span style="padding:4px 9px;color:#8A9077">5m</span>
+      <span style="padding:4px 9px;background:#656D4A;color:#F6F3EA">1h</span>
+      <span style="padding:4px 9px;color:#8A9077">24h</span>
+      <span style="padding:4px 9px;color:#8A9077">7d</span>
+    </div>
+    <span style="display:flex;align-items:center;gap:6px;font:400 11px 'IBM Plex Mono',monospace;color:#656D4A"><span style="width:6px;height:6px;border-radius:50%;background:#656D4A;animation:ikPulse 2s ease-in-out infinite"></span>auto 15s</span>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <div style="width:212px;flex:none;background:#F6F3EA;border-right:1px solid #D2CCB8;padding:12px 0;display:flex;flex-direction:column">
+      <div style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#A29A80;padding:0 12px 8px">HOST</div>
+      <div style="margin:0 10px 12px;padding:8px 10px;background:#EFEBE0;border:1px solid #DDD7C4;border-radius:6px">
+        <div style="display:flex;justify-content:space-between;font:500 12px 'IBM Plex Mono',monospace;color:#2B3223;margin-bottom:7px"><span>ks-b</span><span style="color:#656D4A;font-size:10.5px">up 41d</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;align-items:center;gap:6px;font:400 10px 'IBM Plex Mono',monospace;color:#8A9077"><span style="width:22px">cpu</span><span style="flex:1;height:4px;background:#DDD7C4;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:34%;height:100%;background:#656D4A"></span></span><span style="width:26px;text-align:right">34%</span></div>
+          <div style="display:flex;align-items:center;gap:6px;font:400 10px 'IBM Plex Mono',monospace;color:#8A9077"><span style="width:22px">mem</span><span style="flex:1;height:4px;background:#DDD7C4;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:61%;height:100%;background:#656D4A"></span></span><span style="width:26px;text-align:right">61%</span></div>
+          <div style="display:flex;align-items:center;gap:6px;font:400 10px 'IBM Plex Mono',monospace;color:#8A9077"><span style="width:22px">disk</span><span style="flex:1;height:4px;background:#DDD7C4;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:62%;height:100%;background:#936639"></span></span><span style="width:26px;text-align:right">62%</span></div>
+        </div>
+      </div>
+      <div style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#A29A80;padding:0 12px 6px">SERVICES · PM2</div>
+      <sc-for list="{{ services }}" as="s" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:7px;margin:0 8px;padding:5px 8px;border-radius:5px;background:{{ s.bg }}">
+          <span style="width:6px;height:6px;border-radius:50%;background:{{ s.dot }};flex:none"></span>
+          <span style="flex:1;font:400 11.5px 'IBM Plex Mono',monospace;color:{{ s.fg }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.n }}</span>
+          <svg viewBox="0 0 40 12" preserveAspectRatio="none" style="width:40px;height:12px;flex:none;display:block"><polyline points="{{ s.pts }}" fill="none" stroke="{{ s.spark }}" stroke-width="1.1"></polyline></svg>
+        </div>
+      </sc-for>
+      <div style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#A29A80;padding:16px 12px 6px">VIEWS</div>
+      <div style="display:flex;align-items:center;margin:0 8px;padding:5px 8px;border-radius:5px;background:#E4E7D6;color:#3E4630;font-size:12px"><span style="flex:1">Overview</span></div>
+      <div style="display:flex;align-items:center;margin:0 8px;padding:5px 8px;border-radius:5px;color:#6D7659;font-size:12px" style-hover="background:#EFEBE0"><span style="flex:1">Logs</span></div>
+      <div style="display:flex;align-items:center;margin:0 8px;padding:5px 8px;border-radius:5px;color:#6D7659;font-size:12px" style-hover="background:#EFEBE0"><span style="flex:1">Metrics</span></div>
+      <div style="display:flex;align-items:center;margin:0 8px;padding:5px 8px;border-radius:5px;color:#6D7659;font-size:12px" style-hover="background:#EFEBE0"><span style="flex:1">Issues</span><span style="font:500 10px 'IBM Plex Mono',monospace;background:#DDD7C4;color:#5C6448;border-radius:3px;padding:0 5px">12</span></div>
+      <div style="display:flex;align-items:center;margin:0 8px;padding:5px 8px;border-radius:5px;color:#6D7659;font-size:12px" style-hover="background:#EFEBE0"><span style="flex:1">Alerts</span><span style="font:500 10px 'IBM Plex Mono',monospace;background:#F0DDCB;color:#8F4416;border-radius:3px;padding:0 5px">2</span></div>
+      <div style="flex:1"></div>
+      <div style="padding:0 14px;font:400 10px/1.7 'IBM Plex Mono',monospace;color:#A29A80">collector ▲ 4d 02:11<br>retention 14d · rollup 01:00</div>
+    </div>
+
+    <div style="flex:1;min-width:0;display:flex;gap:12px;padding:12px">
+
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:12px">
+
+        <div style="flex:none;background:#F6F3EA;border:1px solid #D2CCB8;border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:14px">
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <span style="font:600 20px 'IBM Plex Mono',monospace;letter-spacing:-.01em;color:#2B3223">pfa</span>
+            <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#8A9077">ECS · pino + @elastic/ecs-pino-format</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;flex:1">
+            <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#5C6448;background:#EFEBE0;border:1px solid #DDD7C4;border-radius:4px;padding:2px 7px">pm2 id 3</span>
+            <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#5C6448;background:#EFEBE0;border:1px solid #DDD7C4;border-radius:4px;padding:2px 7px">node 22.4.1</span>
+            <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#5C6448;background:#EFEBE0;border:1px solid #DDD7C4;border-radius:4px;padding:2px 7px">v2.19.0 · a41c9e2</span>
+            <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#5C6448;background:#EFEBE0;border:1px solid #DDD7C4;border-radius:4px;padding:2px 7px">up 6d 04h</span>
+            <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#8F4416;background:#F0DDCB;border:1px solid #E4C6AA;border-radius:4px;padding:2px 7px">restarts 3</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <div style="display:flex;align-items:center;gap:6px;background:#E4E7D6;border:1px solid #CBD2B4;border-radius:5px;padding:4px 9px"><span style="width:6px;height:6px;border-radius:50%;background:#656D4A"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#3E4630">mysql 3ms</span></div>
+            <div style="display:flex;align-items:center;gap:6px;background:#E4E7D6;border:1px solid #CBD2B4;border-radius:5px;padding:4px 9px"><span style="width:6px;height:6px;border-radius:50%;background:#656D4A"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#3E4630">redis 1ms</span></div>
+            <div style="display:flex;align-items:center;gap:6px;background:#F0DDCB;border:1px solid #E4C6AA;border-radius:5px;padding:4px 9px"><span style="width:6px;height:6px;border-radius:50%;background:#B4551F"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#8F4416">/health 502</span></div>
+          </div>
+        </div>
+
+        <div style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+          <div style="background:#F6F3EA;border:1px solid #D2CCB8;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+            <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#A29A80">THROUGHPUT</span>
+            <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 21px 'IBM Plex Mono',monospace;color:#2B3223">41.2</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#8A9077">req/s</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#656D4A;margin-left:auto">▲ 6%</span></div>
+            <svg viewBox="0 0 120 32" preserveAspectRatio="none" style="width:100%;height:32px;display:block">
+              <path d="{{ areaReq }}" fill="#C2C5AA" opacity="0.55"></path>
+              <polyline points="{{ lineReq }}" fill="none" stroke="#656D4A" stroke-width="1.3"></polyline>
+            </svg>
+          </div>
+          <div style="background:#F6F3EA;border:1px solid #D2CCB8;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+            <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#A29A80">ERROR RATE</span>
+            <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 21px 'IBM Plex Mono',monospace;color:#8F4416">1.8</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#8A9077">%</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#B4551F;margin-left:auto">▲ 1.4 pt</span></div>
+            <div style="display:flex;align-items:flex-end;gap:1.5px;height:32px">
+              <sc-for list="{{ errBars }}" as="h" hint-placeholder-count="30">
+                <div style="flex:1;height:{{ h.v }}px;background:{{ h.c }}"></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:#F6F3EA;border:1px solid #D2CCB8;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+            <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#A29A80">p95 LATENCY</span>
+            <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 21px 'IBM Plex Mono',monospace;color:#2B3223">412</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#8A9077">ms</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#B4551F;margin-left:auto">▲ 210ms</span></div>
+            <svg viewBox="0 0 120 32" preserveAspectRatio="none" style="width:100%;height:32px;display:block">
+              <line x1="0" y1="12" x2="120" y2="12" stroke="#D2CCB8" stroke-width="1" stroke-dasharray="2 3"></line>
+              <polyline points="{{ lineP95 }}" fill="none" stroke="#936639" stroke-width="1.3"></polyline>
+            </svg>
+          </div>
+          <div style="background:#F6F3EA;border:1px solid #D2CCB8;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+            <span style="font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#A29A80">RUNTIME NODE</span>
+            <div style="display:flex;align-items:baseline;gap:6px"><span style="font:500 21px 'IBM Plex Mono',monospace;color:#2B3223">318</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:#8A9077">MB heap</span></div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-top:2px">
+              <div style="display:flex;align-items:center;gap:6px;font:400 10px 'IBM Plex Mono',monospace;color:#8A9077"><span style="width:52px">event loop</span><span style="flex:1;height:4px;background:#DDD7C4;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:18%;height:100%;background:#656D4A"></span></span><span>4.1ms</span></div>
+              <div style="display:flex;align-items:center;gap:6px;font:400 10px 'IBM Plex Mono',monospace;color:#8A9077"><span style="width:52px">gc pause</span><span style="flex:1;height:4px;background:#DDD7C4;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:31%;height:100%;background:#656D4A"></span></span><span>12ms</span></div>
+              <div style="display:flex;align-items:center;gap:6px;font:400 10px 'IBM Plex Mono',monospace;color:#8A9077"><span style="width:52px">pool db</span><span style="flex:1;height:4px;background:#DDD7C4;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:100%;height:100%;background:#B4551F"></span></span><span style="color:#8F4416">10/10</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:none;background:#F6F3EA;border:1px solid #D2CCB8;border-radius:8px;overflow:hidden">
+          <div style="display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid #DDD7C4">
+            <span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#2B3223;flex:1">Routes · last hour</span>
+            <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#A29A80">sorted by p95 ▼</span>
+          </div>
+          <div style="display:flex;padding:5px 12px;font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.13em;color:#A29A80;background:#F1EDE2;border-bottom:1px solid #E4DFD0">
+            <span style="flex:1">ROUTE</span><span style="width:66px;text-align:right">RATE</span><span style="width:62px;text-align:right">p50</span><span style="width:70px;text-align:right">p95</span><span style="width:70px;text-align:right">p99</span><span style="width:62px;text-align:right">ERR</span><span style="width:88px;text-align:right">SHARE</span>
+          </div>
+          <sc-for list="{{ routes }}" as="r" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;padding:5.5px 12px;font:400 11.5px 'IBM Plex Mono',monospace;border-bottom:1px solid #EDE9DC;background:{{ r.bg }}" style-hover="background:#EFEBE0">
+              <span style="flex:1;color:#2B3223;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#A29A80">{{ r.m }}</span> {{ r.p }}</span>
+              <span style="width:66px;text-align:right;color:#5C6448">{{ r.rate }}</span>
+              <span style="width:62px;text-align:right;color:#8A9077">{{ r.p50 }}</span>
+              <span style="width:70px;text-align:right;color:{{ r.p95c }}">{{ r.p95 }}</span>
+              <span style="width:70px;text-align:right;color:#8A9077">{{ r.p99 }}</span>
+              <span style="width:62px;text-align:right;color:{{ r.errc }}">{{ r.err }}</span>
+              <span style="width:88px;display:flex;justify-content:flex-end;padding-left:14px"><span style="width:100%;height:5px;background:#E4DFD0;border-radius:2px;overflow:hidden;display:block"><span style="display:block;height:100%;background:{{ r.barc }};width:{{ r.share }}%"></span></span></span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="flex:1;min-height:0;background:#F6F3EA;border:1px solid #D2CCB8;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid #DDD7C4">
+            <span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#2B3223;flex:1">Issues · grouped by fingerprint</span>
+            <span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#A29A80">stable across deploys</span>
+          </div>
+          <sc-for list="{{ issues }}" as="i" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;border-bottom:1px solid #EDE9DC;background:{{ i.bg }}" style-hover="background:#EFEBE0">
+              <span style="width:6px;height:6px;border-radius:50%;background:{{ i.dot }};flex:none"></span>
+              <span style="font:500 10.5px 'IBM Plex Mono',monospace;color:#5C6448;background:#EFEBE0;border:1px solid #DDD7C4;border-radius:3px;padding:1px 6px;flex:none">{{ i.fp }}</span>
+              <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+                <span style="font:500 11.5px 'IBM Plex Mono',monospace;color:#2B3223;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ i.type }}</span>
+                <span style="font:400 10.5px 'IBM Plex Sans',sans-serif;color:#8A9077;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ i.msg }}</span>
+              </span>
+              <svg viewBox="0 0 60 16" preserveAspectRatio="none" style="width:60px;height:16px;flex:none;display:block"><polyline points="{{ i.pts }}" fill="none" stroke="{{ i.spark }}" stroke-width="1.2"></polyline></svg>
+              <span style="width:56px;text-align:right;font:500 12px 'IBM Plex Mono',monospace;color:{{ i.cc }}">{{ i.count }}</span>
+              <span style="width:64px;text-align:right;font:400 10.5px 'IBM Plex Mono',monospace;color:#A29A80">{{ i.last }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+
+      <div style="width:308px;flex:none;display:flex;flex-direction:column;gap:12px">
+
+        <div style="flex:none;background:#F6F3EA;border:1px solid #D2CCB8;border-radius:8px;overflow:hidden">
+          <div style="display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid #DDD7C4"><span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#2B3223;flex:1">Alerts</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#A29A80">evaluated by the collector</span></div>
+          <div style="padding:10px 12px;border-bottom:1px solid #EDE9DC;background:#FBEFE4;border-left:3px solid #B4551F">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><span style="font:700 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#F6F3EA;background:#B4551F;border-radius:3px;padding:2px 6px">FIRING</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#8F4416">for 00:04:12</span></div>
+            <div style="font:400 11px/1.5 'IBM Plex Mono',monospace;color:#2B3223;margin-bottom:6px">rate(http_5xx[5m]) &gt; 1%</div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#8A9077">pfa · now <span style="color:#8F4416;font-weight:500">3.1%</span></span></div>
+            <div style="display:flex;gap:1.5px;margin-top:7px">
+              <sc-for list="{{ alertHistA }}" as="a" hint-placeholder-count="36">
+                <div style="flex:1;height:12px;background:{{ a.c }};border-radius:1px"></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="padding:10px 12px;background:#F6F3EA;border-left:3px solid #936639">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><span style="font:700 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#F6F3EA;background:#936639;border-radius:3px;padding:2px 6px">PENDING</span><span style="font:400 10.5px 'IBM Plex Mono',monospace;color:#7A6034">for 00:01:38</span></div>
+            <div style="font:400 11px/1.5 'IBM Plex Mono',monospace;color:#2B3223;margin-bottom:6px">pm2_restarts_total[1h] &gt; 2</div>
+            <div style="font:400 10.5px 'IBM Plex Mono',monospace;color:#8A9077">iknos-ui · now <span style="color:#7A6034;font-weight:500">3</span></div>
+            <div style="display:flex;gap:1.5px;margin-top:7px">
+              <sc-for list="{{ alertHistB }}" as="a" hint-placeholder-count="36">
+                <div style="flex:1;height:12px;background:{{ a.c }};border-radius:1px"></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:1;min-height:0;background:#333D29;border:1px solid #2A3020;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:7px;padding:7px 10px;background:#2A3020;border-bottom:1px solid #414833">
+            <span style="width:6px;height:6px;border-radius:50%;background:#A4AC86;animation:ikPulse 1.4s ease-in-out infinite"></span>
+            <span style="font:500 10.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#C2C5AA;flex:1">LIVE TAIL · pfa</span>
+            <span style="font:400 10px 'IBM Plex Mono',monospace;color:#8A9370">⌘L fullscreen</span>
+          </div>
+          <div style="flex:1;min-height:0;padding:7px 10px;font:400 10.2px/1.62 'IBM Plex Mono',monospace;color:#A4AC86;overflow:hidden">
+            <sc-for list="{{ tail }}" as="t" hint-placeholder-count="12">
+              <div style="display:flex;gap:7px;white-space:nowrap;overflow:hidden"><span style="color:#6E7758;flex:none">{{ t.t }}</span><span style="color:{{ t.lc }};flex:none;width:32px">{{ t.lvl }}</span><span style="color:#B6AD90;overflow:hidden;text-overflow:ellipsis">{{ t.msg }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="flex:none;background:#F6F3EA;border:1px solid #D2CCB8;border-radius:8px;padding:10px 12px">
+          <div style="font:500 11px 'IBM Plex Sans',sans-serif;color:#2B3223;margin-bottom:8px">Storage &amp; retention</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:#8A9077"><span style="width:52px;color:#5C6448">logs</span><span style="flex:1;height:5px;background:#E4DFD0;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:72%;height:100%;background:#656D4A"></span></span><span style="width:56px;text-align:right">4.2 GB</span><span style="width:26px;text-align:right;color:#A29A80">14j</span></div>
+            <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:#8A9077"><span style="width:52px;color:#5C6448">metrics</span><span style="flex:1;height:5px;background:#E4DFD0;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:28%;height:100%;background:#A4AC86"></span></span><span style="width:56px;text-align:right">812 MB</span><span style="width:26px;text-align:right;color:#A29A80">30j</span></div>
+            <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:#8A9077"><span style="width:52px;color:#5C6448">issues</span><span style="flex:1;height:5px;background:#E4DFD0;border-radius:2px;overflow:hidden;display:block"><span style="display:block;width:9%;height:100%;background:#A68A64"></span></span><span style="width:56px;text-align:right">64 MB</span><span style="width:26px;text-align:right;color:#A29A80">∞</span></div>
+          </div>
+          <div style="margin-top:9px;padding-top:8px;border-top:1px solid #E4DFD0;font:400 10px/1.6 'IBM Plex Mono',monospace;color:#A29A80">mysql 5.1/20 GB · nightly purge 03:00 · hourly rollup +00:07</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+</div>
+<p class="dv-next">À essayer ensuite : « pousse <a class="dv-oid" href="#1a">1a</a> encore plus loin, mode plein clavier sans souris » · « donne-moi l'écran Issues dans le style de <a class="dv-oid" href="#1b">1b</a> » · « croise les deux : chrome de <a class="dv-oid" href="#1b">1b</a>, table de <a class="dv-oid" href="#1a">1a</a> » · « version claire de <a class="dv-oid" href="#1a">1a</a> »</p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:3060,&quot;height&quot;:1220}}">
+class Component extends DCLogic {
+  rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  poly(vals, w, h, pad) {
+    const min = Math.min(...vals), max = Math.max(...vals), span = (max - min) || 1;
+    return vals.map((v, i) => {
+      const x = (i / (vals.length - 1)) * w;
+      const y = h - pad - ((v - min) / span) * (h - pad * 2);
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+  }
+
+  series(seed, n, base, jitter, tail) {
+    const r = this.rng(seed), out = [];
+    for (let i = 0; i < n; i++) {
+      let v = base + (r() - 0.5) * jitter + Math.sin(i / 3.1) * jitter * 0.35;
+      if (tail && i > n - 7) v += (i - (n - 7)) * tail;
+      out.push(Math.max(0.5, v));
+    }
+    return out;
+  }
+
+  pack(c) {
+    const RD = [
+      ['02:14:37.908', 'WARN', 'pfa', '—', '—', 'none', 'mariadb pool exhausted (10/10) · waited 812ms', '4f2ab91c', '812ms', 1],
+      ['02:14:37.106', 'INFO', 'pfa', 'GET /api/dossiers/8821', '200', 'ok', 'request completed', '9c0e17d4', '41ms', 0],
+      ['02:14:36.884', 'INFO', 'iknos-collector', '—', '—', 'none', 'scrape pfa:/metrics · 412 series', '—', '38ms', 0],
+      ['02:14:36.512', 'INFO', 'pfa', 'GET /api/auth/session', '200', 'ok', 'session refreshed · rolling +30m', '71ba3f60', '12ms', 0],
+      ['02:14:36.204', 'WARN', 'iknos-ui', 'GET /issues', '200', 'ok', 'slow server component render', 'b83c1e05', '1204ms', 0],
+      ['02:14:35.998', 'INFO', 'pfa', 'POST /api/documents/912/preview', '201', 'ok', 'pdf rendered · 3 pages', '2d47c9aa', '318ms', 0],
+      ['02:14:35.771', 'DEBU', 'iknos-collector', '—', '—', 'none', 'offset 4182993 · inode 2621511 persisted', '—', '2ms', 0],
+      ['02:14:35.442', 'INFO', 'pfa', 'GET /api/dossiers', '200', 'ok', 'request completed · 24 rows', '5e10ff23', '27ms', 0],
+      ['02:14:34.980', 'ERRO', 'pfa', 'POST /api/exports', '500', 'err', 'ConnectionAcquireTimeoutError · pool timeout', '7c2f01bd', '8007ms', 1],
+      ['02:14:34.612', 'INFO', 'nginx', 'GET /assets/app.4f2b.css', '304', 'warn', 'cache hit', '—', '1ms', 0],
+      ['02:14:34.115', 'INFO', 'pfa', 'POST /api/auth/login', '401', 'warn', 'invalid credentials · 3rd attempt', 'a90b4417', '96ms', 0],
+      ['02:14:33.902', 'INFO', 'iknos-collector', '—', '—', 'none', 'health pfa ok · mysql 3ms · redis 1ms', '—', '6ms', 0],
+      ['02:14:33.480', 'INFO', 'pfa', 'GET /api/dossiers/8815', '200', 'ok', 'request completed', '33cc82e1', '44ms', 0]
+    ];
+    const RD2 = [
+      ['02:14:33.041', 'INFO', 'pfa', 'GET /api/dossiers/8802', '200', 'ok', 'request completed', 'e71a04bc', '38ms', 0],
+      ['02:14:32.774', 'WARN', 'pfa', 'POST /api/exports', '—', 'none', 'retry 2/3 · backoff 2000ms', '7c2f01bd', '—', 1],
+      ['02:14:32.219', 'INFO', 'iknos-collector', '—', '—', 'none', 'hourly rollup 01:00 → 02:00 written', '—', '412ms', 0],
+      ['02:14:31.905', 'INFO', 'pfa', 'GET /api/dossiers/8799', '200', 'ok', 'request completed', '0b39d7fa', '29ms', 0],
+      ['02:14:31.480', 'DEBU', 'pfa', '—', '—', 'none', 'prisma · adapter-mariadb pool acquire 3ms', '—', '3ms', 0],
+      ['02:14:31.002', 'INFO', 'nginx', 'GET /assets/app.9c1d.js', '200', 'ok', 'served · 412 KB', '—', '4ms', 0]
+    ];
+    const L = { ERRO: c.eD, WARN: c.wD, INFO: c.iD, DEBU: c.dD };
+    const S = { ok: c.iD, warn: c.wD, err: c.eD, none: c.dD };
+    const toRow = (a) => ({
+      t: a[0], lvl: a[1], lc: L[a[1]], svc: a[2], route: a[3], st: a[4], sc: S[a[5]],
+      msg: a[6], trace: a[7], dur: a[8], bg: a[9] ? c.hotBg : 'transparent', edge: a[9] ? c.hotEdge : 'transparent'
+    });
+
+    const eb = this.rng(41), errBars = [];
+    for (let i = 0; i < 30; i++) {
+      const hot = i > 23;
+      errBars.push({ v: hot ? 12 + Math.round(eb() * 18) : 2 + Math.round(eb() * 7), c: hot ? c.barHot : c.barCool });
+    }
+    const ah = this.rng(77), alertHist = [];
+    for (let i = 0; i < 36; i++) alertHist.push({ c: i > 30 ? c.alertHot : (ah() > 0.9 ? c.alertMid : c.alertOff) });
+
+    const ISS = [
+      ['4f2ab91c', 'ConnectionAcquireTimeoutError', 'pool timeout after 8000ms', '1 204', '2m ago', 51, 'hot'],
+      ['8d1e7740', 'TypeError', "reading 'siret' of undefined", '318', '14m ago', 57, 'warn'],
+      ['b83c1e05', 'PrismaClientKnownRequestError', 'P2028 transaction already closed', '47', '1h ago', 63, 'mid'],
+      ['2ac59f13', 'RangeError', 'Maximum call stack size exceeded', '9', '6h ago', 67, 'ok']
+    ];
+    const issues = ISS.map((a, k) => ({
+      fp: a[0], type: a[1], msg: a[2], count: a[3], last: a[4],
+      dot: a[6] === 'hot' ? c.eL : a[6] === 'warn' ? c.wL : a[6] === 'mid' ? c.midDot : c.okDot,
+      bg: a[6] === 'hot' ? c.hotTint : 'transparent',
+      spark: a[6] === 'hot' ? c.eL : c.sparkDim,
+      cc: a[6] === 'hot' ? c.eText : a[6] === 'ok' ? c.dimText : c.inkText,
+      pts: this.poly(this.series(a[5], 24, 6, 4, a[6] === 'hot' ? 3 : 0), 60, 16, 2)
+    }));
+
+    const services = [
+      { n: 'pfa', dot: c.eD, mixBg: c.navActive, mixFg: c.navFgOn, mixSpark: c.eD, pts: this.poly(this.series(3, 20, 8, 6, 2.4), 40, 12, 1.5) },
+      { n: 'iknos-ui', dot: c.okDotD, mixBg: 'transparent', mixFg: c.navFg, mixSpark: c.navSpark, pts: this.poly(this.series(5, 20, 8, 5, 0), 40, 12, 1.5) },
+      { n: 'iknos-collector', dot: c.okDotD, mixBg: 'transparent', mixFg: c.navFg, mixSpark: c.navSpark, pts: this.poly(this.series(9, 20, 8, 3, 0), 40, 12, 1.5) },
+      { n: 'nginx', dot: c.okDotD, mixBg: 'transparent', mixFg: c.navFg, mixSpark: c.navSpark, pts: this.poly(this.series(13, 20, 8, 4, 0), 40, 12, 1.5) }
+    ];
+
+    return { rows: RD.map(toRow), rows2: RD2.map(toRow), errBars, alertHist, issues, services };
+  }
+
+  renderVals() {
+    const r = this.rng(11);
+    const hist = [];
+    for (let i = 0; i < 72; i++) {
+      const info = 5 + Math.round(r() * 15 + Math.sin(i / 5) * 4);
+      const warn = r() > 0.78 ? 2 + Math.round(r() * 4) : 0;
+      const err = i > 60 ? Math.round(3 + r() * (i - 58) * 1.6) : (r() > 0.94 ? 2 : 0);
+      hist.push({ i: info, w: warn, e: err, o: i > 60 ? 1 : 0.75 });
+    }
+
+    const lvl = { ERRO: '#E07B3C', WARN: '#C79449', INFO: '#8A9370', DEBU: '#5C6448' };
+    const mk = (t, l, svc, route, st, stc, msg, trace, dur, hot) => ({
+      t, lvl: l, lc: lvl[l], svc, route, st, sc: stc, msg, trace, dur,
+      bg: hot ? '#221A11' : 'transparent', edge: hot ? '#8C4620' : 'transparent'
+    });
+
+    const rows = [
+      mk('02:14:37.908', 'WARN', 'pfa', '—', '—', '#4C543C', 'mariadb pool exhausted (10/10) · waited 812ms', '4f2ab91c', '812ms', true),
+      mk('02:14:37.106', 'INFO', 'pfa', 'GET /api/dossiers/8821', '200', '#8A9370', 'request completed', '9c0e17d4', '41ms'),
+      mk('02:14:36.884', 'INFO', 'iknos-collector', '—', '—', '#4C543C', 'scrape pfa:/metrics · 412 series', '—', '38ms'),
+      mk('02:14:36.512', 'INFO', 'pfa', 'GET /api/auth/session', '200', '#8A9370', 'session refreshed · rolling +30m', '71ba3f60', '12ms'),
+      mk('02:14:36.204', 'WARN', 'iknos-ui', 'GET /issues', '200', '#8A9370', 'slow server component render', 'b83c1e05', '1204ms'),
+      mk('02:14:35.998', 'INFO', 'pfa', 'POST /api/documents/912/preview', '201', '#8A9370', 'pdf rendered · 3 pages', '2d47c9aa', '318ms'),
+      mk('02:14:35.771', 'DEBU', 'iknos-collector', '—', '—', '#4C543C', 'offset 4182993 · inode 2621511 persisted', '—', '2ms'),
+      mk('02:14:35.442', 'INFO', 'pfa', 'GET /api/dossiers', '200', '#8A9370', 'request completed · 24 rows', '5e10ff23', '27ms'),
+      mk('02:14:34.980', 'ERRO', 'pfa', 'POST /api/exports', '500', '#E07B3C', 'ConnectionAcquireTimeoutError · pool timeout', '7c2f01bd', '8007ms', true),
+      mk('02:14:34.612', 'INFO', 'nginx', 'GET /assets/app.4f2b.css', '304', '#B5813F', 'cache hit', '—', '1ms'),
+      mk('02:14:34.115', 'INFO', 'pfa', 'POST /api/auth/login', '401', '#B5813F', 'invalid credentials · 3rd attempt', 'a90b4417', '96ms'),
+      mk('02:14:33.902', 'INFO', 'iknos-collector', '—', '—', '#4C543C', 'health pfa ok · mysql 3ms · redis 1ms', '—', '6ms'),
+      mk('02:14:33.480', 'INFO', 'pfa', 'GET /api/dossiers/8815', '200', '#8A9370', 'request completed', '33cc82e1', '44ms')
+    ];
+
+    const svcRows = [
+      { n: 'pfa', c: '8 214', w: 88, dot: '#A4AC86' },
+      { n: 'iknos-ui', c: '1 902', w: 22, dot: '#656D4A' },
+      { n: 'iknos-collector', c: '344', w: 8, dot: '#656D4A' },
+      { n: 'nginx', c: '118', w: 4, dot: '#4A5438' }
+    ];
+    const lvlRows = [
+      { n: 'info', c: '9 733', w: 96, dot: '#8A9370' },
+      { n: 'warn', c: '512', w: 14, dot: '#B5813F' },
+      { n: 'error', c: '187', w: 7, dot: '#C2652E' },
+      { n: 'debug', c: '146', w: 5, dot: '#4C543C' }
+    ];
+    const stRows = [
+      { n: '2xx', c: '9 402', w: 94, dot: '#A4AC86' },
+      { n: '3xx', c: '118', w: 5, dot: '#656D4A' },
+      { n: '4xx', c: '731', w: 16, dot: '#B5813F' },
+      { n: '5xx', c: '187', w: 7, dot: '#C2652E' }
+    ];
+    const rtRows = [
+      { n: '/api/dossiers/:id', c: '3 411', w: 82 },
+      { n: '/api/auth/session', c: '1 902', w: 46 },
+      { n: '/api/documents/:id/preview', c: '806', w: 20 },
+      { n: '/api/exports', c: '214', w: 6 }
+    ];
+
+    const services = [
+      { n: 'pfa', dot: '#B4551F', bg: '#E4E7D6', fg: '#2B3223', spark: '#B4551F', mixBg: '#262C1E', mixFg: '#C2C5AA', mixDot: '#E07B3C', mixSpark: '#E07B3C', pts: this.poly(this.series(3, 20, 8, 6, 2.4), 40, 12, 1.5) },
+      { n: 'iknos-ui', dot: '#656D4A', bg: 'transparent', fg: '#5C6448', spark: '#8A9077', mixBg: 'transparent', mixFg: '#8A9370', mixSpark: '#5C6448', pts: this.poly(this.series(5, 20, 8, 5, 0), 40, 12, 1.5) },
+      { n: 'iknos-collector', dot: '#656D4A', bg: 'transparent', fg: '#5C6448', spark: '#8A9077', mixBg: 'transparent', mixFg: '#8A9370', mixSpark: '#5C6448', pts: this.poly(this.series(9, 20, 8, 3, 0), 40, 12, 1.5) },
+      { n: 'nginx', dot: '#656D4A', bg: 'transparent', fg: '#5C6448', spark: '#8A9077', mixBg: 'transparent', mixFg: '#8A9370', mixSpark: '#5C6448', pts: this.poly(this.series(13, 20, 8, 4, 0), 40, 12, 1.5) }
+    ];
+
+    const reqVals = this.series(21, 34, 40, 14, 0);
+    const lineReq = this.poly(reqVals, 120, 32, 3);
+    const areaReq = 'M0,32 L' + lineReq.split(' ').join(' L') + ' L120,32 Z';
+    const lineP95 = this.poly(this.series(29, 34, 180, 60, 34), 120, 32, 3);
+
+    const eb = this.rng(41);
+    const errBars = [];
+    for (let i = 0; i < 30; i++) {
+      const hot = i > 23;
+      const v = hot ? 12 + Math.round(eb() * 18) : 2 + Math.round(eb() * 7);
+      errBars.push({ v, c: hot ? '#B4551F' : '#C2C5AA' });
+    }
+
+    const routes = [
+      { m: 'POST', p: '/api/exports', rate: '0.6/s', p50: '210ms', p95: '8014ms', p95c: '#8F4416', p99: '8110ms', err: '31.4%', errc: '#8F4416', share: 4, barc: '#B4551F', bg: '#FBEFE4' },
+      { m: 'POST', p: '/api/documents/:id/preview', rate: '2.2/s', p50: '180ms', p95: '412ms', p95c: '#7A6034', p99: '702ms', err: '1.1%', errc: '#8A9077', share: 14, barc: '#936639', bg: 'transparent' },
+      { m: 'GET', p: '/api/dossiers', rate: '9.1/s', p50: '31ms', p95: '140ms', p95c: '#2B3223', p99: '380ms', err: '0.4%', errc: '#8A9077', share: 38, barc: '#656D4A', bg: 'transparent' },
+      { m: 'GET', p: '/api/dossiers/:id', rate: '18.4/s', p50: '22ms', p95: '96ms', p95c: '#2B3223', p99: '210ms', err: '0.2%', errc: '#8A9077', share: 72, barc: '#656D4A', bg: 'transparent' },
+      { m: 'GET', p: '/api/auth/session', rate: '6.8/s', p50: '8ms', p95: '19ms', p95c: '#2B3223', p99: '44ms', err: '0.0%', errc: '#8A9077', share: 26, barc: '#A4AC86', bg: 'transparent' },
+      { m: 'GET', p: '/health', rate: '2.0/s', p50: '3ms', p95: '6ms', p95c: '#2B3223', p99: '9ms', err: '0.0%', errc: '#8A9077', share: 8, barc: '#A4AC86', bg: 'transparent' }
+    ];
+
+    const issues = [
+      { fp: '4f2ab91c', type: 'ConnectionAcquireTimeoutError', msg: 'pool timeout after 8000ms · src/queue/export.ts:142', count: '1 204', cc: '#8F4416', last: '2m ago', dot: '#B4551F', bg: '#FBEFE4', spark: '#B4551F', pts: this.poly(this.series(51, 24, 6, 4, 3), 60, 16, 2) },
+      { fp: '8d1e7740', type: 'TypeError', msg: "Cannot read properties of undefined (reading 'siret')", count: '318', cc: '#2B3223', last: '14m ago', dot: '#936639', bg: 'transparent', spark: '#8A9077', pts: this.poly(this.series(57, 24, 6, 5, 0), 60, 16, 2) },
+      { fp: 'b83c1e05', type: 'PrismaClientKnownRequestError', msg: 'P2028 transaction already closed · iknos-ui', count: '47', cc: '#2B3223', last: '1h ago', dot: '#A68A64', bg: 'transparent', spark: '#8A9077', pts: this.poly(this.series(63, 24, 5, 3, 0), 60, 16, 2) },
+      { fp: '2ac59f13', type: 'RangeError', msg: 'Maximum call stack size exceeded · pdf/render.ts:88', count: '9', cc: '#5C6448', last: '6h ago', dot: '#A4AC86', bg: 'transparent', spark: '#A4AC86', pts: this.poly(this.series(67, 24, 4, 2, 0), 60, 16, 2) }
+    ];
+
+    const ah = this.rng(77);
+    const alertHistA = [], alertHistB = [];
+    for (let i = 0; i < 36; i++) {
+      alertHistA.push({ c: i > 30 ? '#B4551F' : (ah() > 0.9 ? '#E4C6AA' : '#E4DFD0') });
+      alertHistB.push({ c: i > 33 ? '#936639' : (ah() > 0.85 ? '#E6DDC6' : '#E4DFD0') });
+    }
+
+    const tl = { E: '#E07B3C', W: '#C79449', I: '#8A9370', D: '#5C6448' };
+    const tail = [
+      { t: '02:14:37.912', lvl: 'ERRO', lc: tl.E, msg: 'exportQueue · pool timeout after 8000ms' },
+      { t: '02:14:37.908', lvl: 'WARN', lc: tl.W, msg: 'mariadb pool exhausted (10/10)' },
+      { t: '02:14:37.106', lvl: 'INFO', lc: tl.I, msg: 'GET /api/dossiers/8821 200 · 41ms' },
+      { t: '02:14:36.884', lvl: 'INFO', lc: tl.I, msg: 'scrape /metrics · 412 series · 38ms' },
+      { t: '02:14:36.512', lvl: 'INFO', lc: tl.I, msg: 'GET /api/auth/session 200 · 12ms' },
+      { t: '02:14:36.204', lvl: 'WARN', lc: tl.W, msg: 'slow render /issues · 1204ms' },
+      { t: '02:14:35.998', lvl: 'INFO', lc: tl.I, msg: 'POST /documents/912/preview 201' },
+      { t: '02:14:35.771', lvl: 'DEBU', lc: tl.D, msg: 'offset 4182993 · inode 2621511' },
+      { t: '02:14:35.442', lvl: 'INFO', lc: tl.I, msg: 'GET /api/dossiers 200 · 27ms' },
+      { t: '02:14:34.980', lvl: 'ERRO', lc: tl.E, msg: 'POST /api/exports 500 · 8007ms' },
+      { t: '02:14:34.612', lvl: 'INFO', lc: tl.I, msg: 'GET /assets/app.4f2b.css 304' },
+      { t: '02:14:34.115', lvl: 'INFO', lc: tl.I, msg: 'POST /api/auth/login 401' }
+    ];
+
+    const rows2 = [
+      mk('02:14:33.041', 'INFO', 'pfa', 'GET /api/dossiers/8802', '200', '#8A9370', 'request completed', 'e71a04bc', '38ms'),
+      mk('02:14:32.774', 'WARN', 'pfa', 'POST /api/exports', '—', '#4C543C', 'retry 2/3 · backoff 2000ms', '7c2f01bd', '—', true),
+      mk('02:14:32.219', 'INFO', 'iknos-collector', '—', '—', '#4C543C', 'hourly rollup 01:00 → 02:00 written', '—', '412ms'),
+      mk('02:14:31.905', 'INFO', 'pfa', 'GET /api/dossiers/8799', '200', '#8A9370', 'request completed', '0b39d7fa', '29ms'),
+      mk('02:14:31.480', 'DEBU', 'pfa', '—', '—', '#4C543C', 'prisma · adapter-mariadb pool acquire 3ms', '—', '3ms'),
+      mk('02:14:31.002', 'INFO', 'nginx', 'GET /assets/app.9c1d.js', '200', '#8A9370', 'served · 412 KB', '—', '4ms')
+    ];
+
+    const G = this.pack({
+      eD: '#E0665B', wD: '#D9A441', iD: '#93A492', dD: '#5C6663',
+      hotBg: '#241A1A', hotEdge: '#8C3B36',
+      barHot: '#B4453D', barCool: '#C4D0BE',
+      alertHot: '#B4453D', alertMid: '#E8CFC9', alertOff: '#DCE3D9',
+      eL: '#B4453D', wL: '#B8862B', midDot: '#8FA88C', okDot: '#9DB394',
+      hotTint: '#F9EBE9', sparkDim: '#7C8B80', eText: '#9B3A33', inkText: '#232A26', dimText: '#4E5A52',
+      navActive: '#23282A', navFgOn: '#C9D2C4', navFg: '#93A492', navSpark: '#5C6663', okDotD: '#5F7A5A'
+    });
+    const B = this.pack({
+      eD: '#E4736B', wD: '#E0AE55', iD: '#8FA99A', dD: '#55697C',
+      hotBg: '#22191C', hotEdge: '#8E3C38',
+      barHot: '#8E2F2A', barCool: '#8FAB9C',
+      alertHot: '#8E2F2A', alertMid: '#AE9490', alertOff: '#99ADB7',
+      eL: '#8E2F2A', wL: '#8A6118', midDot: '#4E7B96', okDot: '#3C6B52',
+      hotTint: '#C4A9A6', sparkDim: '#5C7886', eText: '#7E2C28', inkText: '#131E24', dimText: '#3A4E59',
+      navActive: '#1E2733', navFgOn: '#CBD8D0', navFg: '#8FA99A', navSpark: '#55697C', okDotD: '#4E8266'
+    });
+
+    return {
+      rows2,
+      gRows: G.rows, gRows2: G.rows2, gErrBars: G.errBars, gAlertHist: G.alertHist, gIssues: G.issues, gServices: G.services,
+      bRows: B.rows, bRows2: B.rows2, bErrBars: B.errBars, bAlertHist: B.alertHist, bIssues: B.issues, bServices: B.services,
+      urlC: 'iknos.ks-b.internal/services/pfa?pane=logs',
+      tabsC: [{ title: 'iknos · pfa' }, { title: 'pm2 monit' }, { title: 'pfa — admin' }],
+      winW: 1440, winH: 984,
+      urlA: 'iknos.ks-b.internal/logs?service=pfa&level=warn',
+      urlB: 'iknos.ks-b.internal/services/pfa',
+      tabsA: [{ title: 'iknos · logs' }, { title: 'pfa — admin' }, { title: 'pm2 monit' }],
+      tabsB: [{ title: 'iknos · pfa' }, { title: 'iknos · issues' }, { title: 'pfa — admin' }],
+      hist, rows,
+      facetService: svcRows, facetLevel: lvlRows, facetStatus: stRows, facetRoute: rtRows,
+      ingestPts: this.poly(this.series(101, 30, 20, 12, 0), 128, 26, 2),
+      services, lineReq, areaReq, lineP95, errBars, routes, issues, alertHistA, alertHistB, tail
+    };
+  }
+}
+
+</script>
+</body>
+</html>
