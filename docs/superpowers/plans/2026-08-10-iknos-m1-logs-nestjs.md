@@ -2,13 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a deployed Iknos that tails every PM2 log file on ks-b into MySQL and serves it back through an authenticated Logs page with search, filters and live tail.
+**Goal:** Ship a deployed Iknos that tails every PM2 log file on ks-b into MySQL and serves it back through an authenticated, keyboard-driven Logs view with search, filters, a volume histogram, live tail and request timelines.
 
-**Architecture:** One NestJS app (`iknos-api`) hosts the collector and the HTTP API in a single process, talking to MySQL through Prisma and Redis for sessions. A Next app holds no database access — its server components fetch the API over localhost, forwarding the session cookie. nginx routes `/api/*` to Nest and everything else to Next on one subdomain.
+**Architecture:** One NestJS app (`iknos-api`) hosts the collector and the HTTP API in a single process, talking to MySQL through Prisma and Redis for sessions. A Next app holds no database access — its server components fetch the API over localhost, forwarding the session cookie. nginx routes `/api/*` to Nest and everything else to Next on one subdomain. The UI is service-scoped: a PM2 service rail drives every view, and the chassis around it ships whole in M1 even though most of its views arrive later.
 
-**Tech Stack:** NestJS, Prisma 7 + `@prisma/adapter-mariadb`, MySQL 8 with daily partitioning, Redis, pino + `@elastic/ecs-pino-format`, Next App Router, Tailwind v4, PM2, nginx.
+**Tech Stack:** NestJS, Prisma 7 + `@prisma/adapter-mariadb`, MySQL 8 with daily partitioning, Redis, pino + `@elastic/ecs-pino-format`, Next App Router, Tailwind v4, nuqs, PM2, nginx.
 
-**Spec:** `docs/superpowers/specs/2026-08-10-iknos-nestjs-api-design.md`
+**Specs:** `docs/superpowers/specs/2026-08-10-iknos-nestjs-api-design.md` (backend) and `docs/superpowers/specs/2026-08-09-iknos-ui-design.md` (UI, tokens and interaction). The mockup those come from is `docs/design/iknos-prototype.dc.html`.
 
 ## Global Constraints
 
@@ -19,8 +19,12 @@
 - DB column names: `byte_offset` not `offset` (`OFFSET` is reserved in MySQL 8.0); the users table is `app_user` not `user`.
 - Every route except `GET /health` and `POST /api/auth/login` requires a valid session, enforced by a global `APP_GUARD`, never per-controller.
 - Error responses never contain internal detail (SQL text, file paths, hostnames). Detail goes to logs only.
-- `GET /api/logs` and `GET /api/logs/stream` reject any request without both `from` and `to`.
+- `GET /api/logs`, `GET /api/logs/stream` and `GET /api/logs/histogram` reject any request without both `from` and `to`.
 - Nothing in the ingestion path may block the event loop: no sync file I/O, no `JSON.parse` on an unbounded line, no backtracking regex over log text.
+- **UI: no colour outside the token layer**, and no arbitrary Tailwind values (`text-[…]`, `gap-[…]`). Brackets are for structure only. Every state has a dark token and a light token — the component picks by surface (UI spec §3.2).
+- **UI: the page never scrolls.** 1440×900 is the design frame; only lists scroll inside their own box.
+- **UI: a view whose data does not exist yet is absent, not faked.** No placeholder charts, no lorem numbers, no greyed-out "coming soon" entries.
+- Every list response carries `meta.tookMs`, and the status bar shows it.
 - Commits use the repo's configured git identity, with no co-author or tool attribution trailers.
 
 ## File Structure
@@ -45,11 +49,19 @@ iknos/
         csrf.util.ts               constant-time compare
         session.guard.ts           APP_GUARD + @Public()
         auth.controller.ts         login, logout, csrf, me
+        account.controller.ts      register, recover, password
         ratelimit.service.ts
       logs/
         logs.controller.ts
         logs.service.ts            raw SQL query builder
+        histogram.service.ts       bucketed counts by level
+        trace.service.ts           rows sharing a trace.id
         cursor.ts                  encode/decode keyset cursor
+      search/
+        search.controller.ts       one route, several sources
+      collector/
+        collector.controller.ts    status and storage
+        storage.service.ts         information_schema, cached
       stream/
         log-bus.ts                 in-process event bus
         stream.controller.ts       manual SSE
@@ -58,11 +70,25 @@ iknos/
         parser.ts                  ECS / bare JSON / plain text
         tailer.ts                  stat loop, rotation
         writer.ts                  bounded queue, transactional batch
+        ingest-stats.ts            counters read by /api/collector/status
         ingest.service.ts          lifecycle wiring
       maintenance/
         partitions.ts              pure planning
         maintenance.service.ts     scheduled job
-  apps/web/                        Next App Router
+    web/src/
+      styles/                      globals split + Iknos token layer
+      lib/
+        api.ts                     apiGet / apiMutate
+        log-query.ts               UI state -> API query, one place
+      components/
+        chrome/                    top bar, service rail, status bar
+        ui/                        card, button, field, chip, table, modal, toast
+      hooks/
+        use-shortcuts.ts           global key map, mounted once
+        use-log-stream.ts          EventSource + bounded buffer
+      app/
+        (auth)/                    login, register, recover, about
+        (app)/[service]/           service, logs, metrics, issues, alerts
   deploy/                          ecosystem, nginx, deploy.sh
 ```
 
@@ -190,6 +216,12 @@ model Service {
 
 model AppUser {
   id           Int      @id @default(autoincrement())
+
+  /// Always true. UNIQUE on it is what makes "there is exactly one account" a guarantee the
+  /// database enforces, rather than a `count() === 0` the register route hopes it won the race
+  /// for. Copied from Zeus, which reached the same shape for the same reason.
+  singleton    Boolean  @unique @default(true)
+
   email        String   @unique @db.VarChar(255)
   passwordHash String   @map("password_hash") @db.VarChar(255)
   createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
@@ -257,7 +289,7 @@ PARTITION BY RANGE (TO_DAYS(ts)) (
 );
 ```
 
-Only `p_future` is created here. The table is correct and writable from the first insert; the sliding window is Task 18's job.
+Only `p_future` is created here. The table is correct and writable from the first insert; the sliding window is Task 20's job.
 
 - [ ] **Step 4: Apply and verify the partitioning survived**
 
@@ -283,9 +315,13 @@ Expected: exit code 0, no drift. Partitioning is a table attribute Prisma does n
 
 `packages/db/src/index.ts` exports one `PrismaClient` instance built on the mariadb adapter — a single instance shared by both apps, never one per module.
 
-`packages/db/src/seed.ts` inserts `pfa-api` / `pfa-nest-api` and `pfa-front` / `pfa-front` into `service`.
+`packages/db/src/seed.ts` inserts four rows into `service`: `pfa-api` / `pfa-nest-api`, `pfa-front` / `pfa-front`, and **Iknos' own two processes**, `iknos-api` / `iknos-api` and `iknos-web` / `iknos-web`.
+
+Seeding Iknos itself is not vanity. It monitors itself through its own pipeline (spec §3.3), and without those two rows the service rail shows a single application on the day the milestone ships — losing the most convincing demonstration the tool has. `nginx` is deliberately absent: it is not a PM2 process and its logs come from elsewhere (`IKN-16`).
 
 Write `.env.example` with `DATABASE_URL`, `REDIS_URL`, `IKNOS_PORT`, `IKNOS_LOG_LEVEL`, `IKNOS_COOKIE_SECRET`, `IKNOS_RETENTION_DAYS`, `IKNOS_PM2_LOG_GLOB`.
+
+No variable controls registration. It seals itself once the account exists (Task 11), which is why `singleton` is in the schema from the first migration rather than added later: the CLI in Task 10 must not be able to create the second account that would make that constraint impossible to add.
 
 - [ ] **Step 7: Commit**
 
@@ -349,6 +385,7 @@ describe("parseEnv", () => {
       /IKNOS_RETENTION_DAYS/,
     );
   });
+
 });
 ```
 
@@ -555,7 +592,7 @@ git commit -m "feat(api): global exception filter that never leaks detail"
 - Create: `apps/api/src/common/logger.ts`, `apps/api/src/common/logger.spec.ts`
 
 **Interfaces:**
-- Produces: `logger` (a pino instance emitting ECS), and `INGEST_SKIP_MARKER = "IKNOS_SELF_ERR"`. Task 12's parser must skip lines containing the marker; Task 15's writer prints it on database failure.
+- Produces: `logger` (a pino instance emitting ECS), and `INGEST_SKIP_MARKER = "IKNOS_SELF_ERR"`. Task 13's parser must skip lines containing the marker; Task 16's writer prints it on database failure.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -743,7 +780,7 @@ void bootstrap();
 
 - [ ] **Step 5: Handle BigInt before it bites**
 
-`LogEntry.id` is a `BigInt`, and `JSON.stringify` throws `TypeError: Do not know how to serialize a BigInt` the first time a log row reaches a response. Fix it at the DTO boundary — Task 16 maps `id` to a string explicitly.
+`LogEntry.id` is a `BigInt`, and `JSON.stringify` throws `TypeError: Do not know how to serialize a BigInt` the first time a log row reaches a response. Fix it at the DTO boundary — Task 17 maps `id` to a string explicitly.
 
 Do **not** patch `BigInt.prototype.toJSON` globally. It looks like a one-line fix, but it silently turns every BigInt anywhere into a string, including in places where you would rather have had the error.
 
@@ -1247,11 +1284,15 @@ async login(@Body() body: LoginDto, @Req() req, @Res({ passthrough: true }) res)
 
 `logout` destroys the session and clears the cookie; `GET /api/csrf` returns `req.session.csrfToken`; `GET /api/me` returns `{ userId }`. Generate `DUMMY_HASH` once with `bcrypt.hashSync("a password nobody has", 10)` and paste the real value.
 
-Trust the proxy so `req.ip` is the real client: `app.set("trust proxy", 1)` in `main.ts`, paired with nginx setting `X-Forwarded-For` in Task 23. Without both, every request looks like `127.0.0.1` and five failures lock out everyone.
+Trust the proxy so `req.ip` is the real client: `app.set("trust proxy", 1)` in `main.ts`, paired with nginx setting `X-Forwarded-For` in Task 31. Without both, every request looks like `127.0.0.1` and five failures lock out everyone.
 
 - [ ] **Step 5: Add the user CLI**
 
-`packages/db/src/seed-user.ts` — reads an email argument, prompts twice for a password without echoing, rejects anything under 12 characters, hashes with bcrypt, inserts. Wire it as `pnpm seed:user`. No public registration, no `POST /users`.
+`packages/db/src/seed-user.ts` — reads an email argument, prompts twice for a password without echoing, rejects anything under 12 characters, hashes with bcrypt, inserts. Wire it as `pnpm seed:user`. No `POST /users`.
+
+The CLI stays password-only here because the column that stores a recovery passphrase does not exist yet — Task 11 adds it and extends this same script.
+
+It creates **the** account, not **an** account: `singleton` (Task 3) makes a second one fail on a unique constraint. That is deliberate, and it is the same mechanism that seals registration in Task 11.
 
 - [ ] **Step 6: Run the tests, then check from outside**
 
@@ -1275,13 +1316,448 @@ git commit -m "feat(auth): login, logout, csrf, me and login rate limiting"
 
 ---
 
-## Task 11: Line framing
+## Task 11: Registration, recovery and password change
+
+**Files:**
+- Create: `apps/api/src/auth/passphrase.util.ts`, `apps/api/src/auth/passphrase.util.spec.ts`, `apps/api/src/auth/account.controller.ts`, `apps/api/test/account.e2e-spec.ts`
+- Modify: `prisma/schema.prisma`, `apps/api/src/auth/users.service.ts`, `apps/api/src/auth/ratelimit.service.ts`, `packages/db/src/seed-user.ts`
+
+**Interfaces:**
+- Consumes: `SessionService` (Task 8), `@Public()` and `SessionGuard` (Task 9), `RateLimitService` and `UsersService` (Task 10), `app_user.singleton` (Task 3).
+- Produces: `GET /api/auth/bootstrap`, `POST /api/auth/register`, `POST /api/auth/recover`, `POST /api/auth/password`, the column `app_user.recovery_passphrase_hash`, and `verifyPassphrase(hash, provided)`. Task 24 builds the four screens on these.
+
+ks-b has no mail server and is not getting one, so a reset link is not available. The way back into an account is a passphrase chosen when it was created. That single constraint is why this task exists at all.
+
+**This is Zeus's auth shape, copied deliberately.** Zeus is the closest sibling — an internal single-account console on the same box, with the same no-mail constraint — and it already answers every question here: `GET /auth/bootstrap` returning `{ sealed }`, a register route that is first-run only and seals itself, a recovery passphrase hashed independently of the password, and identical refusals across every recovery failure. Read `~/dev/Zeus/nest-api/src/auth/auth.service.ts` before writing this task; do not re-derive it.
+
+The one thing worth restating rather than assuming: **registration is gated by whether the account exists, not by an environment variable.** No flag to set, none to forget, and no way to reopen it by editing a `.env` in a hurry. The seal is a `UNIQUE` constraint, so it holds even against two requests in the same millisecond.
+
+- [ ] **Step 1: Add the column**
+
+In `prisma/schema.prisma`, on `AppUser`:
+
+```prisma
+  /// Hashed independently of the password: the passphrase can reset the password, so knowing
+  /// one must never reveal the other.
+  recoveryPassphraseHash String? @map("recovery_passphrase_hash") @db.VarChar(255)
+```
+
+Nullable, deliberately: accounts created by the CLI before this task keep working and simply have no way back. `singleton` is already there from Task 3, so this migration adds one column and no constraint. Then:
+
+```bash
+pnpm prisma migrate dev --name account_recovery
+```
+
+Expected: an additive migration adding one nullable column, no table rewrite.
+
+- [ ] **Step 2: Write the failing unit test**
+
+`apps/api/src/auth/passphrase.util.spec.ts`:
+
+```ts
+import { describe, expect, it } from "vitest";
+import { hashPassphrase, verifyPassphrase } from "./passphrase.util";
+
+describe("verifyPassphrase", () => {
+  it("accepts the passphrase it was given", async () => {
+    const hash = await hashPassphrase("correct horse battery staple ok");
+    expect(await verifyPassphrase(hash, "correct horse battery staple ok")).toBe(true);
+  });
+
+  it("rejects a different passphrase", async () => {
+    const hash = await hashPassphrase("correct horse battery staple ok");
+    expect(await verifyPassphrase(hash, "incorrect horse battery staple")).toBe(false);
+  });
+
+  it("rejects an account with no passphrase, and still pays the bcrypt cost", async () => {
+    const started = performance.now();
+    expect(await verifyPassphrase(null, "anything at all, long enough")).toBe(false);
+
+    // bcrypt at cost 10 takes tens of milliseconds. An early `return false` on
+    // the null hash would take approximately zero — making "this account has no
+    // passphrase" measurable with a stopwatch, which is exactly the list of
+    // unrecoverable accounts an attacker would like to have.
+    expect(performance.now() - started).toBeGreaterThan(5);
+  });
+});
+```
+
+- [ ] **Step 3: Run it to verify it fails**
+
+Run: `pnpm vitest run apps/api/src/auth/passphrase`
+Expected: FAIL — cannot resolve `./passphrase.util`.
+
+- [ ] **Step 4: Implement it**
+
+`apps/api/src/auth/passphrase.util.ts`:
+
+```ts
+import bcrypt from "bcryptjs";
+
+export const MIN_PASSWORD = 12;
+export const MIN_PASSPHRASE = 20;
+
+/** Generate once with `bcrypt.hashSync("no passphrase set", 10)` and paste the
+ *  real value here, exactly as Task 10 does for the login dummy hash. */
+export const DUMMY_PASSPHRASE_HASH = "$2a$10$REPLACE_WITH_A_REAL_BCRYPT_HASH";
+
+export function hashPassphrase(passphrase: string): Promise<string> {
+  return bcrypt.hash(passphrase, 10);
+}
+
+/** Always runs a comparison, including against the dummy hash, so an account
+ *  with no passphrase costs the same as a wrong one. */
+export async function verifyPassphrase(
+  hash: string | null,
+  provided: string,
+): Promise<boolean> {
+  const matched = await bcrypt.compare(provided, hash ?? DUMMY_PASSPHRASE_HASH);
+  return hash !== null && matched;
+}
+
+/** Names the offending field and never echoes the value — a 400 that quotes the
+ *  rejected password writes it into the access log of every proxy in between. */
+export function assertLength(value: string | undefined, min: number, field: string): void {
+  if (!value || value.length < min) {
+    throw new Error(`${field} must be at least ${min} characters`);
+  }
+}
+```
+
+- [ ] **Step 5: Run it to verify it passes**
+
+Run: `pnpm vitest run apps/api/src/auth/passphrase`
+Expected: PASS, 3 tests.
+
+- [ ] **Step 6: Write the failing endpoint tests**
+
+`apps/api/test/account.e2e-spec.ts`:
+
+```ts
+import request from "supertest";
+import { describe, expect, it } from "vitest";
+import { buildTestApp, login } from "./helpers";
+
+const PASSPHRASE = "a recovery passphrase of ample length";
+const PASSWORD = "a-long-enough-password";
+
+describe("account", () => {
+  it("reports the seal once an account exists", async () => {
+    const app = await buildTestApp({ seeded: true });
+    const res = await request(app.getHttpServer()).get("/api/auth/bootstrap").expect(200);
+
+    expect(res.body).toEqual({ sealed: true });
+  });
+
+  it("registers on a fresh instance, and opens no session", async () => {
+    const app = await buildTestApp({ seeded: false });
+    const res = await request(app.getHttpServer())
+      .post("/api/auth/register")
+      .send({ email: "first@iknos.local", password: PASSWORD, passphrase: PASSPHRASE })
+      .expect(201);
+
+    // No cookie on purpose: the front lands on /login, which proves the password
+    // works before it becomes the only way in.
+    expect(res.headers["set-cookie"]).toBeUndefined();
+    await login(app, "first@iknos.local", PASSWORD);
+  });
+
+  it("seals itself the moment it succeeds", async () => {
+    const app = await buildTestApp({ seeded: false });
+    const send = (email: string) =>
+      request(app.getHttpServer())
+        .post("/api/auth/register")
+        .send({ email, password: PASSWORD, passphrase: PASSPHRASE });
+
+    await send("first@iknos.local").expect(201);
+    await send("second@iknos.local").expect(409);
+    expect((await request(app.getHttpServer()).get("/api/auth/bootstrap")).body.sealed).toBe(true);
+  });
+
+  it("lets the database settle a race rather than the route", async () => {
+    const app = await buildTestApp({ seeded: false });
+    const send = (email: string) =>
+      request(app.getHttpServer())
+        .post("/api/auth/register")
+        .send({ email, password: PASSWORD, passphrase: PASSPHRASE });
+
+    // A `count() === 0` check both requests pass is exactly the race the UNIQUE
+    // constraint on `singleton` exists to lose for us.
+    const results = await Promise.all([send("a@iknos.local"), send("b@iknos.local")]);
+    expect(results.filter((r) => r.status === 201)).toHaveLength(1);
+    expect(results.filter((r) => r.status === 409)).toHaveLength(1);
+  });
+
+  it("names the short field and never repeats its value", async () => {
+    const app = await buildTestApp({ seeded: false });
+    const res = await request(app.getHttpServer())
+      .post("/api/auth/register")
+      .send({ email: "first@iknos.local", password: "hunter2", passphrase: PASSPHRASE })
+      .expect(400);
+
+    const body = JSON.stringify(res.body);
+    expect(body).toMatch(/password/i);
+    expect(body).not.toContain("hunter2");
+  });
+
+  it("recovers with the right passphrase and invalidates the old session", async () => {
+    const app = await buildTestApp({ seeded: true });
+    const cookie = await login(app, "test@iknos.local", "test-password-1234");
+
+    await request(app.getHttpServer())
+      .post("/api/auth/recover")
+      .send({ email: "test@iknos.local", passphrase: PASSPHRASE, newPassword: "a-brand-new-password" })
+      .expect(201);
+
+    await request(app.getHttpServer()).get("/api/me").set("Cookie", cookie).expect(401);
+    await login(app, "test@iknos.local", "a-brand-new-password");
+  });
+
+  it("answers every recovery failure identically", async () => {
+    const app = await buildTestApp({ seeded: true });
+    const attempt = (email: string, passphrase: string) =>
+      request(app.getHttpServer())
+        .post("/api/auth/recover")
+        .send({ email, passphrase, newPassword: PASSWORD });
+
+    const wrongPassphrase = await attempt("test@iknos.local", "the wrong passphrase entirely");
+    const unknownAccount = await attempt("nobody@iknos.local", PASSPHRASE);
+
+    // Only one account can exist (`singleton`), so the third case is made by
+    // emptying the column rather than by seeding a second user.
+    await prisma.appUser.update({
+      where: { email: "test@iknos.local" },
+      data: { recoveryPassphraseHash: null },
+    });
+    const noPassphraseOnFile = await attempt("test@iknos.local", PASSPHRASE);
+
+    // Three different reasons, one refusal. The route never confirms which.
+    for (const res of [unknownAccount, noPassphraseOnFile]) {
+      expect(res.status).toBe(wrongPassphrase.status);
+      expect(JSON.stringify(res.body)).toBe(JSON.stringify(wrongPassphrase.body));
+    }
+  });
+
+  it("429s the sixth recovery attempt for that address", async () => {
+    const app = await buildTestApp({ seeded: true });
+    const attempt = () =>
+      request(app.getHttpServer())
+        .post("/api/auth/recover")
+        .send({ email: "test@iknos.local", passphrase: "wrong passphrase but long", newPassword: PASSWORD });
+
+    // The one failure that is deliberately distinguishable: "try again in
+    // fifteen minutes" is useless advice if it reads like "wrong passphrase".
+    for (let i = 0; i < 5; i++) await attempt().expect(401);
+    await attempt().expect(429);
+  });
+
+  it("refuses a password change without the current password or without CSRF", async () => {
+    const app = await buildTestApp({ seeded: true });
+    const cookie = await login(app, "test@iknos.local", "test-password-1234");
+    const { body } = await request(app.getHttpServer()).get("/api/csrf").set("Cookie", cookie);
+
+    await request(app.getHttpServer())
+      .post("/api/auth/password")
+      .set("Cookie", cookie)
+      .set("x-csrf-token", body.csrfToken)
+      .send({ currentPassword: "not-the-right-one", newPassword: PASSWORD })
+      .expect(401);
+
+    await request(app.getHttpServer())
+      .post("/api/auth/password")
+      .set("Cookie", cookie)
+      .send({ currentPassword: "test-password-1234", newPassword: PASSWORD })
+      .expect(403);
+  });
+
+  it("keeps the caller's own session alive after a password change", async () => {
+    const app = await buildTestApp({ seeded: true });
+    const cookie = await login(app, "test@iknos.local", "test-password-1234");
+    const { body } = await request(app.getHttpServer()).get("/api/csrf").set("Cookie", cookie);
+
+    await request(app.getHttpServer())
+      .post("/api/auth/password")
+      .set("Cookie", cookie)
+      .set("x-csrf-token", body.csrfToken)
+      .send({ currentPassword: "test-password-1234", newPassword: "another-good-password" })
+      .expect(201);
+
+    await request(app.getHttpServer()).get("/api/me").set("Cookie", cookie).expect(200);
+  });
+});
+```
+
+Extend `apps/api/test/helpers.ts` with a `login(app, email, password)` returning the cookie, and let `buildTestApp` take `{ seeded }` — `true` truncates `app_user` and inserts `test@iknos.local` with `PASSPHRASE`, `false` truncates and leaves it empty. The seal is a fact about the table, so the fixture has to control the table.
+
+The rate-limit tests need the `iknos:rl:` prefix flushed in `beforeEach`, or a rerun starts already throttled.
+
+- [ ] **Step 7: Run them to verify they fail**
+
+Run: `pnpm vitest run apps/api/test/account`
+Expected: FAIL — all three routes 404.
+
+- [ ] **Step 8: Widen the rate limiter**
+
+`ratelimit.service.ts` — the fixed 5-per-minute becomes a default rather than the only option:
+
+```ts
+/** `subject` is an IP for login and an email address for recovery. */
+async allow(
+  subject: string,
+  bucket = "login",
+  max = MAX_ATTEMPTS,
+  windowSeconds = WINDOW_SECONDS,
+): Promise<boolean> {
+  const key = `iknos:rl:${bucket}:${subject}`;
+  const count = await this.redis.incr(key);
+  if (count === 1) await this.redis.expire(key, windowSeconds);
+  return count <= max;
+}
+
+/** Recovery clears its counter on success, so an owner who fumbled the
+ *  passphrase twice before getting it right is not throttled afterwards. */
+async clear(subject: string, bucket: string): Promise<void> {
+  await this.redis.del(`iknos:rl:${bucket}:${subject}`);
+}
+```
+
+The default arguments keep the login key identical to Task 10's, so nothing there changes behaviour.
+
+Recovery keys on the **email address**, not the IP, and 5 attempts per fifteen minutes — Zeus's numbers. The trade is deliberate: keying on the address means someone can burn the owner's budget and stall them for a quarter of an hour, but keying on the IP means an attacker with a handful of addresses gets unlimited guesses against a secret that protects the only account. The second is the attack that matters.
+
+- [ ] **Step 8b: Expose the seal**
+
+```ts
+/** Public: tells /register whether to show the first-run form or the sealed state. */
+@Public()
+@Get("bootstrap")
+async bootstrap(): Promise<{ sealed: boolean }> {
+  return { sealed: (await this.users.count()) > 0 };
+}
+```
+
+This does leak "somebody has set this instance up", which is why it answers with a boolean and not an address. On a console that already answers `/login`, that is not a secret worth protecting.
+
+- [ ] **Step 9: Implement the controller**
+
+`apps/api/src/auth/account.controller.ts`. `UsersService` gains `count()`, `findById`, `create(email, password, passphrase)` and `setPassword(id, password, passphrase?)`, all hashing with bcrypt and all normalising the address (trim, lowercase) before it touches the database — otherwise `Me@…` and `me@…` are two accounts on a table that may only ever hold one.
+
+```ts
+const RECOVER_MAX = 5;
+const RECOVER_WINDOW_SECONDS = 15 * 60;
+const RECOVER_BUCKET = "recover";
+
+@Controller("api/auth")
+export class AccountController {
+  /** First run only. Seals itself the moment it succeeds. */
+  @Public()
+  @Post("register")
+  async register(@Body() body: RegisterDto) {
+    assertLength(body.password, MIN_PASSWORD, "password");
+    assertLength(body.passphrase, MIN_PASSPHRASE, "passphrase");
+
+    // Checked here so the ordinary case answers politely…
+    if ((await this.users.count()) > 0) {
+      throw new ConflictException("this instance already has its account");
+    }
+
+    try {
+      await this.users.create(body.email, body.password, body.passphrase);
+    } catch {
+      // …and caught here because that check is a race, and the UNIQUE
+      // constraint on `singleton` is the only thing that actually wins it.
+      throw new ConflictException("this instance already has its account");
+    }
+
+    // No session on purpose: the front lands on /login with "account created —
+    // sign in", which proves the password works before it is the only way in.
+    return { ok: true };
+  }
+
+  @Public()
+  @Post("recover")
+  async recover(@Body() body: RecoverDto) {
+    const email = normaliseEmail(body.email ?? "");
+
+    // Keyed on the address rather than the caller's IP — see Step 8.
+    const allowed = await this.rateLimit.allow(
+      email, RECOVER_BUCKET, RECOVER_MAX, RECOVER_WINDOW_SECONDS,
+    );
+    if (!allowed) throw new HttpException("too many attempts", 429);
+
+    assertLength(body.newPassword, MIN_PASSWORD, "password");
+
+    const user = await this.users.findByEmail(email);
+    const ok = await verifyPassphrase(user?.recoveryPassphraseHash ?? null, body.passphrase ?? "");
+    // One refusal for three different reasons — wrong passphrase, no such
+    // account, no passphrase on file. The route never says which it was.
+    if (!user || !ok) throw new UnauthorizedException("could not recover");
+
+    await this.users.setPassword(user.id, body.newPassword);
+    await this.sessions.destroyForUser(user.id);
+    await this.rateLimit.clear(email, RECOVER_BUCKET);
+
+    // No session here either, and for the same reason as register.
+    return { ok: true };
+  }
+
+  @Post("password")
+  async password(@Body() body: PasswordDto, @Req() req) {
+    const user = await this.users.findById(req.session.userId);
+    const ok = user ? await bcrypt.compare(body.currentPassword ?? "", user.passwordHash) : false;
+    if (!user || !ok) throw new UnauthorizedException();
+
+    assertLength(body.newPassword, MIN_PASSWORD, "password");
+    if (body.passphrase !== undefined) assertLength(body.passphrase, MIN_PASSPHRASE, "passphrase");
+
+    // One session per user (Task 8) means there is no other session to destroy
+    // here, so the caller's own survives by construction. The last test asserts
+    // that property anyway, so it fails loudly the day that rule is relaxed and
+    // a stolen session would otherwise outlive the password change.
+    await this.users.setPassword(user.id, body.newPassword, body.passphrase);
+    return { ok: true };
+  }
+}
+```
+
+`assertLength` throws a plain `Error`; wrap it or convert it to `BadRequestException` at the controller boundary so the exception filter (Task 5) returns 400 rather than 500. A `ValidationPipe` on the DTOs is equally acceptable — the tests hold either way.
+
+- [ ] **Step 10: Extend the user CLI**
+
+`packages/db/src/seed-user.ts` now prompts for the recovery passphrase too, without echoing, rejecting anything under 20 characters. Skipping it is allowed and prints a warning naming the consequence in full: *this account can only be reset in the database*.
+
+Run against an instance that already has its account, it fails on the `singleton` constraint. Catch that and print *this instance already has its account — use recovery instead* rather than letting a Prisma constraint error reach the terminal.
+
+- [ ] **Step 11: Run the tests to verify they pass**
+
+Run: `pnpm vitest run apps/api/test/account apps/api/src/auth`
+Expected: PASS — 10 endpoint tests, 3 passphrase tests, plus Tasks 8–10's suites still green.
+
+Then from outside, with the server up and an account already created:
+
+```bash
+curl -s localhost:4310/api/auth/bootstrap
+curl -si -X POST localhost:4310/api/auth/register -H 'content-type: application/json' -d '{}' | head -1
+```
+
+Expected: `{"sealed":true}`, then `HTTP/1.1 409 Conflict`.
+
+- [ ] **Step 12: Commit**
+
+```bash
+git add apps/api packages/db prisma
+git commit -m "feat(auth): gated registration, passphrase recovery and password change"
+```
+
+---
+
+## Task 12: Line framing
 
 **Files:**
 - Create: `apps/api/src/ingest/line-buffer.ts`, `apps/api/src/ingest/line-buffer.spec.ts`
 
 **Interfaces:**
-- Produces: `LineBuffer` with `push(chunk: Buffer)`, `nextLine(): string | null`, `pendingBytes: number`, and `MAX_LINE_BYTES`. Task 13's tailer feeds it; Task 12's parser consumes its output.
+- Produces: `LineBuffer` with `push(chunk: Buffer)`, `nextLine(): string | null`, `pendingBytes: number`, and `MAX_LINE_BYTES`. Task 14's tailer feeds it; Task 13's parser consumes its output.
 
 The smallest piece of the project and the one most worth getting exactly right. In Rust the type system made this safe for free; in Node it is a convention, so it needs tests.
 
@@ -1421,7 +1897,7 @@ git commit -m "feat(ingest): byte-safe line framing across read boundaries"
 
 ---
 
-## Task 12: Log line parser
+## Task 13: Log line parser
 
 **Files:**
 - Create: `apps/api/src/ingest/parser.ts`, `apps/api/src/ingest/parser.spec.ts`, `packages/contracts/src/log-record.ts`
@@ -1686,7 +2162,7 @@ export function parse(
 }
 ```
 
-`JSON.parse` here is safe from the event-loop rule because Task 11 caps a line at 1 MB before it ever reaches this function.
+`JSON.parse` here is safe from the event-loop rule because Task 12 caps a line at 1 MB before it ever reaches this function.
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
@@ -1702,13 +2178,13 @@ git commit -m "feat(ingest): ECS, bare JSON and plain text line parsing"
 
 ---
 
-## Task 13: Rotation logic and the tailer loop
+## Task 14: Rotation logic and the tailer loop
 
 **Files:**
 - Create: `apps/api/src/ingest/rotation.ts`, `apps/api/src/ingest/rotation.spec.ts`, `apps/api/src/ingest/tailer.ts`
 
 **Interfaces:**
-- Produces: `decide(stored: StoredOffset | null, now: FileStat): Action` (pure), and `Tailer` with `poll(): Promise<void>`. Task 15 drives `poll` on an interval.
+- Produces: `decide(stored: StoredOffset | null, now: FileStat): Action` (pure), and `Tailer` with `poll(): Promise<void>`. Task 16 drives `poll` on an interval.
 
 The decision is pulled out as a pure function so every rotation case is testable without a filesystem. The I/O around it stays thin.
 
@@ -1841,7 +2317,7 @@ export class Tailer {
     }
   }
 
-  /** One pass over every matching file. Called on a 1s interval by Task 15. */
+  /** One pass over every matching file. Called on a 1s interval by Task 16. */
   async poll(): Promise<void> {
     // Re-globbing each tick is how a newly deployed PM2 app is picked up
     // without restarting Iknos.
@@ -1918,13 +2394,13 @@ git commit -m "feat(ingest): rotation decision and tailer loop"
 
 ---
 
-## Task 14: Bounded queue and the transactional writer
+## Task 15: Bounded queue and the transactional writer
 
 **Files:**
 - Create: `apps/api/src/ingest/writer.ts`, `apps/api/src/ingest/writer.spec.ts`, `apps/api/test/durability.e2e-spec.ts`
 
 **Interfaces:**
-- Produces: `Writer` with `submit(chunk: Chunk): void`, `flush(): Promise<void>`, `dropped: number`, and `Chunk = { records: LogRecord[]; offset: OffsetRow }`. Task 15 owns its lifecycle.
+- Produces: `Writer` with `submit(chunk: Chunk): void`, `flush(): Promise<void>`, `dropped: number`, and `Chunk = { records: LogRecord[]; offset: OffsetRow }`. Task 16 owns its lifecycle.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -2055,6 +2531,11 @@ export class Writer {
   private queue: LogRecord[] = [];
   private offsets = new Map<string, OffsetRow>();
   dropped = 0;
+  // Read by GET /api/collector/status (Task 21). Held in memory on purpose: a
+  // status route that queries MySQL goes silent exactly when MySQL is the
+  // problem, which is the one moment anybody looks at it.
+  written = 0;
+  lastWrittenAt: Date | null = null;
 
   constructor(
     private readonly db = { persist: persistBatch },
@@ -2115,13 +2596,27 @@ git commit -m "feat(ingest): bounded queue and transactional batch writer"
 
 ---
 
-## Task 15: Event bus and ingestion lifecycle
+## Task 16: Event bus and ingestion lifecycle
 
 **Files:**
 - Create: `apps/api/src/stream/log-bus.ts`, `apps/api/src/ingest/ingest.service.ts`, `apps/api/src/ingest/ingest.module.ts`, `apps/api/test/tail-roundtrip.e2e-spec.ts`
 
 **Interfaces:**
-- Produces: `LogBus` with `emit(record: LogRecord)` and `subscribe(fn): () => void` (returns an unsubscribe), and `IngestService` implementing `OnApplicationBootstrap` / `OnApplicationShutdown`. Task 17 subscribes to the bus.
+- Produces: `LogBus` with `emit(record: LogRecord)` and `subscribe(fn): () => void` (returns an unsubscribe), and `IngestService` implementing `OnApplicationBootstrap` / `OnApplicationShutdown` and exposing `stats(): IngestStats`. Task 19 subscribes to the bus; Task 21 serves `stats()` over HTTP.
+
+`IngestStats` is the snapshot the status route needs, assembled from objects this service already holds — nothing new to plumb through the tailer or the parser:
+
+```ts
+export type IngestStats = {
+  written: number;
+  dropped: number;
+  queued: number;
+  lastWrittenAt: Date | null;
+  files: { filePath: string; byteOffset: number }[];
+};
+```
+
+Add it as a method on `IngestService`, reading the writer's counters and the tailer's in-memory offset map. **No database query** — see Task 21 for why that constraint is the whole point of the route.
 
 - [ ] **Step 1: Write the failing integration test**
 
@@ -2289,13 +2784,15 @@ git commit -m "feat(ingest): event bus and ingestion lifecycle"
 
 ---
 
-## Task 16: Logs query endpoint
+## Task 17: Logs query endpoint
 
 **Files:**
 - Create: `apps/api/src/logs/cursor.ts`, `apps/api/src/logs/cursor.spec.ts`, `apps/api/src/logs/logs.service.ts`, `apps/api/src/logs/logs.controller.ts`, `apps/api/src/services.controller.ts`, `packages/contracts/src/log-page.ts`, `apps/api/test/logs.e2e-spec.ts`
 
 **Interfaces:**
-- Produces: `GET /api/logs`, `GET /api/services`, and the DTOs `LogRow` and `LogPage { rows: LogRow[]; nextCursor: string | null }` in `@iknos/contracts`. Tasks 17, 21 and 22 import those types.
+- Produces: `GET /api/logs`, `GET /api/services`, and the DTOs `LogRow`, `Service { name: string; pm2Name: string; enabled: boolean }`, `Meta { tookMs: number }` and `LogPage { rows: LogRow[]; nextCursor: string | null; meta: Meta }` in `@iknos/contracts`. Tasks 19, 23, 25, 26, 27 and 28 import those types.
+
+`Meta` is its own exported type rather than an inline shape, because every list response in the project carries one and the status bar renders it the same way regardless of which route produced it.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -2511,6 +3008,7 @@ export class LogsController {
     if (to <= from) throw new BadRequestException("'to' must be after 'from'");
 
     const limit = Math.min(Math.max(p.limit ?? DEFAULT_LIMIT, 1), MAX_LIMIT);
+    const startedAt = Date.now();
 
     // Fetch one extra to learn whether another page exists, without a COUNT.
     const found = await search({
@@ -2530,12 +3028,15 @@ export class LogsController {
       // or JSON.stringify throws and pagination silently skips rows.
       rows: page.map((r) => ({ ...r, id: r.id.toString(), ts: r.ts.toISOString() })),
       nextCursor: hasMore && last ? encodeCursor(last.ts, last.id) : null,
+      // Measured around the query, not the whole request: the status bar is
+      // meant to show when the database is getting slow, not when the network is.
+      meta: { tookMs: Date.now() - startedAt },
     };
   }
 }
 ```
 
-Add `GET /api/services` as a plain `prisma.service.findMany({ where: { enabled: true } })`.
+Add `GET /api/services` as a plain `prisma.service.findMany({ where: { enabled: true } })`, returning `name`, `pm2Name` and `enabled`. Health state and sparkline series join this response in `IKN-8`; until then the fields are **absent from the payload**, not present and zero — the rail omits what it does not know rather than drawing a flat green line for a service nobody has ever probed.
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
@@ -2561,7 +3062,198 @@ git commit -m "feat(api): logs search with keyset pagination"
 
 ---
 
-## Task 17: Live tail over SSE
+## Task 18: Histogram and trace endpoints
+
+**Files:**
+- Create: `apps/api/src/logs/histogram.service.ts`, `apps/api/src/logs/histogram.service.spec.ts`, `apps/api/src/logs/trace.service.ts`, `packages/contracts/src/histogram.ts`, `packages/contracts/src/trace.ts`
+- Modify: `apps/api/src/logs/logs.controller.ts`, `apps/api/test/logs.e2e-spec.ts`
+
+**Interfaces:**
+- Consumes: the filter parsing and the `from`/`to` guard from Task 17, unchanged and shared rather than copied.
+- Produces: `GET /api/logs/histogram` → `Histogram { bucketMs: number; buckets: Bucket[]; meta: Meta }` with `Bucket = { t: string; error: number; warn: number; info: number }`, and `GET /api/logs/trace/:traceId` → `Trace { rows: LogRow[]; totalMs: number; meta: Meta }`. Task 26 draws the histogram, Task 28 the timeline.
+
+- [ ] **Step 1: Write the failing bucket-size test**
+
+The one piece of real logic here is choosing a bucket size, and it is pure, so it gets tested without a database.
+
+`apps/api/src/logs/histogram.service.spec.ts`:
+
+```ts
+import { describe, expect, it } from "vitest";
+import { MAX_BUCKETS, chooseBucketMs } from "./histogram.service";
+
+const span = (ms: number) => chooseBucketMs(0, ms);
+
+describe("chooseBucketMs", () => {
+  it("gives a minute per bucket over an hour", () => {
+    expect(span(60 * 60_000)).toBe(60_000);
+  });
+
+  it("gives an hour per bucket over a day", () => {
+    expect(span(24 * 60 * 60_000)).toBe(3_600_000);
+  });
+
+  it("never exceeds the ceiling, whatever the range", () => {
+    for (const ms of [1_000, 900_000, 3_600_000, 86_400_000, 604_800_000, 10 * 365 * 86_400_000]) {
+      expect(Math.ceil(ms / chooseBucketMs(0, ms))).toBeLessThanOrEqual(MAX_BUCKETS);
+    }
+  });
+
+  it("never returns zero or a negative size for a degenerate range", () => {
+    expect(chooseBucketMs(0, 0)).toBeGreaterThan(0);
+    expect(chooseBucketMs(500, 0)).toBeGreaterThan(0);
+  });
+});
+```
+
+The third test is the one that matters. A client asking for a week in one-second buckets would ask the database for six hundred thousand rows and the browser to draw them — the server, not the caller, decides granularity.
+
+- [ ] **Step 2: Run it to verify it fails**
+
+Run: `pnpm vitest run apps/api/src/logs/histogram`
+Expected: FAIL — cannot resolve `./histogram.service`.
+
+- [ ] **Step 3: Implement the bucket sizing**
+
+`apps/api/src/logs/histogram.service.ts`:
+
+```ts
+export const MAX_BUCKETS = 60;
+
+const STEPS_MS = [
+  1_000, 5_000, 15_000, 60_000, 300_000, 900_000, 3_600_000, 21_600_000, 86_400_000,
+];
+
+/** Smallest round step that keeps the bucket count within the ceiling. */
+export function chooseBucketMs(fromMs: number, toMs: number): number {
+  const span = Math.max(toMs - fromMs, 1);
+  const fit = STEPS_MS.find((step) => span / step <= MAX_BUCKETS);
+  // Past the largest round step, stop being pretty and just divide. The ceiling
+  // is a guarantee; round numbers on the axis are only a preference.
+  return fit ?? Math.ceil(span / MAX_BUCKETS);
+}
+```
+
+- [ ] **Step 4: Write the query**
+
+Same `WHERE` clause as Task 17 — same filters, same mandatory window, same bound parameters — with the grouping added:
+
+```sql
+SELECT FLOOR(TIMESTAMPDIFF(MICROSECOND, ?, ts) / ?) AS bucket,
+       SUM(level >= 50) AS error,
+       SUM(level  = 40) AS warn,
+       SUM(level  < 40) AS info
+  FROM log_entry
+ WHERE ts >= ? AND ts < ?   -- plus the optional filters
+ GROUP BY bucket
+ ORDER BY bucket
+```
+
+Two details worth stating rather than discovering:
+
+- The bucket expression uses `TIMESTAMPDIFF` from `from`, not `UNIX_TIMESTAMP(ts)`. The latter interprets a `DATETIME` in the session time zone, so the same query would bucket differently depending on who connected. `TIMESTAMPDIFF` is an exact offset and has no time zone at all.
+- Wrapping `ts` in a function in the `SELECT`/`GROUP BY` does **not** defeat partition pruning, because pruning is decided by the `WHERE` clause, which still compares the bare column. Step 7 verifies that rather than trusting it.
+
+Empty buckets are filled in by the service, not by SQL: a range with no logs must return a flat row of zeroes, not a shorter array. The chart's x-axis has to stay the range the user asked for.
+
+Levels follow pino: `error` is 50 and above, so `fatal` is counted as an error rather than silently dropped.
+
+- [ ] **Step 5: Write the trace endpoint**
+
+`apps/api/src/logs/trace.service.ts` — every row sharing a `trace.id`, in `ts` order, with `duration_ms`:
+
+```ts
+const TRACE_ID = /^[0-9a-f]{1,32}$/i;
+
+async byTraceId(traceId: string, from: Date, to: Date): Promise<Trace> {
+  // Reject the shape before it reaches the query. The value is bound either
+  // way, but a 400 on obvious garbage beats an index scan that finds nothing.
+  if (!TRACE_ID.test(traceId)) throw new BadRequestException("malformed trace id");
+
+  const rows = await this.prisma.$queryRaw<Row[]>`
+    SELECT id, ts, service, level, level_name, message, route, http_method,
+           status_code, duration_ms, trace_id
+      FROM log_entry
+     WHERE trace_id = ${traceId} AND ts >= ${from} AND ts < ${to}
+     ORDER BY ts ASC
+     LIMIT 500`;
+  ...
+}
+```
+
+Bounded like everything else, and for the same reason: `(trace_id, ts)` is indexed, but an unbounded lookup of an id that appears nowhere still walks the whole index across every partition.
+
+`totalMs` spans the first row's `ts` to the last row's `ts` plus its `duration_ms` — the wall-clock length of the request as the logs recorded it. This is not a span tree and must not be described as one anywhere in the response.
+
+- [ ] **Step 6: Add the endpoint tests**
+
+Append to `apps/api/test/logs.e2e-spec.ts`:
+
+```ts
+it("rejects a histogram request with no window", async () => {
+  await request(app.getHttpServer()).get("/api/logs/histogram").expect(400);
+});
+
+it("returns buckets that total the same as the search", async () => {
+  const window = `from=${from}&to=${to}&service=pfa-api`;
+  const hist = await request(app.getHttpServer()).get(`/api/logs/histogram?${window}`).expect(200);
+  const total = hist.body.buckets.reduce(
+    (n: number, b: Bucket) => n + b.error + b.warn + b.info, 0,
+  );
+
+  expect(total).toBe(KNOWN_ROW_COUNT_FOR_THAT_WINDOW);
+});
+
+it("keeps the bucket count bounded over a week", async () => {
+  const res = await request(app.getHttpServer())
+    .get(`/api/logs/histogram?from=${weekAgo}&to=${to}`).expect(200);
+  expect(res.body.buckets.length).toBeLessThanOrEqual(60);
+});
+
+it("returns a trace in timestamp order", async () => {
+  const res = await request(app.getHttpServer())
+    .get(`/api/logs/trace/${KNOWN_TRACE_ID}?from=${from}&to=${to}`).expect(200);
+
+  const times = res.body.rows.map((r: LogRow) => r.ts);
+  expect(times).toEqual([...times].sort());
+  expect(res.body.totalMs).toBeGreaterThan(0);
+});
+
+it("400s a malformed trace id and 200s an unknown one", async () => {
+  await request(app.getHttpServer())
+    .get(`/api/logs/trace/not-a-trace-id!?from=${from}&to=${to}`).expect(400);
+
+  const res = await request(app.getHttpServer())
+    .get(`/api/logs/trace/deadbeef?from=${from}&to=${to}`).expect(200);
+  expect(res.body.rows).toEqual([]);
+});
+```
+
+An unknown trace id is an empty result, not a 404: the caller asked a well-formed question and the answer is "nothing", which is information.
+
+- [ ] **Step 7: Confirm pruning survives the GROUP BY**
+
+```bash
+mysql iknos -e "EXPLAIN SELECT FLOOR(TIMESTAMPDIFF(MICROSECOND,'2026-08-09 00:00:00', ts)/60000000) b, COUNT(*) FROM log_entry WHERE ts >= '2026-08-09 00:00:00' AND ts < '2026-08-10 00:00:00' GROUP BY b\G"
+```
+
+Expected: the `partitions` column lists one partition, not all of them. If it lists all of them, the `WHERE` clause has been altered somewhere into a form MySQL cannot prune on — fix that before moving on, because this query runs on every page load.
+
+- [ ] **Step 8: Run the tests**
+
+Run: `pnpm vitest run apps/api/src/logs apps/api/test/logs`
+Expected: PASS — 4 bucket tests, 2 cursor tests, 10 endpoint tests.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add apps/api/src/logs packages/contracts apps/api/test
+git commit -m "feat(api): log volume histogram and trace timeline endpoints"
+```
+
+---
+
+## Task 19: Live tail over SSE
 
 **Files:**
 - Create: `apps/api/src/stream/stream.controller.ts`, `apps/api/test/stream.e2e-spec.ts`
@@ -2650,7 +3342,7 @@ export class StreamController {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
-      // Belt and braces with nginx's proxy_buffering off (Task 23).
+      // Belt and braces with nginx's proxy_buffering off (Task 31).
       "X-Accel-Buffering": "no",
     });
 
@@ -2722,15 +3414,17 @@ git commit -m "feat(api): live tail over server-sent events"
 
 ---
 
-## Task 18: Partition maintenance and retention
+## Task 20: Partition maintenance and retention
 
 **Files:**
 - Create: `apps/api/src/maintenance/partitions.ts`, `apps/api/src/maintenance/partitions.spec.ts`, `apps/api/src/maintenance/maintenance.service.ts`, `apps/api/test/maintenance.e2e-spec.ts`
 
 **Interfaces:**
-- Produces: `plan(existing: string[], today: Date, retentionDays: number, daysAhead: number): Plan` (pure) and `MaintenanceService` running it at boot and daily.
+- Produces: `plan(existing: string[], today: Date, retentionDays: number, daysAhead: number): Plan` (pure) and `MaintenanceService` running it at boot and daily, exposing `window(): { retentionDays: number; oldestPartition: string | null; lastRunAt: Date | null }`. Task 21 serves that over HTTP.
 
 The planning is pure so the date arithmetic — the part that is genuinely easy to get wrong — is tested without a database.
+
+`window()` exists because a retention policy nobody can check from the interface is a retention policy nobody trusts. It is three fields the service already has in hand after each run.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -2904,13 +3598,240 @@ git commit -m "feat(maintenance): daily partition window and retention"
 
 ---
 
-## Task 19: Next app and design system port
+## Task 21: Collector status and storage endpoints
 
 **Files:**
-- Create: `apps/web/` (Next App Router), `apps/web/src/app/layout.tsx`, `apps/web/src/styles/*`, `apps/web/src/lib/api.ts`, `apps/web/src/components/*`
+- Create: `apps/api/src/collector/collector.controller.ts`, `apps/api/src/collector/ingest-rate.service.ts`, `apps/api/src/collector/storage.service.ts`, `apps/api/src/collector/storage.service.spec.ts`, `packages/contracts/src/collector.ts`, `apps/api/test/collector.e2e-spec.ts`
 
 **Interfaces:**
-- Produces: `apiGet<T>(path)` for server components (forwards the incoming cookie) and `apiMutate(path, body)` for client components (attaches the CSRF header). Tasks 20, 21 and 22 use only these two.
+- Consumes: `IngestService.stats()` (Task 16) and `MaintenanceService.window()` (Task 20).
+- Produces: `GET /api/collector/status` → `CollectorStatus` and `GET /api/collector/storage` → `Storage`. Task 30 renders both.
+
+`packages/contracts/src/collector.ts`:
+
+```ts
+export type CollectorStatus = {
+  /** null, never 0, when nothing has been written yet. */
+  lagMs: number | null;
+  written: number;
+  dropped: number;
+  queued: number;
+  perMinute: number[];
+  files: { filePath: string; byteOffset: number }[];
+};
+
+export type Storage = {
+  tables: { name: string; bytes: number; retentionDays: number | null }[];
+  oldestPartition: string | null;
+  diskFreeBytes: number;
+  diskTotalBytes: number;
+  lastRunAt: string | null;
+};
+```
+
+This is Iknos watching itself, which is the claim the whole project rests on. A collector that cannot say whether it is keeping up is a blind spot in the one place that cannot afford one.
+
+- [ ] **Step 1: Write the failing tests**
+
+`apps/api/src/collector/storage.service.spec.ts`:
+
+```ts
+import { describe, expect, it, vi } from "vitest";
+import { StorageService } from "./storage.service";
+import { lagMsFrom } from "./collector.controller";
+
+const statfs = async () => ({ bsize: 4096, blocks: 1000, bfree: 400 });
+
+describe("StorageService", () => {
+  it("does not query information_schema twice inside the cache window", async () => {
+    const query = vi.fn().mockResolvedValue([{ name: "log_entry", bytes: 1024n }]);
+    const svc = new StorageService({ $queryRaw: query } as never, statfs as never);
+
+    await svc.read();
+    await svc.read();
+
+    // information_schema is not free on a partitioned table, and this panel has
+    // no reason whatsoever to be fresh to the second.
+    expect(query).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns byte counts as numbers, not BigInt", async () => {
+    const query = vi.fn().mockResolvedValue([{ name: "log_entry", bytes: 1024n }]);
+    const svc = new StorageService({ $queryRaw: query } as never, statfs as never);
+
+    // BigInt reaching JSON.stringify throws, exactly as in Task 7.
+    expect(() => JSON.stringify(svc)).not.toThrow();
+    const out = await svc.read();
+    expect(typeof out.tables[0].bytes).toBe("number");
+  });
+});
+
+describe("lagMsFrom", () => {
+  it("reports null on a cold start rather than zero", () => {
+    // Zero means "perfectly up to date". Nothing-written-yet means "I don't
+    // know". Collapsing the two is how a dead collector looks healthy.
+    expect(lagMsFrom(null, new Date())).toBeNull();
+  });
+
+  it("reports the distance from the last written line", () => {
+    const now = new Date("2026-08-09T12:00:10.000Z");
+    expect(lagMsFrom(new Date("2026-08-09T12:00:00.000Z"), now)).toBe(10_000);
+  });
+});
+```
+
+- [ ] **Step 2: Run them to verify they fail**
+
+Run: `pnpm vitest run apps/api/src/collector`
+Expected: FAIL — cannot resolve `./storage.service`.
+
+- [ ] **Step 3: Implement the storage read**
+
+`apps/api/src/collector/storage.service.ts`:
+
+```ts
+import { statfs } from "node:fs/promises";
+import { Injectable } from "@nestjs/common";
+
+const CACHE_MS = 5 * 60_000;
+
+@Injectable()
+export class StorageService {
+  private cached: { at: number; value: Storage } | null = null;
+
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly fsStat = statfs,
+  ) {}
+
+  async read(): Promise<Storage> {
+    if (this.cached && Date.now() - this.cached.at < CACHE_MS) return this.cached.value;
+
+    const rows = await this.prisma.$queryRaw<{ name: string; bytes: bigint }[]>`
+      SELECT table_name AS name, data_length + index_length AS bytes
+        FROM information_schema.TABLES
+       WHERE table_schema = DATABASE()`;
+
+    const fs = await this.fsStat("/");
+    const value: Storage = {
+      // Number() at the boundary, once. Task 7 decided not to patch BigInt
+      // globally, so every crossing point converts explicitly.
+      tables: rows.map((r) => ({ name: r.name, bytes: Number(r.bytes), retentionDays: null })),
+      oldestPartition: null,
+      diskFreeBytes: fs.bsize * fs.bfree,
+      diskTotalBytes: fs.bsize * fs.blocks,
+      lastRunAt: null,
+    };
+
+    this.cached = { at: Date.now(), value };
+    return value;
+  }
+}
+```
+
+The controller fills `retentionDays`, `oldestPartition` and `lastRunAt` from `MaintenanceService.window()` — those are already in memory and must not be cached alongside the expensive part.
+
+- [ ] **Step 4: Sample the ingest rate**
+
+The writer counts totals; the sparkline needs a series. One sampler owns that, and nothing else changes:
+
+```ts
+@Injectable()
+export class IngestRateService {
+  private readonly minutes: number[] = [];
+  private lastTotal = 0;
+
+  constructor(private readonly ingest: IngestService) {}
+
+  @Interval(60_000)
+  sample(): void {
+    const { written } = this.ingest.stats();
+    this.minutes.push(written - this.lastTotal);
+    this.lastTotal = written;
+    if (this.minutes.length > 60) this.minutes.shift();
+  }
+
+  /** Shorter than 60 after a restart, and that is the honest answer. The card
+   *  draws what exists rather than padding the left with zeroes that would read
+   *  as "no traffic an hour ago". */
+  get perMinute(): number[] {
+    return [...this.minutes];
+  }
+}
+```
+
+- [ ] **Step 5: Write the controller**
+
+Both routes sit behind the global guard, like everything else. `status` reads **only** from memory — `IngestService.stats()` and `IngestRateService` — and issues no query at all:
+
+```ts
+export function lagMsFrom(lastWrittenAt: Date | null, now: Date): number | null {
+  return lastWrittenAt === null ? null : now.getTime() - lastWrittenAt.getTime();
+}
+```
+
+That constraint is the entire point of the route. A status endpoint that queries MySQL goes quiet precisely when MySQL is the problem, which is the only moment anyone opens it.
+
+- [ ] **Step 6: Add the endpoint tests**
+
+`apps/api/test/collector.e2e-spec.ts` — both routes 401 without a cookie; with a session, `status` responds while the database is stopped:
+
+```ts
+it("still answers when every database call fails", async () => {
+  // Log in against a healthy app first. Sessions live in Redis and the guard
+  // never touches MySQL, so this cookie stays valid against an app whose
+  // database is gone — which is itself the property being relied on here.
+  const healthy = await buildTestApp();
+  const cookie = await login(healthy, "test@iknos.local", "test-password-1234");
+
+  // Overriding the client is deterministic and needs no control over the MySQL
+  // service. If the status route ever grows a query, this goes red — instead of
+  // the pill going blank during the very outage it exists to report.
+  const dead = {
+    $queryRaw: () => Promise.reject(new Error("ECONNREFUSED")),
+    $executeRawUnsafe: () => Promise.reject(new Error("ECONNREFUSED")),
+    appUser: { findUnique: () => Promise.reject(new Error("ECONNREFUSED")) },
+  };
+  const app = await buildTestApp({ prisma: dead });
+
+  const res = await request(app.getHttpServer())
+    .get("/api/collector/status").set("Cookie", cookie).expect(200);
+
+  expect(res.body).toHaveProperty("lagMs");
+
+  // And the contrast that proves the stub is really in the way.
+  await request(app.getHttpServer())
+    .get(`/api/logs?from=${from}&to=${to}`).set("Cookie", cookie).expect(500);
+});
+```
+
+`buildTestApp` gains an optional `prisma` override alongside the `seeded` one from Task 11 — a stub swapped in through the Nest testing module's `overrideProvider`. Both apps must share one Redis, which they do by default.
+
+Do not skip this test. It is the single behaviour this route exists for.
+
+- [ ] **Step 7: Run the tests**
+
+Run: `pnpm vitest run apps/api/src/collector apps/api/test/collector`
+Expected: PASS — 4 unit tests, 3 endpoint tests.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add apps/api/src/collector packages/contracts apps/api/test
+git commit -m "feat(api): collector status and storage endpoints"
+```
+
+---
+
+## Task 22: Next app, Iknos tokens and primitives
+
+**Files:**
+- Create: `apps/web/` (Next App Router), `apps/web/src/styles/tokens.css`, `apps/web/src/styles/globals.css`, `apps/web/src/styles/tokens.test.ts`, `apps/web/src/lib/api.ts`, `apps/web/src/components/ui/*`
+
+**Interfaces:**
+- Produces: the token layer, the M1 primitives, and `apiGet<T>(path)` / `apiMutate(path, body)`. Tasks 23 through 30 use only these.
+
+The design system is **not** a port of PFA's appearance. The exploration behind the mockup rejected it explicitly — *"zéro dégradé, monospace partout où il y a de la donnée"* — so `GlowCard` and its gradient rule do not survive. What is copied from PFA is the *architecture*: the `globals.css` split, the token layer, `nuqs` for URL state, the primitive inventory. See `docs/superpowers/specs/2026-08-09-iknos-ui-design.md` §3.
 
 - [ ] **Step 1: Scaffold**
 
@@ -2918,29 +3839,133 @@ git commit -m "feat(maintenance): daily partition window and retention"
 pnpm create next-app@latest apps/web --ts --app --tailwind --eslint=false --src-dir --import-alias '@/*'
 ```
 
-Delete the generated boilerplate page and CSS so nothing from the template survives the port.
+Delete the generated page and CSS so nothing from the template survives.
 
-- [ ] **Step 2: Port the design system from PFA**
+- [ ] **Step 2: Write the failing token test**
 
-Copy into `apps/web/src/styles/`: the `globals.css` split, the token files (colours, spacing, radii, typography, scales), the font setup, and the background and grain layers. Then rename in one pass:
+`apps/web/src/styles/tokens.test.ts`:
 
-```bash
-cd apps/web && grep -rl 'pfa-' src | xargs sed -i '' 's/pfa-/ikn-/g' && grep -rn 'pfa-' src | wc -l
+```ts
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+
+const css = readFileSync(new URL("./tokens.css", import.meta.url), "utf8");
+
+function declaredVars(selector: string): string[] {
+  const block = css.split(selector)[1]?.split("}")[0] ?? "";
+  return [...block.matchAll(/--ikn-[\w-]+/g)].map((m) => m[0]).sort();
+}
+
+function walk(dir: string): string[] {
+  return readdirSync(dir).flatMap((e) => {
+    const p = join(dir, e);
+    return statSync(p).isDirectory() ? walk(p) : p.endsWith(".tsx") ? [p] : [];
+  });
+}
+
+describe("token layer", () => {
+  it("declares the same variables on every surface", () => {
+    // The classic failure: a colour gets added to the dark ramp, the light one
+    // silently inherits nothing, and one component renders invisible text.
+    const chassis = declaredVars('[data-surface="chassis"]');
+    const work = declaredVars('[data-surface="work"]');
+
+    expect(chassis.length).toBeGreaterThan(10);
+    expect(work).toEqual(chassis);
+  });
+
+  it("has no bare hex colour in any component", () => {
+    const offenders = walk("src")
+      .filter((f) => /#[0-9a-fA-F]{3,8}\b/.test(readFileSync(f, "utf8")));
+
+    expect(offenders).toEqual([]);
+  });
+});
 ```
 
-Expected: `0`. Drop the `''` after `-i` on Linux.
+The second test turns a global constraint into something that fails a build instead of a review.
 
-A fork, not a link: from here the two design systems evolve separately.
+- [ ] **Step 3: Run it to verify it fails**
 
-- [ ] **Step 3: Port only what M1 needs**
+Run: `pnpm --filter web vitest run src/styles/tokens.test.ts`
+Expected: FAIL — `tokens.css` does not exist.
 
-`GlowCard` with its gradient and border rule, buttons, text fields, selects, the table primitive, the status badge, tooltip, and the time-range picker with its `nuqs` URL state.
+- [ ] **Step 4: Write the token layer**
 
-**Not** the dataviz primitives — M1 has no charts and they would be dead code. They arrive with `IKN-13`.
+`apps/web/src/styles/tokens.css` — three surfaces, the same variable names on each. A component never names a colour; it names a role, and the surface it is mounted on decides the value.
 
-Keep the original rules: no arbitrary Tailwind values, everything snapped to tokens.
+```css
+/* Chassis: the tool. Bars, rail, status line, modals, auth. Never moves. */
+[data-surface="chassis"] {
+  --ikn-bg:            #171E27;
+  --ikn-bg-inset:      #0C1117;
+  --ikn-bg-raised:     #1E2733;
+  --ikn-border:        #27313D;
+  --ikn-border-strong: #33404E;
+  --ikn-border-focus:  #4A5F72;
+  --ikn-fg:            #CBD8D0;
+  --ikn-fg-muted:      #8FA99A;
+  --ikn-fg-dim:        #5E7286;
+  --ikn-accent:        #86B99A;
+  --ikn-warn:          #E0AE55;
+  --ikn-error:         #E4736B;
+  --ikn-info:          #7FA8C4;
+  --ikn-error-bg:      #22191C;
+}
 
-- [ ] **Step 4: Write the API client**
+/* Work surface: the data you read for an hour at a time. */
+[data-surface="work"] {
+  --ikn-bg:            #BFCDD4;
+  --ikn-bg-inset:      #AEBFC7;
+  --ikn-bg-raised:     #BFCDD4;
+  --ikn-border:        #93A8B3;
+  --ikn-border-strong: #A3B6BF;
+  --ikn-border-focus:  #556A76;
+  --ikn-fg:            #131E24;
+  --ikn-fg-muted:      #3F535F;
+  --ikn-fg-dim:        #556A76;
+  --ikn-accent:        #3C6B52;
+  --ikn-warn:          #8A6118;
+  --ikn-error:         #8E2F2A;
+  --ikn-info:          #4E7B96;
+  --ikn-error-bg:      #C4A9A6;
+}
+
+/* Terminal: the log window, inset into the work surface. */
+[data-surface="terminal"] {
+  --ikn-bg:            #10151C;
+  --ikn-bg-inset:      #0C1117;
+  --ikn-bg-raised:     #171E27;
+  --ikn-border:        #1B242E;
+  --ikn-border-strong: #24303C;
+  --ikn-border-focus:  #4A5F72;
+  --ikn-fg:            #DFE9E4;
+  --ikn-fg-muted:      #AFC0BA;
+  --ikn-fg-dim:        #55697C;
+  --ikn-accent:        #86B99A;
+  --ikn-warn:          #E0AE55;
+  --ikn-error:         #E4736B;
+  --ikn-info:          #7FA8C4;
+  --ikn-error-bg:      #22191C;
+}
+```
+
+Expose them to Tailwind v4 with `@theme { --color-ikn-bg: var(--ikn-bg); … }` so `bg-ikn-bg` works and no component ever needs a bracket.
+
+Fonts: **JetBrains Mono** for anything that is data or chrome, **IBM Plex Sans** for card titles and prose. The mockup also loads IBM Plex Mono without using it — drop it, three families for two jobs is page weight with no return.
+
+Green is the identity, not "everything is fine". It is why the exploration discarded the navy direction. No chart may use `--ikn-accent` as a neutral series colour.
+
+- [ ] **Step 5: Build the primitives**
+
+Only what M1 needs: card, button, text field, select, filter chip, status badge, dense table, pill, tooltip, modal shell (tag, title, `esc`, body, hint line, actions), toast, and the time-range control with its `nuqs` URL state.
+
+Plus **sparkline** — the one dataviz primitive M1 needs, for the service rail and the ingest card. Line and bar charts wait for `IKN-13` and `IKN-23`; porting them now would be dead code.
+
+A card is a 1px border and a flat fill. It never floats on a shadow. Elevation belongs to things that overlay: modals, the user menu, toasts. Density is a single prop, `compact` (default) or `comfortable`, and it changes row padding and nothing else.
+
+- [ ] **Step 6: Write the API client**
 
 `apps/web/src/lib/api.ts`:
 
@@ -2980,35 +4005,156 @@ export async function apiMutate(path: string, body?: unknown): Promise<Response>
 }
 ```
 
-Client-side calls use relative paths so they reach nginx on the same origin — which is what makes the cookie and CSRF header work with no CORS configuration at all.
+Client calls use relative paths so they reach nginx on the same origin — which is what makes the cookie and the CSRF header work with no CORS configuration at all.
 
-- [ ] **Step 5: Add the app chrome**
+- [ ] **Step 7: Run the tests and build**
 
-`layout.tsx` with the four nav entries (Overview, Logs, Issues, Alerts). Only Logs is reachable in M1; the other three render a "coming in M2" state rather than a dead link, so the navigation never has to change shape.
+Run: `pnpm --filter web vitest run && pnpm --filter web build`
+Expected: PASS, 2 token tests; build succeeds; types resolve against `@iknos/contracts`.
 
-- [ ] **Step 6: Verify**
-
-Run: `pnpm --filter web build`
-Expected: build succeeds, no `pfa-` remaining, types resolve against `@iknos/contracts`.
-
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add apps/web
-git commit -m "feat(web): next app with the PFA design system ported"
+git commit -m "feat(web): iknos token layer, primitives and api client"
 ```
 
 ---
 
-## Task 20: Login page and route protection
+## Task 23: The app chassis — top bar, service rail, status bar
 
 **Files:**
-- Create: `apps/web/src/app/login/page.tsx`, `apps/web/src/app/login/login-form.tsx`, `apps/web/src/middleware.ts`
+- Create: `apps/web/src/app/(app)/layout.tsx`, `apps/web/src/components/chrome/top-bar.tsx`, `service-rail.tsx`, `status-bar.tsx`, `user-menu.tsx`, `views.ts`, `apps/web/src/components/chrome/views.test.ts`
 
 **Interfaces:**
-- Produces: a working login flow. Every later page can assume a session exists by the time it renders.
+- Consumes: `apiGet` (Task 22), `GET /api/services` (Task 17).
+- Produces: the chassis every later task renders inside, the selected service in the route, and the global time range in the URL. Tasks 25 through 30 add panels, never chrome.
 
-- [ ] **Step 1: Write the middleware**
+The chassis ships **whole** in M1 even though most of its views arrive later. Retrofitting a service rail into a finished page is far more expensive than building around one from the start.
+
+- [ ] **Step 1: Write the failing view-list test**
+
+`apps/web/src/components/chrome/views.test.ts`:
+
+```ts
+import { describe, expect, it } from "vitest";
+import { VIEWS } from "./views";
+
+describe("VIEWS", () => {
+  it("lists only views that can actually answer", () => {
+    // No greyed-out entries, no "coming in M2". An interface that advertises
+    // five views and delivers one teaches you to stop trusting the other four.
+    expect(VIEWS.map((v) => v.key)).toEqual(["logs"]);
+  });
+
+  it("gives every view a unique shortcut", () => {
+    const keys = VIEWS.map((v) => v.badge);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+```
+
+- [ ] **Step 2: Run it to verify it fails, then implement**
+
+Run: `pnpm --filter web vitest run src/components/chrome`
+Expected: FAIL, then PASS once `views.ts` exists:
+
+```ts
+export type View = { key: string; label: string; badge: string };
+
+/**
+ * M1 ships one view. `service`, `metrics`, `issues` and `alerts` are appended
+ * here by IKN-13, IKN-23, IKN-14 and IKN-15 — each one when its data exists,
+ * never before. Update the test in the same commit that adds one.
+ */
+export const VIEWS: readonly View[] = [{ key: "logs", label: "logs", badge: "L" }];
+```
+
+- [ ] **Step 3: Route by service**
+
+`apps/web/src/app/(app)/[service]/[view]/page.tsx`. The selected service is a path segment, not component state: it must survive a reload, a shared link and the browser's back button, and every panel on screen is scoped to it.
+
+The layout is a server component that calls `apiGet<Service[]>("/api/services")` once and hands the list to the rail. One request for the whole rail, not one per row — the rail is on every screen and a per-row request would be paid forever.
+
+- [ ] **Step 4: Build the three pieces of chrome**
+
+**Top bar** — brand, the `ks-b` host badge, the `services / {service}` breadcrumb, the ⌘K trigger (wired in Task 29), the global range selector `15m · 1h · 24h · 7d` in the URL via `nuqs`, the collector pill (Task 30), and a clock.
+
+**Service rail** — one row per service: status dot, name, sparkline. Services with no health data yet render the name alone; the dot and sparkline are simply absent, because `GET /api/services` omits those fields until `IKN-8` (Task 17, step 5). Below the list: the view list, the ingest card (Task 30), the user menu.
+
+**Status bar** — mode, service, tail state, event count, query time, active-alert count, and the permanent keyboard legend. Task 29 fills the last four; the bar exists now so nothing has to reflow later.
+
+**User menu** — signed-in email, `settings` (toasts "not in v1 scope", exactly as the mockup does), `change password` and `set recovery passphrase` (both live, Task 24), and log out.
+
+`data-surface` is set once per region: `chassis` on the bars and rail, `work` on the main column. That single attribute is what makes the two token ramps resolve correctly, so it must never be set on an individual component.
+
+- [ ] **Step 5: Verify the frame by hand**
+
+At 1440×900 with the logs view open:
+
+- the page itself does not scroll — `document.body.scrollHeight <= window.innerHeight` in the console;
+- only the log list scrolls, inside its own box;
+- shrinking the window collapses the rail without breaking the status bar;
+- every colour on screen resolves from a token (spot-check in devtools that no computed colour comes from an inline hex).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add apps/web
+git commit -m "feat(web): app chassis with service rail and status bar"
+```
+
+---
+
+## Task 24: Auth screens — login, register, recover, about
+
+**Files:**
+- Create: `apps/web/src/app/(auth)/login/page.tsx`, `register/page.tsx`, `recover/page.tsx`, `about/page.tsx`, `apps/web/src/app/(auth)/auth-shell.tsx`, `apps/web/src/lib/bootstrap.ts`, `apps/web/src/lib/bootstrap.test.ts`, `apps/web/src/middleware.ts`
+
+**Interfaces:**
+- Consumes: `GET /api/auth/bootstrap` (Task 11), `POST /api/auth/login` (Task 10), `register` / `recover` / `password` (Task 11).
+- Produces: a working way in, and a working way back in.
+
+- [ ] **Step 1: Read the seal, on the server**
+
+The route already exists (Task 11, Step 8b). The front side follows worldweathr's `getPublicConfig` shape — React `cache()` so a layout and a page share one request per render, a schema-validated body, and a defined answer when the API will not give one.
+
+`apps/web/src/lib/bootstrap.ts`:
+
+```ts
+import { cache } from "react";
+import { z } from "zod";
+
+const BootstrapSchema = z.object({ sealed: z.boolean() });
+
+/**
+ * What we assume when the API will not answer. Sealed, because that is the
+ * normal state of a deployed instance and the two mistakes are not equal:
+ * wrongly showing the seal on a fresh instance costs nothing — first-run setup
+ * is documented as `pnpm seed:user` anyway — while wrongly showing an open
+ * first-run form on a live console invites someone to try to take it over.
+ *
+ * The API refuses either way, so this is only ever cosmetic. It should still be
+ * cosmetic in the safe direction.
+ */
+const SEALED = { sealed: true };
+
+export const getBootstrap = cache(async (): Promise<{ sealed: boolean }> => {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/bootstrap`, { cache: "no-store" });
+    if (!res.ok) return SEALED;
+
+    const parsed = BootstrapSchema.safeParse(await res.json());
+    return parsed.success ? parsed.data : SEALED;
+  } catch {
+    return SEALED;
+  }
+});
+```
+
+`bootstrap.test.ts` covers the three ways the API can fail to answer — unreachable, non-OK, wrong shape — and asserts `sealed: true` for each. Mock the fetch by throwing from inside the implementation rather than with `mockRejectedValue`, which builds the rejected promise at setup time and gets flagged as unhandled before the code under test awaits it.
+
+- [ ] **Step 2: Write the middleware**
 
 `apps/web/src/middleware.ts`:
 
@@ -3027,13 +4173,21 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!login|register|recover|about|_next/static|_next/image|favicon.ico).*)"],
 };
 ```
 
-- [ ] **Step 2: Write the form**
+The three new public pages join `login` in the exclusion list. Forgetting one produces a redirect loop on the page whose entire purpose is recovering an account you cannot log into.
 
-`login-form.tsx` — a client component posting to `/api/auth/login` with `credentials: "same-origin"`. Login carries no CSRF token, because there is no session yet to mint one from; `SameSite=Lax` is what protects it.
+- [ ] **Step 3: Build the shared shell**
+
+`auth-shell.tsx` — full-screen `data-surface="chassis"`, the oversized outlined `IKNOS` wordmark bled off the bottom-left, two radial washes, a chrome bar carrying `KS-B.INTERNAL` with a liveness dot, and the footer: the product line, an `ABOUT IKNOS →` link, and `httpOnly cookie · rolling session · CSRF · bcrypt`.
+
+Stating the security posture on the login screen of a self-hosted tool is honest and costs one line.
+
+- [ ] **Step 4: Build login**
+
+A client component posting to `/api/auth/login` with `credentials: "same-origin"`. Login carries no CSRF token — there is no session yet to mint one from, and `SameSite=Lax` is what protects it.
 
 Three states, exactly:
 
@@ -3044,34 +4198,114 @@ if (res.status === 429) {
   // Deliberately identical for unknown account and wrong password.
   setError("Identifiants invalides.");
 } else {
-  router.replace("/logs");
+  router.replace("/pfa-api/logs");
 }
 ```
 
-- [ ] **Step 3: Verify by hand**
+- [ ] **Step 5: Build register, with its sealed state**
 
-Submit empty (client validation blocks), wrong credentials (generic message), six times fast (the 429 message), correct credentials (redirect to `/logs`).
+A server component calls `getBootstrap()`. When `sealed` is true it renders the amber-edged banner — *"this instance already has its account"*, with *"use recovery if you are locked out"* underneath — above the form, with the form at 42% opacity and the button inert.
 
-Cookie flags are checked in Task 23 against the deployed environment — `Secure` requires HTTPS and cannot be observed on `localhost`.
+**Decided on the server, deliberately.** Fetching the seal in the client and hiding the form after mount leaves a window in which a real, submittable first-run form is on screen. Worldweathr's signup page makes the same call for the same reason.
 
-- [ ] **Step 4: Commit**
+Render the form rather than hiding it. Someone who arrives here needs to see that the instance is already set up, not wonder whether the page is broken.
+
+On a fresh instance: email, password + confirm, a four-segment strength meter, recovery passphrase + confirm (20+ characters), and the warning in full — *the only way back in if you lose your password; there is no recovery email; write it down.*
+
+On success the API opens no session, so the page redirects to `/login` with *"account created — sign in"*. That is not a missing feature: signing in immediately proves the password works while the passphrase is still on screen to be written down.
+
+The mockup's banner names an environment variable (`IKNOS_ALLOW_SIGNUP=false`). There is no such variable — the seal is the account's existence — so the copy changes. The mockup is authoritative on form, not on values.
+
+- [ ] **Step 6: Build recover and about**
+
+`recover` — email, recovery passphrase, new password + confirm, posting to `/api/auth/recover`. On success, redirect to login with a toast; the API has already destroyed every session.
+
+`about` — the legal notice as a key/value list, reachable from the footer of all three.
+
+- [ ] **Step 7: Verify by hand**
+
+- Empty submit blocked client-side; wrong credentials give the generic message; six fast attempts give the 429 message; correct credentials land on the logs view.
+- With an account present, `/register` shows the sealed banner and the button does nothing.
+- Against an empty `app_user`, registration creates the account and lands on `/login`, where the new password works.
+- Stopping the API and reloading `/register` still shows the seal, not an open form.
+- Recovery with the right passphrase works; with a wrong one, the message is identical to an account that has no passphrase at all.
+- `/recover` is reachable while logged out — the redirect-loop check.
+
+Cookie flags are verified in Task 31 against the deployed environment: `Secure` requires real HTTPS and cannot be observed on `localhost`.
+
+- [ ] **Step 8: Commit**
 
 ```bash
-git add apps/web
-git commit -m "feat(web): login page and cookie-presence middleware"
+git add apps/web apps/api/src/auth
+git commit -m "feat(web): login, gated registration, recovery and legal screens"
 ```
 
 ---
 
-## Task 21: Logs page — search, filters and pagination
+## Task 25: Logs panel — query tokens, table and pagination
 
 **Files:**
-- Create: `apps/web/src/lib/log-query.ts`, `apps/web/src/lib/log-query.test.ts`, `apps/web/src/app/logs/page.tsx`, `apps/web/src/app/logs/filters.tsx`, `apps/web/src/app/logs/log-table.tsx`, `apps/web/src/app/logs/log-row.tsx`
+- Create: `apps/web/src/lib/log-query.ts`, `apps/web/src/lib/log-query.test.ts`, `apps/web/src/components/logs/log-panel.tsx`, `query-bar.tsx`, `log-table.tsx`, `log-row.tsx`
 
 **Interfaces:**
-- Produces: `buildLogQuery(params: URLSearchParams, now?: Date): string` — the single place UI state becomes an API query. Task 22 reuses it for the SSE URL, so search and live tail cannot drift apart.
+- Produces: `buildLogQuery(params: URLSearchParams, now?: Date): string` — the single place UI state becomes an API query. Tasks 26, 27 and 28 all reuse it, so search, histogram and live tail cannot drift apart.
 
-- [ ] **Step 1: Write the query builder with its test**
+- [ ] **Step 1: Write the failing query-builder test**
+
+`apps/web/src/lib/log-query.test.ts`:
+
+```ts
+import { describe, expect, it } from "vitest";
+import { buildLogQuery } from "./log-query";
+
+const q = (init: Record<string, string> = {}, now?: Date) =>
+  new URLSearchParams(buildLogQuery(new URLSearchParams(init), now));
+
+describe("buildLogQuery", () => {
+  it("always emits from and to", () => {
+    expect(q().get("from")).toBeTruthy();
+    expect(q().get("to")).toBeTruthy();
+  });
+
+  it("passes through set filters and omits unset ones", () => {
+    const out = q({ service: "pfa-api", q: "/api/users/42" });
+    expect(out.get("service")).toBe("pfa-api");
+    expect(out.get("q")).toBe("/api/users/42");
+    expect(out.has("route")).toBe(false);
+  });
+
+  it("honours the selected range", () => {
+    const out = q({ range: "24h" }, new Date("2026-08-09T12:00:00.000Z"));
+    expect(out.get("from")).toBe("2026-08-08T12:00:00.000Z");
+  });
+
+  it("falls back to a sane range rather than emitting an invalid one", () => {
+    expect(q({ range: "nonsense" }).get("from")).toBeTruthy();
+  });
+
+  it("keeps a switched-off token in the URL but out of the query", () => {
+    // This is what lets you look "without the service filter" and get it back
+    // with one click instead of retyping it.
+    const out = q({ service: "pfa-api", min_level: "warn", off: "service" });
+    expect(out.has("service")).toBe(false);
+    expect(out.get("min_level")).toBe("warn");
+  });
+
+  it("ignores an explicit window in the incoming params", () => {
+    // The range control is the only source of from/to. A hand-edited URL must
+    // not be able to widen the window past what the control can express.
+    const out = q({ from: "1970-01-01T00:00:00.000Z", range: "1h" });
+    expect(out.get("from")).not.toBe("1970-01-01T00:00:00.000Z");
+  });
+});
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+Run: `pnpm --filter web vitest run src/lib/log-query.test.ts`
+Expected: FAIL — cannot resolve `./log-query`.
+
+- [ ] **Step 3: Implement it**
 
 `apps/web/src/lib/log-query.ts`:
 
@@ -3079,6 +4313,7 @@ git commit -m "feat(web): login page and cookie-presence middleware"
 export type Range = "15m" | "1h" | "24h" | "7d";
 
 const MINUTES: Record<Range, number> = { "15m": 15, "1h": 60, "24h": 1440, "7d": 10080 };
+const FILTERS = ["service", "min_level", "route", "status", "q"] as const;
 
 export function resolveRange(range: Range, now = new Date()) {
   return {
@@ -3088,95 +4323,195 @@ export function resolveRange(range: Range, now = new Date()) {
 }
 
 /**
- * `from` and `to` are always present. The API rejects a request without them,
- * so the UI must be structurally incapable of building one.
+ * `from` and `to` are always present and always come from the range control.
+ * The API rejects a request without them, so the UI must be structurally
+ * incapable of building one — hence a fresh URLSearchParams rather than a copy
+ * of the incoming one.
  */
 export function buildLogQuery(params: URLSearchParams, now = new Date()): string {
-  const range = (params.get("range") as Range | null) ?? "1h";
-  const { from, to } = resolveRange(MINUTES[range] ? range : "1h", now);
+  const asked = params.get("range") as Range | null;
+  const range: Range = asked && MINUTES[asked] ? asked : "1h";
+  const { from, to } = resolveRange(range, now);
+
+  // Tokens named in `off` keep their value in the URL and stay out of the query.
+  const off = new Set((params.get("off") ?? "").split(",").filter(Boolean));
 
   const out = new URLSearchParams({ from, to });
-  for (const key of ["service", "min_level", "route", "status", "q", "cursor"]) {
+  for (const key of FILTERS) {
     const value = params.get(key);
-    if (value) out.set(key, value);
+    if (value && !off.has(key)) out.set(key, value);
   }
+  const cursor = params.get("cursor");
+  if (cursor) out.set("cursor", cursor);
+
   return out.toString();
 }
 ```
 
-`apps/web/src/lib/log-query.test.ts`:
+- [ ] **Step 4: Run it to verify it passes**
+
+Run: `pnpm --filter web vitest run src/lib/log-query.test.ts`
+Expected: PASS, 6 tests.
+
+- [ ] **Step 5: Build the query bar**
+
+Filters are chips, not fields: `service:pfa-api`, `level>=warn`, and a free-text token. Each shows `×` when active and `+` when off, dimming rather than disappearing, and toggling one edits `off` in the URL through `nuqs`.
+
+To the right: the `● LIVE` / `❙❙ PAUSED` toggle (Task 27) and `⌘L fullscreen`.
+
+- [ ] **Step 6: Build the table**
+
+Columns `TIME · LVL · SERVICE · ROUTE · ST · MESSAGE · TRACE · DUR` — a direct projection of `log_entry`, which is why it costs nothing to serve.
+
+`data-surface="terminal"` on the panel. Level colours from the tokens; error rows take `--ikn-error-bg` and a left edge; the selected row takes the accent edge; `traceId` is dotted-underlined.
+
+Expanding a row shows the raw ECS JSON on the left, the stack (for errors) or process context (otherwise) on the right, and three actions: `⌥⏎ trace`, `⌘I issue`, `⌘C copy NDJSON`. `⌘I` is inert until `IKN-14` exists and is therefore **not rendered yet** — the same rule as the view list.
+
+`LogPage` and `LogRow` come from `@iknos/contracts`, never redeclared by hand.
+
+- [ ] **Step 7: Wire up pagination**
+
+Load-more, never numbered pages: `nextCursor` from the previous response goes into the next request and rows append rather than replace. Because the cursor is keyset rather than an offset, rows arriving during paging cannot shift the window and cause a duplicate or a skip.
+
+- [ ] **Step 8: Verify**
+
+With ingestion running: every filter combines and survives a reload; a switched-off token keeps its value; a `traceId` click reconstructs the request; load-more reaches the end with no repeated row; 10 000 loaded rows still scroll smoothly.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add apps/web
+git commit -m "feat(web): logs panel with filter tokens and cursor pagination"
+```
+
+---
+## Task 26: Volume histogram
+
+**Files:**
+- Create: `apps/web/src/components/logs/histogram.tsx`, `apps/web/src/lib/anomaly.ts`, `apps/web/src/lib/anomaly.test.ts`
+
+**Interfaces:**
+- Consumes: `GET /api/logs/histogram` (Task 18) and `buildLogQuery` (Task 25).
+- Produces: the stacked bar chart above the log table, and `anomalyIndex(buckets)`.
+
+This is what turns the panel from a list you can read into a tool you can diagnose with: you see **when** it started before you read **what** happened.
+
+- [ ] **Step 1: Write the failing anomaly test**
+
+`apps/web/src/lib/anomaly.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { buildLogQuery } from "./log-query";
+import { anomalyIndex } from "./anomaly";
 
-describe("buildLogQuery", () => {
-  it("always emits from and to", () => {
-    const q = new URLSearchParams(buildLogQuery(new URLSearchParams()));
-    expect(q.get("from")).toBeTruthy();
-    expect(q.get("to")).toBeTruthy();
+const flat = (n: number) => Array.from({ length: 20 }, () => ({ error: n, warn: 0, info: 10 }));
+
+describe("anomalyIndex", () => {
+  it("finds the spike", () => {
+    const buckets = flat(1);
+    buckets[13].error = 40;
+    expect(anomalyIndex(buckets)).toBe(13);
   });
 
-  it("passes through set filters and omits unset ones", () => {
-    const q = new URLSearchParams(
-      buildLogQuery(new URLSearchParams({ service: "pfa-api", q: "/api/users/42" })),
-    );
-    expect(q.get("service")).toBe("pfa-api");
-    expect(q.get("q")).toBe("/api/users/42");
-    expect(q.has("route")).toBe(false);
+  it("stays silent on a flat series", () => {
+    expect(anomalyIndex(flat(2))).toBeNull();
   });
 
-  it("honours the selected range", () => {
-    const now = new Date("2026-08-09T12:00:00.000Z");
-    const q = new URLSearchParams(buildLogQuery(new URLSearchParams({ range: "24h" }), now));
-    expect(q.get("from")).toBe("2026-08-08T12:00:00.000Z");
+  it("stays silent on a series of zeroes", () => {
+    expect(anomalyIndex(flat(0))).toBeNull();
   });
 
-  it("falls back to a sane range rather than emitting an invalid one", () => {
-    const q = new URLSearchParams(buildLogQuery(new URLSearchParams({ range: "nonsense" })));
-    expect(q.get("from")).toBeTruthy();
+  it("does not call two errors an anomaly", () => {
+    // Two errors above a median of zero is not an incident, it is Tuesday.
+    const buckets = flat(0);
+    buckets[4].error = 2;
+    expect(anomalyIndex(buckets)).toBeNull();
+  });
+
+  it("handles an empty series without throwing", () => {
+    expect(anomalyIndex([])).toBeNull();
   });
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails, then passes**
+- [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm --filter web vitest run src/lib/log-query.test.ts`
-Expected: FAIL first (module not found), PASS once Step 1's file is saved.
+Run: `pnpm --filter web vitest run src/lib/anomaly.test.ts`
+Expected: FAIL — cannot resolve `./anomaly`.
 
-- [ ] **Step 3: Build the page**
+- [ ] **Step 3: Implement it**
 
-`page.tsx` — a server component reading `searchParams`, calling ``apiGet<LogPage>(`/api/logs?${buildLogQuery(params)}`)``, rendering `<Filters />` and `<LogTable />`. `LogPage` and `LogRow` come from `@iknos/contracts`, never hand-redeclared.
+`apps/web/src/lib/anomaly.ts`:
 
-`filters.tsx` — a client component holding service, minimum level, route, status, free text and range, all state in the URL via `nuqs`. A shareable, reloadable search falls out of that for free.
+```ts
+import type { Bucket } from "@iknos/contracts";
 
-`log-table.tsx` — dense rows: timestamp, service, level badge, message. Clicking a row expands the full record including `attrs`. Clicking a `traceId` sets `q` to that id and clears the other filters — the move that turns one line into the whole request.
+const FLOOR = 3;
 
-- [ ] **Step 4: Wire up pagination**
+/**
+ * The bucket whose error count sits furthest above the median, when that excess
+ * clears both a small absolute floor and the median itself.
+ *
+ * Deliberately crude and explainable. Nobody should have to reverse-engineer
+ * why a marker appeared on their chart, and a marker that fires on noise gets
+ * ignored within a week — at which point it is worse than no marker.
+ */
+export function anomalyIndex(buckets: Pick<Bucket, "error">[]): number | null {
+  if (buckets.length === 0) return null;
 
-Load-more, not numbered pages: `nextCursor` from the previous response goes into the next request, and rows append rather than replace.
+  const errors = buckets.map((b) => b.error);
+  const sorted = [...errors].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
 
-Because the cursor is keyset rather than an offset, rows arriving during paging cannot shift the window and cause a duplicate or a skip.
+  let best = -1;
+  let bestExcess = 0;
+  errors.forEach((n, i) => {
+    const excess = n - median;
+    if (excess > bestExcess) {
+      bestExcess = excess;
+      best = i;
+    }
+  });
 
-- [ ] **Step 5: Verify**
+  return bestExcess >= Math.max(FLOOR, median) ? best : null;
+}
+```
 
-With ingestion running: every filter combines and survives a reload; a `traceId` click reconstructs the request; load-more reaches the end with no repeated row; 10 000 loaded rows still scroll smoothly.
+- [ ] **Step 4: Run it to verify it passes**
 
-- [ ] **Step 6: Commit**
+Run: `pnpm --filter web vitest run src/lib/anomaly.test.ts`
+Expected: PASS, 5 tests.
+
+- [ ] **Step 5: Build the chart**
+
+A client component fetching `/api/logs/histogram?${buildLogQuery(params)}` — the same builder as the table, so the two can never describe different windows.
+
+Each bucket is a column of three stacked segments, error on top, then warn, then info, using `--ikn-error`, `--ikn-warn` and a dimmed accent. Buckets are already server-side counts; the component does no aggregation.
+
+Under the bars, four time labels and, when `anomalyIndex` returns a bucket, the marker: `▲ 02:14:37 · +18 err`.
+
+Clicking a bucket narrows `from`/`to` to that bucket by writing an explicit custom range into the URL. Table, histogram and live tail all re-read from the URL, so one click updates all three with no cross-component wiring.
+
+- [ ] **Step 6: Verify**
+
+Generate a burst of errors in a monitored app. The spike appears in the right bucket, the marker lands on it, clicking it narrows the range and the table below shows exactly those lines. Switch to `7d`: the bar count stays at or below sixty and the bucket size on the axis grows.
+
+- [ ] **Step 7: Commit**
 
 ```bash
 git add apps/web
-git commit -m "feat(web): logs page with filters and cursor pagination"
+git commit -m "feat(web): log volume histogram with anomaly marker"
 ```
 
 ---
 
-## Task 22: Logs page — live tail
+## Task 27: Live tail
 
 **Files:**
-- Create: `apps/web/src/app/logs/live-tail.tsx`, `apps/web/src/hooks/use-log-stream.ts`
+- Create: `apps/web/src/hooks/use-log-stream.ts`, `apps/web/src/components/logs/live-toggle.tsx`
 
 **Interfaces:**
+- Consumes: `GET /api/logs/stream` (Task 19), `buildLogQuery` (Task 25).
 - Produces: `useLogStream(query: string, enabled: boolean)` returning `{ rows, gaps, connected, paused }`.
 
 - [ ] **Step 1: Write the hook**
@@ -3231,19 +4566,20 @@ export function useLogStream(query: string, enabled: boolean) {
 }
 ```
 
-- [ ] **Step 2: Build the component**
+- [ ] **Step 2: Build the toggle and the pause rule**
 
-`live-tail.tsx` — a client component with a start/stop toggle, building its query with the same `buildLogQuery` the search page uses so the two views cannot diverge.
+`live-toggle.tsx` builds its query with the same `buildLogQuery` the table and the histogram use, so the three views cannot diverge.
 
-Pause on scroll: when the user leaves the top of the list, set `paused.current = true` and show a "N nouvelles lignes" button that resumes and jumps back. A list that jumps while you are reading it is unusable, and this is the whole difference between a live tail people use and one they switch off.
+Pause on scroll: when the user leaves the top of the list, set `paused.current = true` and show a `N nouvelles lignes` button that resumes and jumps back. A list that jumps while you are reading it is unusable, and this one rule is the whole difference between a live tail people leave on and one they switch off.
 
 Render a visible marker whenever `gaps` increases, and a connection indicator driven by `connected`.
 
 - [ ] **Step 3: Verify the hard cases**
 
 - A line appended to a PM2 log file appears within 2 seconds.
-- Scrolling down pauses; the resume button restores the flow.
+- Scrolling down pauses; the resume button restores the flow and the count is right.
 - Restarting the Nest process shows a disconnect, then reconnects on its own with a gap marker.
+- Changing a filter token while live rebuilds the stream against the new query.
 - Leave the tab open 8 hours under real traffic; browser memory stays flat. If it climbs, `MAX_BUFFERED_ROWS` is not being applied.
 
 - [ ] **Step 4: Commit**
@@ -3255,7 +4591,240 @@ git commit -m "feat(web): live tail with pause-on-scroll and gap markers"
 
 ---
 
-## Task 23: Deployment
+## Task 28: Trace timeline modal
+
+**Files:**
+- Create: `apps/web/src/components/logs/trace-modal.tsx`
+
+**Interfaces:**
+- Consumes: `GET /api/logs/trace/:traceId` (Task 18) and the modal shell (Task 22).
+- Produces: the view opened by `⌥⏎` and by clicking a `traceId`.
+
+- [ ] **Step 1: Build it**
+
+The modal shell with tag `TRACE`, the trace id and the total duration in the title, and one row per log line: timestamp, service, route or operation, message, and a bar whose width is proportional to `duration_ms` against `totalMs`. The row that errored takes the error background and edge.
+
+Actions: copy the trace id, and open the logs filtered to it.
+
+- [ ] **Step 2: Say what it is, in the interface**
+
+The hint line reads *"correlated through trace.id · N events"* — not "spans". This is a request timeline reconstructed from log rows, and distributed tracing remains out of scope (backend spec §11). Calling it a span tree in the UI would be a promise the data cannot keep, and someone would eventually rely on it.
+
+A row with no `duration_ms` gets no bar rather than a zero-width one — absent and instant are different facts.
+
+- [ ] **Step 3: Verify**
+
+- `⌥⏎` on a selected row and a click on its `traceId` open the same view.
+- The rows are in timestamp order and the bars sum visually to the total.
+- A trace id that has exactly one row renders a single line without a degenerate chart.
+- `esc` closes it and returns the selection to where it was.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add apps/web
+git commit -m "feat(web): request timeline for a trace id"
+```
+
+---
+
+## Task 29: Command palette, keyboard navigation and the status bar
+
+**Files:**
+- Create: `apps/api/src/search/search.controller.ts`, `apps/web/src/hooks/use-shortcuts.ts`, `apps/web/src/hooks/use-shortcuts.test.ts`, `apps/web/src/components/chrome/palette.tsx`
+- Modify: `apps/web/src/components/chrome/status-bar.tsx`
+
+**Interfaces:**
+- Produces: `GET /api/search?q=&from=&to=`, the global key map, and the ⌘K palette. Every later view inherits all three.
+
+The status bar advertises these permanently. That is what separates a dashboard you look at from a tool you use, and it is much cheaper to establish now than to retrofit across five views.
+
+- [ ] **Step 1: Write the failing shortcut tests**
+
+`apps/web/src/hooks/use-shortcuts.test.ts`, in jsdom:
+
+```ts
+import { fireEvent, renderHook } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { useShortcuts } from "./use-shortcuts";
+
+describe("useShortcuts", () => {
+  it("fires a bare key", () => {
+    const onNext = vi.fn();
+    renderHook(() => useShortcuts({ j: onNext }));
+    fireEvent.keyDown(window, { key: "j" });
+    expect(onNext).toHaveBeenCalled();
+  });
+
+  it("stays out of the way while typing", () => {
+    const onNext = vi.fn();
+    renderHook(() => useShortcuts({ j: onNext }));
+
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+    fireEvent.keyDown(input, { key: "j" });
+
+    // Otherwise searching for "json" moves the cursor four times.
+    expect(onNext).not.toHaveBeenCalled();
+  });
+
+  it("still allows escape while typing", () => {
+    const onEscape = vi.fn();
+    renderHook(() => useShortcuts({ Escape: onEscape }));
+
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+    fireEvent.keyDown(input, { key: "Escape" });
+
+    expect(onEscape).toHaveBeenCalled();
+  });
+
+  it("prevents the browser default on the combinations it claims", () => {
+    renderHook(() => useShortcuts({ "mod+l": vi.fn() }));
+    const event = new KeyboardEvent("keydown", { key: "l", metaKey: true, cancelable: true });
+    window.dispatchEvent(event);
+
+    // Without this, ⌘L opens the address bar and the shortcut printed in the
+    // status bar simply does not work.
+    expect(event.defaultPrevented).toBe(true);
+  });
+});
+```
+
+- [ ] **Step 2: Run them to verify they fail**
+
+Run: `pnpm --filter web vitest run src/hooks/use-shortcuts.test.ts`
+Expected: FAIL — cannot resolve `./use-shortcuts`.
+
+- [ ] **Step 3: Implement the hook**
+
+`use-shortcuts.ts` — one listener on `window`, mounted **once** in the chassis and never per page. Two pages each registering their own listener eventually fight over the same key, and which one wins depends on mount order.
+
+```ts
+const TYPING = new Set(["INPUT", "TEXTAREA"]);
+
+function isTyping(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  return !!el && (TYPING.has(el.tagName) || el.isContentEditable);
+}
+```
+
+Key names are normalised to `mod+k` form so the same map works on both platforms. `Escape` is the single key allowed through while typing.
+
+The full map, all of it in the status bar's legend: `j` `k` `↑` `↓` move, `⏎` expands, `⌥⏎` opens the trace, `/` focuses the query bar, `⌘K` the palette, `⌘L` fullscreen logs, `⌘I` the issue, `⌘C` copies NDJSON, `⌘⇧L` logs out, `esc` closes.
+
+The selection is clamped whenever the filters change: a filter that empties the list must not leave the cursor pointing past the end.
+
+- [ ] **Step 4: Write the search route**
+
+`apps/api/src/search/search.controller.ts` — one route, several sources, five results each:
+
+```ts
+const PER_TYPE = 5;
+
+@Get("api/search")
+async search(@Query("q") q: string, @Query("from") from: string, @Query("to") to: string) {
+  const term = (q ?? "").trim();
+  if (term.length < 2) return { results: [] };
+
+  const [services, routes, traces] = await Promise.all([
+    this.services.matching(term, PER_TYPE),
+    // Bounded by the same window as everything else: `(route, ts)` is indexed,
+    // but an unbounded DISTINCT over a partitioned table reads every partition.
+    this.logs.distinctRoutes(term, new Date(from), new Date(to), PER_TYPE),
+    this.logs.matchingTraceIds(term, new Date(from), new Date(to), PER_TYPE),
+  ]);
+
+  return { results: [...services, ...routes, ...traces, ...matchViews(term)] };
+}
+```
+
+Issues join this list with `IKN-14`. Each result carries a `kind` (`SERVICE`, `ROUTE`, `TRACE`, `VIEW`), a label, and the action it performs — a palette result is an action, not a link.
+
+- [ ] **Step 5: Build the palette**
+
+One input, results grouped by kind with the action named on the right. `↑↓` navigates, `⏎` runs, `esc` closes.
+
+Debounce the input and abort the previous request with an `AbortController`. Without the abort, fast typing lets the slowest response win and the list shows the results of a query the user has already replaced.
+
+- [ ] **Step 6: Fill in the status bar**
+
+Mode (`NORMAL` / `MODAL`), selected service, tail state, event count for the range, **`q {meta.tookMs}ms`**, the active-alert count (inert until `IKN-15`, so not rendered yet), and the keyboard legend.
+
+The query time is the point: it is the only place a query that has quietly become slow becomes visible without anyone going to look for it.
+
+- [ ] **Step 7: Run the tests and check the whole path**
+
+Run: `pnpm --filter web vitest run src/hooks && pnpm vitest run apps/api/src/search`
+Expected: PASS, 4 shortcut tests plus the search tests.
+
+Then, without touching the mouse: log in, switch service from the palette, filter, move the selection with `j`/`k`, expand a row, open its trace, close it, and log out with `⌘⇧L`.
+
+```bash
+curl -si 'localhost:4310/api/search?q=api' | head -1
+```
+
+Expected: `HTTP/1.1 401 Unauthorized`.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add apps/web apps/api/src/search
+git commit -m "feat: command palette, keyboard navigation and status bar"
+```
+
+---
+
+## Task 30: Collector chrome — lag pill, ingest card, storage panel
+
+**Files:**
+- Create: `apps/web/src/components/chrome/collector-pill.tsx`, `ingest-card.tsx`, `apps/web/src/components/panels/storage-panel.tsx`
+
+**Interfaces:**
+- Consumes: `GET /api/collector/status` and `GET /api/collector/storage` (Task 21).
+- Produces: the three places Iknos reports on itself.
+
+- [ ] **Step 1: Build the pill**
+
+Top bar, right of the range control: a pulsing dot and the lag. Green normally, amber past a lag threshold, red when the tailer has read nothing for several minutes.
+
+`lagMs === null` renders `collector —`, never `collector 0.0s`. Zero means "perfectly up to date"; null means "I have not written anything yet". A cold start that renders as zero is a dead collector that looks healthy, which is the one failure this pill exists to prevent.
+
+Polls every 10 seconds. The route reads memory only, so this is cheap by construction.
+
+- [ ] **Step 2: Build the ingest card**
+
+Bottom of the rail: `INGEST · 60m`, the sparkline from `perMinute` (Task 22's primitive), then the event count and the volume for the window.
+
+Fewer than sixty samples after a restart draws a shorter line rather than padding the left with zeroes — zeroes there would read as "no traffic an hour ago", which is a different and false statement.
+
+- [ ] **Step 3: Build the storage panel**
+
+One row per table: a fill bar, the size, and the retention window. A footer carrying disk occupancy and the schedule — `mysql 5.1/20 GB · nightly purge 03:00`.
+
+Every number is real: sizes from `information_schema`, retention and the oldest partition from `MaintenanceService.window()`. The mockup's `4.2 GB` against `14d` was decorative and must not be reproduced.
+
+The panel lives in the alerts view, which does not exist until `IKN-15`. Until then, mount it under the ingest card in the rail — the numbers are useful now and moving one component later is cheap.
+
+- [ ] **Step 4: Verify**
+
+- `pm2 stop iknos-api`, wait, restart: the pill goes red and recovers on its own.
+- Immediately after a restart the pill reads `—` and the sparkline is short, not zeroed.
+- The sizes match `SELECT table_name, data_length+index_length FROM information_schema.TABLES` run by hand.
+- The oldest partition matches `IKNOS_RETENTION_DAYS`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add apps/web
+git commit -m "feat(web): collector lag, ingest rate and storage panel"
+```
+
+---
+
+## Task 31: Deployment
 
 **Files:**
 - Create: `deploy/ecosystem.config.js`, `deploy/nginx.conf`, `deploy/deploy.sh`, `README.md`
@@ -3292,6 +4861,8 @@ module.exports = {
 };
 ```
 
+These two names are what the service rail displays, because the rail shows what PM2 reports. The mockup labels them `iknos-collector` and `iknos-ui`; the PM2 names win, and `Service.name` exists if a friendlier label is ever wanted.
+
 - [ ] **Step 2: Write the nginx site**
 
 `deploy/nginx.conf`:
@@ -3323,8 +4894,9 @@ server {
   location /api/ {
     proxy_pass http://127.0.0.1:4310;
     proxy_set_header Host $host;
-    # The login rate limiter keys on this. Without it every request appears to
-    # come from 127.0.0.1 and the first five failures lock out everybody.
+    # The login and recovery rate limiters key on this. Without it every request
+    # appears to come from 127.0.0.1 and the first five failures lock out
+    # everybody.
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Real-IP $remote_addr;
   }
@@ -3343,13 +4915,27 @@ One subdomain, so the browser stays on one origin and the session cookie and CSR
 
 `deploy/deploy.sh` — pull, `pnpm install --frozen-lockfile`, `pnpm -r build`, symlink the new release to `current`, `pm2 reload` both processes. Model it on PFA's script.
 
+It also writes the release marker, which is three lines and the difference between an issue that says `v2.19.0` and one that says `—`:
+
+```bash
+GIT_SHA=$(git rev-parse --short HEAD)
+VERSION=$(node -p "require('./package.json').version")
+printf 'IKNOS_RELEASE=%s\nIKNOS_COMMIT=%s\n' "$VERSION" "$GIT_SHA" > "$RELEASE_DIR/.release"
+```
+
 **The script never migrates.** Migrations are manual:
 
 ```bash
 ssh ks-b 'cd /var/www/iknos/current && pnpm prisma migrate deploy'
 ```
 
-- [ ] **Step 4: First deploy**
+- [ ] **Step 4: Write the environment file**
+
+`/var/www/iknos/shared/.env` holds `DATABASE_URL`, `REDIS_URL`, `IKNOS_COOKIE_SECRET`, `IKNOS_PORT`, `IKNOS_LOG_LEVEL`, `IKNOS_RETENTION_DAYS`, `IKNOS_PM2_LOG_GLOB`.
+
+**Nothing here controls registration.** It seals itself once the account exists (Task 11), enforced by a unique constraint rather than a variable — so there is no line to forget, and none to flip back on while debugging at two in the morning.
+
+- [ ] **Step 5: First deploy**
 
 ```bash
 ssh ks-b 'mkdir -p /var/www/iknos/shared && chmod 700 /var/www/iknos/shared'
@@ -3360,22 +4946,40 @@ ssh ks-b 'cd /var/www/iknos/current && pnpm prisma migrate deploy && pnpm seed:u
 ssh ks-b 'pm2 start deploy/ecosystem.config.js && pm2 save && pm2 startup'
 ```
 
-- [ ] **Step 5: Verify against the milestone's criteria**
+`seed:user` will prompt for the recovery passphrase. Answer it, and write the passphrase down somewhere that is not this machine — it is the only way back into the only account.
+
+The browser path works equally well: skip `seed:user` and visit `/register` once, which is open until it isn't. Either way the instance seals itself afterwards, and the second attempt gets a 409.
+
+- [ ] **Step 6: Verify against the milestone's criteria**
 
 ```bash
-curl -si https://iknos.YOUR_DOMAIN/api/me | head -1   # expect 401
-curl -si https://iknos.YOUR_DOMAIN/health  | head -1   # expect 200
+curl -si https://iknos.YOUR_DOMAIN/api/me       | head -1   # expect 401
+curl -si https://iknos.YOUR_DOMAIN/health       | head -1   # expect 200
+curl -s  https://iknos.YOUR_DOMAIN/api/auth/bootstrap        # expect {"sealed":true}
+curl -si -X POST https://iknos.YOUR_DOMAIN/api/auth/register \
+     -H 'content-type: application/json' -d '{}' | head -1   # expect 409
+curl -si 'https://iknos.YOUR_DOMAIN/api/logs'   | head -1   # expect 401
 ```
 
-Then in a browser: log in, confirm in devtools that the cookie carries `HttpOnly`, `Secure` and `SameSite=Lax` (only observable over real HTTPS), open the Logs page, and confirm a line written by any PM2 app on ks-b appears within 2 seconds.
+Then in a browser, working through the epic's acceptance list:
 
-Reboot the machine and confirm both processes return. Rollback to the previous release once, deliberately, so you know it works before you need it.
+- log in, and confirm in devtools that the cookie carries `HttpOnly`, `Secure` and `SameSite=Lax` — only observable over real HTTPS;
+- a line written by any PM2 app on ks-b appears in the logs view within 2 seconds;
+- the histogram shows the window and clicking a bucket narrows it;
+- a `traceId` opens the request timeline;
+- the whole path works from the keyboard, without the mouse;
+- the collector pill shows a real lag and the storage panel real sizes;
+- the service rail lists four services, `iknos-api` among them — the tool watching itself;
+- `/register` shows the sealed banner, and still does with the API stopped;
+- recovery with the passphrase from Step 5 sets a new password, then log back in with it.
 
-- [ ] **Step 6: Write the README**
+Reboot the machine and confirm both processes return. Roll back to the previous release once, deliberately, so you know it works before you need it.
 
-Installation, environment variables, local commands, deploy and rollback, the manual migration step, the measured RSS of both processes after 24 hours, and the measured steady-state database size.
+- [ ] **Step 7: Write the README**
 
-- [ ] **Step 7: Commit**
+Installation, environment variables, local commands, deploy and rollback, the manual migration step, the measured RSS of both processes after 24 hours, the measured steady-state database size, and the `GET /api/logs` response time measured against at least 10 M rows.
+
+- [ ] **Step 8: Commit**
 
 ```bash
 git add deploy/ README.md
@@ -3386,15 +4990,24 @@ git commit -m "feat(deploy): pm2, nginx and release-directory deployment"
 
 ## Self-Review
 
-**Spec coverage.** Every section of the design doc maps to a task: §3 architecture → Tasks 1, 7, 15; §4 data model → Tasks 2, 3, 18; §5 ingestion → Tasks 11–15; §6 API and auth → Tasks 4–10, 16, 17; §7 the Next seam → Tasks 19, 21; §8 deployment → Task 23; §9 testing → distributed through every task rather than gathered at the end.
+**Spec coverage — backend** (`2026-08-10-iknos-nestjs-api-design.md`): §3 architecture → Tasks 1, 7, 16; §4 data model → Tasks 2, 3, 20; §5 ingestion → Tasks 12–16; §6 API and auth → Tasks 4–11, 17, 18, 19; §7 the Next seam → Tasks 22, 23, 25; §8 deployment → Task 31; §9 testing → distributed through every task rather than gathered at the end.
+
+**Spec coverage — UI** (`2026-08-09-iknos-ui-design.md`): §3 visual language → Task 22; §4 information architecture → Task 23; §5.1 log panel → Tasks 25, 26, 27, 28; §5.7 auth screens → Task 24; §6 interaction rules → Task 29; §7 what the front consumes → Tasks 18, 21, 29; §5.5 storage panel → Tasks 21, 30. Sections §5.2 through §5.6 describe views owned by later milestones (`IKN-13`, `IKN-23`, `IKN-14`, `IKN-15`) and are deliberately absent here.
 
 **The three places Node needs discipline Rust gave for free** — all three are acceptance criteria, not commentary:
-- Task 11, decoding only complete lines. Without it, a split codepoint becomes U+FFFD silently.
-- Task 14, the queue ceiling checked by hand on every push. Node has no bounded channel.
-- Tasks 15 and 17, unsubscribing on disconnect and never overlapping polls. Neither is enforced by anything but the code.
+- Task 12, decoding only complete lines. Without it, a split codepoint becomes U+FFFD silently.
+- Task 15, the queue ceiling checked by hand on every push. Node has no bounded channel.
+- Tasks 16 and 19, unsubscribing on disconnect and never overlapping polls. Neither is enforced by anything but the code.
 
-**Deliberate deferrals**, noted rather than dropped: the dataviz primitives from `IKN-5` are not ported in Task 19 (M1 has no charts; they arrive with `IKN-13`), and `apps/web` is scaffolded as a placeholder in Task 1 before being built properly in Task 19.
+**Three constraints turned into tests rather than review comments**, because that is the only way they survive six months: the token ramps declaring identical variable sets and no bare hex in any component (Task 22), the view list refusing to advertise views that cannot answer (Task 23), and the histogram's bucket ceiling holding for any range a caller can ask for (Task 18).
 
-**Values to fill in from your environment**, each called out at the step that needs it: the real `DUMMY_HASH` bcrypt string in Task 10, and `YOUR_DOMAIN` in Task 23. Both are environment facts, not undecided design.
+**Borrowed rather than invented.** The auth shape in Tasks 10, 11 and 24 is Zeus's, read from `~/dev/Zeus/nest-api/src/auth/`: the `bootstrap` / `sealed` vocabulary, first-run registration sealed by a `UNIQUE` column instead of an environment flag, a recovery passphrase hashed independently of the password, one identical refusal across every recovery failure with the rate limit as the deliberate exception, and register and recover both opening no session. The front's `getBootstrap` is worldweathr's `getPublicConfig` — React `cache()`, schema-validated body, a defined answer when the API will not give one, and the decision taken on the server so no submittable form is ever briefly on screen. Neither was re-derived here, and neither should be re-derived when reading this.
 
-**Ordering note.** Task 10's first test asserts 401 on `/api/services` and `/api/logs`, which do not exist until Task 16. Nest returns 404 for an unmounted route, so either run that test after Task 16 or assert "not 200" until then.
+**Deliberate deferrals**, noted rather than dropped: line and bar dataviz primitives are not built in Task 22 — M1 has no charts beyond the sparkline and the histogram's own bars, and they arrive with `IKN-13` and `IKN-23`; `apps/web` is scaffolded as a placeholder in Task 1 before being built properly in Task 22; the `⌘I issue` action and the active-alert counter are wired but not rendered until `IKN-14` and `IKN-15` exist; the storage panel lives in the rail until the alerts view gives it its intended home.
+
+**Values to fill in from your environment**, each called out at the step that needs it: the real `DUMMY_HASH` in Task 10 and `DUMMY_PASSPHRASE_HASH` in Task 11, the known trace id and row count for the fixture window in Task 18, and `YOUR_DOMAIN` in Task 31. All are environment facts, not undecided design.
+
+**Ordering notes.**
+- Task 10's first test asserts 401 on `/api/services` and `/api/logs`, which do not exist until Task 17. Nest returns 404 for an unmounted route, so either run that test after Task 17 or assert "not 200" until then.
+- `app_user.singleton` is in Task 3's initial schema rather than Task 11's migration, even though registration is Task 11's subject. The CLI ships in Task 10; without the constraint already in place it could create the second account that makes the constraint impossible to add later.
+- Task 21's storage response is only complete once Task 20 exposes `window()`. Both are before it in the order; if you reorder, keep that pair together.
