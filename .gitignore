@@ -1,0 +1,27 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Note: .sqlx/ is intentionally NOT ignored — `cargo sqlx prepare` output is
+# committed so CI can compile without a reachable database.
+
+# Node / Next
+node_modules/
+.next/
+out/
+.pnpm-store/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
