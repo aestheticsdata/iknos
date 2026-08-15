@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Iknos — service view (mock)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   IKNOS — static mock of the service view.
+
+   No framework, no build, no JS. This is the mockup rendered as plain HTML so
+   it can live at a URL and be argued with. The chart geometry is not redrawn
+   by hand: it is the prototype's own seeded generators, run once and inlined.
+
+   The token layer below is the part meant to survive. It is the two ramps from
+   the UI spec §3.2, selected by `data-surface` rather than by the component
+   remembering which background it happens to sit on. When this becomes Tailwind
+   v4 (plan Task 22), these custom properties are what moves across; the markup
+   is scaffolding.
+
+   Rule the spec states and this file obeys: no component carries a bare hex.
+   Every colour below the token block is a var().
+   ========================================================================== */
+
+/* --- chassis ramp (dark) — bars, rail, status bar, modals, auth ----------- */
+:root,
+[data-surface="chassis"] {
+  --surface:        #171E27;
+  --surface-inset:  #0C1117;
+  --surface-deep:   #10151C;
+  --surface-raised: #1E2733;
+  --surface-hover:  #1C2634;
+  --surface-soft:   #24303C;   /* chips, key badges, the raised bits in the rail */
+  --surface-badge:  #1B2530;   /* the ks-b host badge */
+  --surface-alert:  #33232A;   /* the alerts count badge */
+  --surface-alert-hover: #22191C;
+  --border:         #27313D;
+  --border-strong:  #33404E;
+  --border-focus:   #4A5F72;
+  --spark-idle:     #55697C;   /* sparkline for a service that is not selected */
+
+  --text:        #CBD8D0;
+  --text-muted:  #8FA99A;
+  --text-dim:    #77899B;
+  --text-faint:  #5E7286;
+
+  --err:   #E4736B;
+  --warn:  #E0AE55;
+  --info:  #8FA99A;
+  --debug: #55697C;
+  --link:  #7FA8C4;
+}
+
+/* --- work surface ramp (light) — cards, tables, tiles --------------------- */
+[data-surface="work"] {
+  --surface:       #BFCDD4;
+  --surface-inset: #AEBFC7;
+  --surface-hover: #AEBFC7;
+  --surface-warn:  #C4A9A6;
+  --surface-ok:    #9CBCAA;
+  --border:        #93A8B3;
+  --border-strong: #A3B6BF;
+  --border-row:    #A9BAC3;
+
+  --text:       #131E24;
+  --text-muted: #3F535F;
+  --text-dim:   #556A76;
+
+  --err:      #8E2F2A;
+  --err-text: #7E2C28;
+  --err-bd:   #AE9490;
+  --warn:     #8A6118;
+  --ok:       #3C6B52;
+  --info:     #4E7B96;
+  --ok-soft:  #C2D4CB;
+  --ok-bd:    #86A895;
+  --spark:    #5C7886;
+  --bar-muted: #8FAB9C;        /* error-rate bars, before the spike */
+  --on-solid:  #DFE9E4;        /* text on a saturated badge, either ramp */
+}
+
+/* --- terminal ramp (darkest) — the log window inset into the light --------- */
+[data-surface="terminal"] {
+  --surface:       #171E27;
+  --surface-inset: #0C1117;
+  --surface-deep:  #10151C;
+  --surface-head:  #141A22;
+  --surface-hover: #1A2330;
+  --surface-sel:   #1C2634;
+  --surface-err:   #22191C;
+  --border:        #1B242E;
+  --border-strong: #33404E;
+  --border-row:    #1E2733;
+  --border-soft:   #24303C;
+  --edge-err:      #8E3C38;
+
+  --text:       #DFE9E4;
+  --text-muted: #AFC0BA;
+  --text-dim:   #8FA99A;
+  --text-faint: #77899B;
+  --text-ghost: #5E7286;
+  --rule:       #55697C;
+
+  --err:   #E4736B;
+  --warn:  #E0AE55;
+  --info:  #8FA99A;
+  --debug: #55697C;
+  --link:  #7FA8C4;
+  --bar-err:  #C1504A;
+  --bar-warn: #C89A3E;
+  --bar-info: #3E5A50;
+}
+
+/* Cross-ramp constants. The accent is the one colour that means the same thing
+   on every surface, which is why it is not in either ramp. */
+:root {
+  --accent:      #86B99A;
+  --accent-deep: #4E8266;
+  --canvas:      #8FA5B0;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* --- reset ---------------------------------------------------------------- */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  overflow: hidden;                 /* U6 — the page never scrolls. Lists do. */
+  background: var(--surface-deep);
+  color: var(--text);
+  font: 400 12.5px/1.5 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+svg { display: block; }
+
+@keyframes ikPulse { 0%,100% { opacity: 1 } 50% { opacity: .2 } }
+
+/* --- app shell ------------------------------------------------------------ */
+.app {
+  height: 100vh;
+  min-height: 660px;
+  background: var(--canvas);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ========================= top bar ======================================== */
+.topbar {
+  height: 38px; flex: none;
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+}
+.brand { font-weight: 700; letter-spacing: .14em; font-size: 12px; }
+.host-badge {
+  font-size: 10.5px; color: var(--accent);
+  background: var(--surface-badge); border: 1px solid var(--border-strong);
+  border-radius: 3px; padding: 1px 6px;
+}
+.crumb { font-size: 11px; color: var(--text-dim); }
+.crumb .sep { color: var(--border-strong); }
+.crumb .leaf { color: var(--text); }
+
+.palette-slot { flex: 1; display: flex; justify-content: center; }
+.palette-trigger {
+  width: 392px; height: 22px;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: 4px; padding: 0 8px;
+  font-size: 10.5px; color: var(--text-faint); cursor: pointer;
+}
+.palette-trigger:hover { border-color: var(--border-focus); color: var(--text-muted); }
+.palette-trigger kbd { font: inherit; color: var(--text-dim); }
+
+.range-group {
+  display: flex; border: 1px solid var(--border);
+  border-radius: 4px; overflow: hidden; font-size: 10.5px;
+}
+.range-group span { padding: 2px 8px; color: var(--text-dim); cursor: pointer; }
+.range-group span[aria-current="true"] { background: var(--surface-soft); color: var(--text); }
+
+.collector {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10.5px; color: var(--text-dim);
+}
+.collector .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); animation: ikPulse 2s ease-in-out infinite;
+}
+.collector .label { color: var(--accent); }
+.clock { font-size: 10.5px; color: var(--text); }
+
+/* ========================= body ========================================== */
+.body { flex: 1; display: flex; min-height: 0; }
+
+/* --- service rail --------------------------------------------------------- */
+.rail {
+  position: relative; width: 172px; flex: none;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 10px 0;
+  font-family: var(--mono);
+}
+.rail-heading {
+  font-size: 9px; letter-spacing: .16em; color: var(--text-faint);
+  padding: 0 12px 7px;
+}
+.rail-heading.spaced { padding: 16px 12px 6px; }
+
+.svc {
+  display: flex; align-items: center; gap: 7px;
+  margin: 0 6px; padding: 4px 8px;
+  border-radius: 4px; cursor: pointer;
+}
+.svc:hover { background: var(--surface-hover); }
+.svc[aria-current="true"] { background: var(--surface-raised); }
+.svc .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.svc .name {
+  flex: 1; font-size: 11px; color: var(--text-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.svc[aria-current="true"] .name { color: var(--text); }
+.svc svg { width: 34px; height: 12px; flex: none; }
+
+.view {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px;
+  border-left: 2px solid transparent;
+  color: var(--text-muted); font-size: 11.5px; cursor: pointer;
+}
+.view:hover { background: var(--surface-hover); color: var(--text); }
+.view[aria-current="true"] {
+  background: var(--surface-raised);
+  border-left-color: var(--accent);
+  color: var(--text);
+}
+.view .n { flex: 1; }
+.view .k {
+  color: var(--text-faint); border-radius: 3px;
+  padding: 0 5px; font-size: 10px;
+}
+.view .k.count { background: var(--surface-soft); color: var(--text-muted); }
+.view .k.alert { background: var(--surface-alert); color: var(--err); }
+
+.spacer { flex: 1; }
+
+.ingest {
+  margin: 0 8px; padding: 8px 10px;
+  background: var(--surface-inset);
+  border: 1px solid var(--surface-soft); border-radius: 4px;
+}
+.ingest-title {
+  font-size: 9px; letter-spacing: .12em;
+  color: var(--text-faint); margin-bottom: 6px;
+}
+.ingest svg { width: 100%; height: 24px; }
+.ingest-foot {
+  display: flex; justify-content: space-between;
+  font-size: 9.5px; color: var(--text-dim); margin-top: 6px;
+}
+
+.user {
+  margin: 9px 8px 0; padding: 6px 8px;
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--border); border-radius: 5px;
+  background: transparent; cursor: pointer;
+}
+.user:hover { background: var(--surface-hover); border-color: var(--border-focus); }
+.user .avatar {
+  width: 20px; height: 20px; flex: none; border-radius: 4px;
+  background: var(--surface-soft); color: var(--accent);
+  font-size: 9px; font-weight: 700; letter-spacing: .06em;
+  display: flex; align-items: center; justify-content: center;
+}
+.user .who {
+  flex: 1; font-size: 11px; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.user .caret { font-size: 9px; color: var(--text-faint); line-height: 1; }
+
+/* --- work surface --------------------------------------------------------- */
+.work {
+  flex: 1; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column; gap: 11px;
+  padding: 11px 12px;
+  background: var(--canvas);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* service header */
+.svc-header {
+  flex: none;
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 13px;
+}
+.svc-header .title { font: 600 18px var(--mono); color: var(--text); }
+.svc-header .emitter { font: 400 10.5px var(--mono); color: var(--text-muted); }
+.chips { display: flex; gap: 5px; flex: 1; }
+.chip {
+  font: 400 10.5px var(--mono);
+  color: var(--text-muted);
+  background: var(--surface-inset);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px; padding: 2px 7px;
+}
+.chip.bad {
+  color: var(--err-text); background: var(--surface-warn); border-color: var(--err-bd);
+}
+.pills { display: flex; gap: 5px; }
+.pill {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface-ok); border: 1px solid var(--ok-bd);
+  border-radius: 5px; padding: 3px 8px; cursor: pointer;
+}
+.pill:hover { filter: brightness(1.06); }
+.pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
+.pill .t { font: 500 10.5px var(--mono); color: var(--text); }
+.pill.bad { background: var(--surface-warn); border-color: var(--err-bd); }
+.pill.bad .dot { background: var(--err); }
+.pill.bad .t { color: var(--err-text); }
+
+/* signal tiles */
+.signals {
+  flex: none; display: grid;
+  grid-template-columns: repeat(4, 1fr); gap: 11px;
+}
+.tile { padding: 9px 12px; display: flex; flex-direction: column; gap: 5px; }
+.tile .label {
+  font: 500 9px var(--mono); letter-spacing: .14em; color: var(--text-dim);
+}
+.tile .figure { display: flex; align-items: baseline; gap: 6px; }
+.tile .v { font: 500 20px var(--mono); color: var(--text); }
+.tile .v.bad { color: var(--err); }
+.tile .u { font: 400 11px var(--mono); color: var(--text-muted); }
+.tile .delta {
+  font: 400 10.5px var(--mono); margin-left: auto; color: var(--ok);
+}
+.tile .delta.bad { color: var(--err); }
+.tile svg { width: 100%; height: 26px; }
+
+.bars { display: flex; align-items: flex-end; gap: 1.5px; height: 26px; }
+.bars i { flex: 1; background: var(--bar-muted); }
+
+.meters { display: flex; flex-direction: column; gap: 3px; }
+.meter {
+  display: flex; align-items: center; gap: 6px;
+  font: 400 10px var(--mono); color: var(--text-muted);
+}
+.meter .k { width: 50px; }
+.meter .track {
+  flex: 1; height: 4px; background: var(--border-strong);
+  border-radius: 2px; overflow: hidden; display: block;
+}
+.meter .fill { display: block; height: 100%; background: var(--ok); }
+.meter .fill.bad { background: var(--err); }
+.meter .val.bad { color: var(--err); }
+
+/* --- bottom: log window + right rail -------------------------------------- */
+.bottom { flex: 1; min-height: 0; display: flex; gap: 11px; }
+
+/* the log window: a dark window inset into the light surface (U3) */
+.logwin {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  background: var(--surface-deep);
+  border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden;
+  box-shadow: 0 2px 14px rgba(10,18,24,.34), inset 0 0 0 1px rgba(143,169,154,.07);
+  font-family: var(--mono);
+}
+.logwin-head {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-soft);
+}
+.logwin-head .caret { color: var(--accent-deep); font-size: 11px; }
+.tokenbar {
+  flex: 1; display: flex; align-items: center; gap: 6px;
+  height: 23px; background: var(--surface-inset);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px; padding: 0 8px; font-size: 11px;
+}
+.token {
+  display: flex; align-items: center; gap: 5px;
+  border: 1px solid transparent; border-radius: 3px;
+  padding: 0 5px; cursor: pointer;
+  color: var(--text-ghost); opacity: .55;
+}
+.token:hover { opacity: 1; border-color: var(--border-focus); }
+.token[aria-pressed="true"] { opacity: 1; border-color: var(--border-strong); }
+.token[aria-pressed="true"].svc { color: var(--accent); }
+.token .mark { color: var(--text-ghost); font-size: 10px; }
+
+.live {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10.5px; font-weight: 500;
+  color: var(--surface-deep); background: var(--accent);
+  border: 1px solid var(--accent); border-radius: 4px;
+  padding: 2px 8px; cursor: pointer;
+}
+.fullscreen { font-size: 10.5px; color: var(--text-ghost); cursor: pointer; }
+.fullscreen:hover { color: var(--text); }
+
+/* volume histogram */
+.hist { flex: none; padding: 7px 10px 5px; border-bottom: 1px solid var(--border-row); }
+.hist-bars { display: flex; align-items: flex-end; gap: 1px; height: 34px; }
+.hist-bars i { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
+.hist-bars b { background: var(--bar-err); }
+.hist-bars u { background: var(--bar-warn); }
+.hist-bars s { background: var(--bar-info); }
+.hist-axis {
+  display: flex; justify-content: space-between;
+  font-size: 9.5px; color: var(--rule); margin-top: 4px;
+}
+.hist-axis .anomaly { color: var(--link); }
+
+/* log table */
+.log-head {
+  flex: none; display: flex; padding: 4px 10px;
+  font-size: 9px; letter-spacing: .13em; color: var(--text-ghost);
+  border-bottom: 1px solid var(--border-row);
+  background: var(--surface-head);
+}
+.log-rows { flex: 1; min-height: 0; overflow-y: auto; }
+.row {
+  display: flex; align-items: center;
+  padding: 5px 10px 5px 8px; font-size: 11px;
+  border-left: 2px solid transparent; cursor: pointer;
+}
+.row:hover { background: var(--surface-hover); }
+.row[aria-selected="true"] { background: var(--surface-sel); border-left-color: var(--accent); }
+.row.err { background: var(--surface-err); border-left-color: var(--edge-err); }
+.row.err .msg { color: var(--text); }
+
+.c-time  { width: 84px; color: var(--text-faint); }
+.c-lvl   { width: 42px; }
+.c-svc   { width: 104px; color: var(--text-dim); }
+.c-route { width: 176px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-st    { width: 32px; }
+.c-msg   { flex: 1; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-trace { width: 72px; color: var(--link); }
+.c-dur   { width: 54px; text-align: right; color: var(--text-faint); }
+.log-head .c-time { width: 86px; }
+
+.lvl-ERRO { color: var(--err); }
+.lvl-WARN { color: var(--warn); }
+.lvl-INFO { color: var(--info); }
+.lvl-DEBU { color: var(--debug); }
+.st-ok   { color: var(--info); }
+.st-warn { color: var(--warn); }
+.st-err  { color: var(--err); }
+.st-none { color: var(--debug); }
+.traced { text-decoration: underline dotted; cursor: pointer; }
+
+/* --- right rail (alerts + issues) ----------------------------------------- */
+.side { width: 296px; flex: none; display: flex; flex-direction: column; gap: 11px; min-height: 0; }
+
+.panel-head {
+  display: flex; align-items: center;
+  padding: 7px 11px; border-bottom: 1px solid var(--border-strong);
+}
+.panel-head .t { font: 500 11px var(--sans); color: var(--text); flex: 1; }
+.panel-head .note { font: 400 10px var(--mono); color: var(--text-dim); }
+
+.alerts { flex: none; overflow: hidden; height: fit-content; }
+.alert {
+  padding: 9px 11px;
+  border-bottom: 1px solid var(--border-row);
+  border-left: 3px solid var(--warn);
+  cursor: pointer;
+}
+.alert:hover { filter: brightness(1.04); }
+.alert.firing { background: var(--surface-warn); border-left-color: var(--err-bd); }
+.alert-top { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+.alert-state {
+  font: 700 9px var(--mono); letter-spacing: .14em;
+  color: var(--on-solid); background: var(--warn);
+  border-radius: 3px; padding: 2px 6px;
+}
+.alert.firing .alert-state { background: var(--err); }
+.alert-since { font: 400 10.5px var(--mono); color: var(--warn); }
+.alert.firing .alert-since { color: var(--err); }
+.alert-rule { font: 400 11px var(--mono); color: var(--text); }
+.alert-value { font: 400 10.5px var(--mono); color: var(--text-muted); margin-top: 3px; }
+.alert-value b { font-weight: 500; color: var(--warn); }
+.alert.firing .alert-value b { color: var(--err); }
+
+.issues {
+  flex: 1; min-height: 0; min-width: 0;
+  overflow-y: auto; display: flex; flex-direction: column;
+}
+.issue {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 8px 11px; border-bottom: 1px solid var(--border-row);
+  cursor: pointer;
+}
+.issue:hover { background: var(--surface-hover); }
+.issue.hot { background: var(--surface-warn); }
+.issue-top { display: flex; align-items: center; gap: 7px; }
+.issue-top .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.issue-fp {
+  font: 500 10.5px var(--mono); color: var(--text-muted);
+  background: var(--surface-inset); border: 1px solid var(--border-strong);
+  border-radius: 3px; padding: 0 5px; flex: none;
+}
+.issue-count { font: 500 11.5px var(--mono); color: var(--text); }
+.issue.hot .issue-count { color: var(--err-text); }
+.issue-last { font: 400 10px var(--mono); color: var(--text-dim); }
+.issue-mid { display: flex; align-items: center; gap: 8px; }
+.issue-type {
+  flex: 1; min-width: 0; font: 400 11px var(--mono); color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.issue-mid svg { width: 52px; height: 14px; flex: none; }
+.issue-msg {
+  font: 400 10.2px/1.35 var(--mono); color: var(--text-muted);
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.issue-more {
+  padding: 7px 11px; font: 400 10.5px var(--mono);
+  color: var(--text-muted); background: var(--surface-inset); cursor: pointer;
+}
+.issue-more:hover { color: var(--text); }
+
+.dot-hot  { background: var(--err); }
+.dot-warn { background: var(--warn); }
+.dot-mid  { background: var(--info); }
+.dot-ok   { background: var(--ok); }
+
+/* ========================= status bar ===================================== */
+.statusbar {
+  height: 26px; flex: none;
+  display: flex; align-items: center;
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border-strong);
+  font: 400 10.5px var(--mono); color: var(--text-muted);
+}
+.statusbar .mode {
+  background: var(--accent); color: var(--surface-deep);
+  font-weight: 700; letter-spacing: .1em;
+  padding: 0 10px; height: 100%; display: flex; align-items: center;
+}
+.statusbar .seg {
+  padding: 0 10px; border-right: 1px solid var(--border-strong);
+  height: 100%; display: flex; align-items: center;
+}
+.statusbar .seg.first { color: var(--text); }
+.statusbar .on { color: var(--accent); }
+.statusbar .q { color: var(--text-muted); }
+.statusbar .alerts-seg { color: var(--err); cursor: pointer; }
+.statusbar .alerts-seg:hover { background: var(--surface-alert-hover); }
+.statusbar .keys { padding: 0 10px; color: var(--text-dim); }
+
+/* A mock, and it says so. Removed the day it stops being one. */
+.mock-flag {
+  position: fixed; right: 10px; bottom: 32px; z-index: 50;
+  font: 500 9px var(--mono); letter-spacing: .14em;
+  color: var(--surface-deep); background: var(--warn);
+  border-radius: 3px; padding: 3px 8px;
+  opacity: .82; pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===================== top bar ====================================== -->
+  <header class="topbar">
+    <span class="brand">IKNOS</span>
+    <span class="host-badge">ks-b</span>
+    <span class="crumb">services<span class="sep">&nbsp;/&nbsp;</span><span class="leaf">pfa</span></span>
+    <div class="palette-slot">
+      <div class="palette-trigger"><kbd>⌘K</kbd><span>search services, routes, issues, traces…</span></div>
+    </div>
+    <div class="range-group">
+      <span>15m</span><span aria-current="true">1h</span><span>24h</span><span>7d</span>
+    </div>
+    <span class="collector">
+      <span class="dot"></span><span class="label">collector</span> lag 0.4s
+    </span>
+    <span class="clock">02:14:38</span>
+  </header>
+
+  <div class="body">
+
+    <!-- ===================== service rail =============================== -->
+    <nav class="rail">
+      <div class="rail-heading">SERVICES · PM2</div>
+
+      <div class="svc" aria-current="true">
+        <span class="dot" style="background:var(--err)"></span>
+        <span class="name">pfa</span>
+        <svg viewBox="0 0 40 12" preserveAspectRatio="none"><polyline points="0.0,10.1 2.1,8.6 4.2,7.1 6.3,7.2 8.4,8.4 10.5,6.6 12.6,7.5 14.7,8.6 16.8,10.2 18.9,8.0 21.1,10.5 23.2,8.6 25.3,9.8 27.4,9.4 29.5,8.3 31.6,6.1 33.7,7.2 35.8,4.9 37.9,3.4 40.0,1.5" fill="none" stroke="var(--err)" stroke-width="1.1"/></svg>
+      </div>
+      <div class="svc">
+        <span class="dot" style="background:var(--warn)"></span>
+        <span class="name">iknos-ui</span>
+        <svg viewBox="0 0 40 12" preserveAspectRatio="none"><polyline points="0.0,7.3 2.1,7.5 4.2,1.5 6.3,7.0 8.4,4.4 10.5,4.5 12.6,5.4 14.7,1.7 16.8,7.1 18.9,7.7 21.1,3.6 23.2,4.1 25.3,7.7 27.4,7.9 29.5,10.5 31.6,6.6 33.7,10.2 35.8,7.6 37.9,9.3 40.0,5.3" fill="none" stroke="var(--spark-idle)" stroke-width="1.1"/></svg>
+      </div>
+      <div class="svc">
+        <span class="dot" style="background:var(--accent)"></span>
+        <span class="name">iknos-collector</span>
+        <svg viewBox="0 0 40 12" preserveAspectRatio="none"><polyline points="0.0,7.2 2.1,4.1 4.2,6.8 6.3,5.6 8.4,4.3 10.5,1.5 12.6,1.8 14.7,4.7 16.8,6.7 18.9,5.5 21.1,5.2 23.2,9.4 25.3,8.4 27.4,9.5 29.5,8.1 31.6,7.7 33.7,10.5 35.8,6.9 37.9,4.4 40.0,3.3" fill="none" stroke="var(--spark-idle)" stroke-width="1.1"/></svg>
+      </div>
+      <div class="svc">
+        <span class="dot" style="background:var(--accent)"></span>
+        <span class="name">nginx</span>
+        <svg viewBox="0 0 40 12" preserveAspectRatio="none"><polyline points="0.0,8.0 2.1,7.6 4.2,6.8 6.3,4.5 8.4,4.6 10.5,4.9 12.6,4.6 14.7,1.5 16.8,7.0 18.9,3.5 21.1,7.6 23.2,9.9 25.3,10.5 27.4,5.7 29.5,6.5 31.6,10.1 33.7,5.4 35.8,7.0 37.9,6.2 40.0,8.2" fill="none" stroke="var(--spark-idle)" stroke-width="1.1"/></svg>
+      </div>
+
+      <div class="rail-heading spaced">VIEWS</div>
+      <div class="view" aria-current="true"><span class="n">service</span><span class="k">S</span></div>
+      <div class="view"><span class="n">logs</span><span class="k">L</span></div>
+      <div class="view"><span class="n">metrics</span><span class="k">M</span></div>
+      <div class="view"><span class="n">issues</span><span class="k count">12</span></div>
+      <div class="view"><span class="n">alerts</span><span class="k alert">2</span></div>
+
+      <div class="spacer"></div>
+
+      <div class="ingest">
+        <div class="ingest-title">INGEST · 60m</div>
+        <svg viewBox="0 0 128 24" preserveAspectRatio="none"><polyline points="0.0,14.6 4.4,11.0 8.8,2.6 13.2,9.1 17.7,4.6 22.1,11.8 26.5,2.3 30.9,12.4 35.3,4.1 39.7,12.1 44.1,10.4 48.6,8.1 53.0,17.7 57.4,22.0 61.8,21.9 66.2,15.0 70.6,20.1 75.0,10.4 79.4,13.2 83.9,16.2 88.3,13.2 92.7,10.9 97.1,13.6 101.5,7.6 105.9,2.2 110.3,2.0 114.8,7.5 119.2,14.1 123.6,13.2 128.0,11.6" fill="none" stroke="var(--accent)" stroke-width="1.2"/></svg>
+        <div class="ingest-foot"><span>10 460 ev</span><span>4.2 GB</span></div>
+      </div>
+
+      <div class="user">
+        <span class="avatar">CO</span>
+        <span class="who">cosmokaat</span>
+        <span class="caret">⌃<br>⌄</span>
+      </div>
+    </nav>
+
+    <!-- ===================== work surface =============================== -->
+    <main class="work" data-surface="work">
+
+      <section class="card svc-header">
+        <span class="title">pfa</span>
+        <span class="emitter">ECS · pino + @elastic/ecs-pino-format</span>
+        <div class="chips">
+          <span class="chip">pm2 id 3</span>
+          <span class="chip">node 22.4.1</span>
+          <span class="chip">v2.19.0 · a41c9e2</span>
+          <span class="chip">up 6d 04h</span>
+          <span class="chip bad">restarts 3</span>
+        </div>
+        <div class="pills">
+          <div class="pill"><span class="dot"></span><span class="t">mysql 3ms</span></div>
+          <div class="pill"><span class="dot"></span><span class="t">redis 1ms</span></div>
+          <div class="pill bad"><span class="dot"></span><span class="t">/health 502</span></div>
+        </div>
+      </section>
+
+      <section class="signals">
+        <div class="card tile">
+          <span class="label">THROUGHPUT</span>
+          <div class="figure"><span class="v">41.2</span><span class="u">req/s</span><span class="delta">▲ 6%</span></div>
+          <svg viewBox="0 0 120 26" preserveAspectRatio="none">
+            <path d="M0,26 L0.0,16.2 L3.6,15.5 L7.3,13.8 L10.9,9.1 L14.5,9.3 L18.2,10.0 L21.8,9.2 L25.5,3.0 L29.1,14.3 L32.7,7.1 L36.4,15.5 L40.0,20.1 L43.6,21.4 L47.3,11.5 L50.9,13.1 L54.5,20.5 L58.2,10.9 L61.8,14.3 L65.5,12.6 L69.1,16.7 L72.7,18.4 L76.4,12.1 L80.0,9.1 L83.6,4.2 L87.3,7.7 L90.9,6.9 L94.5,7.1 L98.2,5.9 L101.8,11.1 L105.5,18.0 L109.1,11.1 L112.7,18.5 L116.4,15.0 L120.0,23.0 L120,26 Z" fill="var(--ok-soft)" opacity=".7"/>
+            <polyline points="0.0,16.2 3.6,15.5 7.3,13.8 10.9,9.1 14.5,9.3 18.2,10.0 21.8,9.2 25.5,3.0 29.1,14.3 32.7,7.1 36.4,15.5 40.0,20.1 43.6,21.4 47.3,11.5 50.9,13.1 54.5,20.5 58.2,10.9 61.8,14.3 65.5,12.6 69.1,16.7 72.7,18.4 76.4,12.1 80.0,9.1 83.6,4.2 87.3,7.7 90.9,6.9 94.5,7.1 98.2,5.9 101.8,11.1 105.5,18.0 109.1,11.1 112.7,18.5 116.4,15.0 120.0,23.0" fill="none" stroke="var(--ok)" stroke-width="1.3"/>
+          </svg>
+        </div>
+
+        <div class="card tile">
+          <span class="label">ERROR RATE</span>
+          <div class="figure"><span class="v bad">1.8</span><span class="u">%</span><span class="delta bad">▲ 1.4 pt</span></div>
+          <div class="bars"><i style="height:4px"></i><i style="height:9px"></i><i style="height:8px"></i><i style="height:3px"></i><i style="height:7px"></i><i style="height:4px"></i><i style="height:2px"></i><i style="height:3px"></i><i style="height:5px"></i><i style="height:9px"></i><i style="height:5px"></i><i style="height:8px"></i><i style="height:7px"></i><i style="height:8px"></i><i style="height:5px"></i><i style="height:6px"></i><i style="height:9px"></i><i style="height:9px"></i><i style="height:6px"></i><i style="height:2px"></i><i style="height:8px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:3px"></i><i style="height:27px;background:var(--err)"></i><i style="height:19px;background:var(--err)"></i><i style="height:22px;background:var(--err)"></i><i style="height:13px;background:var(--err)"></i><i style="height:24px;background:var(--err)"></i><i style="height:20px;background:var(--err)"></i></div>
+        </div>
+
+        <div class="card tile">
+          <span class="label">p95 LATENCY</span>
+          <div class="figure"><span class="v">412</span><span class="u">ms</span><span class="delta bad">▲ 210ms</span></div>
+          <svg viewBox="0 0 120 26" preserveAspectRatio="none">
+            <line x1="0" y1="10" x2="120" y2="10" stroke="var(--border)" stroke-width="1" stroke-dasharray="2 3"/>
+            <polyline points="0.0,20.4 3.6,16.9 7.3,17.5 10.9,16.8 14.5,16.7 18.2,18.5 21.8,16.2 25.5,19.3 29.1,19.5 32.7,20.0 36.4,17.3 40.0,19.4 43.6,18.3 47.3,20.7 50.9,20.2 54.5,23.0 58.2,22.3 61.8,19.2 65.5,22.1 69.1,20.1 72.7,18.7 76.4,16.8 80.0,16.5 83.6,18.6 87.3,18.0 90.9,19.6 94.5,18.5 98.2,16.6 101.8,14.0 105.5,16.1 109.1,12.4 112.7,9.6 116.4,8.4 120.0,3.0" fill="none" stroke="var(--warn)" stroke-width="1.3"/>
+          </svg>
+        </div>
+
+        <div class="card tile">
+          <span class="label">NODE RUNTIME</span>
+          <div class="figure"><span class="v">318</span><span class="u">MB heap</span></div>
+          <div class="meters">
+            <div class="meter"><span class="k">event loop</span><span class="track"><span class="fill" style="width:18%"></span></span><span class="val">4.1ms</span></div>
+            <div class="meter"><span class="k">db pool</span><span class="track"><span class="fill bad" style="width:100%"></span></span><span class="val bad">10/10</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bottom">
+
+        <!-- ===================== log window ============================= -->
+        <div class="logwin" data-surface="terminal">
+          <div class="logwin-head">
+            <span class="caret">▸</span>
+            <div class="tokenbar">
+              <span class="token svc" aria-pressed="true">service:pfa<span class="mark">×</span></span>
+              <span class="token">level&gt;=warn<span class="mark">+</span></span>
+              <span class="token">export<span class="mark">+</span></span>
+            </div>
+            <span class="live">● LIVE</span>
+            <span class="fullscreen">⌘L fullscreen</span>
+          </div>
+
+          <div class="hist">
+            <div class="hist-bars"><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:9px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:7px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:8px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:3px"></u><s style="height:10px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:13px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:14px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:15px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:21px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:11px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:5px"></u><s style="height:14px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:23px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:20px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:21px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:20px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:17px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:14px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:9px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:5px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:4px"></s></i><i style="opacity:0.75"><b style="height:2px"></b><u style="height:0px"></u><s style="height:11px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:4px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:9px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:12px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:9px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:7px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:2px"></u><s style="height:12px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:3px"></u><s style="height:7px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:17px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:15px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:9px"></s></i><i style="opacity:0.75"><b style="height:2px"></b><u style="height:0px"></u><s style="height:17px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:3px"></u><s style="height:14px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:12px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:11px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:17px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:21px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:10px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:20px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:14px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:10px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:23px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:23px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:20px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:18px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:10px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:14px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:15px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:13px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:15px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:7px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:12px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:13px"></s></i><i style="opacity:0.75"><b style="height:2px"></b><u style="height:0px"></u><s style="height:4px"></s></i><i style="opacity:0.75"><b style="height:2px"></b><u style="height:0px"></u><s style="height:13px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:14px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:3px"></u><s style="height:5px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:3px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:10px"></s></i><i style="opacity:0.75"><b style="height:2px"></b><u style="height:0px"></u><s style="height:3px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:10px"></s></i><i style="opacity:0.75"><b style="height:0px"></b><u style="height:0px"></u><s style="height:3px"></s></i><i style="opacity:1"><b style="height:4px"></b><u style="height:0px"></u><s style="height:6px"></s></i><i style="opacity:1"><b style="height:7px"></b><u style="height:0px"></u><s style="height:9px"></s></i><i style="opacity:1"><b style="height:4px"></b><u style="height:0px"></u><s style="height:15px"></s></i><i style="opacity:1"><b style="height:12px"></b><u style="height:0px"></u><s style="height:11px"></s></i><i style="opacity:1"><b style="height:10px"></b><u style="height:0px"></u><s style="height:18px"></s></i><i style="opacity:1"><b style="height:3px"></b><u style="height:0px"></u><s style="height:20px"></s></i><i style="opacity:1"><b style="height:11px"></b><u style="height:0px"></u><s style="height:8px"></s></i><i style="opacity:1"><b style="height:15px"></b><u style="height:0px"></u><s style="height:16px"></s></i><i style="opacity:1"><b style="height:10px"></b><u style="height:0px"></u><s style="height:22px"></s></i><i style="opacity:1"><b style="height:16px"></b><u style="height:0px"></u><s style="height:19px"></s></i><i style="opacity:1"><b style="height:23px"></b><u style="height:0px"></u><s style="height:11px"></s></i></div>
+            <div class="hist-axis"><span>01:59:38</span><span>02:04</span><span>02:09</span><span class="anomaly">▲ 02:14:37 · +18 err</span></div>
+          </div>
+
+          <div class="log-head">
+            <span class="c-time">TIME</span><span class="c-lvl">LVL</span><span class="c-svc">SERVICE</span><span class="c-route">ROUTE</span><span class="c-st">ST</span><span class="c-msg">MESSAGE</span><span class="c-trace">TRACE</span><span class="c-dur">DUR</span>
+          </div>
+
+          <div class="log-rows">
+            <div class="row err" aria-selected="true"><span class="c-time">02:14:37.912</span><span class="c-lvl lvl-ERRO">ERRO</span><span class="c-svc">pfa</span><span class="c-route">POST /api/exports</span><span class="c-st st-err">500</span><span class="c-msg msg">Unhandled rejection in exportQueue — acquire connection timeout</span><span class="c-trace traced">4f2ab91c</span><span class="c-dur">8014ms</span></div>
+            <div class="row err"><span class="c-time">02:14:37.908</span><span class="c-lvl lvl-WARN">WARN</span><span class="c-svc">pfa</span><span class="c-route">—</span><span class="c-st st-none">—</span><span class="c-msg msg">mariadb pool exhausted (10/10) · waited 812ms</span><span class="c-trace traced">4f2ab91c</span><span class="c-dur">812ms</span></div>
+            <div class="row"><span class="c-time">02:14:37.106</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">pfa</span><span class="c-route">GET /api/dossiers/8821</span><span class="c-st st-ok">200</span><span class="c-msg">request completed</span><span class="c-trace traced">9c0e17d4</span><span class="c-dur">41ms</span></div>
+            <div class="row"><span class="c-time">02:14:36.884</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">iknos-collector</span><span class="c-route">—</span><span class="c-st st-none">—</span><span class="c-msg">scrape pfa:/metrics · 412 series</span><span class="c-trace">—</span><span class="c-dur">38ms</span></div>
+            <div class="row"><span class="c-time">02:14:36.512</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">pfa</span><span class="c-route">GET /api/auth/session</span><span class="c-st st-ok">200</span><span class="c-msg">session refreshed · rolling +30m</span><span class="c-trace traced">71ba3f60</span><span class="c-dur">12ms</span></div>
+            <div class="row"><span class="c-time">02:14:36.204</span><span class="c-lvl lvl-WARN">WARN</span><span class="c-svc">iknos-ui</span><span class="c-route">GET /issues</span><span class="c-st st-ok">200</span><span class="c-msg">slow server component render</span><span class="c-trace traced">b83c1e05</span><span class="c-dur">1204ms</span></div>
+            <div class="row"><span class="c-time">02:14:35.998</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">pfa</span><span class="c-route">POST /api/documents/912/preview</span><span class="c-st st-ok">201</span><span class="c-msg">pdf rendered · 3 pages</span><span class="c-trace traced">2d47c9aa</span><span class="c-dur">318ms</span></div>
+            <div class="row"><span class="c-time">02:14:35.771</span><span class="c-lvl lvl-DEBU">DEBU</span><span class="c-svc">iknos-collector</span><span class="c-route">—</span><span class="c-st st-none">—</span><span class="c-msg">offset 4182993 · inode 2621511 persisted</span><span class="c-trace">—</span><span class="c-dur">2ms</span></div>
+            <div class="row"><span class="c-time">02:14:35.442</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">pfa</span><span class="c-route">GET /api/dossiers</span><span class="c-st st-ok">200</span><span class="c-msg">request completed · 24 rows</span><span class="c-trace traced">5e10ff23</span><span class="c-dur">27ms</span></div>
+            <div class="row err"><span class="c-time">02:14:34.980</span><span class="c-lvl lvl-ERRO">ERRO</span><span class="c-svc">pfa</span><span class="c-route">POST /api/exports</span><span class="c-st st-err">500</span><span class="c-msg msg">ConnectionAcquireTimeoutError · pool timeout</span><span class="c-trace traced">7c2f01bd</span><span class="c-dur">8007ms</span></div>
+            <div class="row"><span class="c-time">02:14:34.612</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">nginx</span><span class="c-route">GET /assets/app.4f2b.css</span><span class="c-st st-warn">304</span><span class="c-msg">cache hit</span><span class="c-trace">—</span><span class="c-dur">1ms</span></div>
+            <div class="row"><span class="c-time">02:14:34.115</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">pfa</span><span class="c-route">POST /api/auth/login</span><span class="c-st st-warn">401</span><span class="c-msg">invalid credentials · 3rd attempt</span><span class="c-trace traced">a90b4417</span><span class="c-dur">96ms</span></div>
+            <div class="row"><span class="c-time">02:14:33.902</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">iknos-collector</span><span class="c-route">—</span><span class="c-st st-none">—</span><span class="c-msg">health pfa ok · mysql 3ms · redis 1ms</span><span class="c-trace">—</span><span class="c-dur">6ms</span></div>
+            <div class="row"><span class="c-time">02:14:33.480</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">pfa</span><span class="c-route">GET /api/dossiers/8815</span><span class="c-st st-ok">200</span><span class="c-msg">request completed</span><span class="c-trace traced">33cc82e1</span><span class="c-dur">44ms</span></div>
+            <div class="row"><span class="c-time">02:14:33.041</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">pfa</span><span class="c-route">GET /api/dossiers/8802</span><span class="c-st st-ok">200</span><span class="c-msg">request completed</span><span class="c-trace traced">e71a04bc</span><span class="c-dur">38ms</span></div>
+            <div class="row err"><span class="c-time">02:14:32.774</span><span class="c-lvl lvl-WARN">WARN</span><span class="c-svc">pfa</span><span class="c-route">POST /api/exports</span><span class="c-st st-none">—</span><span class="c-msg msg">retry 2/3 · backoff 2000ms</span><span class="c-trace traced">7c2f01bd</span><span class="c-dur">—</span></div>
+            <div class="row"><span class="c-time">02:14:32.219</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">iknos-collector</span><span class="c-route">—</span><span class="c-st st-none">—</span><span class="c-msg">hourly rollup 01:00 → 02:00 written</span><span class="c-trace">—</span><span class="c-dur">412ms</span></div>
+            <div class="row"><span class="c-time">02:14:31.905</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">pfa</span><span class="c-route">GET /api/dossiers/8799</span><span class="c-st st-ok">200</span><span class="c-msg">request completed</span><span class="c-trace traced">0b39d7fa</span><span class="c-dur">29ms</span></div>
+            <div class="row"><span class="c-time">02:14:31.480</span><span class="c-lvl lvl-DEBU">DEBU</span><span class="c-svc">pfa</span><span class="c-route">—</span><span class="c-st st-none">—</span><span class="c-msg">prisma · adapter-mariadb pool acquire 3ms</span><span class="c-trace">—</span><span class="c-dur">3ms</span></div>
+            <div class="row"><span class="c-time">02:14:31.002</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">nginx</span><span class="c-route">GET /assets/app.9c1d.js</span><span class="c-st st-ok">200</span><span class="c-msg">served · 412 KB</span><span class="c-trace">—</span><span class="c-dur">4ms</span></div>
+            <div class="row err"><span class="c-time">02:14:30.774</span><span class="c-lvl lvl-ERRO">ERRO</span><span class="c-svc">iknos-ui</span><span class="c-route">GET /issues</span><span class="c-st st-err">500</span><span class="c-msg msg">PrismaClientKnownRequestError P2028</span><span class="c-trace traced">b83c1e05</span><span class="c-dur">204ms</span></div>
+            <div class="row"><span class="c-time">02:14:30.310</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">pfa</span><span class="c-route">GET /health</span><span class="c-st st-ok">200</span><span class="c-msg">mysql ok · redis ok · disk 62%</span><span class="c-trace">—</span><span class="c-dur">6ms</span></div>
+            <div class="row"><span class="c-time">02:14:29.884</span><span class="c-lvl lvl-INFO">INFO</span><span class="c-svc">pfa</span><span class="c-route">GET /api/dossiers/8790</span><span class="c-st st-ok">200</span><span class="c-msg">request completed</span><span class="c-trace traced">c41f9d02</span><span class="c-dur">31ms</span></div>
+            <div class="row"><span class="c-time">02:14:29.402</span><span class="c-lvl lvl-WARN">WARN</span><span class="c-svc">pfa</span><span class="c-route">GET /api/exports/44</span><span class="c-st st-warn">404</span><span class="c-msg">export expired · retention 14d</span><span class="c-trace traced">9ab30f71</span><span class="c-dur">11ms</span></div>
+          </div>
+        </div>
+
+        <!-- ===================== right rail ============================= -->
+        <aside class="side">
+          <div class="card alerts">
+            <div class="panel-head"><span class="t">Alerts</span><span class="note">evaluated by the collector</span></div>
+            <div class="alert firing">
+              <div class="alert-top"><span class="alert-state">FIRING</span><span class="alert-since">for 00:04:12</span></div>
+              <div class="alert-rule">rate(http_5xx[5m]) &gt; 1%</div>
+              <div class="alert-value">pfa · now <b>3.1%</b></div>
+            </div>
+            <div class="alert">
+              <div class="alert-top"><span class="alert-state">PENDING</span><span class="alert-since">for 00:01:38</span></div>
+              <div class="alert-rule">pm2_restarts_total[1h] &gt; 2</div>
+              <div class="alert-value">iknos-ui · now <b>3</b></div>
+            </div>
+          </div>
+
+          <div class="card issues">
+            <div class="panel-head"><span class="t">Issues · fingerprints</span><span class="note">unresolved</span></div>
+
+            <div class="issue hot">
+              <div class="issue-top">
+                <span class="dot dot-hot"></span><span class="issue-fp">4f2ab91c</span>
+                <span style="flex:1"></span>
+                <span class="issue-count">1 204</span><span class="issue-last">2m ago</span>
+              </div>
+              <div class="issue-mid">
+                <span class="issue-type">ConnectionAcquireTimeoutError</span>
+                <svg viewBox="0 0 60 14" preserveAspectRatio="none"><polyline points="0.0,13.1 2.6,11.6 5.2,11.7 7.8,11.9 10.4,12.2 13.0,11.4 15.7,12.3 18.3,12.4 20.9,12.4 23.5,12.5 26.1,11.8 28.7,12.6 31.3,13.3 33.9,13.4 36.5,13.0 39.1,13.8 41.7,13.3 44.3,14.0 47.0,11.2 49.6,8.9 52.2,7.4 54.8,6.7 57.4,4.3 60.0,2.0" fill="none" stroke="var(--err)" stroke-width="1.2"/></svg>
+              </div>
+              <div class="issue-msg">pool timeout after 8000ms · src/queue/export.ts:142</div>
+            </div>
+
+            <div class="issue">
+              <div class="issue-top">
+                <span class="dot dot-warn"></span><span class="issue-fp">8d1e7740</span>
+                <span style="flex:1"></span>
+                <span class="issue-count">318</span><span class="issue-last">14m ago</span>
+              </div>
+              <div class="issue-mid">
+                <span class="issue-type">TypeError</span>
+                <svg viewBox="0 0 60 14" preserveAspectRatio="none"><polyline points="0.0,9.5 2.6,7.2 5.2,3.4 7.8,3.3 10.4,6.1 13.0,7.0 15.7,2.0 18.3,2.8 20.9,6.2 23.5,4.3 26.1,6.7 28.7,6.7 31.3,11.1 33.9,12.8 36.5,14.0 39.1,13.6 41.7,10.6 44.3,12.1 47.0,9.7 49.6,10.5 52.2,4.0 54.8,5.5 57.4,4.9 60.0,6.5" fill="none" stroke="var(--spark)" stroke-width="1.2"/></svg>
+              </div>
+              <div class="issue-msg">reading 'siret' of undefined · src/dossiers/normalize.ts:88</div>
+            </div>
+
+            <div class="issue">
+              <div class="issue-top">
+                <span class="dot dot-mid"></span><span class="issue-fp">b83c1e05</span>
+                <span style="flex:1"></span>
+                <span class="issue-count">47</span><span class="issue-last">1h ago</span>
+              </div>
+              <div class="issue-mid">
+                <span class="issue-type">PrismaClientKnownRequestError</span>
+                <svg viewBox="0 0 60 14" preserveAspectRatio="none"><polyline points="0.0,11.0 2.6,3.6 5.2,3.1 7.8,2.0 10.4,7.1 13.0,3.9 15.7,6.1 18.3,7.8 20.9,6.8 23.5,10.8 26.1,10.2 28.7,6.8 31.3,14.0 33.9,8.5 36.5,12.9 39.1,8.7 41.7,13.0 44.3,13.2 47.0,13.0 49.6,9.3 52.2,12.2 54.8,3.1 57.4,5.6 60.0,3.8" fill="none" stroke="var(--spark)" stroke-width="1.2"/></svg>
+              </div>
+              <div class="issue-msg">P2028 transaction already closed · app/issues/page.tsx:31</div>
+            </div>
+
+            <div class="issue">
+              <div class="issue-top">
+                <span class="dot dot-ok"></span><span class="issue-fp">2ac59f13</span>
+                <span style="flex:1"></span>
+                <span class="issue-count">9</span><span class="issue-last">6h ago</span>
+              </div>
+              <div class="issue-mid">
+                <span class="issue-type">RangeError</span>
+                <svg viewBox="0 0 60 14" preserveAspectRatio="none"><polyline points="0.0,9.8 2.6,7.8 5.2,3.6 7.8,8.1 10.4,8.7 13.0,2.0 15.7,7.0 18.3,9.5 20.9,4.8 23.5,7.4 26.1,10.7 28.7,7.7 31.3,14.0 33.9,8.9 36.5,12.7 39.1,8.5 41.7,6.0 44.3,11.6 47.0,10.1 49.6,12.3 52.2,3.8 54.8,8.3 57.4,6.9 60.0,8.8" fill="none" stroke="var(--spark)" stroke-width="1.2"/></svg>
+              </div>
+              <div class="issue-msg">Maximum call stack size exceeded · src/pdf/render.ts:204</div>
+            </div>
+
+            <div class="issue-more">2 more unresolved · open Issues →</div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===================== status bar =================================== -->
+  <footer class="statusbar">
+    <span class="mode">NORMAL</span>
+    <span class="seg first">pfa</span>
+    <span class="seg">tail&nbsp;<span class="on">on</span></span>
+    <span class="seg">10 464 ev / 1h</span>
+    <span class="seg">q&nbsp;<span class="q">38ms</span></span>
+    <span class="seg alerts-seg">1 active alert</span>
+    <span class="spacer"></span>
+    <span class="keys">j/k move · ⏎ expand · ⌥⏎ trace · / filter · ⌘K palette</span>
+  </footer>
+</div>
+
+<div class="mock-flag">STATIC MOCK · NO DATA</div>
+</body>
+</html>

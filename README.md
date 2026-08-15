@@ -5,8 +5,9 @@ Logs, metrics, issues and alerts for apps you already run, without operating an 
 get them.
 
 **Status: design complete, no application code yet.** This repository currently holds the
-specs, the mockup and the M1 implementation plan. Work is tracked in Spira under the `IKN`
-project.
+specs, the mockup, the M1 implementation plan — and a static mock of the service view, live at
+**<https://iknos.1991computer.com>**, so the design can be argued with in a browser. Work is
+tracked in Spira under the `IKN` project.
 
 ---
 
@@ -74,7 +75,7 @@ retained mockup.
 | Database | MySQL 8, daily RANGE partitioning on `TO_DAYS(ts)` |
 | Sessions | Redis, opaque cookie, CSRF compared in constant time |
 | Web | Next App Router, Tailwind v4, `nuqs` for URL state |
-| Deployment | Two PM2 processes behind nginx, built on the target host |
+| Deployment | Two PM2 processes behind nginx, built on the target host — `iknos-web` on 3006, `iknos-api` on 6900 |
 
 Auth is single-account and self-sealing: registration is open while the user table is empty
 and closed forever after, enforced by a `UNIQUE` column rather than an environment flag
@@ -104,6 +105,8 @@ hosts, per-user roles. The schema keeps each of those additive.
 | [`specs/2026-08-09-iknos-ui-design.md`](docs/superpowers/specs/2026-08-09-iknos-ui-design.md) | UI design and information architecture, from the mockup |
 | [`plans/2026-08-10-iknos-m1-logs-nestjs.md`](docs/superpowers/plans/2026-08-10-iknos-m1-logs-nestjs.md) | M1 implementation plan, 31 tasks, TDD step by step |
 | [`design/`](docs/design/) | The mockup, and the exploration that produced it |
+| [`DEPLOY.md`](DEPLOY.md) | The box, the ports, the vhost, and how the mock gets shipped |
+| [`mock/index.html`](mock/index.html) | The static mock behind the URL above — one file, no build |
 
 Two documents are kept but **superseded**, because the reasoning in them is still worth
 reading: [`specs/2026-08-09-iknos-rust-api-design.md`](docs/superpowers/specs/2026-08-09-iknos-rust-api-design.md)
