@@ -4827,12 +4827,28 @@ git commit -m "feat(web): collector lag, ingest rate and storage panel"
 ## Task 31: Deployment
 
 **Files:**
-- Create: `deploy/ecosystem.config.js`, `deploy/nginx.conf`, `deploy/deploy.sh`, `README.md`
+- Create: `deploy/ecosystem.config.js`, `deploy/deploy.sh`
+- Modify: `deploy/nginx/iknos.conf`, `README.md`, `DEPLOY.md`
+- Delete: `mock/`, `deploy/deploy-mock.sh`
 
 **Interfaces:**
+- Consumes: the subdomain, certificate and vhost already installed on ks-b (2026-08-15).
 - Produces: a deployed Iknos on its subdomain, and a one-command deploy.
 
 Both processes are Node, so this is a copy-and-adapt of PFA's deployment. Build on ks-b, same release-directory scheme, no second machine.
+
+**Half of this task is already done.** `iknos.1991computer.com` resolves, has its own certificate and a vhost in `/etc/nginx/conf.d/iknos.conf`, and serves a static mock. What is missing is the two PM2 processes and the deploy script — so this task *edits* the vhost rather than writing one, and the ports below are the ones already reserved, not placeholders:
+
+| | port | pm2 name |
+|---|---|---|
+| api | `6900` (block `6900–6999`) | `iknos-api` |
+| front | `3006` | `iknos-web` |
+
+See `DEPLOY.md`. Both were verified free on ks-b with `ss -ltn` before being taken, and both are
+**registered in Zeus since 2026-08-15**. That makes the registry the contract rather than a note:
+every value in it — the two ports, the two pm2 names, `/health` outside `/api`, one ecosystem file
+for both processes — is something this task has to match, or the Zeus dashboard reports drift. The
+two rows read *not running* in red until Step 5, which is correct and not something to fix.
 
 - [ ] **Step 1: Write the PM2 ecosystem file**
 
@@ -4855,61 +4871,54 @@ module.exports = {
       script: "pnpm",
       args: "start",
       cwd: "/var/www/iknos/current/apps/web",
-      env: { PORT: "4311", IKNOS_API_BASE: "http://127.0.0.1:4310" },
+      env: { PORT: "3006", IKNOS_API_BASE: "http://127.0.0.1:6900" },
     },
   ],
 };
 ```
 
+The API's own port is not in this file: it comes from `IKNOS_PORT` in the shared `.env` (Step 4), which must read `6900`. `4310` is the local development default in `.env.example` and stays that way — dev runs on the laptop, production on ks-b, and pinning them together buys nothing.
+
 These two names are what the service rail displays, because the rail shows what PM2 reports. The mockup labels them `iknos-collector` and `iknos-ui`; the PM2 names win, and `Service.name` exists if a friendlier label is ever wanted.
 
-- [ ] **Step 2: Write the nginx site**
+They are also the names in Zeus's port registry, and the registry rejects an app slug it does not know. Renaming either here without updating the registry row is how a service silently stops being tracked.
 
-`deploy/nginx.conf`:
+- [ ] **Step 2: Take the vhost out of mock phase**
 
-```nginx
-server {
-  listen 443 ssl http2;
-  server_name iknos.YOUR_DOMAIN;
+**Do not write a new vhost.** One already exists at `deploy/nginx/iknos.conf`, is installed at `/etc/nginx/conf.d/iknos.conf`, and is serving traffic. Writing a second one produces two files claiming `server_name iknos.1991computer.com`, and nginx resolves that by silently ignoring one of them.
 
-  # TLS via certbot
+It was written in trekker's shape — which is pfa's — with everything the API needs already present but commented out, including the SSE block. Two edits:
 
-  location /health {
-    proxy_pass http://127.0.0.1:4310;
-  }
+1. Delete the block bracketed by the `MOCK PHASE` banners: the `location /` that serves `/var/www/iknos/public_html`.
+2. Uncomment the four proxy blocks below it — `^~ /api/logs/stream`, `/api/`, `= /health`, `/_next/static/`, and the final `location /`.
 
-  # SSE needs its own block, before the general /api/ one.
-  location /api/logs/stream {
-    proxy_pass http://127.0.0.1:4310;
-    proxy_http_version 1.1;
-    proxy_set_header Connection "";
-    # Without this nginx buffers the stream and "live" arrives in clumps every
-    # few seconds. This is the line everyone forgets.
-    proxy_buffering off;
-    proxy_cache off;
-    proxy_read_timeout 3600s;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-  }
+The ports in those blocks are already `6900` and `3006`. Nothing else in the file changes.
 
-  location /api/ {
-    proxy_pass http://127.0.0.1:4310;
-    proxy_set_header Host $host;
-    # The login and recovery rate limiters key on this. Without it every request
-    # appears to come from 127.0.0.1 and the first five failures lock out
-    # everybody.
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Real-IP $remote_addr;
-  }
+Then, from the laptop:
 
-  location / {
-    proxy_pass http://127.0.0.1:4311;
-    proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-  }
-}
+```bash
+scp deploy/nginx/iknos.conf ks-b:/tmp/iknos.conf
+ssh ks-b 'sudo cp /tmp/iknos.conf /etc/nginx/conf.d/iknos.conf && sudo nginx -t'
+ssh ks-b 'sudo systemctl reload nginx'
 ```
 
+Run `nginx -t` and read it before reloading — one nginx serves nine sites on ks-b. Its two pre-existing `conflicting server name ""` warnings come from `minimal-certbot.conf` and are not about this change.
+
+Two things in that file worth knowing rather than rediscovering:
+
+- **`^~ /api/logs/stream` must stay above `/api/`.** nginx picks the longest matching prefix; without `^~` the stream falls into the general block, gets buffered, and "live" arrives in clumps every few seconds. This is the line everyone forgets, which is why it was written before the route existed.
+- **`X-Forwarded-For` on `/api/`.** The login and recovery rate limiters key on it. Without it every request appears to come from `127.0.0.1` and the first five failures lock out everybody.
+
 One subdomain, so the browser stays on one origin and the session cookie and CSRF header work with no CORS configuration.
+
+- [ ] **Step 2b: Retire the mock**
+
+```bash
+git rm -r mock deploy/deploy-mock.sh
+ssh ks-b 'rm -rf /var/www/iknos/public_html'
+```
+
+Drop the mock's two rows from `README.md`'s documentation table and the mock section of `DEPLOY.md`. A static mock still being served from a path no vhost references is the kind of thing that is found two years later by someone wondering whether it matters.
 
 - [ ] **Step 3: Write the deploy script**
 
@@ -4933,6 +4942,8 @@ ssh ks-b 'cd /var/www/iknos/current && pnpm prisma migrate deploy'
 
 `/var/www/iknos/shared/.env` holds `DATABASE_URL`, `REDIS_URL`, `IKNOS_COOKIE_SECRET`, `IKNOS_PORT`, `IKNOS_LOG_LEVEL`, `IKNOS_RETENTION_DAYS`, `IKNOS_PM2_LOG_GLOB`.
 
+**`IKNOS_PORT=6900` here**, not the `4310` of `.env.example`. That file is the development default; this one is production, and `6900` is what the vhost proxies to and what Zeus's registry has reserved. Getting it wrong produces a vhost proxying to a closed port and a 502 on every route.
+
 **Nothing here controls registration.** It seals itself once the account exists (Task 11), enforced by a unique constraint rather than a variable — so there is no line to forget, and none to flip back on while debugging at two in the morning.
 
 - [ ] **Step 5: First deploy**
@@ -4950,15 +4961,25 @@ ssh ks-b 'pm2 start deploy/ecosystem.config.js && pm2 save && pm2 startup'
 
 The browser path works equally well: skip `seed:user` and visit `/register` once, which is open until it isn't. Either way the instance seals itself afterwards, and the second attempt gets a 409.
 
+- [ ] **Step 5b: Give Zeus the database name**
+
+The migration above is the first moment Iknos has a schema on ks-b. Open Zeus's `/backups` page and
+record it against the `iknos` app.
+
+**Do not defer this.** Zeus dumps the databases it knows about; one it does not know about is not
+dumped, and nothing anywhere reports the absence. Skipping this step leaves a running instance that
+has been collecting logs for a week with no backup — strictly worse than having no instance, because
+it looks fine.
+
 - [ ] **Step 6: Verify against the milestone's criteria**
 
 ```bash
-curl -si https://iknos.YOUR_DOMAIN/api/me       | head -1   # expect 401
-curl -si https://iknos.YOUR_DOMAIN/health       | head -1   # expect 200
-curl -s  https://iknos.YOUR_DOMAIN/api/auth/bootstrap        # expect {"sealed":true}
-curl -si -X POST https://iknos.YOUR_DOMAIN/api/auth/register \
+curl -si https://iknos.1991computer.com/api/me       | head -1   # expect 401
+curl -si https://iknos.1991computer.com/health       | head -1   # expect 200
+curl -s  https://iknos.1991computer.com/api/auth/bootstrap        # expect {"sealed":true}
+curl -si -X POST https://iknos.1991computer.com/api/auth/register \
      -H 'content-type: application/json' -d '{}' | head -1   # expect 409
-curl -si 'https://iknos.YOUR_DOMAIN/api/logs'   | head -1   # expect 401
+curl -si 'https://iknos.1991computer.com/api/logs'   | head -1   # expect 401
 ```
 
 Then in a browser, working through the epic's acceptance list:
@@ -4972,6 +4993,10 @@ Then in a browser, working through the epic's acceptance list:
 - the service rail lists four services, `iknos-api` among them — the tool watching itself;
 - `/register` shows the sealed banner, and still does with the API stopped;
 - recovery with the passphrase from Step 5 sets a new password, then log back in with it.
+
+Then open Zeus. Both `iknos` rows go green, and the app reports no convention drift — that is the
+external check on the two ports and the health URL, done by something that was not looking over your
+shoulder while you wrote them.
 
 Reboot the machine and confirm both processes return. Roll back to the previous release once, deliberately, so you know it works before you need it.
 
@@ -5005,7 +5030,9 @@ git commit -m "feat(deploy): pm2, nginx and release-directory deployment"
 
 **Deliberate deferrals**, noted rather than dropped: line and bar dataviz primitives are not built in Task 22 — M1 has no charts beyond the sparkline and the histogram's own bars, and they arrive with `IKN-13` and `IKN-23`; `apps/web` is scaffolded as a placeholder in Task 1 before being built properly in Task 22; the `⌘I issue` action and the active-alert counter are wired but not rendered until `IKN-14` and `IKN-15` exist; the storage panel lives in the rail until the alerts view gives it its intended home.
 
-**Values to fill in from your environment**, each called out at the step that needs it: the real `DUMMY_HASH` in Task 10 and `DUMMY_PASSPHRASE_HASH` in Task 11, the known trace id and row count for the fixture window in Task 18, and `YOUR_DOMAIN` in Task 31. All are environment facts, not undecided design.
+**Values to fill in from your environment**, each called out at the step that needs it: the real `DUMMY_HASH` in Task 10 and `DUMMY_PASSPHRASE_HASH` in Task 11, and the known trace id and row count for the fixture window in Task 18. All are environment facts, not undecided design.
+
+Task 31's domain and ports are no longer among them: `iknos.1991computer.com`, `6900` and `3006` are decided, live, and written into the vhost that is already installed.
 
 **Ordering notes.**
 - Task 10's first test asserts 401 on `/api/services` and `/api/logs`, which do not exist until Task 17. Nest returns 404 for an unmounted route, so either run that test after Task 17 or assert "not 200" until then.

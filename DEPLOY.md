@@ -23,9 +23,23 @@ Both slots were the last free entries in Zeus's registry, and both were verified
 | front | `3006` | `iknos-web` | reserved, nothing listening |
 | api | `6900` (block `6900–6999`) | `iknos-api` | reserved, nothing listening |
 
-⚠️ **Not yet in Zeus's port registry.** The registry seed lives in Zeus's repo, so adding these two
-rows is a change there plus a `pnpm seed`. Until that happens `6900–6999` and `3006` read as free to
-anyone looking, which is how they get taken twice.
+**Registered in Zeus on 2026-08-15.** Both rows read *not running*, in red — that is the correct
+state, not a defect to chase: the ports are reserved, nothing is listening yet. `IKN-4` turns them
+green.
+
+Registration also makes the registry the contract, so the deploy has to match it or the dashboard
+shows drift: `6900` **exactly** (Zeus flags any api whose port is not a multiple of 100), `3006`,
+the two pm2 names above, `/health` **outside** `/api`, and **one** ecosystem file at
+`/var/www/iknos/ecosystem.config.js` declaring both processes — unlike zeus and trekker, which have
+two. Zeus probes the front root with `redirect: "manual"`, so a 307 there counts as up.
+
+⚠️ **No `dbName` recorded yet**, because there is no schema until the first Prisma migration
+(`IKN-3`). Until it is set from Zeus's `/backups` page, **Iknos is excluded from the nightly
+database dumps** — a live instance with no backup is a worse state than no instance, so this is a
+step of the first deploy, not a follow-up.
+
+One side effect worth knowing: Zeus rejects a deploy report from an unregistered app with a 400, so
+`deploy/deploy.sh` can report its deploys from the first run.
 
 ## The machine
 
