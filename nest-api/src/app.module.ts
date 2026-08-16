@@ -1,7 +1,8 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { APP_FILTER } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { LoggerModule } from "nestjs-pino";
+import { SessionGuard } from "./auth/session.guard";
 import { AllExceptionsFilter } from "./common/all-exceptions.filter";
 import { logger } from "./common/logger";
 import { validate } from "./config/env.validation";
@@ -45,6 +46,12 @@ import { RedisModule } from "./redis/redis.module";
       // Registered globally, never per-controller: a controller added later is covered because
       // it exists, not because someone remembered.
       useValue: new AllExceptionsFilter(logger),
+    },
+    {
+      provide: APP_GUARD,
+      // Same reasoning, and here it is the security property itself: every route is denied
+      // until something says otherwise, so the only way to expose one is to write `@Public()`.
+      useClass: SessionGuard,
     },
   ],
 })

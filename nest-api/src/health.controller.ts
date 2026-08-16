@@ -1,4 +1,5 @@
 import { Controller, Get } from "@nestjs/common";
+import { Public } from "./auth/public.decorator";
 
 /**
  * The only public route.
@@ -10,8 +11,10 @@ import { Controller, Get } from "@nestjs/common";
  * It also lives **outside** `/api` — the vhost routes `= /health` straight to this port, and it
  * is the URL Zeus's registry probes.
  *
- * Task 9 adds `@Public()` here, once the global session guard exists to need it.
+ * `@Public()` is what exempts it from the global guard. Zeus's registry probes this URL with
+ * no cookie, so a 401 here reads as the whole app being down.
  */
+@Public()
 @Controller()
 export class HealthController {
   @Get("health")

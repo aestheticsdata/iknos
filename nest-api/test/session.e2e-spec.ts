@@ -4,6 +4,7 @@ import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "../src/app.module";
+import { Public } from "../src/auth/public.decorator";
 import { SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from "../src/auth/session.constants";
 import { buildSessionMiddleware } from "../src/auth/session.middleware";
 import { RedisService, SESSION_PREFIX } from "../src/redis/redis.service";
@@ -32,9 +33,13 @@ const SECRET = "test-secret-at-least-as-long-as-the-real-one-which-is-sixty-four
 
 /**
  * Two routes that exist only here: enough to put something in a session and read it back, which
- * is all Task 8 has to prove. The real login arrives in Task 10 and the guard in Task 9 — until
- * then these are deliberately unprotected.
+ * is all this file has to prove. The real login arrives in Task 10.
+ *
+ * `@Public()` because these assertions are about the middleware, not the guard — without it the
+ * global guard from Task 9 would answer 401 before any of them got to look at a cookie. The
+ * guard has its own suite in `session-guard.e2e-spec.ts`.
  */
+@Public()
 @Controller("test-session")
 class SessionProbeController {
   @Post("login/:userId")
