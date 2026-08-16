@@ -1426,7 +1426,9 @@ import { buildTestApp } from "./helpers";
 describe("auth", () => {
   it("401s every protected route without a session", async () => {
     const app = await buildTestApp();
-    for (const url of ["/api/me", "/api/csrf", "/api/services", "/api/logs"]) {
+    // Only routes that exist: Nest answers 404 for an unknown path before any guard runs, so
+    // listing a route from a later task would pass for the wrong reason.
+    for (const url of ["/api/me", "/api/csrf"]) {
       await request(app.getHttpServer()).get(url).expect(401);
     }
   });
@@ -1607,15 +1609,26 @@ async login(@Body() body: LoginDto, @Req() req, @Res({ passthrough: true }) res)
   // One session per user: the previous cookie has to stop working before the new one exists.
   await this.redis.clearSessionsForUser(user.id);
 
+  // A fresh session id, and not decoration: without it, anyone able to plant a cookie in the
+  // victim's browser keeps a working handle on the session once the victim logs in.
+  await new Promise<void>((resolve, reject) => {
+    req.session.regenerate((error) => (error ? reject(error) : resolve()));
+  });
+
   // The middleware writes the record and sets the cookie on its own; the handler only says
   // what the session holds. Rotating the CSRF token here is what makes a token captured
   // before login useless after it.
   req.session.userId = user.id;
   req.session.csrfToken = randomBytes(32).toString("base64url");
 
+  // Four typos then a success must not leave the owner one attempt from a lockout.
+  await this.rateLimit.reset(ip);
+
   return { userId: user.id, csrfToken: req.session.csrfToken };
 }
 ```
+
+`RateLimitService` therefore carries `reset(ip)` alongside `allow(ip)`.
 
 `@Res({ passthrough: true })` is no longer needed on `login` — nothing sets a cookie by hand.
 
@@ -1626,6 +1639,12 @@ Trust the proxy so `req.ip` is the real client: `app.set("trust proxy", 1)` in `
 - [ ] **Step 6: Add the user CLI**
 
 `nest-api/scripts/create-account.ts` — reads an email argument, prompts twice for a password without echoing, rejects anything under 12 characters, hashes with `hashPassword`, inserts. Wire it as `pnpm seed:user`. No `POST /users`.
+
+The password comes from stdin, never from `argv` — an argument lands in the shell history and in `ps` output for every user on the box.
+
+**Support a piped stdin as well as a TTY.** `printf 'pw\npw\n' | pnpm seed:user you@example.com` is how the account gets created over SSH on a first deploy, and readline in terminal mode garbles a pipe. Drain the stream **once** and hand out lines from the buffer: opening a second reader for the confirmation finds stdin already consumed by the first, the promise never settles, and the process exits 0 having printed nothing — which looks exactly like success.
+
+Catch Prisma's `P2002` and print "this instance already has its account" rather than letting a unique-constraint stack trace reach the terminal.
 
 The CLI stays password-only here because the column that stores a recovery passphrase does not exist yet — Task 11 adds it and extends this same script.
 
