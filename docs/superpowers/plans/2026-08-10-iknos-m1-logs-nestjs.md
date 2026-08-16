@@ -4891,7 +4891,7 @@ git commit -m "feat(web): collector lag, ingest rate and storage panel"
 ## Task 31: Deployment
 
 **Files:**
-- Create: `nest-api/ecosystem.config.example.js`, `nest-api/deploy-api.sh`, `front/ecosystem.config.example.js`, `front/deploy-front.sh`
+- Create: `nest-api/ecosystem.config.example.js`, `nest-api/deploy-api.sh`, `front/deploy-front.sh`
 - Modify: `deploy/nginx/iknos.conf`, `README.md`, `DEPLOY.md`
 - Delete: `mock/`, `deploy/deploy-mock.sh`
 
@@ -4914,29 +4914,35 @@ every value in it — the two ports, the two pm2 names, `/health` outside `/api`
 for both processes — is something this task has to match, or the Zeus dashboard reports drift. The
 two rows read *not running* in red until Step 5, which is correct and not something to fix.
 
-- [ ] **Step 1: Write the PM2 ecosystem files — two of them**
+- [ ] **Step 1: Write the PM2 ecosystem file — one, and it declares the API only**
 
-Iknos deploys the way its siblings do, not the way trekker does. Trekker's own `deploy-api.sh`
-spells out the difference:
+Read off ks-b rather than inferred. Every sibling has exactly this on the server:
 
-> The sibling apps ship one package because each of their halves is an independent pnpm root
-> with its own lockfile. Trekker is a single workspace…
+```
+/var/www/<app>/
+  nest-api/              live API — the api process's cwd
+  nest-api-releases/     timestamped releases
+  nest-api.bak/          the previous release, kept for rollback
+  public_html/           live front — the front process's cwd
+  public_html.bak/
+  deploy-logs/
+  ecosystem.config.js    chmod 600, holds the secrets, declares the API
+```
 
-`nest-api/` and `front/` are independent pnpm roots here, each with its own lockfile, so each
-ships and restarts on its own. That means **two ecosystem files and two deploy scripts**, the
-shape Zeus, PFA and spira all have — not one file naming both processes.
+`/var/www/zeus/ecosystem.config.js` declares `zeus-nest-api` and nothing else. The front is not
+in an ecosystem file: `zeus-front` runs `node_modules/next/dist/bin/next start -p 3003 -H
+127.0.0.1` with `cwd=/var/www/zeus/public_html`. spira and trekker are identical bar the port.
 
-`nest-api/ecosystem.config.example.js`, committed, with `ecosystem.config.js` gitignored beside
-it because it holds secrets:
+So Iknos gets **one** `ecosystem.config.js`, deployed to `/var/www/iknos/`, declaring
+`iknos-api`. `nest-api/ecosystem.config.example.js` is what lives in the repo; the real file is
+gitignored because it holds the secrets.
 
 ```js
-const { join } = require("node:path");
-
 module.exports = {
   apps: [
     {
       name: "iknos-api",
-      cwd: join(__dirname, "current"),
+      cwd: "/var/www/iknos/nest-api",
       // dist/src, not dist: the Prisma client generates to ../generated, so tsc's root covers
       // the whole package and the layout is mirrored one level down.
       script: "dist/src/main.js",
@@ -4951,7 +4957,7 @@ module.exports = {
         // Loopback only — nginx is the single public entrance. Node with no bind host listens
         // on every interface.
         HOST: "127.0.0.1",
-        // From Zeus's registry: block 6900–6999, and the API sits on the block's first port.
+        // From Zeus's registry: block 6900–6999, and an API sits on its block's first port.
         IKNOS_PORT: 6900,
         DATABASE_URL: "mysql://iknos:REPLACE_ME@127.0.0.1:3306/iknos",
         REDIS_URL: "redis://127.0.0.1:6379",
@@ -4966,31 +4972,41 @@ module.exports = {
 };
 ```
 
-`front/ecosystem.config.example.js` is the matching pair for `iknos-web` on `3006`, with
-`IKNOS_API_BASE: "http://127.0.0.1:6900"`.
+`iknos-web` is started the way its siblings are, from `public_html` after the front is built
+there:
+
+```bash
+ssh ks-b 'cd /var/www/iknos/public_html && pm2 start node_modules/next/dist/bin/next \
+  --name iknos-web -- start -p 3006 -H 127.0.0.1'
+```
 
 `IKNOS_PORT` is `6900` here and `4310` in local development. Dev runs on the laptop and
 production on ks-b; pinning them together buys nothing.
 
 The two PM2 names are what the service rail displays, because the rail shows what PM2 reports.
 The mockup labels them `iknos-collector` and `iknos-ui`; the PM2 names win, and `Service.name`
-exists if a friendlier label is ever wanted.
+exists if a friendlier label is ever wanted. They are also the names in Zeus's registry —
+renaming either without updating the row is how a service silently stops being tracked.
 
-⚠️ **Zeus's registry has to be corrected here.** Both iknos rows were registered on 2026-08-15
-with a single shared `ecosystemPath` of `/var/www/iknos/ecosystem.config.js`, which was true of
-the layout at the time and is not true of this one. Update them to
-`/var/www/iknos/api/ecosystem.config.js` and `/var/www/iknos/front/ecosystem.config.js`, or the
-dashboard reports drift against paths that do not exist.
+- [ ] **Step 1b: Write the deploy script**
 
-- [ ] **Step 1b: Write the two deploy scripts**
+`nest-api/deploy-api.sh`, modelled on Zeus's and PFA's, and the directory names above are what
+it creates:
 
-`nest-api/deploy-api.sh` and `front/deploy-front.sh`, modelled on Zeus's and PFA's: rsync into a
-fresh timestamped release directory, atomic switch keeping the previous release as a backup,
-`pnpm install --frozen-lockfile` and build **on the server**, `pm2 reload`, automatic rollback if
-anything fails after the switch.
+1. rsync the package into `nest-api-releases/<timestamp>/`
+2. `pnpm install --frozen-lockfile` and `pnpm build` **on the server**
+3. move the live `nest-api/` aside to `nest-api.bak/`, move the new release into place
+4. `pm2 reload iknos-api`
+5. **on any failure after step 3, swap `nest-api.bak/` back and reload again** — that is the
+   whole point of keeping it, and it is why the backup is a sibling directory rather than a
+   tarball somewhere
 
-**Neither script ever migrates.** `prisma migrate deploy` is run by hand over SSH, same rule as
-PFA and trekker.
+Append a line per run to `deploy-logs/`.
+
+**The script never migrates.** `prisma migrate deploy` is run by hand over SSH, same rule as PFA
+and trekker.
+
+The front's deploy follows the same pattern into `public_html` / `public_html.bak`.
 
 - [ ] **Step 2: Take the vhost out of mock phase**
 
@@ -5024,8 +5040,11 @@ One subdomain, so the browser stays on one origin and the session cookie and CSR
 
 ```bash
 git rm -r mock deploy/deploy-mock.sh
-ssh ks-b 'rm -rf /var/www/iknos/public_html'
 ```
+
+**Do not delete `/var/www/iknos/public_html`.** It is where the front deploys — `iknos-web` runs
+with that directory as its cwd, exactly as `zeus-front` and `spira-front` do. The front's build
+replaces `index.html` in it; the directory itself stays.
 
 Drop the mock's two rows from `README.md`'s documentation table and the mock section of `DEPLOY.md`. A static mock still being served from a path no vhost references is the kind of thing that is found two years later by someone wondering whether it matters.
 
@@ -5044,7 +5063,7 @@ printf 'IKNOS_RELEASE=%s\nIKNOS_COMMIT=%s\n' "$VERSION" "$GIT_SHA" > "$RELEASE_D
 **The script never migrates.** Migrations are manual:
 
 ```bash
-ssh ks-b 'cd /var/www/iknos/api/current && pnpm prisma migrate deploy'
+ssh ks-b 'cd /var/www/iknos/nest-api && pnpm prisma migrate deploy'
 ```
 
 - [ ] **Step 4: Write the environment file**
@@ -5063,9 +5082,9 @@ ssh ks-b 'mkdir -p /var/www/iknos/shared && chmod 700 /var/www/iknos/shared'
 ssh ks-b 'chmod 600 /var/www/iknos/shared/.env'
 ./nest-api/deploy-api.sh
 ./front/deploy-front.sh
-ssh ks-b 'cd /var/www/iknos/api/current && pnpm prisma migrate deploy && pnpm seed:user you@yourdomain'
-ssh ks-b 'pm2 start /var/www/iknos/api/ecosystem.config.js --env production'
-ssh ks-b 'pm2 start /var/www/iknos/front/ecosystem.config.js --env production'
+ssh ks-b 'cd /var/www/iknos/nest-api && pnpm prisma migrate deploy && pnpm seed:user you@yourdomain'
+ssh ks-b 'pm2 start /var/www/iknos/ecosystem.config.js --env production'
+ssh ks-b 'cd /var/www/iknos/public_html && pm2 start node_modules/next/dist/bin/next --name iknos-web -- start -p 3006 -H 127.0.0.1'
 ssh ks-b 'pm2 save && pm2 startup'
 ```
 

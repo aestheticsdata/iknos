@@ -32,13 +32,35 @@ shows drift: `6900` **exactly** (Zeus flags any api whose port is not a multiple
 the two pm2 names above, and `/health` **outside** `/api`. Zeus probes the front root with
 `redirect: "manual"`, so a 307 there counts as up.
 
-⚠️ **One registry field is already wrong.** Both rows were registered with a single shared
-`ecosystemPath` of `/var/www/iknos/ecosystem.config.js`, which described the layout as it stood on
-2026-08-15. The repository has since moved to the fleet's shape — `nest-api/` and `front/` as
-independent pnpm roots, the way Zeus, PFA and spira are — so there are **two** ecosystem files, not
-one. Correct the rows to `/var/www/iknos/api/ecosystem.config.js` and
-`/var/www/iknos/front/ecosystem.config.js` before `IKN-4` ships, or the dashboard checks a path
-that will never exist.
+The registered `ecosystemPath` of `/var/www/iknos/ecosystem.config.js` is correct and needs no
+change. Every sibling has exactly one such file at its application root, `chmod 600`, and it
+declares the **API only** — `/var/www/zeus/ecosystem.config.js` names `zeus-nest-api` and nothing
+else. The front is not in an ecosystem file at all: `zeus-front` is `next start -p 3003 -H
+127.0.0.1` run with `cwd=/var/www/zeus/public_html`, and spira and trekker are identical bar the
+port.
+
+## What the box will look like
+
+Read off ks-b, not invented. Every sibling has this, and Iknos gets the same:
+
+```
+/var/www/iknos/
+  nest-api/              live API — the api process's cwd
+  nest-api-releases/     timestamped releases
+  nest-api.bak/          the previous release, kept for rollback
+  public_html/           live front — the front process's cwd (today: the mock)
+  public_html.bak/
+  deploy-logs/
+  ecosystem.config.js    chmod 600, secrets, declares iknos-api
+```
+
+Rollback is a directory swap, which is why `.bak` is a sibling of the live directory rather than a
+tarball somewhere: the deploy script moves the live copy aside before moving the new release in,
+and on any failure after that point it moves it straight back and reloads. Nothing to unpack, and
+the previous version is always one `mv` away.
+
+**Today only `public_html` exists**, holding the mock. The deploy script creates the rest on its
+first run — and `public_html` is not removed when the mock goes, it is where the front deploys.
 
 ⚠️ **No `dbName` recorded yet**, because there is no schema until the first Prisma migration
 (`IKN-3`). Until it is set from Zeus's `/backups` page, **Iknos is excluded from the nightly
