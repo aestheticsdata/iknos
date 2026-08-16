@@ -10,7 +10,13 @@ export default defineConfig({
   test: {
     globals: false,
     environment: "node",
-    include: ["src/**/*.spec.ts", "test/**/*.spec.ts"],
+    // class-validator and class-transformer read their decorators back through the metadata
+    // reflection API. Nest's own bootstrap imports this; unit tests never reach bootstrap, so
+    // without it every validator silently sees an empty rule set and validation always passes.
+    setupFiles: ["reflect-metadata"],
+    // `*spec.ts`, not `*.spec.ts`: the e2e files follow Nest's `*.e2e-spec.ts` convention, which
+    // a dot-anchored glob silently skips — the run then reports success having executed nothing.
+    include: ["src/**/*spec.ts", "test/**/*spec.ts"],
     // No tests until Task 4, and an empty run must not be a red build — otherwise the first
     // `pnpm test` teaches everyone to ignore its exit code.
     passWithNoTests: true,
