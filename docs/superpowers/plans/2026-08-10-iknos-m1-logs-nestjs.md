@@ -1407,7 +1407,7 @@ git commit -m "feat(auth): global session guard with constant-time csrf check"
 ## Task 10: Auth controller, rate limiting and the user CLI
 
 **Files:**
-- Create: `nest-api/src/auth/auth.controller.ts`, `nest-api/src/auth/ratelimit.service.ts`, `nest-api/src/auth/users.service.ts`, `nest-api/scripts/create-account.ts`, `nest-api/test/auth.e2e-spec.ts`
+- Create: `nest-api/src/auth/password.util.ts`, `nest-api/src/auth/password.util.spec.ts`, `nest-api/src/auth/auth.controller.ts`, `nest-api/src/auth/ratelimit.service.ts`, `nest-api/src/auth/users.service.ts`, `nest-api/scripts/create-account.ts`, `nest-api/test/auth.e2e-spec.ts`
 
 **Interfaces:**
 - Produces: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/csrf`, `GET /api/me`. Every later route sits behind the guard these establish.
@@ -1516,9 +1516,78 @@ export class RateLimitService {
 }
 ```
 
-- [ ] **Step 4: Implement the controller**
+- [ ] **Step 4: Hash passwords with `node:crypto`, no dependency**
 
-`nest-api/src/auth/auth.controller.ts` — the shape below, with `bcryptjs` for hashing:
+No `bcryptjs`, despite the four sibling APIs using it and `IKN-6` naming it. Node ships a memory-hard KDF, and OWASP ranks scrypt above bcrypt precisely because bcrypt is not memory-hard. `bcryptjs` is also a pure-JS reimplementation rather than a binding, so dropping it removes a dependency instead of adding one.
+
+**`crypto.argon2` is not an option, even though it would rank higher still.** It exists from Node 24.11 and ks-b runs **v24.3.0**, where it is `undefined` — it would compile on a developer machine and throw on the box. Re-measure before reaching for it; do not assume a version.
+
+Measured at these parameters: **266 ms** locally, **310 ms on ks-b**. That is the intended cost, and it is affordable because the only route that pays it is rate-limited to five attempts a minute.
+
+`nest-api/src/auth/password.util.ts`:
+
+```ts
+import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
+import { promisify } from "node:util";
+
+const scryptAsync = promisify(scrypt);
+
+// OWASP's scrypt parameters. They are written into every hash rather than assumed, so raising
+// them later is a one-line change that leaves existing accounts able to log in.
+const N = 2 ** 17;
+const R = 8;
+const P = 1;
+const KEY_BYTES = 32;
+const SALT_BYTES = 16;
+
+/** 128 * N * r is ~134 MiB here, and scrypt's default ceiling is 32 MiB — without this it
+ *  refuses the parameters outright rather than running slowly. */
+function maxmemFor(n: number, r: number): number {
+  return Math.max(256 * 1024 * 1024, 128 * n * r * 2);
+}
+
+/** `scrypt$N$r$p$salt$key`, all base64. Self-describing, so verify never has to guess. */
+export async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(SALT_BYTES);
+  const key = (await scryptAsync(password, salt, KEY_BYTES, {
+    N,
+    r: R,
+    p: P,
+    maxmem: maxmemFor(N, R),
+  })) as Buffer;
+
+  return ["scrypt", N, R, P, salt.toString("base64"), key.toString("base64")].join("$");
+}
+
+export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  const parts = stored.split("$");
+  if (parts.length !== 6 || parts[0] !== "scrypt") return false;
+
+  const [, n, r, p, saltB64, keyB64] = parts;
+  const [nn, rr, pp] = [Number(n), Number(r), Number(p)];
+  if (!Number.isInteger(nn) || !Number.isInteger(rr) || !Number.isInteger(pp)) return false;
+
+  const key = Buffer.from(keyB64, "base64");
+  // Parameters come from the stored hash, never from the constants above: an account created
+  // before a cost increase has to keep verifying against the cost it was created with.
+  const derived = (await scryptAsync(password, Buffer.from(saltB64, "base64"), key.length, {
+    N: nn,
+    r: rr,
+    p: pp,
+    maxmem: maxmemFor(nn, rr),
+  })) as Buffer;
+
+  return timingSafeEqual(key, derived);
+}
+```
+
+Async, not `scryptSync`, and this is not a preference. Iknos runs the collector in the same process as the API — a synchronous derivation would stall log ingestion for a third of a second on every login attempt, including the failed ones.
+
+Write `password.util.spec.ts` alongside: a round trip verifies; a wrong password does not; two hashes of the same password differ (the salt is random); a truncated or non-scrypt string returns `false` rather than throwing; and a hash carrying different parameters than the current constants still verifies.
+
+- [ ] **Step 5: Implement the controller**
+
+`nest-api/src/auth/auth.controller.ts` — the shape below, hashing through `password.util.ts`:
 
 ```ts
 @Public()
@@ -1527,11 +1596,12 @@ async login(@Body() body: LoginDto, @Req() req, @Res({ passthrough: true }) res)
   if (!(await this.rateLimit.allow(req.ip))) throw new HttpException("", 429);
 
   const user = await this.users.findByEmail(body.email);
-  // Compare against a dummy hash when the account is missing, so a nonexistent
-  // account and a wrong password cost the same time and return the same body.
+  // Derive against a dummy hash when the account is missing, so a nonexistent account and a
+  // wrong password cost the same 300ms and return the same body. `&& false` and not `||`:
+  // the derivation still has to run, its result just must not be able to grant anything.
   const ok = user
-    ? await bcrypt.compare(body.password, user.passwordHash)
-    : (await bcrypt.compare(body.password, DUMMY_HASH), false);
+    ? await verifyPassword(body.password, user.passwordHash)
+    : (await verifyPassword(body.password, DUMMY_HASH)) && false;
   if (!user || !ok) throw new UnauthorizedException();
 
   // One session per user: the previous cookie has to stop working before the new one exists.
@@ -1549,19 +1619,19 @@ async login(@Body() body: LoginDto, @Req() req, @Res({ passthrough: true }) res)
 
 `@Res({ passthrough: true })` is no longer needed on `login` — nothing sets a cookie by hand.
 
-`logout` calls `req.session.destroy(...)` and `res.clearCookie(SESSION_COOKIE_NAME)`; `GET /api/csrf` returns `req.session.csrfToken`, creating one if the session has none; `GET /api/me` returns `{ userId }`. Generate `DUMMY_HASH` once with `bcrypt.hashSync("a password nobody has", 10)` and paste the real value.
+`logout` calls `req.session.destroy(...)` and `res.clearCookie(SESSION_COOKIE_NAME)`; `GET /api/csrf` returns `req.session.csrfToken`, creating one if the session has none; `GET /api/me` returns `{ userId }`. Generate `DUMMY_HASH` once with `node -e 'import("./dist/src/auth/password.util.js").then(m => m.hashPassword("a password nobody has").then(console.log))'` and paste the real value — a constant, not a value computed at boot, so startup does not pay 300 ms for a string that never changes.
 
 Trust the proxy so `req.ip` is the real client: `app.set("trust proxy", 1)` in `main.ts`, paired with nginx setting `X-Forwarded-For` in Task 31. Without both, every request looks like `127.0.0.1` and five failures lock out everyone.
 
-- [ ] **Step 5: Add the user CLI**
+- [ ] **Step 6: Add the user CLI**
 
-`nest-api/scripts/create-account.ts` — reads an email argument, prompts twice for a password without echoing, rejects anything under 12 characters, hashes with bcrypt, inserts. Wire it as `pnpm seed:user`. No `POST /users`.
+`nest-api/scripts/create-account.ts` — reads an email argument, prompts twice for a password without echoing, rejects anything under 12 characters, hashes with `hashPassword`, inserts. Wire it as `pnpm seed:user`. No `POST /users`.
 
 The CLI stays password-only here because the column that stores a recovery passphrase does not exist yet — Task 11 adds it and extends this same script.
 
 It creates **the** account, not **an** account: `singleton` (Task 3) makes a second one fail on a unique constraint. That is deliberate, and it is the same mechanism that seals registration in Task 11.
 
-- [ ] **Step 6: Run the tests, then check from outside**
+- [ ] **Step 7: Run the tests, then check from outside**
 
 Run: `pnpm seed:user test@iknos.local` then `pnpm test test/auth`
 Expected: PASS, 5 tests.
@@ -1574,7 +1644,7 @@ curl -si localhost:4310/api/me | head -1
 
 Expected: `HTTP/1.1 401 Unauthorized`. This is the spec's acceptance criterion — verified in `curl`, not only in a browser.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add nest-api nest-api/src/prisma
@@ -1636,15 +1706,15 @@ describe("verifyPassphrase", () => {
     expect(await verifyPassphrase(hash, "incorrect horse battery staple")).toBe(false);
   });
 
-  it("rejects an account with no passphrase, and still pays the bcrypt cost", async () => {
+  it("rejects an account with no passphrase, and still pays the derivation cost", async () => {
     const started = performance.now();
     expect(await verifyPassphrase(null, "anything at all, long enough")).toBe(false);
 
-    // bcrypt at cost 10 takes tens of milliseconds. An early `return false` on
-    // the null hash would take approximately zero — making "this account has no
-    // passphrase" measurable with a stopwatch, which is exactly the list of
-    // unrecoverable accounts an attacker would like to have.
-    expect(performance.now() - started).toBeGreaterThan(5);
+    // scrypt at these parameters takes ~300ms. An early `return false` on the null
+    // hash would take approximately zero — making "this account has no passphrase"
+    // measurable with a stopwatch, which is exactly the list of unrecoverable
+    // accounts an attacker would like to have.
+    expect(performance.now() - started).toBeGreaterThan(50);
   });
 });
 ```
@@ -1659,26 +1729,27 @@ Expected: FAIL — cannot resolve `./passphrase.util`.
 `nest-api/src/auth/passphrase.util.ts`:
 
 ```ts
-import bcrypt from "bcryptjs";
+import { hashPassword, verifyPassword } from "./password.util";
 
 export const MIN_PASSWORD = 12;
 export const MIN_PASSPHRASE = 20;
 
-/** Generate once with `bcrypt.hashSync("no passphrase set", 10)` and paste the
- *  real value here, exactly as Task 10 does for the login dummy hash. */
-export const DUMMY_PASSPHRASE_HASH = "$2a$10$REPLACE_WITH_A_REAL_BCRYPT_HASH";
+/** Generate once the same way as Task 10's `DUMMY_HASH`, and paste the real value here. */
+export const DUMMY_PASSPHRASE_HASH = "scrypt$131072$8$1$REPLACE$WITH_A_REAL_HASH";
 
+/** The passphrase is a password by another name — same KDF, same parameters, one place to
+ *  raise the cost. It is not a second scheme just because it protects a second thing. */
 export function hashPassphrase(passphrase: string): Promise<string> {
-  return bcrypt.hash(passphrase, 10);
+  return hashPassword(passphrase);
 }
 
-/** Always runs a comparison, including against the dummy hash, so an account
+/** Always runs a derivation, including against the dummy hash, so an account
  *  with no passphrase costs the same as a wrong one. */
 export async function verifyPassphrase(
   hash: string | null,
   provided: string,
 ): Promise<boolean> {
-  const matched = await bcrypt.compare(provided, hash ?? DUMMY_PASSPHRASE_HASH);
+  const matched = await verifyPassword(provided, hash ?? DUMMY_PASSPHRASE_HASH);
   return hash !== null && matched;
 }
 
@@ -1907,7 +1978,7 @@ This does leak "somebody has set this instance up", which is why it answers with
 
 - [ ] **Step 9: Implement the controller**
 
-`nest-api/src/auth/account.controller.ts`. `UsersService` gains `count()`, `findById`, `create(email, password, passphrase)` and `setPassword(id, password, passphrase?)`, all hashing with bcrypt and all normalising the address (trim, lowercase) before it touches the database — otherwise `Me@…` and `me@…` are two accounts on a table that may only ever hold one.
+`nest-api/src/auth/account.controller.ts`. `UsersService` gains `count()`, `findById`, `create(email, password, passphrase)` and `setPassword(id, password, passphrase?)`, all hashing with `hashPassword` and all normalising the address (trim, lowercase) before it touches the database — otherwise `Me@…` and `me@…` are two accounts on a table that may only ever hold one.
 
 ```ts
 const RECOVER_MAX = 5;
@@ -1971,7 +2042,7 @@ export class AccountController {
   @Post("password")
   async password(@Body() body: PasswordDto, @Req() req) {
     const user = await this.users.findById(req.session.userId);
-    const ok = user ? await bcrypt.compare(body.currentPassword ?? "", user.passwordHash) : false;
+    const ok = user ? await verifyPassword(body.currentPassword ?? "", user.passwordHash) : false;
     if (!user || !ok) throw new UnauthorizedException();
 
     assertLength(body.newPassword, MIN_PASSWORD, "password");
@@ -4448,7 +4519,7 @@ The three new public pages join `login` in the exclusion list. Forgetting one pr
 
 - [ ] **Step 3: Build the shared shell**
 
-`auth-shell.tsx` — full-screen `data-surface="chassis"`, the oversized outlined `IKNOS` wordmark bled off the bottom-left, two radial washes, a chrome bar carrying `KS-B.INTERNAL` with a liveness dot, and the footer: the product line, an `ABOUT IKNOS →` link, and `httpOnly cookie · rolling session · CSRF · bcrypt`.
+`auth-shell.tsx` — full-screen `data-surface="chassis"`, the oversized outlined `IKNOS` wordmark bled off the bottom-left, two radial washes, a chrome bar carrying `KS-B.INTERNAL` with a liveness dot, and the footer: the product line, an `ABOUT IKNOS →` link, and `httpOnly cookie · rolling session · CSRF · scrypt`.
 
 Stating the security posture on the login screen of a self-hosted tool is honest and costs one line.
 
