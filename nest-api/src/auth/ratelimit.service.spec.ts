@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { RedisService } from "../redis/redis.service";
-import { MAX_ATTEMPTS, RateLimitService, WINDOW_SECONDS } from "./ratelimit.service";
+import { MAX_ATTEMPTS, RateLimitService, RECOVERY_LIMIT, WINDOW_SECONDS } from "./ratelimit.service";
 
 describe("RateLimitService", () => {
   let redis: RedisService;
@@ -77,5 +77,54 @@ describe("RateLimitService", () => {
     const ttl = await redis.getClient().ttl(`iknos:rl:login:${client}`);
     expect(ttl).toBeGreaterThan(0);
     expect(ttl).toBeLessThanOrEqual(WINDOW_SECONDS);
+  });
+
+  describe("recovery", () => {
+    function email(): string {
+      const value = `test-${randomUUID()}@example.com`;
+      keys.push(`iknos:rl:recover:${value}`);
+      return value;
+    }
+
+    it("keeps its own budget, on a much longer window", async () => {
+      const address = email();
+      for (let i = 0; i < RECOVERY_LIMIT.max; i++) {
+        expect(await limiter.allowRecovery(address)).toBe(true);
+      }
+      expect(await limiter.allowRecovery(address)).toBe(false);
+
+      const ttl = await redis.getClient().ttl(`iknos:rl:recover:${address}`);
+      expect(ttl).toBeGreaterThan(WINDOW_SECONDS);
+      expect(ttl).toBeLessThanOrEqual(RECOVERY_LIMIT.windowSeconds);
+    });
+
+    it("counts the address, not the caller", async () => {
+      // The whole point of keying recovery by e-mail: rotating IPs must not buy more guesses at
+      // the passphrase of the one account that exists.
+      const address = email();
+      for (let i = 0; i <= RECOVERY_LIMIT.max; i++) await limiter.allowRecovery(address);
+
+      expect(await limiter.allowRecovery(address)).toBe(false);
+      expect(await limiter.allowRecovery(email())).toBe(true);
+    });
+
+    it("does not share a budget with login", async () => {
+      const both = `shared-${randomUUID()}`;
+      keys.push(`iknos:rl:login:${both}`, `iknos:rl:recover:${both}`);
+
+      for (let i = 0; i <= MAX_ATTEMPTS; i++) await limiter.allow(both);
+
+      expect(await limiter.allow(both)).toBe(false);
+      expect(await limiter.allowRecovery(both)).toBe(true);
+    });
+
+    it("gives the budget back on a successful recovery", async () => {
+      const address = email();
+      for (let i = 0; i < RECOVERY_LIMIT.max; i++) await limiter.allowRecovery(address);
+
+      await limiter.resetRecovery(address);
+
+      expect(await limiter.allowRecovery(address)).toBe(true);
+    });
   });
 });

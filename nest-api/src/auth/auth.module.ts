@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AccountController } from "./account.controller";
 import { AuthController } from "./auth.controller";
 import { RateLimitService } from "./ratelimit.service";
 import { UsersService } from "./users.service";
@@ -10,7 +11,7 @@ import { UsersService } from "./users.service";
  * because a guard listed by a feature module protects only that module's routes.
  */
 @Module({
-  controllers: [AuthController],
+  controllers: [AuthController, AccountController],
   providers: [UsersService, RateLimitService],
   exports: [UsersService],
 })
