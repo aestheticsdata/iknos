@@ -7,51 +7,6 @@
     "useIgnoreFile": true
   },
   "files": {
-    "ignoreUnknown": true,
-    "includes": ["**", "!docs/design", "!mock", "!nest-api/generated"]
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "indentWidth": 2,
-    "lineWidth": 120
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "double",
-      "attributePosition": "multiline"
-    }
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
-    }
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "preset": "recommended",
-      "correctness": {
-        "useExhaustiveDependencies": "off"
-      },
-      "style": {
-        "useImportType": {
-          "level": "warn",
-          "options": { "style": "separatedType" }
-        }
-      }
-    }
-  },
-  "assist": {
-    "actions": {
-      "source": {
-        "organizeImports": {
-          "level": "on",
-          "options": {
-            "groups": [{ "type": false }, ":BLANK_LINE:", { "type": true }]
-          }
-        }
-      }
-    }
+    "ignoreUnknown": true
   }
 }
