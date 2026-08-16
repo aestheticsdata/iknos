@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { LoggerModule } from "nestjs-pino";
+import { AuthModule } from "./auth/auth.module";
 import { SessionGuard } from "./auth/session.guard";
 import { AllExceptionsFilter } from "./common/all-exceptions.filter";
 import { logger } from "./common/logger";
@@ -38,6 +39,7 @@ import { RedisModule } from "./redis/redis.module";
     }),
     PrismaModule,
     RedisModule,
+    AuthModule,
   ],
   controllers: [HealthController],
   providers: [

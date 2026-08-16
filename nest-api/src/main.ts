@@ -2,6 +2,7 @@
 // through the metadata reflection API, and the environment is validated before anything else.
 import "reflect-metadata";
 
+import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { Logger } from "nestjs-pino";
 import { AppModule } from "./app.module";
@@ -25,9 +26,13 @@ async function bootstrap() {
   // value rather than a string off process.env.
   const { port, cookieSecret } = parseEnv({ ...process.env });
 
-  // Behind nginx. Without this, req.ip is the proxy — so the login rate limit of Task 10 would
-  // count the whole internet as one client — and a Secure cookie is never set.
+  // Behind nginx. Without this, req.ip is the proxy — so the login rate limit counts the whole
+  // internet as one client — and a Secure cookie is never set.
   (app.getHttpAdapter().getInstance() as Application).set("trust proxy", 1);
+
+  // whitelist strips properties no DTO declares, so a request cannot smuggle a field a handler
+  // was never written to expect.
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
   // Registered before listen and therefore ahead of every route, including /health, which
   // stores nothing and so still costs no Redis entry.
