@@ -1,0 +1,65 @@
+/**
+ * PM2 config for the Iknos API — TEMPLATE.
+ *
+ * Copy to `ecosystem.config.js`, fill in the secrets, and keep that copy out of git (it is in
+ * .gitignore, same rule as the rest of the fleet).
+ *
+ * **This file is the production environment.** There is no `.env` on ks-b: pm2 injects
+ * `env_production` into the process before Nest starts, and `nest-api/.env` is a development
+ * convenience that never leaves the laptop. `deploy-api.sh` also reads `DATABASE_URL` out of the
+ * copy on the server to run `prisma migrate deploy`, so this is the single place production
+ * credentials live.
+ *
+ * Keep it in sync with `src/config/env.validation.ts`, which refuses to boot on a missing or
+ * malformed value and names every offender at once.
+ *
+ * Port 6900, block 6900–6999, reserved in Zeus's registry. `iknos-api` is the pm2 name that
+ * registry row expects — renaming it here breaks the health probe and the deploy report.
+ */
+const prodConfig = {
+  // The database user's rights stop at the iknos schema. @127.0.0.1 and not @localhost: MySQL
+  // treats those as different accounts, and this URL connects over TCP.
+  DATABASE_URL: "mysql://iknos:PASSWORD@127.0.0.1:3306/iknos",
+
+  // Shared with every other app on the box, which is why every key Iknos writes is namespaced
+  // `iknos:`.
+  REDIS_URL: "redis://127.0.0.1:6379",
+
+  // 6900 on ks-b, 4310 in development. Keeping them equal would buy nothing.
+  IKNOS_PORT: "6900",
+
+  IKNOS_LOG_LEVEL: "info",
+
+  // openssl rand -base64 48
+  //
+  // Signs `iknos.sid`. Changing it invalidates every live session, which is the correct behaviour
+  // and worth knowing before doing it casually.
+  IKNOS_COOKIE_SECRET: "CHANGE-ME",
+
+  // Days of logs kept. Retention drops whole daily partitions, so one is the floor — zero would
+  // drop the partition currently being written to.
+  IKNOS_RETENTION_DAYS: "14",
+
+  // What the collector tails. PM2 writes every app's stdout and stderr here, which is the whole
+  // reason Iknos needs no agent installed anywhere.
+  IKNOS_PM2_LOG_GLOB: "/home/debian/.pm2/logs/*.log",
+};
+
+module.exports = {
+  apps: [
+    {
+      name: "iknos-api",
+      cwd: "/var/www/iknos/nest-api",
+      script: "dist/src/main.js",
+      // The tsconfig declares path aliases; this is what makes them resolve at runtime. Harmless
+      // while every import is relative, and one less thing to discover the day one is not.
+      node_args: "-r tsconfig-paths/register",
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        ...prodConfig,
+      },
+    },
+  ],
+};

@@ -21,6 +21,11 @@ coverage/
 .env.*
 !.env.example
 
+# The production environment. Holds the database password and the cookie secret in clear, and is
+# the file pm2 starts the API with — `ecosystem.config.example.js` is the committed template.
+# Same rule as every other app in the fleet.
+ecosystem.config.js
+
 # Editors / OS
 .DS_Store
 .idea/
