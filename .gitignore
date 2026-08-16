@@ -10,8 +10,8 @@ out/
 
 # Prisma 7 requires an explicit generator output. It is build output, not source:
 # `prisma generate` reproduces it, and committing it makes every schema change a
-# thousand-line diff.
-prisma/generated/
+# thousand-line diff. Same path as trekker and Zeus.
+nest-api/generated/
 
 # Tests
 coverage/

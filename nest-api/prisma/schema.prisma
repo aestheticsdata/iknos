@@ -1,0 +1,119 @@
+// Iknos' data model. See docs/superpowers/specs/2026-08-10-iknos-nestjs-api-design.md §4.
+//
+// Four models only — everything M1 needs to put a log line on screen. The rest arrives with
+// the feature that needs it, as additive migrations: the recovery passphrase column with
+// Task 11, the metric and host tables with M2, issues with M3, alerts after that.
+//
+// Layout, generator settings and output path are trekker's and Zeus's, unchanged.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../generated/prisma"
+  moduleFormat        = "cjs"
+  importFileExtension = ""
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+/// The registry of monitored applications. This is what makes the tool reusable without a
+/// redeploy: adding an app is a row, not a code change.
+model Service {
+  id Int @id @default(autoincrement())
+
+  /// What the interface calls it.
+  name String @unique @db.VarChar(64)
+
+  /// What PM2 calls it. Deliberately distinct from `name`: the service rail shows what PM2
+  /// reports, but a friendlier label stays possible without renaming a process.
+  pm2Name String @map("pm2_name") @db.VarChar(64)
+
+  metricsUrl String? @map("metrics_url") @db.VarChar(255)
+  healthUrl  String? @map("health_url") @db.VarChar(255)
+  logGlob    String? @map("log_glob") @db.VarChar(512)
+
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  @@map("service")
+}
+
+/// The single account. `user` is reserved in MySQL 8, hence `app_user`.
+model AppUser {
+  id Int @id @default(autoincrement())
+
+  /// Always true. UNIQUE on it is what makes "there is exactly one account" a guarantee the
+  /// database enforces, rather than a `count() === 0` the register route hopes it won the race
+  /// for. Copied from Zeus, which reached the same shape for the same reason.
+  ///
+  /// It is here in the first migration and not with Task 11 because the CLI arrives in Task 10,
+  /// before registration — and a CLI that could create the second account would make this
+  /// constraint impossible to add afterwards.
+  singleton Boolean @unique @default(true)
+
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  @@map("app_user")
+}
+
+/// Where the tailer got to in each file. `(dev, inode)` is how rotation is detected: a new
+/// inode means the file was replaced and reading restarts at zero.
+model IngestOffset {
+  filePath String @id @map("file_path") @db.VarChar(512)
+
+  dev   BigInt @db.UnsignedBigInt
+  inode BigInt @db.UnsignedBigInt
+
+  /// `byte_offset`, never `offset` — OFFSET is reserved in MySQL 8.0.
+  byteOffset BigInt @map("byte_offset") @db.UnsignedBigInt
+
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@map("ingest_offset")
+}
+
+/// One log line. Partitioned by day — see the hand-written clause in the initial migration,
+/// which Prisma cannot express and will not round-trip.
+///
+/// No FULLTEXT index: InnoDB forbids one on a partitioned table. That trade is deliberate and
+/// argued in §4.2 of the backend spec — partitioning buys instant retention that returns disk,
+/// and literal search that actually finds paths, UUIDs and trace ids.
+model LogEntry {
+  id BigInt   @default(autoincrement()) @db.UnsignedBigInt
+  ts DateTime @db.DateTime(3)
+
+  service   String  @db.VarChar(64)
+  level     Int     @db.SmallInt
+  levelName String  @map("level_name") @db.VarChar(16)
+  logger    String? @db.VarChar(128)
+  message   String  @db.Text
+
+  traceId String? @map("trace_id") @db.Char(32)
+
+  httpMethod String? @map("http_method") @db.VarChar(10)
+  route      String? @db.VarChar(255)
+  statusCode Int?    @map("status_code") @db.SmallInt
+  durationMs Int?    @map("duration_ms")
+
+  /// 45 characters: an IPv4-mapped IPv6 address is the longest form that fits.
+  clientIp String? @map("client_ip") @db.VarChar(45)
+
+  userId   String? @map("user_id") @db.VarChar(64)
+  hostname String? @db.VarChar(128)
+
+  /// Everything the columns above do not claim.
+  attrs Json?
+
+  /// Composite, and in this order. MySQL requires every unique key of a partitioned table to
+  /// contain the partitioning column; InnoDB requires the AUTO_INCREMENT column to lead an
+  /// index. `(id, ts)` is the only shape that satisfies both.
+  @@id([id, ts])
+  @@index([service, ts])
+  @@index([level, ts])
+  @@index([traceId, ts])
+  @@index([route, ts])
+  @@map("log_entry")
+}
