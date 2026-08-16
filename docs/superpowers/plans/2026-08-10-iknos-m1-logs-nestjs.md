@@ -55,8 +55,14 @@ iknos/
       common/
         all-exceptions.filter.ts
         logger.ts                  pino ECS + INGEST_SKIP_MARKER
+      redis/
+        redis.service.ts           the one client + clearSessionsForUser
+        redis.module.ts            @Global
+      types/
+        express-session.d.ts       what a session holds
       auth/
-        session.service.ts         Redis session store
+        session.constants.ts       cookie name, 2h TTL
+        session.middleware.ts      express-session + connect-redis
         csrf.util.ts               constant-time compare
         session.guard.ts           APP_GUARD + @Public()
         auth.controller.ts         login, logout, csrf, me
@@ -882,171 +888,345 @@ git commit -m "feat(api): bootstrap, health check and graceful shutdown"
 ## Task 8: Redis session store
 
 **Files:**
-- Create: `nest-api/src/auth/session.service.ts`, `nest-api/src/auth/session.service.spec.ts`
+- Create: `nest-api/src/redis/redis.service.ts`, `nest-api/src/redis/redis.module.ts`, `nest-api/src/redis/redis.service.spec.ts`
+- Create: `nest-api/src/auth/session.constants.ts`, `nest-api/src/auth/session.middleware.ts`
+- Create: `nest-api/src/types/express-session.d.ts`
+- Create: `nest-api/test/session.e2e-spec.ts`, `nest-api/test/setup-env.ts`
+- Modify: `nest-api/src/main.ts`, `nest-api/src/app.module.ts`, `nest-api/vitest.config.mts`, `biome.json`
 
 **Interfaces:**
-- Produces: `SessionService` with `create(userId: number): Promise<{ sid: string; session: Session }>`, `get(sid: string): Promise<Session | null>` (slides the TTL), `destroy(sid: string)`, `destroyForUser(userId: number)`, and `Session = { userId: number; csrfToken: string }`. Tasks 9 and 10 consume all of it.
+- Produces: `RedisService` with `getClient(): RedisClientType`, `ready(): Promise<void>` and `clearSessionsForUser(userId: number)`; `SESSION_PREFIX = "iknos:sess:"`; `buildSessionMiddleware(client, secret, secure)`; `SESSION_COOKIE_NAME`, `SESSION_TTL_SECONDS`; and `SessionData` augmented with `userId?: number` and `csrfToken?: string`. Tasks 9–11 read and write `req.session` directly.
 
-Start from PFA's session service and adapt: same key shape, same one-session-per-user rule, TTL raised to 2h.
+**This is the fleet's session, not a bespoke one.** Zeus, spira, trekker and PFA all run `express-session` + `connect-redis` on top of `redis@5`, with a `RedisService` wrapping one client. Iknos does the same, and `IKN-6` says so outright — *« on recopie le code »*. Nothing here is hand-rolled: `express-session` owns the cookie, its signature and the sliding TTL; `connect-redis` owns the store; the only Iknos-specific code is `clearSessionsForUser` and the middleware's configuration.
 
-- [ ] **Step 1: Write the failing test**
+Deviations from trekker, both deliberate: the TTL is **2h** rather than 1h — a dashboard lives in a tab — and the middleware is built by a **function** rather than inlined in `main.ts`, so the tests exercise the configuration that ships instead of a MemoryStore standing in for it.
 
-`nest-api/src/auth/session.service.spec.ts`:
+- [ ] **Step 1: Add the dependencies**
+
+```bash
+cd nest-api
+pnpm add redis@^5.11.0 connect-redis@^10.0.0 express-session@^1.19.0
+pnpm add -D @types/express-session@^1.19.0
+```
+
+`redis`, not `ioredis`: four sibling APIs already use the former, and a fleet with two Redis clients is a fleet where the next person guesses wrong.
+
+- [ ] **Step 2: Put Biome where the fleet puts it**
+
+The fleet splits its Biome configuration in two, and Iknos must match — Zeus, spira, trekker, pfa and worldweathr all do:
+
+- **`biome.json` at the repository root**: `"root": true`, `vcs` and `files` only. No formatter, no linter, no rules. It exists to mark the root and to turn on `.gitignore` handling, nothing else.
+- **`nest-api/biome.json`**: `"root": false` and the whole configuration — `lineWidth: 120`, double quotes, `preset: "recommended"`, and the `organizeImports` groups that put type imports in a trailing block. Copy worldweathr's `api/biome.json`, which is the fleet's Nest-side one. `front/biome.json` arrives with Task 22 and is the front variant, with the `css.parser.tailwindDirectives` block the API has no use for.
+
+Nothing ever runs Biome from the repository root; `pnpm check` runs inside `nest-api`, which is why the nested config is the one that matters. `generated/` needs no exclusion — it is in `.gitignore` and `useIgnoreFile` is on.
+
+The Nest-side config carries one option the front's does not, and it is not optional: every route argument from Task 9 onwards is a parameter decorator (`@Req`, `@Body`, `@Param`), which Biome refuses to parse by default.
+
+```json
+"javascript": {
+  "parser": {
+    "unsafeParameterDecoratorsEnabled": true
+  }
+}
+```
+
+Without it the controller files fail to *parse*, so they are neither linted nor formatted — and the run still reports success.
+
+**`biome.json` is strict JSON and does not accept `//` comments.** A comment makes the whole config fail to load *silently*, and Biome falls back to its defaults: tabs, **80 columns**, and none of the ignore rules. A single `--write` in that state reformats every file it can reach.
+
+- [ ] **Step 3: Make `.env` reachable from unit tests**
+
+`nest-api/test/setup-env.ts`:
+
+```ts
+try {
+  process.loadEnvFile();
+} catch {
+  // No .env: CI and ks-b both provide the environment directly.
+}
+```
+
+and in `vitest.config.mts`: `setupFiles: ["reflect-metadata", "./test/setup-env.ts"]`.
+
+The e2e suites already get this for free — `ConfigModule.forRoot({ envFilePath })` reads the file while the imports array is evaluated, before any provider is constructed. A unit spec that instantiates one service never imports `AppModule`, so without this it falls back to a default URL and passes for the wrong reason.
+
+- [ ] **Step 4: Write the failing RedisService test**
+
+`nest-api/src/redis/redis.service.spec.ts` — against a real Redis, because the failure modes worth catching (a wrong SCAN pattern, one malformed entry aborting the sweep) are exactly the ones a fake is written not to have. Every key carries a random suffix and is deleted afterwards, so a run cannot collide with a live session.
 
 ```ts
 import { randomUUID } from "node:crypto";
-import Redis from "ioredis";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { SessionService } from "./session.service";
+import { RedisService, SESSION_PREFIX } from "./redis.service";
 
-let redis: Redis;
-let sessions: SessionService;
+describe("RedisService", () => {
+  let service: RedisService;
+  const written: string[] = [];
+  const run = randomUUID();
 
-beforeAll(() => {
-  redis = new Redis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
-  sessions = new SessionService(redis);
-});
-afterAll(async () => {
-  await redis.quit();
-});
+  async function writeSession(sid: string, value: string): Promise<string> {
+    const key = `${SESSION_PREFIX}${run}-${sid}`;
+    await service.getClient().set(key, value);
+    written.push(key);
+    return key;
+  }
 
-describe("SessionService", () => {
-  it("creates and reads back a session", async () => {
-    const { sid, session } = await sessions.create(42);
-    const found = await sessions.get(sid);
-
-    expect(found?.userId).toBe(42);
-    expect(found?.csrfToken).toBe(session.csrfToken);
-    expect(session.csrfToken).toHaveLength(43); // 32 random bytes, base64url
-    await sessions.destroy(sid);
+  beforeAll(async () => {
+    service = new RedisService();
+    service.onModuleInit();
+    await service.ready();
   });
 
-  it("returns null for an unknown sid rather than throwing", async () => {
-    expect(await sessions.get(`missing-${randomUUID()}`)).toBeNull();
+  afterAll(async () => {
+    if (written.length > 0) await service.getClient().del(written);
+    await service.onModuleDestroy();
   });
 
-  it("makes a destroyed session unreadable", async () => {
-    const { sid } = await sessions.create(7);
-    await sessions.destroy(sid);
-    expect(await sessions.get(sid)).toBeNull();
+  it("connects", () => {
+    expect(service.getClient().isReady).toBe(true);
   });
 
-  it("invalidates the previous session on a new login", async () => {
-    const first = await sessions.create(99);
-    await sessions.destroyForUser(99);
-    const second = await sessions.create(99);
+  it("deletes only the sessions belonging to the user", async () => {
+    const mine = await writeSession("mine", JSON.stringify({ userId: 1 }));
+    const theirs = await writeSession("theirs", JSON.stringify({ userId: 2 }));
 
-    expect(await sessions.get(first.sid)).toBeNull();
-    expect(await sessions.get(second.sid)).not.toBeNull();
-    await sessions.destroy(second.sid);
+    await service.clearSessionsForUser(1);
+
+    expect(await service.getClient().exists(mine)).toBe(0);
+    expect(await service.getClient().exists(theirs)).toBe(1);
   });
 
-  it("issues unpredictable, distinct session ids", async () => {
-    const a = await sessions.create(1);
-    const b = await sessions.create(1);
-    expect(a.sid).not.toBe(b.sid);
-    expect(a.sid).toHaveLength(43);
-    await sessions.destroy(a.sid);
-    await sessions.destroy(b.sid);
+  it("finishes the sweep when an entry is not valid JSON", async () => {
+    await writeSession("garbage", "{not json");
+    const mine = await writeSession("after-garbage", JSON.stringify({ userId: 3 }));
+
+    await service.clearSessionsForUser(3);
+
+    expect(await service.getClient().exists(mine)).toBe(0);
   });
 
-  it("slides the TTL on read", async () => {
-    const { sid } = await sessions.create(5);
-    await redis.expire(`iknos:sess:${sid}`, 10);
-    await sessions.get(sid);
+  it("does not touch keys outside the session prefix", async () => {
+    const foreign = `iknos:not-a-session:${run}`;
+    await service.getClient().set(foreign, JSON.stringify({ userId: 4 }));
+    written.push(foreign);
 
-    const ttl = await redis.ttl(`iknos:sess:${sid}`);
-    expect(ttl).toBeGreaterThan(60);
-    await sessions.destroy(sid);
+    await service.clearSessionsForUser(4);
+
+    expect(await service.getClient().exists(foreign)).toBe(1);
   });
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+Run: `pnpm test src/redis`
+Expected: FAIL — cannot resolve `./redis.service`.
 
-Run: `pnpm test src/auth/session`
-Expected: FAIL — cannot resolve `./session.service`.
+- [ ] **Step 5: Implement RedisService**
 
-- [ ] **Step 3: Implement it**
+`nest-api/src/redis/redis.service.ts` — trekker's, with `userId` typed as a number:
 
-`nest-api/src/auth/session.service.ts`:
+```ts
+import { Injectable, Logger } from "@nestjs/common";
+import { createClient } from "redis";
+
+import type { OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import type { RedisClientType } from "redis";
+
+export const SESSION_PREFIX = "iknos:sess:";
+
+@Injectable()
+export class RedisService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(RedisService.name);
+  private readonly client: RedisClientType;
+  private connection: Promise<void> = Promise.resolve();
+
+  constructor() {
+    this.client = createClient({
+      url: process.env.REDIS_URL,
+      // Without this, a command issued while the connection is down is queued until it comes
+      // back — so a request hangs for as long as Redis is out rather than failing.
+      disableOfflineQueue: true,
+      socket: {
+        // Redis being down is a degraded state, not a reason for the API to die.
+        reconnectStrategy: (retries) => Math.min(1000 * 2 ** retries, 30_000),
+      },
+    });
+
+    // node-redis throws on an unhandled "error" event, which would take the process with it.
+    this.client.on("error", (error: Error) => {
+      this.logger.warn(`Redis unavailable: ${error.message}`);
+    });
+    this.client.on("ready", () => {
+      this.logger.log("Redis connected");
+    });
+  }
+
+  onModuleInit(): void {
+    // Not awaited, and that is the point. With a reconnect strategy that never gives up,
+    // `connect()` does not reject when Redis is down — it never settles. Awaiting it would hang
+    // module init and the API would never reach `listen()`.
+    this.connection = this.client.connect().then(
+      () => undefined,
+      (error: Error) => {
+        this.logger.warn(`Redis not reachable at startup, retrying in background: ${error.message}`);
+      },
+    );
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    if (this.client.isOpen) {
+      await this.client.quit();
+    }
+  }
+
+  /** Resolves once the first connection attempt has settled. For tests; bootstrap never awaits it. */
+  ready(): Promise<void> {
+    return this.connection;
+  }
+
+  getClient(): RedisClientType {
+    return this.client;
+  }
+
+  /**
+   * SCAN rather than KEYS: KEYS blocks the Redis event loop for the whole sweep, and this runs
+   * on a request path against a Redis shared with every other app on the box.
+   */
+  async clearSessionsForUser(userId: number): Promise<void> {
+    for await (const keys of this.client.scanIterator({ MATCH: `${SESSION_PREFIX}*`, COUNT: 100 })) {
+      for (const key of Array.isArray(keys) ? keys : [keys]) {
+        try {
+          const value = await this.client.get(key);
+          if (!value) continue;
+          const session = JSON.parse(value) as { userId?: number };
+          if (session.userId === userId) {
+            await this.client.del(key);
+          }
+        } catch {
+          // A malformed entry is not a reason to leave the rest of the user's sessions alive.
+        }
+      }
+    }
+  }
+}
+```
+
+`nest-api/src/redis/redis.module.ts` — `@Global()`, `providers: [RedisService]`, `exports: [RedisService]`, exactly like `PrismaModule`. Add it to `AppModule`'s imports.
+
+Run: `pnpm test src/redis`
+Expected: PASS, 4 tests.
+
+- [ ] **Step 6: Declare what a session holds**
+
+`nest-api/src/types/express-session.d.ts`:
+
+```ts
+import "express-session";
+
+declare module "express-session" {
+  interface SessionData {
+    userId?: number;
+    csrfToken?: string;
+  }
+}
+```
+
+Typed once, so `req.session.userId` needs no cast at any use site — the casts are what let a typo compile.
+
+- [ ] **Step 7: Build the session middleware**
+
+`nest-api/src/auth/session.constants.ts`:
+
+```ts
+export const SESSION_COOKIE_NAME = "iknos.sid";
+/** Rolling: every request pushes the expiry back, so this measures inactivity, not age. */
+export const SESSION_TTL_SECONDS = 2 * 60 * 60;
+```
+
+`nest-api/src/auth/session.middleware.ts`:
 
 ```ts
 import { randomBytes } from "node:crypto";
-import { Injectable } from "@nestjs/common";
-import type Redis from "ioredis";
+import { RedisStore } from "connect-redis";
+import session from "express-session";
+import { SESSION_PREFIX } from "../redis/redis.service";
+import { SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from "./session.constants";
 
-const TTL_SECONDS = 2 * 60 * 60; // 2h, vs PFA's 10min: a dashboard lives in a tab
-const SESSION_PREFIX = "iknos:sess:";
-const USER_PREFIX = "iknos:user:";
+import type { RequestHandler } from "express";
+import type { RedisClientType } from "redis";
 
-export type Session = { userId: number; csrfToken: string };
+const SESSION_ID_BYTES = 32;
 
-function token(): string {
-  return randomBytes(32).toString("base64url");
-}
-
-@Injectable()
-export class SessionService {
-  constructor(private readonly redis: Redis) {}
-
-  async create(userId: number): Promise<{ sid: string; session: Session }> {
-    const sid = token();
-    const session: Session = { userId, csrfToken: token() };
-
-    await this.redis.setex(`${SESSION_PREFIX}${sid}`, TTL_SECONDS, JSON.stringify(session));
-    // Tracking the current sid per user is what makes one-session-per-user
-    // possible without scanning the keyspace.
-    await this.redis.setex(`${USER_PREFIX}${userId}:sid`, TTL_SECONDS, sid);
-
-    return { sid, session };
-  }
-
-  /** Slides the TTL. Returns null for anything unknown, expired or corrupt —
-   *  a bad cookie is a logout, never a 500. */
-  async get(sid: string): Promise<Session | null> {
-    const key = `${SESSION_PREFIX}${sid}`;
-    const raw = await this.redis.get(key);
-    if (!raw) return null;
-
-    let session: Session;
-    try {
-      session = JSON.parse(raw) as Session;
-    } catch {
-      await this.redis.del(key);
-      return null;
-    }
-
-    await this.redis.expire(key, TTL_SECONDS);
-    await this.redis.expire(`${USER_PREFIX}${session.userId}:sid`, TTL_SECONDS);
-    return session;
-  }
-
-  async destroy(sid: string): Promise<void> {
-    const session = await this.get(sid);
-    if (session) await this.redis.del(`${USER_PREFIX}${session.userId}:sid`);
-    await this.redis.del(`${SESSION_PREFIX}${sid}`);
-  }
-
-  async destroyForUser(userId: number): Promise<void> {
-    const key = `${USER_PREFIX}${userId}:sid`;
-    const sid = await this.redis.get(key);
-    if (sid) await this.redis.del(`${SESSION_PREFIX}${sid}`);
-    await this.redis.del(key);
-  }
+export function buildSessionMiddleware(client: RedisClientType, secret: string, secure: boolean): RequestHandler {
+  return session({
+    name: SESSION_COOKIE_NAME,
+    store: new RedisStore({ client, prefix: SESSION_PREFIX, ttl: SESSION_TTL_SECONDS }),
+    secret,
+    genid: () => randomBytes(SESSION_ID_BYTES).toString("base64url"),
+    resave: false,
+    // No Redis entry and no Set-Cookie until there is something to remember, so an
+    // unauthenticated probe of /health cannot fill a keyspace shared with the other apps.
+    saveUninitialized: false,
+    rolling: true,
+    proxy: true,
+    cookie: {
+      httpOnly: true,
+      secure,
+      // Lax and not Strict: this is what protects the login POST, which by definition has no
+      // CSRF token to present yet.
+      sameSite: "lax",
+      path: "/",
+      maxAge: SESSION_TTL_SECONDS * 1000,
+    },
+  });
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+`secure` is a parameter rather than a `NODE_ENV` read, so a test can set it both ways.
 
-Run: `pnpm test src/auth`
-Expected: PASS, 6 tests.
+In `main.ts`, after `parseEnv` and before `listen`:
 
-- [ ] **Step 5: Commit**
+```ts
+// Behind nginx. Without this, req.ip is the proxy — so Task 10's rate limit would count the
+// whole internet as one client — and a Secure cookie is never set.
+(app.getHttpAdapter().getInstance() as Application).set("trust proxy", 1);
+
+app.use(
+  buildSessionMiddleware(app.get(RedisService).getClient(), cookieSecret, process.env.NODE_ENV === "production"),
+);
+```
+
+- [ ] **Step 8: Write the session e2e test**
+
+`nest-api/test/session.e2e-spec.ts` mounts a throwaway `POST /test-session/login/:userId` and `GET /test-session/whoami` on `AppModule`, applies `buildSessionMiddleware` before `init()`, and asserts:
+
+1. a request that stores nothing gets no `Set-Cookie` and writes no key (`saveUninitialized: false`);
+2. once the session holds something the cookie is `HttpOnly`, `SameSite=Lax`, `Path=/` and signed (`iknos.sid=s%3A…`);
+3. the session survives across requests;
+4. the key sits under `iknos:sess:` with a TTL within a minute of 7200;
+5. after `EXPIRE key 10`, one more request puts the TTL back near 7200 — the slide;
+6. `clearSessionsForUser` makes the cookie stop working;
+7. a second, `AppModule`-free app built with `secure: true` and `trust proxy` marks the cookie `Secure` when `X-Forwarded-Proto: https` is set.
+
+**Give every test its own user id.** The session key is found by scanning for the user it belongs to, so two tests logging in as the same user leave two matching keys and the lookup returns whichever the SCAN reaches first — which is how a sliding-TTL assertion ends up measuring a session nobody touched, and reports `expected 10 to be greater than 7140`.
+
+Run: `pnpm test`
+Expected: PASS, 29 tests across 6 files.
+
+- [ ] **Step 9: Verify against the real process**
 
 ```bash
-git add nest-api/src/auth
-git commit -m "feat(auth): redis session store with sliding ttl"
+pnpm build && node dist/src/main.js
+curl -si http://127.0.0.1:4310/health | head -3
+redis-cli --scan --pattern 'iknos:*' | wc -l
+```
+
+Expected: `200 OK`, **no `Set-Cookie` header**, and **0** Redis keys — `/health` is the one route the world can reach unauthenticated, and it must not be able to write to Redis.
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add nest-api/ biome.json
+git commit -m "feat(auth): redis session store on express-session, the fleet's shape (IKN-6)"
 ```
 
 ---
@@ -1057,7 +1237,8 @@ git commit -m "feat(auth): redis session store with sliding ttl"
 - Create: `nest-api/src/auth/csrf.util.ts`, `nest-api/src/auth/csrf.util.spec.ts`, `nest-api/src/auth/public.decorator.ts`, `nest-api/src/auth/session.guard.ts`
 
 **Interfaces:**
-- Produces: `verifyCsrf(expected, provided): boolean` (constant time), the `@Public()` decorator, and `SessionGuard` registered as `APP_GUARD`. Handlers read `req.session` from here on.
+- Consumes: `req.session` as populated by Task 8's middleware.
+- Produces: `verifyCsrf(expected, provided): boolean` (constant time), the `@Public()` decorator, `CSRF_HEADER`, and `SessionGuard` registered as `APP_GUARD`. Handlers can assume `req.session.userId` is set from here on.
 
 - [ ] **Step 1: Write the failing CSRF test**
 
@@ -1138,41 +1319,36 @@ import {
 import { Reflector } from "@nestjs/core";
 import { verifyCsrf } from "./csrf.util";
 import { IS_PUBLIC } from "./public.decorator";
-import { SessionService } from "./session.service";
+
+import type { Request } from "express";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
-export const COOKIE_NAME = "iknos.sid";
 export const CSRF_HEADER = "x-csrf-token";
 
 @Injectable()
 export class SessionGuard implements CanActivate {
-  constructor(
-    private readonly sessions: SessionService,
-    private readonly reflector: Reflector,
-  ) {}
+  constructor(private readonly reflector: Reflector) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(context: ExecutionContext): boolean {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
       context.getHandler(),
       context.getClass(),
     ]);
     if (isPublic) return true;
 
-    const req = context.switchToHttp().getRequest();
-    const sid = req.signedCookies?.[COOKIE_NAME];
-    if (!sid) throw new UnauthorizedException();
-
-    const session = await this.sessions.get(sid);
-    if (!session) throw new UnauthorizedException();
+    // No store lookup here: the session middleware from Task 8 already verified the cookie's
+    // signature, loaded the record out of Redis and slid its TTL. By the time a guard runs,
+    // `req.session` is either populated or the cookie was never valid.
+    const req = context.switchToHttp().getRequest<Request>();
+    if (!req.session?.userId) throw new UnauthorizedException();
 
     // CSRF applies to every unsafe verb, not just POST.
     if (!SAFE_METHODS.has(req.method)) {
-      if (!verifyCsrf(session.csrfToken, req.headers[CSRF_HEADER] ?? "")) {
+      if (!verifyCsrf(req.session.csrfToken ?? "", (req.headers[CSRF_HEADER] as string) ?? "")) {
         throw new ForbiddenException();
       }
     }
 
-    req.session = session;
     return true;
   }
 }
@@ -1186,7 +1362,7 @@ providers: [{ provide: APP_GUARD, useClass: SessionGuard }]
 
 Global, never per-controller: a controller added six months from now is protected because it exists, not because someone remembered.
 
-In `main.ts`, add `app.use(cookieParser(config.cookieSecret))` so `req.signedCookies` is populated.
+No `cookie-parser`: `express-session` parses and verifies its own signed cookie. Adding one would give two libraries an opinion about `iknos.sid` and neither the authority.
 
 - [ ] **Step 5: Verify the default-deny property**
 
@@ -1276,7 +1452,7 @@ describe("auth", () => {
 });
 ```
 
-`nest-api/test/helpers.ts` builds the app from `AppModule`, applies `cookieParser`, and returns it. The rate-limit test needs a distinct client IP per run or a Redis flush of the `iknos:rl:` prefix in `beforeEach`, otherwise reruns start already throttled.
+`nest-api/test/helpers.ts` builds the app from `AppModule`, applies `buildSessionMiddleware` before `init()` exactly as `main.ts` does, and returns it. The rate-limit test needs a distinct client IP per run or a Redis flush of the `iknos:rl:` prefix in `beforeEach`, otherwise reruns start already throttled.
 
 - [ ] **Step 2: Run it to verify it fails**
 
@@ -1289,23 +1465,24 @@ Expected: FAIL — routes 404.
 
 ```ts
 import { Injectable } from "@nestjs/common";
-import type Redis from "ioredis";
+import { RedisService } from "../redis/redis.service";
 
 const MAX_ATTEMPTS = 5;
 const WINDOW_SECONDS = 60;
 
 @Injectable()
 export class RateLimitService {
-  constructor(private readonly redis: Redis) {}
+  constructor(private readonly redis: RedisService) {}
 
   /** Fixed window. Returns false once the budget is spent. */
   async allow(ip: string): Promise<boolean> {
     const key = `iknos:rl:login:${ip}`;
-    const count = await this.redis.incr(key);
+    const client = this.redis.getClient();
+    const count = await client.incr(key);
     if (count === 1) {
       // Only the first call in a window sets the expiry, so a burst cannot keep
       // pushing the window forward and lock the caller out indefinitely.
-      await this.redis.expire(key, WINDOW_SECONDS);
+      await client.expire(key, WINDOW_SECONDS);
     }
     return count <= MAX_ATTEMPTS;
   }
@@ -1330,23 +1507,22 @@ async login(@Body() body: LoginDto, @Req() req, @Res({ passthrough: true }) res)
     : (await bcrypt.compare(body.password, DUMMY_HASH), false);
   if (!user || !ok) throw new UnauthorizedException();
 
-  await this.sessions.destroyForUser(user.id);           // one session per user
-  const { sid, session } = await this.sessions.create(user.id);
+  // One session per user: the previous cookie has to stop working before the new one exists.
+  await this.redis.clearSessionsForUser(user.id);
 
-  res.cookie(COOKIE_NAME, sid, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    signed: true,
-    maxAge: 2 * 60 * 60 * 1000,
-  });
+  // The middleware writes the record and sets the cookie on its own; the handler only says
+  // what the session holds. Rotating the CSRF token here is what makes a token captured
+  // before login useless after it.
+  req.session.userId = user.id;
+  req.session.csrfToken = randomBytes(32).toString("base64url");
 
-  return { userId: user.id, csrfToken: session.csrfToken };
+  return { userId: user.id, csrfToken: req.session.csrfToken };
 }
 ```
 
-`logout` destroys the session and clears the cookie; `GET /api/csrf` returns `req.session.csrfToken`; `GET /api/me` returns `{ userId }`. Generate `DUMMY_HASH` once with `bcrypt.hashSync("a password nobody has", 10)` and paste the real value.
+`@Res({ passthrough: true })` is no longer needed on `login` — nothing sets a cookie by hand.
+
+`logout` calls `req.session.destroy(...)` and `res.clearCookie(SESSION_COOKIE_NAME)`; `GET /api/csrf` returns `req.session.csrfToken`, creating one if the session has none; `GET /api/me` returns `{ userId }`. Generate `DUMMY_HASH` once with `bcrypt.hashSync("a password nobody has", 10)` and paste the real value.
 
 Trust the proxy so `req.ip` is the real client: `app.set("trust proxy", 1)` in `main.ts`, paired with nginx setting `X-Forwarded-For` in Task 31. Without both, every request looks like `127.0.0.1` and five failures lock out everyone.
 
