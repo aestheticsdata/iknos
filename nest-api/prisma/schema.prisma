@@ -56,6 +56,17 @@ model AppUser {
   passwordHash String   @map("password_hash") @db.VarChar(255)
   createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
 
+  /// The only way back in. ks-b has no mail server and is not getting one, so there is no reset
+  /// link to send — the passphrase chosen at registration is the whole recovery story.
+  ///
+  /// Hashed independently of the password, with the same KDF: the passphrase can reset the
+  /// password, so knowing one must never reveal the other.
+  ///
+  /// Nullable, and that is the point of it being added here rather than in the first migration:
+  /// an account created by `pnpm seed:user` before this column existed keeps working, and simply
+  /// has no way back.
+  recoveryPassphraseHash String? @map("recovery_passphrase_hash") @db.VarChar(255)
+
   @@map("app_user")
 }
 
