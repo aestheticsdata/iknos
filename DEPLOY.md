@@ -29,9 +29,16 @@ green.
 
 Registration also makes the registry the contract, so the deploy has to match it or the dashboard
 shows drift: `6900` **exactly** (Zeus flags any api whose port is not a multiple of 100), `3006`,
-the two pm2 names above, `/health` **outside** `/api`, and **one** ecosystem file at
-`/var/www/iknos/ecosystem.config.js` declaring both processes — unlike zeus and trekker, which have
-two. Zeus probes the front root with `redirect: "manual"`, so a 307 there counts as up.
+the two pm2 names above, and `/health` **outside** `/api`. Zeus probes the front root with
+`redirect: "manual"`, so a 307 there counts as up.
+
+⚠️ **One registry field is already wrong.** Both rows were registered with a single shared
+`ecosystemPath` of `/var/www/iknos/ecosystem.config.js`, which described the layout as it stood on
+2026-08-15. The repository has since moved to the fleet's shape — `nest-api/` and `front/` as
+independent pnpm roots, the way Zeus, PFA and spira are — so there are **two** ecosystem files, not
+one. Correct the rows to `/var/www/iknos/api/ecosystem.config.js` and
+`/var/www/iknos/front/ecosystem.config.js` before `IKN-4` ships, or the dashboard checks a path
+that will never exist.
 
 ⚠️ **No `dbName` recorded yet**, because there is no schema until the first Prisma migration
 (`IKN-3`). Until it is set from Zeus's `/backups` page, **Iknos is excluded from the nightly

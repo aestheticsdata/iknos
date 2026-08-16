@@ -12,9 +12,9 @@
 
 ## Global Constraints
 
-- `biome check` and `vitest run` must pass before every commit. Biome config copied from PFA, `lineWidth: 120`.
+- `pnpm check` and `pnpm test` must pass before every commit. Biome config copied from PFA, `lineWidth: 120`.
 - Path aliases everywhere, never relative imports across directories.
-- `ingest` and `logs` modules may both depend on `packages/db` and on the event bus, **never on each other**.
+- `ingest` and `logs` modules may both depend on `PrismaService` and on the event bus, **never on each other**.
 - Migrations are applied by hand over SSH. **No task ever runs a migration from a deploy script.**
 - DB column names: `byte_offset` not `offset` (`OFFSET` is reserved in MySQL 8.0); the users table is `app_user` not `user`.
 - Every route except `GET /health` and `POST /api/auth/login` requires a valid session, enforced by a global `APP_GUARD`, never per-controller.
@@ -29,17 +29,28 @@
 
 ## File Structure
 
+The layout is the fleet's, not a new one: `front/` beside `nest-api/`, Prisma inside the API,
+each a standalone project with its own `package.json` and its own `node_modules`. Identical to
+Zeus, PFA, spira and trekker. There is no root workspace and no shared package — the front
+**restates** the response types rather than importing them, which is the choice trekker made
+explicitly and the reason no `contracts` package exists here.
+
 ```
 iknos/
-  pnpm-workspace.yaml
-  prisma/schema.prisma
-  packages/
-    db/                            Prisma client singleton + shared types
-    contracts/                     response DTOs imported by both apps
-  apps/
-    api/src/
+  biome.json                       root config, lineWidth 120
+  nest-api/
+    prisma/
+      schema.prisma
+      seed.ts                      service registry
+    prisma.config.ts               CLI only; the app connects through PrismaService
+    generated/prisma/              generated client, gitignored
+    scripts/create-account.ts      the account CLI
+    src/
       main.ts                      bootstrap, shutdown hooks
       app.module.ts
+      prisma/
+        prisma.service.ts          the one client, injectable
+        prisma.module.ts           @Global
       config/env.ts                schema + validated Config type
       common/
         all-exceptions.filter.ts
@@ -57,6 +68,7 @@ iknos/
         histogram.service.ts       bucketed counts by level
         trace.service.ts           rows sharing a trace.id
         cursor.ts                  encode/decode keyset cursor
+        log-page.ts                response shape
       search/
         search.controller.ts       one route, several sources
       collector/
@@ -68,6 +80,7 @@ iknos/
       ingest/
         line-buffer.ts             byte framing
         parser.ts                  ECS / bare JSON / plain text
+        log-record.ts              the parsed shape
         tailer.ts                  stat loop, rotation
         writer.ts                  bounded queue, transactional batch
         ingest-stats.ts            counters read by /api/collector/status
@@ -75,59 +88,101 @@ iknos/
       maintenance/
         partitions.ts              pure planning
         maintenance.service.ts     scheduled job
-    web/src/
-      styles/                      globals split + Iknos token layer
-      lib/
-        api.ts                     apiGet / apiMutate
-        log-query.ts               UI state -> API query, one place
-      components/
-        chrome/                    top bar, service rail, status bar
-        ui/                        card, button, field, chip, table, modal, toast
-      hooks/
-        use-shortcuts.ts           global key map, mounted once
-        use-log-stream.ts          EventSource + bounded buffer
-      app/
-        (auth)/                    login, register, recover, about
-        (app)/[service]/           service, logs, metrics, issues, alerts
+  front/src/
+    styles/                        globals split + Iknos token layer
+    lib/
+      api.ts                       apiGet / apiMutate
+      log-query.ts                 UI state -> API query, one place
+      types/                       response shapes, restated from nest-api
+    components/
+      chrome/                      top bar, service rail, status bar
+      ui/                          card, button, field, chip, table, modal, toast
+    hooks/
+      use-shortcuts.ts             global key map, mounted once
+      use-log-stream.ts            EventSource + bounded buffer
+    app/
+      (auth)/                      login, register, recover, about
+      (app)/[service]/             service, logs, metrics, issues, alerts
   deploy/                          ecosystem, nginx, deploy.sh
 ```
 
+Every `pnpm` command in this plan runs from `nest-api/` unless it says otherwise.
+
 ---
 
-## Task 1: Workspace skeleton
+## Task 1: API skeleton
 
 **Files:**
-- Create: `pnpm-workspace.yaml`, `package.json`, `biome.json`, `vitest.config.ts`, `packages/db/`, `packages/contracts/`, `apps/api/`, `apps/web/` (placeholder)
+- Create: `nest-api/` (Nest 11 scaffold), `biome.json`, `nest-api/vitest.config.mts`, `nest-api/pnpm-workspace.yaml`
 
 **Interfaces:**
-- Produces: a workspace where `pnpm -r build` succeeds, giving every later task a package to write into.
+- Produces: a `nest-api` where `pnpm build` succeeds, giving every later task somewhere to write.
 
-- [ ] **Step 1: Create the workspace**
+**Not a monorepo.** `nest-api/` and, later, `front/` are two standalone projects side by side,
+each with its own `package.json` and `node_modules` — the shape Zeus, PFA, spira and trekker all
+have. There is no root `package.json`, no `pnpm-workspace.yaml` at the repository root, and no
+shared package. Anything the front needs to know about a response shape it restates, which is
+what trekker does and says so in the file that does it.
 
-`pnpm-workspace.yaml`:
+- [ ] **Step 1: Scaffold**
 
-```yaml
-packages:
-  - "apps/*"
-  - "packages/*"
+```bash
+pnpm dlx @nestjs/cli new api --skip-git --skip-install --package-manager pnpm --directory nest-api
 ```
 
-Scaffold the Nest app with `pnpm dlx @nestjs/cli new api --skip-git --package-manager pnpm` inside `apps/`, then delete the generated `app.controller.*` and `app.service.*` — they are template noise.
+`--skip-install` matters: without it the CLI installs into the directory before the manifest is
+final, and you throw the result away anyway. Then delete `app.controller.*`, `app.service.*`,
+`app.controller.spec.ts`, `test/`, `eslint.config.mjs`, `.prettierrc` and the generated README —
+template noise, and the last three are the tooling this repo does not use.
 
-- [ ] **Step 2: Copy the tooling config from PFA**
+Set `name` to `iknos-api` in `package.json`, matching `trekker-api` and `zeus-nest-api`.
 
-`biome.json` (same rules, `lineWidth: 120`) and a root `vitest.config.ts` with workspace projects. Add path aliases in each `tsconfig.json` so nothing imports across directories relatively.
+- [ ] **Step 2: Tooling**
+
+`biome.json` at the repository root (from PFA, `lineWidth: 120`, plus `"includes": ["**", "!docs/design", "!mock", "!nest-api/generated"]` — the retained `.dc.html` mockup uses `{{ }}`
+interpolation Biome cannot parse, and the generated Prisma client is not ours to lint).
+
+`nest-api/vitest.config.mts` — **`.mts`, and running through `unplugin-swc`**:
+
+```ts
+import swc from "unplugin-swc";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  plugins: [swc.vite({ module: { type: "es6" } })],
+  test: {
+    globals: false,
+    environment: "node",
+    include: ["src/**/*.spec.ts", "test/**/*.spec.ts"],
+    passWithNoTests: true,
+  },
+});
+```
+
+Two things here are not preference. Vitest's default esbuild transform does not emit
+`design:paramtypes`, so **every Nest constructor injection resolves to `undefined`** — and the
+failure reads as a broken provider, not a missing compiler flag. SWC emits it. And
+`passWithNoTests` because vitest exits 1 on an empty run, which would make the very first
+`pnpm test` red and teach everyone to ignore its exit code.
+
+Path aliases in `tsconfig.json` (`@config/*`, `@common/*`, `@auth/*`, `@logs/*`, `@ingest/*`,
+`@stream/*`, `@collector/*`, `@search/*`, `@maintenance/*`) so nothing imports across
+directories relatively.
 
 - [ ] **Step 3: Verify**
 
-Run: `pnpm install && pnpm -r build && pnpm biome check && pnpm vitest run`
+Run, from `nest-api/`: `pnpm install && pnpm build && pnpm check && pnpm test`
 Expected: all four succeed. Vitest reports no test files, which is a pass at this stage.
+
+`pnpm install` will refuse to run install scripts until they are allowed; add
+`nest-api/pnpm-workspace.yaml` with an `allowBuilds` block for `prisma`, `@prisma/engines`,
+`@prisma/client`, `@swc/core` and `esbuild`. Zeus has the same file for the same reason.
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add .
-git commit -m "chore: pnpm workspace skeleton"
+git commit -m "chore: nest-api skeleton"
 ```
 
 ---
@@ -190,15 +245,15 @@ git commit -m "docs: confirm MySQL version and partitioning support on ks-b"
 ## Task 3: Prisma schema and the partitioned migration
 
 **Files:**
-- Create: `prisma/schema.prisma`, `packages/db/src/index.ts`, `packages/db/src/seed.ts`, `.env.example`
+- Create: `nest-api/prisma/schema.prisma`, `nest-api/prisma.config.ts`, `nest-api/src/prisma/prisma.service.ts`, `nest-api/src/prisma/prisma.module.ts`, `nest-api/prisma/seed.ts`, `nest-api/.env.example`
 - Modify: the generated migration SQL, by hand
 
 **Interfaces:**
-- Produces: `packages/db` exporting a single `prisma` client, and the four M1 tables. Every later task reads or writes through it.
+- Produces: an injectable `PrismaService` — the one client in the process — and the four M1 tables. Every later task reads or writes through it.
 
 - [ ] **Step 1: Write the schema**
 
-`prisma/schema.prisma` — `provider = "mysql"`, driver adapter `@prisma/adapter-mariadb`, same pairing as PFA.
+`nest-api/prisma/schema.prisma` — `provider = "mysql"`, driver adapter `@prisma/adapter-mariadb`, same pairing as PFA.
 
 ```prisma
 model Service {
@@ -306,16 +361,25 @@ Expected: the output contains `PARTITION BY RANGE (TO_DAYS(ts))`. If the clause 
 Run:
 
 ```bash
-pnpm prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --exit-code
+pnpm prisma migrate diff --from-config-datasource --to-schema nest-api/prisma/schema.prisma --exit-code
 ```
+
+Prisma 7 renamed both flags: `--from-schema-datasource` became `--from-config-datasource` (the
+datasource now comes from `prisma.config.ts`, not the schema), and `--to-schema-datamodel` was
+removed in favour of `--to-schema`. The 6.x spelling exits 1 with a usage dump, which is easy to
+mistake for a passing run if you only look at the last line.
 
 Expected: exit code 0, no drift. Partitioning is a table attribute Prisma does not model, so it should be invisible to the diff. **If it does report drift, stop and solve it here** — a schema that Prisma wants to "fix" on every migration will silently drop the partitioning the first time someone runs `migrate dev` in a hurry.
 
 - [ ] **Step 6: Export the client and seed the registry**
 
-`packages/db/src/index.ts` exports one `PrismaClient` instance built on the mariadb adapter — a single instance shared by both apps, never one per module.
+`nest-api/src/prisma/prisma.service.ts` — an `@Injectable()` extending `PrismaClient`, built on the mariadb adapter, exported by a `@Global()` `PrismaModule`. Trekker's and Zeus's shape exactly.
 
-`packages/db/src/seed.ts` inserts four rows into `service`: `pfa-api` / `pfa-nest-api`, `pfa-front` / `pfa-front`, and **Iknos' own two processes**, `iknos-api` / `iknos-api` and `iknos-web` / `iknos-web`.
+One instance for the process, never one per module: the collector and the API share it, and a second client would be a second connection pool competing with the first for the same MySQL — with the Service view's pool gauge then measuring one of two without saying which.
+
+The import of the generated client stays **relative** (`../../generated/prisma/client`), not aliased: an `@prisma/*` path alias would shadow the npm scope the Prisma packages themselves live in.
+
+`nest-api/prisma/seed.ts` inserts four rows into `service`: `pfa-api` / `pfa-nest-api`, `pfa-front` / `pfa-front`, and **Iknos' own two processes**, `iknos-api` / `iknos-api` and `iknos-web` / `iknos-web`.
 
 Seeding Iknos itself is not vanity. It monitors itself through its own pipeline (spec §3.3), and without those two rows the service rail shows a single application on the day the milestone ships — losing the most convincing demonstration the tool has. `nginx` is deliberately absent: it is not a PM2 process and its logs come from elsewhere (`IKN-16`).
 
@@ -326,7 +390,7 @@ No variable controls registration. It seals itself once the account exists (Task
 - [ ] **Step 7: Commit**
 
 ```bash
-git add prisma/ packages/db .env.example
+git add nest-api/prisma nest-api/prisma.config.ts nest-api/src/prisma nest-api/.env.example
 git commit -m "feat(db): prisma schema with day-partitioned log_entry"
 ```
 
@@ -335,14 +399,14 @@ git commit -m "feat(db): prisma schema with day-partitioned log_entry"
 ## Task 4: Validated configuration
 
 **Files:**
-- Create: `apps/api/src/config/env.ts`, `apps/api/src/config/env.spec.ts`
+- Create: `nest-api/src/config/env.ts`, `nest-api/src/config/env.spec.ts`
 
 **Interfaces:**
 - Produces: `parseEnv(source: Record<string, string | undefined>): Config` throwing a named error, and the `Config` type with `databaseUrl`, `redisUrl`, `port`, `logLevel`, `cookieSecret`, `retentionDays`, `pm2LogGlob`. Registered in `ConfigModule` so every service injects the typed object, never `process.env`.
 
 - [ ] **Step 1: Write the failing test**
 
-`apps/api/src/config/env.spec.ts`:
+`nest-api/src/config/env.spec.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -393,12 +457,12 @@ Taking a source object rather than reading `process.env` keeps the tests free of
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/config`
+Run: `pnpm test src/config`
 Expected: FAIL — cannot resolve `./env`.
 
 - [ ] **Step 3: Implement it**
 
-`apps/api/src/config/env.ts`:
+`nest-api/src/config/env.ts`:
 
 ```ts
 import { z } from "zod";
@@ -453,13 +517,13 @@ Wire it into `ConfigModule.forRoot({ validate: parseEnv, isGlobal: true })`. If 
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm vitest run apps/api/src/config`
+Run: `pnpm test src/config`
 Expected: PASS, 5 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/api/src/config
+git add nest-api/src/config
 git commit -m "feat(api): validated environment configuration"
 ```
 
@@ -468,14 +532,14 @@ git commit -m "feat(api): validated environment configuration"
 ## Task 5: Exception filter
 
 **Files:**
-- Create: `apps/api/src/common/all-exceptions.filter.ts`, `apps/api/src/common/all-exceptions.filter.spec.ts`
+- Create: `nest-api/src/common/all-exceptions.filter.ts`, `nest-api/src/common/all-exceptions.filter.spec.ts`
 
 **Interfaces:**
 - Produces: `AllExceptionsFilter`, registered as `APP_FILTER`. Every controller can throw freely from here on.
 
 - [ ] **Step 1: Write the failing test**
 
-`apps/api/src/common/all-exceptions.filter.spec.ts`:
+`nest-api/src/common/all-exceptions.filter.spec.ts`:
 
 ```ts
 import { BadRequestException } from "@nestjs/common";
@@ -533,12 +597,12 @@ The first test is the spec's "errors never leak internal detail" constraint made
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/common`
+Run: `pnpm test src/common`
 Expected: FAIL — cannot resolve `./all-exceptions.filter`.
 
 - [ ] **Step 3: Implement it**
 
-`apps/api/src/common/all-exceptions.filter.ts`:
+`nest-api/src/common/all-exceptions.filter.ts`:
 
 ```ts
 import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException } from "@nestjs/common";
@@ -574,13 +638,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm vitest run apps/api/src/common`
+Run: `pnpm test src/common`
 Expected: PASS, 2 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/api/src/common
+git add nest-api/src/common
 git commit -m "feat(api): global exception filter that never leaks detail"
 ```
 
@@ -589,14 +653,14 @@ git commit -m "feat(api): global exception filter that never leaks detail"
 ## Task 6: ECS logging and the self-error marker
 
 **Files:**
-- Create: `apps/api/src/common/logger.ts`, `apps/api/src/common/logger.spec.ts`
+- Create: `nest-api/src/common/logger.ts`, `nest-api/src/common/logger.spec.ts`
 
 **Interfaces:**
 - Produces: `logger` (a pino instance emitting ECS), and `INGEST_SKIP_MARKER = "IKNOS_SELF_ERR"`. Task 13's parser must skip lines containing the marker; Task 16's writer prints it on database failure.
 
 - [ ] **Step 1: Write the failing test**
 
-`apps/api/src/common/logger.spec.ts`:
+`nest-api/src/common/logger.spec.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -643,14 +707,14 @@ describe("logger", () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/common/logger`
+Run: `pnpm test src/common/logger`
 Expected: FAIL — cannot resolve `./logger`.
 
 - [ ] **Step 3: Implement it**
 
 Install `pino`, `@elastic/ecs-pino-format` and `nestjs-pino`.
 
-`apps/api/src/common/logger.ts`:
+`nest-api/src/common/logger.ts`:
 
 ```ts
 import ecsFormat from "@elastic/ecs-pino-format";
@@ -676,13 +740,13 @@ Register it with `LoggerModule.forRoot({ pinoHttp: { logger } })` from `nestjs-p
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm vitest run apps/api/src/common`
+Run: `pnpm test src/common`
 Expected: PASS, 5 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/api/src/common
+git add nest-api/src/common
 git commit -m "feat(api): ECS-shaped logging and the self-error marker"
 ```
 
@@ -691,15 +755,15 @@ git commit -m "feat(api): ECS-shaped logging and the self-error marker"
 ## Task 7: Bootstrap, /health, shutdown and BigInt serialization
 
 **Files:**
-- Create: `apps/api/src/health.controller.ts`, `apps/api/test/health.e2e-spec.ts`
-- Modify: `apps/api/src/main.ts`, `apps/api/src/app.module.ts`
+- Create: `nest-api/src/health.controller.ts`, `nest-api/test/health.e2e-spec.ts`
+- Modify: `nest-api/src/main.ts`, `nest-api/src/app.module.ts`
 
 **Interfaces:**
 - Produces: a running server on `127.0.0.1:<port>` serving `GET /health`. Tasks 10, 16, 17 add controllers to the same app.
 
 - [ ] **Step 1: Write the failing test**
 
-`apps/api/test/health.e2e-spec.ts`:
+`nest-api/test/health.e2e-spec.ts`:
 
 ```ts
 import { Test } from "@nestjs/testing";
@@ -729,12 +793,12 @@ describe("health", () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/test/health`
+Run: `pnpm test test/health`
 Expected: FAIL — 404, no such route.
 
 - [ ] **Step 3: Implement the controller**
 
-`apps/api/src/health.controller.ts`:
+`nest-api/src/health.controller.ts`:
 
 ```ts
 import { Controller, Get } from "@nestjs/common";
@@ -755,7 +819,7 @@ Until Task 9 exists, omit the `@Public()` line and add it there.
 
 - [ ] **Step 4: Write the bootstrap**
 
-`apps/api/src/main.ts`:
+`nest-api/src/main.ts`:
 
 ```ts
 import { Logger } from "nestjs-pino";
@@ -784,7 +848,7 @@ void bootstrap();
 
 Do **not** patch `BigInt.prototype.toJSON` globally. It looks like a one-line fix, but it silently turns every BigInt anywhere into a string, including in places where you would rather have had the error.
 
-Add a test that locks the decision in, in `apps/api/test/health.e2e-spec.ts`:
+Add a test that locks the decision in, in `nest-api/test/health.e2e-spec.ts`:
 
 ```ts
 it("BigInt is not globally patched", () => {
@@ -794,13 +858,13 @@ it("BigInt is not globally patched", () => {
 
 - [ ] **Step 6: Run the tests and check it starts**
 
-Run: `pnpm vitest run apps/api/test`
+Run: `pnpm test test`
 Expected: PASS, 2 tests.
 
 Then:
 
 ```bash
-pnpm --filter api start &
+pnpm start &
 sleep 3 && curl -s localhost:4310/health && ss -tlnp | grep 4310 && kill -TERM %1
 ```
 
@@ -809,7 +873,7 @@ Expected: `{"status":"ok"}`; `ss` shows `127.0.0.1:4310` and **not** `0.0.0.0:43
 - [ ] **Step 7: Commit**
 
 ```bash
-git add apps/api
+git add nest-api
 git commit -m "feat(api): bootstrap, health check and graceful shutdown"
 ```
 
@@ -818,7 +882,7 @@ git commit -m "feat(api): bootstrap, health check and graceful shutdown"
 ## Task 8: Redis session store
 
 **Files:**
-- Create: `apps/api/src/auth/session.service.ts`, `apps/api/src/auth/session.service.spec.ts`
+- Create: `nest-api/src/auth/session.service.ts`, `nest-api/src/auth/session.service.spec.ts`
 
 **Interfaces:**
 - Produces: `SessionService` with `create(userId: number): Promise<{ sid: string; session: Session }>`, `get(sid: string): Promise<Session | null>` (slides the TTL), `destroy(sid: string)`, `destroyForUser(userId: number)`, and `Session = { userId: number; csrfToken: string }`. Tasks 9 and 10 consume all of it.
@@ -827,7 +891,7 @@ Start from PFA's session service and adapt: same key shape, same one-session-per
 
 - [ ] **Step 1: Write the failing test**
 
-`apps/api/src/auth/session.service.spec.ts`:
+`nest-api/src/auth/session.service.spec.ts`:
 
 ```ts
 import { randomUUID } from "node:crypto";
@@ -900,12 +964,12 @@ describe("SessionService", () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/auth/session`
+Run: `pnpm test src/auth/session`
 Expected: FAIL — cannot resolve `./session.service`.
 
 - [ ] **Step 3: Implement it**
 
-`apps/api/src/auth/session.service.ts`:
+`nest-api/src/auth/session.service.ts`:
 
 ```ts
 import { randomBytes } from "node:crypto";
@@ -975,13 +1039,13 @@ export class SessionService {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm vitest run apps/api/src/auth`
+Run: `pnpm test src/auth`
 Expected: PASS, 6 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/api/src/auth
+git add nest-api/src/auth
 git commit -m "feat(auth): redis session store with sliding ttl"
 ```
 
@@ -990,14 +1054,14 @@ git commit -m "feat(auth): redis session store with sliding ttl"
 ## Task 9: CSRF and the global session guard
 
 **Files:**
-- Create: `apps/api/src/auth/csrf.util.ts`, `apps/api/src/auth/csrf.util.spec.ts`, `apps/api/src/auth/public.decorator.ts`, `apps/api/src/auth/session.guard.ts`
+- Create: `nest-api/src/auth/csrf.util.ts`, `nest-api/src/auth/csrf.util.spec.ts`, `nest-api/src/auth/public.decorator.ts`, `nest-api/src/auth/session.guard.ts`
 
 **Interfaces:**
 - Produces: `verifyCsrf(expected, provided): boolean` (constant time), the `@Public()` decorator, and `SessionGuard` registered as `APP_GUARD`. Handlers read `req.session` from here on.
 
 - [ ] **Step 1: Write the failing CSRF test**
 
-`apps/api/src/auth/csrf.util.spec.ts`:
+`nest-api/src/auth/csrf.util.spec.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -1027,12 +1091,12 @@ describe("verifyCsrf", () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/auth/csrf`
+Run: `pnpm test src/auth/csrf`
 Expected: FAIL — cannot resolve `./csrf.util`.
 
 - [ ] **Step 3: Implement it**
 
-`apps/api/src/auth/csrf.util.ts` — same shape as PFA's `csrf-token.util.ts`:
+`nest-api/src/auth/csrf.util.ts` — same shape as PFA's `csrf-token.util.ts`:
 
 ```ts
 import { timingSafeEqual } from "node:crypto";
@@ -1052,7 +1116,7 @@ export function verifyCsrf(expected: string, provided: string): boolean {
 
 - [ ] **Step 4: Write the guard**
 
-`apps/api/src/auth/public.decorator.ts`:
+`nest-api/src/auth/public.decorator.ts`:
 
 ```ts
 import { SetMetadata } from "@nestjs/common";
@@ -1061,7 +1125,7 @@ export const IS_PUBLIC = "iknos:public";
 export const Public = () => SetMetadata(IS_PUBLIC, true);
 ```
 
-`apps/api/src/auth/session.guard.ts`:
+`nest-api/src/auth/session.guard.ts`:
 
 ```ts
 import {
@@ -1131,7 +1195,7 @@ Add a temporary controller with no decorator, confirm `curl` gets 401, then dele
 - [ ] **Step 6: Commit**
 
 ```bash
-git add apps/api/src/auth
+git add nest-api/src/auth
 git commit -m "feat(auth): global session guard with constant-time csrf check"
 ```
 
@@ -1140,7 +1204,7 @@ git commit -m "feat(auth): global session guard with constant-time csrf check"
 ## Task 10: Auth controller, rate limiting and the user CLI
 
 **Files:**
-- Create: `apps/api/src/auth/auth.controller.ts`, `apps/api/src/auth/ratelimit.service.ts`, `apps/api/src/auth/users.service.ts`, `packages/db/src/seed-user.ts`, `apps/api/test/auth.e2e-spec.ts`
+- Create: `nest-api/src/auth/auth.controller.ts`, `nest-api/src/auth/ratelimit.service.ts`, `nest-api/src/auth/users.service.ts`, `nest-api/scripts/create-account.ts`, `nest-api/test/auth.e2e-spec.ts`
 
 **Interfaces:**
 - Produces: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/csrf`, `GET /api/me`. Every later route sits behind the guard these establish.
@@ -1149,7 +1213,7 @@ git commit -m "feat(auth): global session guard with constant-time csrf check"
 
 - [ ] **Step 1: Write the failing test**
 
-`apps/api/test/auth.e2e-spec.ts`:
+`nest-api/test/auth.e2e-spec.ts`:
 
 ```ts
 import request from "supertest";
@@ -1212,16 +1276,16 @@ describe("auth", () => {
 });
 ```
 
-`apps/api/test/helpers.ts` builds the app from `AppModule`, applies `cookieParser`, and returns it. The rate-limit test needs a distinct client IP per run or a Redis flush of the `iknos:rl:` prefix in `beforeEach`, otherwise reruns start already throttled.
+`nest-api/test/helpers.ts` builds the app from `AppModule`, applies `cookieParser`, and returns it. The rate-limit test needs a distinct client IP per run or a Redis flush of the `iknos:rl:` prefix in `beforeEach`, otherwise reruns start already throttled.
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/test/auth`
+Run: `pnpm test test/auth`
 Expected: FAIL — routes 404.
 
 - [ ] **Step 3: Implement the rate limiter**
 
-`apps/api/src/auth/ratelimit.service.ts`:
+`nest-api/src/auth/ratelimit.service.ts`:
 
 ```ts
 import { Injectable } from "@nestjs/common";
@@ -1250,7 +1314,7 @@ export class RateLimitService {
 
 - [ ] **Step 4: Implement the controller**
 
-`apps/api/src/auth/auth.controller.ts` — the shape below, with `bcryptjs` for hashing:
+`nest-api/src/auth/auth.controller.ts` — the shape below, with `bcryptjs` for hashing:
 
 ```ts
 @Public()
@@ -1288,7 +1352,7 @@ Trust the proxy so `req.ip` is the real client: `app.set("trust proxy", 1)` in `
 
 - [ ] **Step 5: Add the user CLI**
 
-`packages/db/src/seed-user.ts` — reads an email argument, prompts twice for a password without echoing, rejects anything under 12 characters, hashes with bcrypt, inserts. Wire it as `pnpm seed:user`. No `POST /users`.
+`nest-api/scripts/create-account.ts` — reads an email argument, prompts twice for a password without echoing, rejects anything under 12 characters, hashes with bcrypt, inserts. Wire it as `pnpm seed:user`. No `POST /users`.
 
 The CLI stays password-only here because the column that stores a recovery passphrase does not exist yet — Task 11 adds it and extends this same script.
 
@@ -1296,7 +1360,7 @@ It creates **the** account, not **an** account: `singleton` (Task 3) makes a sec
 
 - [ ] **Step 6: Run the tests, then check from outside**
 
-Run: `pnpm seed:user test@iknos.local` then `pnpm vitest run apps/api/test/auth`
+Run: `pnpm seed:user test@iknos.local` then `pnpm test test/auth`
 Expected: PASS, 5 tests.
 
 Then with the server up:
@@ -1310,7 +1374,7 @@ Expected: `HTTP/1.1 401 Unauthorized`. This is the spec's acceptance criterion �
 - [ ] **Step 7: Commit**
 
 ```bash
-git add apps/api packages/db
+git add nest-api nest-api/src/prisma
 git commit -m "feat(auth): login, logout, csrf, me and login rate limiting"
 ```
 
@@ -1319,8 +1383,8 @@ git commit -m "feat(auth): login, logout, csrf, me and login rate limiting"
 ## Task 11: Registration, recovery and password change
 
 **Files:**
-- Create: `apps/api/src/auth/passphrase.util.ts`, `apps/api/src/auth/passphrase.util.spec.ts`, `apps/api/src/auth/account.controller.ts`, `apps/api/test/account.e2e-spec.ts`
-- Modify: `prisma/schema.prisma`, `apps/api/src/auth/users.service.ts`, `apps/api/src/auth/ratelimit.service.ts`, `packages/db/src/seed-user.ts`
+- Create: `nest-api/src/auth/passphrase.util.ts`, `nest-api/src/auth/passphrase.util.spec.ts`, `nest-api/src/auth/account.controller.ts`, `nest-api/test/account.e2e-spec.ts`
+- Modify: `nest-api/prisma/schema.prisma`, `nest-api/src/auth/users.service.ts`, `nest-api/src/auth/ratelimit.service.ts`, `nest-api/scripts/create-account.ts`
 
 **Interfaces:**
 - Consumes: `SessionService` (Task 8), `@Public()` and `SessionGuard` (Task 9), `RateLimitService` and `UsersService` (Task 10), `app_user.singleton` (Task 3).
@@ -1334,7 +1398,7 @@ The one thing worth restating rather than assuming: **registration is gated by w
 
 - [ ] **Step 1: Add the column**
 
-In `prisma/schema.prisma`, on `AppUser`:
+In `nest-api/prisma/schema.prisma`, on `AppUser`:
 
 ```prisma
   /// Hashed independently of the password: the passphrase can reset the password, so knowing
@@ -1352,7 +1416,7 @@ Expected: an additive migration adding one nullable column, no table rewrite.
 
 - [ ] **Step 2: Write the failing unit test**
 
-`apps/api/src/auth/passphrase.util.spec.ts`:
+`nest-api/src/auth/passphrase.util.spec.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -1384,12 +1448,12 @@ describe("verifyPassphrase", () => {
 
 - [ ] **Step 3: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/auth/passphrase`
+Run: `pnpm test src/auth/passphrase`
 Expected: FAIL — cannot resolve `./passphrase.util`.
 
 - [ ] **Step 4: Implement it**
 
-`apps/api/src/auth/passphrase.util.ts`:
+`nest-api/src/auth/passphrase.util.ts`:
 
 ```ts
 import bcrypt from "bcryptjs";
@@ -1426,12 +1490,12 @@ export function assertLength(value: string | undefined, min: number, field: stri
 
 - [ ] **Step 5: Run it to verify it passes**
 
-Run: `pnpm vitest run apps/api/src/auth/passphrase`
+Run: `pnpm test src/auth/passphrase`
 Expected: PASS, 3 tests.
 
 - [ ] **Step 6: Write the failing endpoint tests**
 
-`apps/api/test/account.e2e-spec.ts`:
+`nest-api/test/account.e2e-spec.ts`:
 
 ```ts
 import request from "supertest";
@@ -1587,13 +1651,13 @@ describe("account", () => {
 });
 ```
 
-Extend `apps/api/test/helpers.ts` with a `login(app, email, password)` returning the cookie, and let `buildTestApp` take `{ seeded }` — `true` truncates `app_user` and inserts `test@iknos.local` with `PASSPHRASE`, `false` truncates and leaves it empty. The seal is a fact about the table, so the fixture has to control the table.
+Extend `nest-api/test/helpers.ts` with a `login(app, email, password)` returning the cookie, and let `buildTestApp` take `{ seeded }` — `true` truncates `app_user` and inserts `test@iknos.local` with `PASSPHRASE`, `false` truncates and leaves it empty. The seal is a fact about the table, so the fixture has to control the table.
 
 The rate-limit tests need the `iknos:rl:` prefix flushed in `beforeEach`, or a rerun starts already throttled.
 
 - [ ] **Step 7: Run them to verify they fail**
 
-Run: `pnpm vitest run apps/api/test/account`
+Run: `pnpm test test/account`
 Expected: FAIL — all three routes 404.
 
 - [ ] **Step 8: Widen the rate limiter**
@@ -1640,7 +1704,7 @@ This does leak "somebody has set this instance up", which is why it answers with
 
 - [ ] **Step 9: Implement the controller**
 
-`apps/api/src/auth/account.controller.ts`. `UsersService` gains `count()`, `findById`, `create(email, password, passphrase)` and `setPassword(id, password, passphrase?)`, all hashing with bcrypt and all normalising the address (trim, lowercase) before it touches the database — otherwise `Me@…` and `me@…` are two accounts on a table that may only ever hold one.
+`nest-api/src/auth/account.controller.ts`. `UsersService` gains `count()`, `findById`, `create(email, password, passphrase)` and `setPassword(id, password, passphrase?)`, all hashing with bcrypt and all normalising the address (trim, lowercase) before it touches the database — otherwise `Me@…` and `me@…` are two accounts on a table that may only ever hold one.
 
 ```ts
 const RECOVER_MAX = 5;
@@ -1724,13 +1788,13 @@ export class AccountController {
 
 - [ ] **Step 10: Extend the user CLI**
 
-`packages/db/src/seed-user.ts` now prompts for the recovery passphrase too, without echoing, rejecting anything under 20 characters. Skipping it is allowed and prints a warning naming the consequence in full: *this account can only be reset in the database*.
+`nest-api/scripts/create-account.ts` now prompts for the recovery passphrase too, without echoing, rejecting anything under 20 characters. Skipping it is allowed and prints a warning naming the consequence in full: *this account can only be reset in the database*.
 
 Run against an instance that already has its account, it fails on the `singleton` constraint. Catch that and print *this instance already has its account — use recovery instead* rather than letting a Prisma constraint error reach the terminal.
 
 - [ ] **Step 11: Run the tests to verify they pass**
 
-Run: `pnpm vitest run apps/api/test/account apps/api/src/auth`
+Run: `pnpm test test/account nest-api/src/auth`
 Expected: PASS — 10 endpoint tests, 3 passphrase tests, plus Tasks 8–10's suites still green.
 
 Then from outside, with the server up and an account already created:
@@ -1745,7 +1809,7 @@ Expected: `{"sealed":true}`, then `HTTP/1.1 409 Conflict`.
 - [ ] **Step 12: Commit**
 
 ```bash
-git add apps/api packages/db prisma
+git add nest-api nest-api/src/prisma prisma
 git commit -m "feat(auth): gated registration, passphrase recovery and password change"
 ```
 
@@ -1754,7 +1818,7 @@ git commit -m "feat(auth): gated registration, passphrase recovery and password 
 ## Task 12: Line framing
 
 **Files:**
-- Create: `apps/api/src/ingest/line-buffer.ts`, `apps/api/src/ingest/line-buffer.spec.ts`
+- Create: `nest-api/src/ingest/line-buffer.ts`, `nest-api/src/ingest/line-buffer.spec.ts`
 
 **Interfaces:**
 - Produces: `LineBuffer` with `push(chunk: Buffer)`, `nextLine(): string | null`, `pendingBytes: number`, and `MAX_LINE_BYTES`. Task 14's tailer feeds it; Task 13's parser consumes its output.
@@ -1763,7 +1827,7 @@ The smallest piece of the project and the one most worth getting exactly right. 
 
 - [ ] **Step 1: Write the failing test**
 
-`apps/api/src/ingest/line-buffer.spec.ts`:
+`nest-api/src/ingest/line-buffer.spec.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -1832,12 +1896,12 @@ The last test guards a file with no newlines at all: without a cap the heap grow
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/ingest/line-buffer`
+Run: `pnpm test src/ingest/line-buffer`
 Expected: FAIL — cannot resolve `./line-buffer`.
 
 - [ ] **Step 3: Implement it**
 
-`apps/api/src/ingest/line-buffer.ts`:
+`nest-api/src/ingest/line-buffer.ts`:
 
 ```ts
 /** A single log line longer than this is garbage, not something to buffer.
@@ -1885,13 +1949,13 @@ export class LineBuffer {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm vitest run apps/api/src/ingest/line-buffer`
+Run: `pnpm test src/ingest/line-buffer`
 Expected: PASS, 7 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/api/src/ingest
+git add nest-api/src/ingest
 git commit -m "feat(ingest): byte-safe line framing across read boundaries"
 ```
 
@@ -1900,14 +1964,14 @@ git commit -m "feat(ingest): byte-safe line framing across read boundaries"
 ## Task 13: Log line parser
 
 **Files:**
-- Create: `apps/api/src/ingest/parser.ts`, `apps/api/src/ingest/parser.spec.ts`, `packages/contracts/src/log-record.ts`
+- Create: `nest-api/src/ingest/parser.ts`, `nest-api/src/ingest/parser.spec.ts`, `nest-api/src/ingest/log-record.ts`
 
 **Interfaces:**
 - Produces: `LogRecord` (the shape crossing every boundary) and `parse(line: string, service: string, stream: "out" | "err"): LogRecord | null`. `null` means the line was deliberately skipped. Tasks 14 and 17 both carry `LogRecord`.
 
 - [ ] **Step 1: Write the failing test**
 
-`apps/api/src/ingest/parser.spec.ts`:
+`nest-api/src/ingest/parser.spec.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -2011,12 +2075,12 @@ describe("parse", () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/ingest/parser`
+Run: `pnpm test src/ingest/parser`
 Expected: FAIL — cannot resolve `./parser`.
 
 - [ ] **Step 3: Define the record type**
 
-`packages/contracts/src/log-record.ts`:
+`nest-api/src/ingest/log-record.ts`:
 
 ```ts
 export type LogRecord = {
@@ -2040,10 +2104,10 @@ export type LogRecord = {
 
 - [ ] **Step 4: Implement the parser**
 
-`apps/api/src/ingest/parser.ts`:
+`nest-api/src/ingest/parser.ts`:
 
 ```ts
-import type { LogRecord } from "@iknos/contracts";
+import type { LogRecord } from "the shared response types";
 import stripAnsi from "strip-ansi";
 import { INGEST_SKIP_MARKER } from "../common/logger";
 
@@ -2166,13 +2230,13 @@ export function parse(
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `pnpm vitest run apps/api/src/ingest`
+Run: `pnpm test src/ingest`
 Expected: PASS, 19 tests.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add apps/api/src/ingest packages/contracts
+git add nest-api/src/ingest nest-api/src/contracts
 git commit -m "feat(ingest): ECS, bare JSON and plain text line parsing"
 ```
 
@@ -2181,7 +2245,7 @@ git commit -m "feat(ingest): ECS, bare JSON and plain text line parsing"
 ## Task 14: Rotation logic and the tailer loop
 
 **Files:**
-- Create: `apps/api/src/ingest/rotation.ts`, `apps/api/src/ingest/rotation.spec.ts`, `apps/api/src/ingest/tailer.ts`
+- Create: `nest-api/src/ingest/rotation.ts`, `nest-api/src/ingest/rotation.spec.ts`, `nest-api/src/ingest/tailer.ts`
 
 **Interfaces:**
 - Produces: `decide(stored: StoredOffset | null, now: FileStat): Action` (pure), and `Tailer` with `poll(): Promise<void>`. Task 16 drives `poll` on an interval.
@@ -2190,7 +2254,7 @@ The decision is pulled out as a pure function so every rotation case is testable
 
 - [ ] **Step 1: Write the failing test**
 
-`apps/api/src/ingest/rotation.spec.ts`:
+`nest-api/src/ingest/rotation.spec.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -2243,12 +2307,12 @@ describe("decide", () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/ingest/rotation`
+Run: `pnpm test src/ingest/rotation`
 Expected: FAIL — cannot resolve `./rotation`.
 
 - [ ] **Step 3: Implement the decision**
 
-`apps/api/src/ingest/rotation.ts`:
+`nest-api/src/ingest/rotation.ts`:
 
 ```ts
 export type StoredOffset = { dev: bigint; inode: bigint; byteOffset: bigint };
@@ -2277,12 +2341,12 @@ export function decide(stored: StoredOffset | null, now: FileStat): Action {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm vitest run apps/api/src/ingest/rotation`
+Run: `pnpm test src/ingest/rotation`
 Expected: PASS, 7 tests.
 
 - [ ] **Step 5: Implement the tailer**
 
-`apps/api/src/ingest/tailer.ts`:
+`nest-api/src/ingest/tailer.ts`:
 
 ```ts
 import { open, stat } from "node:fs/promises";
@@ -2388,7 +2452,7 @@ export class Tailer {
 - [ ] **Step 6: Commit**
 
 ```bash
-git add apps/api/src/ingest
+git add nest-api/src/ingest
 git commit -m "feat(ingest): rotation decision and tailer loop"
 ```
 
@@ -2397,14 +2461,14 @@ git commit -m "feat(ingest): rotation decision and tailer loop"
 ## Task 15: Bounded queue and the transactional writer
 
 **Files:**
-- Create: `apps/api/src/ingest/writer.ts`, `apps/api/src/ingest/writer.spec.ts`, `apps/api/test/durability.e2e-spec.ts`
+- Create: `nest-api/src/ingest/writer.ts`, `nest-api/src/ingest/writer.spec.ts`, `nest-api/test/durability.e2e-spec.ts`
 
 **Interfaces:**
 - Produces: `Writer` with `submit(chunk: Chunk): void`, `flush(): Promise<void>`, `dropped: number`, and `Chunk = { records: LogRecord[]; offset: OffsetRow }`. Task 16 owns its lifecycle.
 
 - [ ] **Step 1: Write the failing tests**
 
-`apps/api/src/ingest/writer.spec.ts` — backpressure, with no database:
+`nest-api/src/ingest/writer.spec.ts` — backpressure, with no database:
 
 ```ts
 import { describe, expect, it, vi } from "vitest";
@@ -2438,12 +2502,12 @@ describe("Writer backpressure", () => {
 });
 ```
 
-`apps/api/test/durability.e2e-spec.ts` — the property that matters, against a real database:
+`nest-api/test/durability.e2e-spec.ts` — the property that matters, against a real database:
 
 ```ts
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { prisma } from "@iknos/db";
+import { prisma } from "the Prisma client";
 import { persistBatch } from "../src/ingest/writer";
 
 const record = (service: string, message: string, levelName = "info") =>
@@ -2487,16 +2551,16 @@ The second test is the whole point. It proves a crash or a database error cannot
 
 - [ ] **Step 2: Run them to verify they fail**
 
-Run: `pnpm vitest run apps/api/src/ingest/writer apps/api/test/durability`
+Run: `pnpm test src/ingest/writer nest-api/test/durability`
 Expected: FAIL — cannot resolve `./writer`.
 
 - [ ] **Step 3: Implement it**
 
-`apps/api/src/ingest/writer.ts`:
+`nest-api/src/ingest/writer.ts`:
 
 ```ts
-import { prisma } from "@iknos/db";
-import type { LogRecord } from "@iknos/contracts";
+import { prisma } from "the Prisma client";
+import type { LogRecord } from "the shared response types";
 import { INGEST_SKIP_MARKER } from "../common/logger";
 import type { LogBus } from "../stream/log-bus";
 
@@ -2584,13 +2648,13 @@ export class Writer {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm vitest run apps/api/src/ingest apps/api/test/durability`
+Run: `pnpm test src/ingest nest-api/test/durability`
 Expected: PASS — 2 backpressure tests, 2 durability tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/api
+git add nest-api
 git commit -m "feat(ingest): bounded queue and transactional batch writer"
 ```
 
@@ -2599,7 +2663,7 @@ git commit -m "feat(ingest): bounded queue and transactional batch writer"
 ## Task 16: Event bus and ingestion lifecycle
 
 **Files:**
-- Create: `apps/api/src/stream/log-bus.ts`, `apps/api/src/ingest/ingest.service.ts`, `apps/api/src/ingest/ingest.module.ts`, `apps/api/test/tail-roundtrip.e2e-spec.ts`
+- Create: `nest-api/src/stream/log-bus.ts`, `nest-api/src/ingest/ingest.service.ts`, `nest-api/src/ingest/ingest.module.ts`, `nest-api/test/tail-roundtrip.e2e-spec.ts`
 
 **Interfaces:**
 - Produces: `LogBus` with `emit(record: LogRecord)` and `subscribe(fn): () => void` (returns an unsubscribe), and `IngestService` implementing `OnApplicationBootstrap` / `OnApplicationShutdown` and exposing `stats(): IngestStats`. Task 19 subscribes to the bus; Task 21 serves `stats()` over HTTP.
@@ -2620,14 +2684,14 @@ Add it as a method on `IngestService`, reading the writer's counters and the tai
 
 - [ ] **Step 1: Write the failing integration test**
 
-`apps/api/test/tail-roundtrip.e2e-spec.ts`:
+`nest-api/test/tail-roundtrip.e2e-spec.ts`:
 
 ```ts
 import { randomUUID } from "node:crypto";
 import { appendFile, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { prisma } from "@iknos/db";
+import { prisma } from "the Prisma client";
 import { describe, expect, it } from "vitest";
 import { IngestService } from "../src/ingest/ingest.service";
 import { LogBus } from "../src/stream/log-bus";
@@ -2659,17 +2723,17 @@ describe("tail roundtrip", () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/test/tail-roundtrip`
+Run: `pnpm test test/tail-roundtrip`
 Expected: FAIL — cannot resolve `../src/ingest/ingest.service`.
 
 - [ ] **Step 3: Implement the bus**
 
-`apps/api/src/stream/log-bus.ts`:
+`nest-api/src/stream/log-bus.ts`:
 
 ```ts
 import { Injectable } from "@nestjs/common";
 import { EventEmitter } from "node:events";
-import type { LogRecord } from "@iknos/contracts";
+import type { LogRecord } from "the shared response types";
 
 @Injectable()
 export class LogBus {
@@ -2696,11 +2760,11 @@ export class LogBus {
 
 - [ ] **Step 4: Implement the lifecycle**
 
-`apps/api/src/ingest/ingest.service.ts`:
+`nest-api/src/ingest/ingest.service.ts`:
 
 ```ts
 import { Injectable, type OnApplicationBootstrap, type OnApplicationShutdown } from "@nestjs/common";
-import { prisma } from "@iknos/db";
+import { prisma } from "the Prisma client";
 import { logger } from "../common/logger";
 import type { LogBus } from "../stream/log-bus";
 import { Tailer } from "./tailer";
@@ -2761,7 +2825,7 @@ Provide it in `IngestModule` with the pattern injected from config.
 
 - [ ] **Step 5: Run the test to verify it passes**
 
-Run: `pnpm vitest run apps/api/test/tail-roundtrip`
+Run: `pnpm test test/tail-roundtrip`
 Expected: PASS. It takes about 5 seconds — the poll interval is wall-clock.
 
 - [ ] **Step 6: Verify by hand**
@@ -2778,7 +2842,7 @@ Expected: one row, service `iknos-demo`, level `info`.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add apps/api
+git add nest-api
 git commit -m "feat(ingest): event bus and ingestion lifecycle"
 ```
 
@@ -2787,16 +2851,16 @@ git commit -m "feat(ingest): event bus and ingestion lifecycle"
 ## Task 17: Logs query endpoint
 
 **Files:**
-- Create: `apps/api/src/logs/cursor.ts`, `apps/api/src/logs/cursor.spec.ts`, `apps/api/src/logs/logs.service.ts`, `apps/api/src/logs/logs.controller.ts`, `apps/api/src/services.controller.ts`, `packages/contracts/src/log-page.ts`, `apps/api/test/logs.e2e-spec.ts`
+- Create: `nest-api/src/logs/cursor.ts`, `nest-api/src/logs/cursor.spec.ts`, `nest-api/src/logs/logs.service.ts`, `nest-api/src/logs/logs.controller.ts`, `nest-api/src/services.controller.ts`, `nest-api/src/logs/log-page.ts`, `nest-api/test/logs.e2e-spec.ts`
 
 **Interfaces:**
-- Produces: `GET /api/logs`, `GET /api/services`, and the DTOs `LogRow`, `Service { name: string; pm2Name: string; enabled: boolean }`, `Meta { tookMs: number }` and `LogPage { rows: LogRow[]; nextCursor: string | null; meta: Meta }` in `@iknos/contracts`. Tasks 19, 23, 25, 26, 27 and 28 import those types.
+- Produces: `GET /api/logs`, `GET /api/services`, and the DTOs `LogRow`, `Service { name: string; pm2Name: string; enabled: boolean }`, `Meta { tookMs: number }` and `LogPage { rows: LogRow[]; nextCursor: string | null; meta: Meta }` in `the shared response types`. Tasks 19, 23, 25, 26, 27 and 28 import those types.
 
 `Meta` is its own exported type rather than an inline shape, because every list response in the project carries one and the status bar renders it the same way regardless of which route produced it.
 
 - [ ] **Step 1: Write the failing tests**
 
-`apps/api/src/logs/cursor.spec.ts`:
+`nest-api/src/logs/cursor.spec.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -2819,7 +2883,7 @@ describe("cursor", () => {
 });
 ```
 
-`apps/api/test/logs.e2e-spec.ts`:
+`nest-api/test/logs.e2e-spec.ts`:
 
 ```ts
 import request from "supertest";
@@ -2899,16 +2963,16 @@ describe("GET /api/logs", () => {
 });
 ```
 
-Extend `apps/api/test/helpers.ts` with `login(app)` returning the cookie header and `seedLogs(n, message?)` inserting rows under a fresh random service name via `persistBatch`.
+Extend `nest-api/test/helpers.ts` with `login(app)` returning the cookie header and `seedLogs(n, message?)` inserting rows under a fresh random service name via `persistBatch`.
 
 - [ ] **Step 2: Run them to verify they fail**
 
-Run: `pnpm vitest run apps/api/src/logs apps/api/test/logs`
+Run: `pnpm test src/logs nest-api/test/logs`
 Expected: FAIL — `/api/logs` 404s.
 
 - [ ] **Step 3: Implement the cursor**
 
-`apps/api/src/logs/cursor.ts`:
+`nest-api/src/logs/cursor.ts`:
 
 ```ts
 export function encodeCursor(ts: Date, id: bigint): string {
@@ -2928,10 +2992,10 @@ export function decodeCursor(raw: string): { ts: Date; id: bigint } | null {
 
 - [ ] **Step 4: Implement the query**
 
-`apps/api/src/logs/logs.service.ts` — raw SQL, because optional filters and a composite cursor comparison do not express cleanly through the Prisma API:
+`nest-api/src/logs/logs.service.ts` — raw SQL, because optional filters and a composite cursor comparison do not express cleanly through the Prisma API:
 
 ```ts
-import { Prisma, prisma } from "@iknos/db";
+import { Prisma, prisma } from "the Prisma client";
 
 export type LogQuery = {
   from: Date; to: Date;
@@ -2985,7 +3049,7 @@ export async function search(query: LogQuery) {
 
 - [ ] **Step 5: Implement the controller**
 
-`apps/api/src/logs/logs.controller.ts`:
+`nest-api/src/logs/logs.controller.ts`:
 
 ```ts
 const MAX_LIMIT = 200;
@@ -3040,7 +3104,7 @@ Add `GET /api/services` as a plain `prisma.service.findMany({ where: { enabled: 
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `pnpm vitest run apps/api/src/logs apps/api/test/logs`
+Run: `pnpm test src/logs nest-api/test/logs`
 Expected: PASS — 2 cursor tests, 5 endpoint tests.
 
 - [ ] **Step 7: Confirm partition pruning actually happens**
@@ -3056,7 +3120,7 @@ Expected: a single named partition. If every partition is listed, the range pred
 - [ ] **Step 8: Commit**
 
 ```bash
-git add apps/api packages/contracts
+git add nest-api nest-api/src/contracts
 git commit -m "feat(api): logs search with keyset pagination"
 ```
 
@@ -3065,8 +3129,8 @@ git commit -m "feat(api): logs search with keyset pagination"
 ## Task 18: Histogram and trace endpoints
 
 **Files:**
-- Create: `apps/api/src/logs/histogram.service.ts`, `apps/api/src/logs/histogram.service.spec.ts`, `apps/api/src/logs/trace.service.ts`, `packages/contracts/src/histogram.ts`, `packages/contracts/src/trace.ts`
-- Modify: `apps/api/src/logs/logs.controller.ts`, `apps/api/test/logs.e2e-spec.ts`
+- Create: `nest-api/src/logs/histogram.service.ts`, `nest-api/src/logs/histogram.service.spec.ts`, `nest-api/src/logs/trace.service.ts`, `nest-api/src/contracts/histogram.ts`, `nest-api/src/contracts/trace.ts`
+- Modify: `nest-api/src/logs/logs.controller.ts`, `nest-api/test/logs.e2e-spec.ts`
 
 **Interfaces:**
 - Consumes: the filter parsing and the `from`/`to` guard from Task 17, unchanged and shared rather than copied.
@@ -3076,7 +3140,7 @@ git commit -m "feat(api): logs search with keyset pagination"
 
 The one piece of real logic here is choosing a bucket size, and it is pure, so it gets tested without a database.
 
-`apps/api/src/logs/histogram.service.spec.ts`:
+`nest-api/src/logs/histogram.service.spec.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -3110,12 +3174,12 @@ The third test is the one that matters. A client asking for a week in one-second
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/logs/histogram`
+Run: `pnpm test src/logs/histogram`
 Expected: FAIL — cannot resolve `./histogram.service`.
 
 - [ ] **Step 3: Implement the bucket sizing**
 
-`apps/api/src/logs/histogram.service.ts`:
+`nest-api/src/logs/histogram.service.ts`:
 
 ```ts
 export const MAX_BUCKETS = 60;
@@ -3160,7 +3224,7 @@ Levels follow pino: `error` is 50 and above, so `fatal` is counted as an error r
 
 - [ ] **Step 5: Write the trace endpoint**
 
-`apps/api/src/logs/trace.service.ts` — every row sharing a `trace.id`, in `ts` order, with `duration_ms`:
+`nest-api/src/logs/trace.service.ts` — every row sharing a `trace.id`, in `ts` order, with `duration_ms`:
 
 ```ts
 const TRACE_ID = /^[0-9a-f]{1,32}$/i;
@@ -3187,7 +3251,7 @@ Bounded like everything else, and for the same reason: `(trace_id, ts)` is index
 
 - [ ] **Step 6: Add the endpoint tests**
 
-Append to `apps/api/test/logs.e2e-spec.ts`:
+Append to `nest-api/test/logs.e2e-spec.ts`:
 
 ```ts
 it("rejects a histogram request with no window", async () => {
@@ -3241,13 +3305,13 @@ Expected: the `partitions` column lists one partition, not all of them. If it li
 
 - [ ] **Step 8: Run the tests**
 
-Run: `pnpm vitest run apps/api/src/logs apps/api/test/logs`
+Run: `pnpm test src/logs nest-api/test/logs`
 Expected: PASS — 4 bucket tests, 2 cursor tests, 10 endpoint tests.
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add apps/api/src/logs packages/contracts apps/api/test
+git add nest-api/src/logs nest-api/src/contracts nest-api/test
 git commit -m "feat(api): log volume histogram and trace timeline endpoints"
 ```
 
@@ -3256,14 +3320,14 @@ git commit -m "feat(api): log volume histogram and trace timeline endpoints"
 ## Task 19: Live tail over SSE
 
 **Files:**
-- Create: `apps/api/src/stream/stream.controller.ts`, `apps/api/test/stream.e2e-spec.ts`
+- Create: `nest-api/src/stream/stream.controller.ts`, `nest-api/test/stream.e2e-spec.ts`
 
 **Interfaces:**
 - Produces: `GET /api/logs/stream`, emitting `log` events whose payload is a `LogRow` — the same shape `GET /api/logs` returns, so the front end needs one row renderer.
 
 - [ ] **Step 1: Write the failing test**
 
-`apps/api/test/stream.e2e-spec.ts`:
+`nest-api/test/stream.e2e-spec.ts`:
 
 ```ts
 import request from "supertest";
@@ -3308,19 +3372,19 @@ Add a `listenerCount()` accessor to `LogBus` for this test.
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/test/stream`
+Run: `pnpm test test/stream`
 Expected: FAIL — 404.
 
 - [ ] **Step 3: Implement it**
 
 Written against the raw response rather than Nest's `@Sse()` decorator. `@Sse()` is tidier, but it gives no access to the socket's buffered length — and without that the "a slow subscriber must not retain memory" requirement cannot actually be met, only hoped for.
 
-`apps/api/src/stream/stream.controller.ts`:
+`nest-api/src/stream/stream.controller.ts`:
 
 ```ts
 import { BadRequestException, Controller, Get, Query, Req, Res } from "@nestjs/common";
 import type { Request, Response } from "express";
-import type { LogRecord } from "@iknos/contracts";
+import type { LogRecord } from "the shared response types";
 import { LogBus } from "./log-bus";
 
 /** Once this much unflushed data is queued for one client, it is not keeping
@@ -3390,7 +3454,7 @@ export class StreamController {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm vitest run apps/api/test/stream`
+Run: `pnpm test test/stream`
 Expected: PASS, 3 tests.
 
 - [ ] **Step 5: Verify a slow consumer cannot stall ingestion**
@@ -3408,7 +3472,7 @@ Expected: the count reaches 20000. `lagged` events on the subscriber are the des
 - [ ] **Step 6: Commit**
 
 ```bash
-git add apps/api
+git add nest-api
 git commit -m "feat(api): live tail over server-sent events"
 ```
 
@@ -3417,7 +3481,7 @@ git commit -m "feat(api): live tail over server-sent events"
 ## Task 20: Partition maintenance and retention
 
 **Files:**
-- Create: `apps/api/src/maintenance/partitions.ts`, `apps/api/src/maintenance/partitions.spec.ts`, `apps/api/src/maintenance/maintenance.service.ts`, `apps/api/test/maintenance.e2e-spec.ts`
+- Create: `nest-api/src/maintenance/partitions.ts`, `nest-api/src/maintenance/partitions.spec.ts`, `nest-api/src/maintenance/maintenance.service.ts`, `nest-api/test/maintenance.e2e-spec.ts`
 
 **Interfaces:**
 - Produces: `plan(existing: string[], today: Date, retentionDays: number, daysAhead: number): Plan` (pure) and `MaintenanceService` running it at boot and daily, exposing `window(): { retentionDays: number; oldestPartition: string | null; lastRunAt: Date | null }`. Task 21 serves that over HTTP.
@@ -3428,7 +3492,7 @@ The planning is pure so the date arithmetic — the part that is genuinely easy 
 
 - [ ] **Step 1: Write the failing test**
 
-`apps/api/src/maintenance/partitions.spec.ts`:
+`nest-api/src/maintenance/partitions.spec.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -3473,12 +3537,12 @@ describe("plan", () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm vitest run apps/api/src/maintenance`
+Run: `pnpm test src/maintenance`
 Expected: FAIL — cannot resolve `./partitions`.
 
 - [ ] **Step 3: Implement planning**
 
-`apps/api/src/maintenance/partitions.ts`:
+`nest-api/src/maintenance/partitions.ts`:
 
 ```ts
 export const FUTURE_PARTITION = "p_future";
@@ -3524,12 +3588,12 @@ export function plan(
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm vitest run apps/api/src/maintenance`
+Run: `pnpm test src/maintenance`
 Expected: PASS, 6 tests.
 
 - [ ] **Step 5: Implement the scheduled job**
 
-`apps/api/src/maintenance/maintenance.service.ts`, using `@nestjs/schedule`:
+`nest-api/src/maintenance/maintenance.service.ts`, using `@nestjs/schedule`:
 
 ```ts
 @Injectable()
@@ -3579,7 +3643,7 @@ export class MaintenanceService implements OnApplicationBootstrap {
 
 - [ ] **Step 6: Write the integration test**
 
-`apps/api/test/maintenance.e2e-spec.ts` — run the job twice, assert the second is a no-op, then insert a row for today and assert it still succeeds. Re-running must never duplicate a partition or leave the table unwritable.
+`nest-api/test/maintenance.e2e-spec.ts` — run the job twice, assert the second is a no-op, then insert a row for today and assert it still succeeds. Re-running must never duplicate a partition or leave the table unwritable.
 
 - [ ] **Step 7: Verify the disk claim rather than trusting it**
 
@@ -3592,7 +3656,7 @@ Expected: one row per day plus `p_future`, and sizes that go to nothing after a 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add apps/api
+git add nest-api
 git commit -m "feat(maintenance): daily partition window and retention"
 ```
 
@@ -3601,13 +3665,13 @@ git commit -m "feat(maintenance): daily partition window and retention"
 ## Task 21: Collector status and storage endpoints
 
 **Files:**
-- Create: `apps/api/src/collector/collector.controller.ts`, `apps/api/src/collector/ingest-rate.service.ts`, `apps/api/src/collector/storage.service.ts`, `apps/api/src/collector/storage.service.spec.ts`, `packages/contracts/src/collector.ts`, `apps/api/test/collector.e2e-spec.ts`
+- Create: `nest-api/src/collector/collector.controller.ts`, `nest-api/src/collector/ingest-rate.service.ts`, `nest-api/src/collector/storage.service.ts`, `nest-api/src/collector/storage.service.spec.ts`, `nest-api/src/contracts/collector.ts`, `nest-api/test/collector.e2e-spec.ts`
 
 **Interfaces:**
 - Consumes: `IngestService.stats()` (Task 16) and `MaintenanceService.window()` (Task 20).
 - Produces: `GET /api/collector/status` → `CollectorStatus` and `GET /api/collector/storage` → `Storage`. Task 30 renders both.
 
-`packages/contracts/src/collector.ts`:
+`nest-api/src/contracts/collector.ts`:
 
 ```ts
 export type CollectorStatus = {
@@ -3633,7 +3697,7 @@ This is Iknos watching itself, which is the claim the whole project rests on. A 
 
 - [ ] **Step 1: Write the failing tests**
 
-`apps/api/src/collector/storage.service.spec.ts`:
+`nest-api/src/collector/storage.service.spec.ts`:
 
 ```ts
 import { describe, expect, it, vi } from "vitest";
@@ -3682,12 +3746,12 @@ describe("lagMsFrom", () => {
 
 - [ ] **Step 2: Run them to verify they fail**
 
-Run: `pnpm vitest run apps/api/src/collector`
+Run: `pnpm test src/collector`
 Expected: FAIL — cannot resolve `./storage.service`.
 
 - [ ] **Step 3: Implement the storage read**
 
-`apps/api/src/collector/storage.service.ts`:
+`nest-api/src/collector/storage.service.ts`:
 
 ```ts
 import { statfs } from "node:fs/promises";
@@ -3774,7 +3838,7 @@ That constraint is the entire point of the route. A status endpoint that queries
 
 - [ ] **Step 6: Add the endpoint tests**
 
-`apps/api/test/collector.e2e-spec.ts` — both routes 401 without a cookie; with a session, `status` responds while the database is stopped:
+`nest-api/test/collector.e2e-spec.ts` — both routes 401 without a cookie; with a session, `status` responds while the database is stopped:
 
 ```ts
 it("still answers when every database call fails", async () => {
@@ -3811,13 +3875,13 @@ Do not skip this test. It is the single behaviour this route exists for.
 
 - [ ] **Step 7: Run the tests**
 
-Run: `pnpm vitest run apps/api/src/collector apps/api/test/collector`
+Run: `pnpm test src/collector nest-api/test/collector`
 Expected: PASS — 4 unit tests, 3 endpoint tests.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add apps/api/src/collector packages/contracts apps/api/test
+git add nest-api/src/collector nest-api/src/contracts nest-api/test
 git commit -m "feat(api): collector status and storage endpoints"
 ```
 
@@ -3826,7 +3890,7 @@ git commit -m "feat(api): collector status and storage endpoints"
 ## Task 22: Next app, Iknos tokens and primitives
 
 **Files:**
-- Create: `apps/web/` (Next App Router), `apps/web/src/styles/tokens.css`, `apps/web/src/styles/globals.css`, `apps/web/src/styles/tokens.test.ts`, `apps/web/src/lib/api.ts`, `apps/web/src/components/ui/*`
+- Create: `front/` (Next App Router), `front/src/styles/tokens.css`, `front/src/styles/globals.css`, `front/src/styles/tokens.test.ts`, `front/src/lib/api.ts`, `front/src/components/ui/*`
 
 **Interfaces:**
 - Produces: the token layer, the M1 primitives, and `apiGet<T>(path)` / `apiMutate(path, body)`. Tasks 23 through 30 use only these.
@@ -3836,14 +3900,14 @@ The design system is **not** a port of PFA's appearance. The exploration behind 
 - [ ] **Step 1: Scaffold**
 
 ```bash
-pnpm create next-app@latest apps/web --ts --app --tailwind --eslint=false --src-dir --import-alias '@/*'
+pnpm create next-app@latest front --ts --app --tailwind --eslint=false --src-dir --import-alias '@/*'
 ```
 
 Delete the generated page and CSS so nothing from the template survives.
 
 - [ ] **Step 2: Write the failing token test**
 
-`apps/web/src/styles/tokens.test.ts`:
+`front/src/styles/tokens.test.ts`:
 
 ```ts
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -3893,7 +3957,7 @@ Expected: FAIL — `tokens.css` does not exist.
 
 - [ ] **Step 4: Write the token layer**
 
-`apps/web/src/styles/tokens.css` — three surfaces, the same variable names on each. A component never names a colour; it names a role, and the surface it is mounted on decides the value.
+`front/src/styles/tokens.css` — three surfaces, the same variable names on each. A component never names a colour; it names a role, and the surface it is mounted on decides the value.
 
 ```css
 /* Chassis: the tool. Bars, rail, status line, modals, auth. Never moves. */
@@ -3967,7 +4031,7 @@ A card is a 1px border and a flat fill. It never floats on a shadow. Elevation b
 
 - [ ] **Step 6: Write the API client**
 
-`apps/web/src/lib/api.ts`:
+`front/src/lib/api.ts`:
 
 ```ts
 const API_BASE = process.env.IKNOS_API_BASE ?? "http://127.0.0.1:4310";
@@ -4010,12 +4074,12 @@ Client calls use relative paths so they reach nginx on the same origin — which
 - [ ] **Step 7: Run the tests and build**
 
 Run: `pnpm --filter web vitest run && pnpm --filter web build`
-Expected: PASS, 2 token tests; build succeeds; types resolve against `@iknos/contracts`.
+Expected: PASS, 2 token tests; build succeeds; types resolve against `the shared response types`.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add apps/web
+git add front
 git commit -m "feat(web): iknos token layer, primitives and api client"
 ```
 
@@ -4024,7 +4088,7 @@ git commit -m "feat(web): iknos token layer, primitives and api client"
 ## Task 23: The app chassis — top bar, service rail, status bar
 
 **Files:**
-- Create: `apps/web/src/app/(app)/layout.tsx`, `apps/web/src/components/chrome/top-bar.tsx`, `service-rail.tsx`, `status-bar.tsx`, `user-menu.tsx`, `views.ts`, `apps/web/src/components/chrome/views.test.ts`
+- Create: `front/src/app/(app)/layout.tsx`, `front/src/components/chrome/top-bar.tsx`, `service-rail.tsx`, `status-bar.tsx`, `user-menu.tsx`, `views.ts`, `front/src/components/chrome/views.test.ts`
 
 **Interfaces:**
 - Consumes: `apiGet` (Task 22), `GET /api/services` (Task 17).
@@ -4034,7 +4098,7 @@ The chassis ships **whole** in M1 even though most of its views arrive later. Re
 
 - [ ] **Step 1: Write the failing view-list test**
 
-`apps/web/src/components/chrome/views.test.ts`:
+`front/src/components/chrome/views.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -4072,7 +4136,7 @@ export const VIEWS: readonly View[] = [{ key: "logs", label: "logs", badge: "L" 
 
 - [ ] **Step 3: Route by service**
 
-`apps/web/src/app/(app)/[service]/[view]/page.tsx`. The selected service is a path segment, not component state: it must survive a reload, a shared link and the browser's back button, and every panel on screen is scoped to it.
+`front/src/app/(app)/[service]/[view]/page.tsx`. The selected service is a path segment, not component state: it must survive a reload, a shared link and the browser's back button, and every panel on screen is scoped to it.
 
 The layout is a server component that calls `apiGet<Service[]>("/api/services")` once and hands the list to the rail. One request for the whole rail, not one per row — the rail is on every screen and a per-row request would be paid forever.
 
@@ -4100,7 +4164,7 @@ At 1440×900 with the logs view open:
 - [ ] **Step 6: Commit**
 
 ```bash
-git add apps/web
+git add front
 git commit -m "feat(web): app chassis with service rail and status bar"
 ```
 
@@ -4109,7 +4173,7 @@ git commit -m "feat(web): app chassis with service rail and status bar"
 ## Task 24: Auth screens — login, register, recover, about
 
 **Files:**
-- Create: `apps/web/src/app/(auth)/login/page.tsx`, `register/page.tsx`, `recover/page.tsx`, `about/page.tsx`, `apps/web/src/app/(auth)/auth-shell.tsx`, `apps/web/src/lib/bootstrap.ts`, `apps/web/src/lib/bootstrap.test.ts`, `apps/web/src/middleware.ts`
+- Create: `front/src/app/(auth)/login/page.tsx`, `register/page.tsx`, `recover/page.tsx`, `about/page.tsx`, `front/src/app/(auth)/auth-shell.tsx`, `front/src/lib/bootstrap.ts`, `front/src/lib/bootstrap.test.ts`, `front/src/middleware.ts`
 
 **Interfaces:**
 - Consumes: `GET /api/auth/bootstrap` (Task 11), `POST /api/auth/login` (Task 10), `register` / `recover` / `password` (Task 11).
@@ -4119,7 +4183,7 @@ git commit -m "feat(web): app chassis with service rail and status bar"
 
 The route already exists (Task 11, Step 8b). The front side follows worldweathr's `getPublicConfig` shape — React `cache()` so a layout and a page share one request per render, a schema-validated body, and a defined answer when the API will not give one.
 
-`apps/web/src/lib/bootstrap.ts`:
+`front/src/lib/bootstrap.ts`:
 
 ```ts
 import { cache } from "react";
@@ -4156,7 +4220,7 @@ export const getBootstrap = cache(async (): Promise<{ sealed: boolean }> => {
 
 - [ ] **Step 2: Write the middleware**
 
-`apps/web/src/middleware.ts`:
+`front/src/middleware.ts`:
 
 ```ts
 import { NextResponse, type NextRequest } from "next/server";
@@ -4236,7 +4300,7 @@ Cookie flags are verified in Task 31 against the deployed environment: `Secure` 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add apps/web apps/api/src/auth
+git add front nest-api/src/auth
 git commit -m "feat(web): login, gated registration, recovery and legal screens"
 ```
 
@@ -4245,14 +4309,14 @@ git commit -m "feat(web): login, gated registration, recovery and legal screens"
 ## Task 25: Logs panel — query tokens, table and pagination
 
 **Files:**
-- Create: `apps/web/src/lib/log-query.ts`, `apps/web/src/lib/log-query.test.ts`, `apps/web/src/components/logs/log-panel.tsx`, `query-bar.tsx`, `log-table.tsx`, `log-row.tsx`
+- Create: `front/src/lib/log-query.ts`, `front/src/lib/log-query.test.ts`, `front/src/components/logs/log-panel.tsx`, `query-bar.tsx`, `log-table.tsx`, `log-row.tsx`
 
 **Interfaces:**
 - Produces: `buildLogQuery(params: URLSearchParams, now?: Date): string` — the single place UI state becomes an API query. Tasks 26, 27 and 28 all reuse it, so search, histogram and live tail cannot drift apart.
 
 - [ ] **Step 1: Write the failing query-builder test**
 
-`apps/web/src/lib/log-query.test.ts`:
+`front/src/lib/log-query.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -4307,7 +4371,7 @@ Expected: FAIL — cannot resolve `./log-query`.
 
 - [ ] **Step 3: Implement it**
 
-`apps/web/src/lib/log-query.ts`:
+`front/src/lib/log-query.ts`:
 
 ```ts
 export type Range = "15m" | "1h" | "24h" | "7d";
@@ -4367,7 +4431,7 @@ Columns `TIME · LVL · SERVICE · ROUTE · ST · MESSAGE · TRACE · DUR` — a
 
 Expanding a row shows the raw ECS JSON on the left, the stack (for errors) or process context (otherwise) on the right, and three actions: `⌥⏎ trace`, `⌘I issue`, `⌘C copy NDJSON`. `⌘I` is inert until `IKN-14` exists and is therefore **not rendered yet** — the same rule as the view list.
 
-`LogPage` and `LogRow` come from `@iknos/contracts`, never redeclared by hand.
+`LogPage` and `LogRow` come from `the shared response types`, never redeclared by hand.
 
 - [ ] **Step 7: Wire up pagination**
 
@@ -4380,7 +4444,7 @@ With ingestion running: every filter combines and survives a reload; a switched-
 - [ ] **Step 9: Commit**
 
 ```bash
-git add apps/web
+git add front
 git commit -m "feat(web): logs panel with filter tokens and cursor pagination"
 ```
 
@@ -4388,7 +4452,7 @@ git commit -m "feat(web): logs panel with filter tokens and cursor pagination"
 ## Task 26: Volume histogram
 
 **Files:**
-- Create: `apps/web/src/components/logs/histogram.tsx`, `apps/web/src/lib/anomaly.ts`, `apps/web/src/lib/anomaly.test.ts`
+- Create: `front/src/components/logs/histogram.tsx`, `front/src/lib/anomaly.ts`, `front/src/lib/anomaly.test.ts`
 
 **Interfaces:**
 - Consumes: `GET /api/logs/histogram` (Task 18) and `buildLogQuery` (Task 25).
@@ -4398,7 +4462,7 @@ This is what turns the panel from a list you can read into a tool you can diagno
 
 - [ ] **Step 1: Write the failing anomaly test**
 
-`apps/web/src/lib/anomaly.test.ts`:
+`front/src/lib/anomaly.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -4441,10 +4505,10 @@ Expected: FAIL — cannot resolve `./anomaly`.
 
 - [ ] **Step 3: Implement it**
 
-`apps/web/src/lib/anomaly.ts`:
+`front/src/lib/anomaly.ts`:
 
 ```ts
-import type { Bucket } from "@iknos/contracts";
+import type { Bucket } from "the shared response types";
 
 const FLOOR = 3;
 
@@ -4499,7 +4563,7 @@ Generate a burst of errors in a monitored app. The spike appears in the right bu
 - [ ] **Step 7: Commit**
 
 ```bash
-git add apps/web
+git add front
 git commit -m "feat(web): log volume histogram with anomaly marker"
 ```
 
@@ -4508,7 +4572,7 @@ git commit -m "feat(web): log volume histogram with anomaly marker"
 ## Task 27: Live tail
 
 **Files:**
-- Create: `apps/web/src/hooks/use-log-stream.ts`, `apps/web/src/components/logs/live-toggle.tsx`
+- Create: `front/src/hooks/use-log-stream.ts`, `front/src/components/logs/live-toggle.tsx`
 
 **Interfaces:**
 - Consumes: `GET /api/logs/stream` (Task 19), `buildLogQuery` (Task 25).
@@ -4516,13 +4580,13 @@ git commit -m "feat(web): log volume histogram with anomaly marker"
 
 - [ ] **Step 1: Write the hook**
 
-`apps/web/src/hooks/use-log-stream.ts`:
+`front/src/hooks/use-log-stream.ts`:
 
 ```ts
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { LogRow } from "@iknos/contracts";
+import type { LogRow } from "the shared response types";
 
 /** A tab left open overnight must not accumulate a gigabyte of rows. */
 const MAX_BUFFERED_ROWS = 2000;
@@ -4585,7 +4649,7 @@ Render a visible marker whenever `gaps` increases, and a connection indicator dr
 - [ ] **Step 4: Commit**
 
 ```bash
-git add apps/web
+git add front
 git commit -m "feat(web): live tail with pause-on-scroll and gap markers"
 ```
 
@@ -4594,7 +4658,7 @@ git commit -m "feat(web): live tail with pause-on-scroll and gap markers"
 ## Task 28: Trace timeline modal
 
 **Files:**
-- Create: `apps/web/src/components/logs/trace-modal.tsx`
+- Create: `front/src/components/logs/trace-modal.tsx`
 
 **Interfaces:**
 - Consumes: `GET /api/logs/trace/:traceId` (Task 18) and the modal shell (Task 22).
@@ -4622,7 +4686,7 @@ A row with no `duration_ms` gets no bar rather than a zero-width one — absent 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add apps/web
+git add front
 git commit -m "feat(web): request timeline for a trace id"
 ```
 
@@ -4631,8 +4695,8 @@ git commit -m "feat(web): request timeline for a trace id"
 ## Task 29: Command palette, keyboard navigation and the status bar
 
 **Files:**
-- Create: `apps/api/src/search/search.controller.ts`, `apps/web/src/hooks/use-shortcuts.ts`, `apps/web/src/hooks/use-shortcuts.test.ts`, `apps/web/src/components/chrome/palette.tsx`
-- Modify: `apps/web/src/components/chrome/status-bar.tsx`
+- Create: `nest-api/src/search/search.controller.ts`, `front/src/hooks/use-shortcuts.ts`, `front/src/hooks/use-shortcuts.test.ts`, `front/src/components/chrome/palette.tsx`
+- Modify: `front/src/components/chrome/status-bar.tsx`
 
 **Interfaces:**
 - Produces: `GET /api/search?q=&from=&to=`, the global key map, and the ⌘K palette. Every later view inherits all three.
@@ -4641,7 +4705,7 @@ The status bar advertises these permanently. That is what separates a dashboard 
 
 - [ ] **Step 1: Write the failing shortcut tests**
 
-`apps/web/src/hooks/use-shortcuts.test.ts`, in jsdom:
+`front/src/hooks/use-shortcuts.test.ts`, in jsdom:
 
 ```ts
 import { fireEvent, renderHook } from "@testing-library/react";
@@ -4719,7 +4783,7 @@ The selection is clamped whenever the filters change: a filter that empties the 
 
 - [ ] **Step 4: Write the search route**
 
-`apps/api/src/search/search.controller.ts` — one route, several sources, five results each:
+`nest-api/src/search/search.controller.ts` — one route, several sources, five results each:
 
 ```ts
 const PER_TYPE = 5;
@@ -4757,7 +4821,7 @@ The query time is the point: it is the only place a query that has quietly becom
 
 - [ ] **Step 7: Run the tests and check the whole path**
 
-Run: `pnpm --filter web vitest run src/hooks && pnpm vitest run apps/api/src/search`
+Run: `pnpm --filter web vitest run src/hooks && pnpm test src/search`
 Expected: PASS, 4 shortcut tests plus the search tests.
 
 Then, without touching the mouse: log in, switch service from the palette, filter, move the selection with `j`/`k`, expand a row, open its trace, close it, and log out with `⌘⇧L`.
@@ -4771,7 +4835,7 @@ Expected: `HTTP/1.1 401 Unauthorized`.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add apps/web apps/api/src/search
+git add front nest-api/src/search
 git commit -m "feat: command palette, keyboard navigation and status bar"
 ```
 
@@ -4780,7 +4844,7 @@ git commit -m "feat: command palette, keyboard navigation and status bar"
 ## Task 30: Collector chrome — lag pill, ingest card, storage panel
 
 **Files:**
-- Create: `apps/web/src/components/chrome/collector-pill.tsx`, `ingest-card.tsx`, `apps/web/src/components/panels/storage-panel.tsx`
+- Create: `front/src/components/chrome/collector-pill.tsx`, `ingest-card.tsx`, `front/src/components/panels/storage-panel.tsx`
 
 **Interfaces:**
 - Consumes: `GET /api/collector/status` and `GET /api/collector/storage` (Task 21).
@@ -4818,7 +4882,7 @@ The panel lives in the alerts view, which does not exist until `IKN-15`. Until t
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/web
+git add front
 git commit -m "feat(web): collector lag, ingest rate and storage panel"
 ```
 
@@ -4827,7 +4891,7 @@ git commit -m "feat(web): collector lag, ingest rate and storage panel"
 ## Task 31: Deployment
 
 **Files:**
-- Create: `deploy/ecosystem.config.js`, `deploy/deploy.sh`
+- Create: `nest-api/ecosystem.config.example.js`, `nest-api/deploy-api.sh`, `front/ecosystem.config.example.js`, `front/deploy-front.sh`
 - Modify: `deploy/nginx/iknos.conf`, `README.md`, `DEPLOY.md`
 - Delete: `mock/`, `deploy/deploy-mock.sh`
 
@@ -4835,7 +4899,7 @@ git commit -m "feat(web): collector lag, ingest rate and storage panel"
 - Consumes: the subdomain, certificate and vhost already installed on ks-b (2026-08-15).
 - Produces: a deployed Iknos on its subdomain, and a one-command deploy.
 
-Both processes are Node, so this is a copy-and-adapt of PFA's deployment. Build on ks-b, same release-directory scheme, no second machine.
+Both processes are Node, so this is a copy-and-adapt of PFA's deployment — two independent halves, each with its own ecosystem file and its own deploy script, exactly as Zeus, PFA and spira are laid out. Build on ks-b, same release-directory scheme, no second machine.
 
 **Half of this task is already done.** `iknos.1991computer.com` resolves, has its own certificate and a vhost in `/etc/nginx/conf.d/iknos.conf`, and serves a static mock. What is missing is the two PM2 processes and the deploy script — so this task *edits* the vhost rather than writing one, and the ports below are the ones already reserved, not placeholders:
 
@@ -4850,38 +4914,83 @@ every value in it — the two ports, the two pm2 names, `/health` outside `/api`
 for both processes — is something this task has to match, or the Zeus dashboard reports drift. The
 two rows read *not running* in red until Step 5, which is correct and not something to fix.
 
-- [ ] **Step 1: Write the PM2 ecosystem file**
+- [ ] **Step 1: Write the PM2 ecosystem files — two of them**
 
-`deploy/ecosystem.config.js`:
+Iknos deploys the way its siblings do, not the way trekker does. Trekker's own `deploy-api.sh`
+spells out the difference:
+
+> The sibling apps ship one package because each of their halves is an independent pnpm root
+> with its own lockfile. Trekker is a single workspace…
+
+`nest-api/` and `front/` are independent pnpm roots here, each with its own lockfile, so each
+ships and restarts on its own. That means **two ecosystem files and two deploy scripts**, the
+shape Zeus, PFA and spira all have — not one file naming both processes.
+
+`nest-api/ecosystem.config.example.js`, committed, with `ecosystem.config.js` gitignored beside
+it because it holds secrets:
 
 ```js
+const { join } = require("node:path");
+
 module.exports = {
   apps: [
     {
       name: "iknos-api",
-      script: "dist/main.js",
-      cwd: "/var/www/iknos/current/apps/api",
-      env_file: "/var/www/iknos/shared/.env",
+      cwd: join(__dirname, "current"),
+      // dist/src, not dist: the Prisma client generates to ../generated, so tsc's root covers
+      // the whole package and the layout is mirrored one level down.
+      script: "dist/src/main.js",
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
       // The Nest side drains on SIGTERM; give it room before SIGKILL.
       kill_timeout: 10000,
       max_restarts: 10,
-    },
-    {
-      name: "iknos-web",
-      script: "pnpm",
-      args: "start",
-      cwd: "/var/www/iknos/current/apps/web",
-      env: { PORT: "3006", IKNOS_API_BASE: "http://127.0.0.1:6900" },
+      env_production: {
+        NODE_ENV: "production",
+        // Loopback only — nginx is the single public entrance. Node with no bind host listens
+        // on every interface.
+        HOST: "127.0.0.1",
+        // From Zeus's registry: block 6900–6999, and the API sits on the block's first port.
+        IKNOS_PORT: 6900,
+        DATABASE_URL: "mysql://iknos:REPLACE_ME@127.0.0.1:3306/iknos",
+        REDIS_URL: "redis://127.0.0.1:6379",
+        IKNOS_LOG_LEVEL: "info",
+        IKNOS_COOKIE_SECRET: "REPLACE_ME",
+        IKNOS_RETENTION_DAYS: 14,
+        IKNOS_PM2_LOG_GLOB: "/home/debian/.pm2/logs/*.log",
+        // SHADOW_DATABASE_URL does NOT belong here — it exists only for `migrate dev`.
+      },
     },
   ],
 };
 ```
 
-The API's own port is not in this file: it comes from `IKNOS_PORT` in the shared `.env` (Step 4), which must read `6900`. `4310` is the local development default in `.env.example` and stays that way — dev runs on the laptop, production on ks-b, and pinning them together buys nothing.
+`front/ecosystem.config.example.js` is the matching pair for `iknos-web` on `3006`, with
+`IKNOS_API_BASE: "http://127.0.0.1:6900"`.
 
-These two names are what the service rail displays, because the rail shows what PM2 reports. The mockup labels them `iknos-collector` and `iknos-ui`; the PM2 names win, and `Service.name` exists if a friendlier label is ever wanted.
+`IKNOS_PORT` is `6900` here and `4310` in local development. Dev runs on the laptop and
+production on ks-b; pinning them together buys nothing.
 
-They are also the names in Zeus's port registry, and the registry rejects an app slug it does not know. Renaming either here without updating the registry row is how a service silently stops being tracked.
+The two PM2 names are what the service rail displays, because the rail shows what PM2 reports.
+The mockup labels them `iknos-collector` and `iknos-ui`; the PM2 names win, and `Service.name`
+exists if a friendlier label is ever wanted.
+
+⚠️ **Zeus's registry has to be corrected here.** Both iknos rows were registered on 2026-08-15
+with a single shared `ecosystemPath` of `/var/www/iknos/ecosystem.config.js`, which was true of
+the layout at the time and is not true of this one. Update them to
+`/var/www/iknos/api/ecosystem.config.js` and `/var/www/iknos/front/ecosystem.config.js`, or the
+dashboard reports drift against paths that do not exist.
+
+- [ ] **Step 1b: Write the two deploy scripts**
+
+`nest-api/deploy-api.sh` and `front/deploy-front.sh`, modelled on Zeus's and PFA's: rsync into a
+fresh timestamped release directory, atomic switch keeping the previous release as a backup,
+`pnpm install --frozen-lockfile` and build **on the server**, `pm2 reload`, automatic rollback if
+anything fails after the switch.
+
+**Neither script ever migrates.** `prisma migrate deploy` is run by hand over SSH, same rule as
+PFA and trekker.
 
 - [ ] **Step 2: Take the vhost out of mock phase**
 
@@ -4922,7 +5031,7 @@ Drop the mock's two rows from `README.md`'s documentation table and the mock sec
 
 - [ ] **Step 3: Write the deploy script**
 
-`deploy/deploy.sh` — pull, `pnpm install --frozen-lockfile`, `pnpm -r build`, symlink the new release to `current`, `pm2 reload` both processes. Model it on PFA's script.
+Covered by Step 1b — `nest-api/deploy-api.sh` and `front/deploy-front.sh`, one per half. Each writes its own release marker:
 
 It also writes the release marker, which is three lines and the difference between an issue that says `v2.19.0` and one that says `—`:
 
@@ -4935,7 +5044,7 @@ printf 'IKNOS_RELEASE=%s\nIKNOS_COMMIT=%s\n' "$VERSION" "$GIT_SHA" > "$RELEASE_D
 **The script never migrates.** Migrations are manual:
 
 ```bash
-ssh ks-b 'cd /var/www/iknos/current && pnpm prisma migrate deploy'
+ssh ks-b 'cd /var/www/iknos/api/current && pnpm prisma migrate deploy'
 ```
 
 - [ ] **Step 4: Write the environment file**
@@ -4952,9 +5061,12 @@ ssh ks-b 'cd /var/www/iknos/current && pnpm prisma migrate deploy'
 ssh ks-b 'mkdir -p /var/www/iknos/shared && chmod 700 /var/www/iknos/shared'
 # Write /var/www/iknos/shared/.env with the real secrets, then:
 ssh ks-b 'chmod 600 /var/www/iknos/shared/.env'
-./deploy/deploy.sh
-ssh ks-b 'cd /var/www/iknos/current && pnpm prisma migrate deploy && pnpm seed:user you@yourdomain'
-ssh ks-b 'pm2 start deploy/ecosystem.config.js && pm2 save && pm2 startup'
+./nest-api/deploy-api.sh
+./front/deploy-front.sh
+ssh ks-b 'cd /var/www/iknos/api/current && pnpm prisma migrate deploy && pnpm seed:user you@yourdomain'
+ssh ks-b 'pm2 start /var/www/iknos/api/ecosystem.config.js --env production'
+ssh ks-b 'pm2 start /var/www/iknos/front/ecosystem.config.js --env production'
+ssh ks-b 'pm2 save && pm2 startup'
 ```
 
 `seed:user` will prompt for the recovery passphrase. Answer it, and write the passphrase down somewhere that is not this machine — it is the only way back into the only account.
@@ -5028,7 +5140,7 @@ git commit -m "feat(deploy): pm2, nginx and release-directory deployment"
 
 **Borrowed rather than invented.** The auth shape in Tasks 10, 11 and 24 is Zeus's, read from `~/dev/Zeus/nest-api/src/auth/`: the `bootstrap` / `sealed` vocabulary, first-run registration sealed by a `UNIQUE` column instead of an environment flag, a recovery passphrase hashed independently of the password, one identical refusal across every recovery failure with the rate limit as the deliberate exception, and register and recover both opening no session. The front's `getBootstrap` is worldweathr's `getPublicConfig` — React `cache()`, schema-validated body, a defined answer when the API will not give one, and the decision taken on the server so no submittable form is ever briefly on screen. Neither was re-derived here, and neither should be re-derived when reading this.
 
-**Deliberate deferrals**, noted rather than dropped: line and bar dataviz primitives are not built in Task 22 — M1 has no charts beyond the sparkline and the histogram's own bars, and they arrive with `IKN-13` and `IKN-23`; `apps/web` is scaffolded as a placeholder in Task 1 before being built properly in Task 22; the `⌘I issue` action and the active-alert counter are wired but not rendered until `IKN-14` and `IKN-15` exist; the storage panel lives in the rail until the alerts view gives it its intended home.
+**Deliberate deferrals**, noted rather than dropped: line and bar dataviz primitives are not built in Task 22 — M1 has no charts beyond the sparkline and the histogram's own bars, and they arrive with `IKN-13` and `IKN-23`; `front` is scaffolded as a placeholder in Task 1 before being built properly in Task 22; the `⌘I issue` action and the active-alert counter are wired but not rendered until `IKN-14` and `IKN-15` exist; the storage panel lives in the rail until the alerts view gives it its intended home.
 
 **Values to fill in from your environment**, each called out at the step that needs it: the real `DUMMY_HASH` in Task 10 and `DUMMY_PASSPHRASE_HASH` in Task 11, and the known trace id and row count for the fixture window in Task 18. All are environment facts, not undecided design.
 

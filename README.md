@@ -77,6 +77,13 @@ retained mockup.
 | Web | Next App Router, Tailwind v4, `nuqs` for URL state |
 | Deployment | Two PM2 processes behind nginx, built on the target host — `iknos-web` on 3006, `iknos-api` on 6900 |
 
+The repository is laid out like the rest of the fleet: `nest-api/` and `front/` side by side,
+each an independent pnpm root with its own lockfile, Prisma inside the API, and one deploy
+script per half. Same shape as Zeus, PFA and spira, so a habit learned in one of them transfers
+without translation. There is deliberately no root workspace and no shared package — the front
+restates the response types rather than importing them, which is the call trekker made and
+documents in the files that do it.
+
 Auth is single-account and self-sealing: registration is open while the user table is empty
 and closed forever after, enforced by a `UNIQUE` column rather than an environment flag
 someone has to remember to set. There is no mail server on the host, so recovery is a
