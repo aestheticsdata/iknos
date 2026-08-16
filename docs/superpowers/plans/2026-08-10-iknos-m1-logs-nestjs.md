@@ -1234,7 +1234,8 @@ git commit -m "feat(auth): redis session store on express-session, the fleet's s
 ## Task 9: CSRF and the global session guard
 
 **Files:**
-- Create: `nest-api/src/auth/csrf.util.ts`, `nest-api/src/auth/csrf.util.spec.ts`, `nest-api/src/auth/public.decorator.ts`, `nest-api/src/auth/session.guard.ts`
+- Create: `nest-api/src/auth/csrf.util.ts`, `nest-api/src/auth/csrf.util.spec.ts`, `nest-api/src/auth/public.decorator.ts`, `nest-api/src/auth/session.guard.ts`, `nest-api/test/session-guard.e2e-spec.ts`
+- Modify: `nest-api/src/app.module.ts` (`APP_GUARD`), `nest-api/src/health.controller.ts` (`@Public()`), `nest-api/test/session.e2e-spec.ts` (`@Public()` on its probe controller)
 
 **Interfaces:**
 - Consumes: `req.session` as populated by Task 8's middleware.
@@ -1364,11 +1365,37 @@ Global, never per-controller: a controller added six months from now is protecte
 
 No `cookie-parser`: `express-session` parses and verifies its own signed cookie. Adding one would give two libraries an opinion about `iknos.sid` and neither the authority.
 
-- [ ] **Step 5: Verify the default-deny property**
+- [ ] **Step 5: Exempt the routes that must answer without a session**
 
-Add a temporary controller with no decorator, confirm `curl` gets 401, then delete it. Better still, keep it as a test in Task 10's e2e suite so the property stays enforced.
+`@Public()` goes on `HealthController` — Zeus's registry probes `/health` with no cookie, and a 401 there reads as the whole app being down.
 
-- [ ] **Step 6: Commit**
+It also goes on the probe controller inside `test/session.e2e-spec.ts`. Those assertions are about the middleware, not the guard; without the exemption the guard answers 401 before any of them gets to look at a cookie, and Task 8's suite goes red for a reason that has nothing to do with Task 8.
+
+- [ ] **Step 6: Verify the default-deny property, permanently**
+
+Not a temporary controller deleted afterwards — a suite that stays. `nest-api/test/session-guard.e2e-spec.ts` registers a `ProtectedController` **carrying no decorator of any kind**, which is precisely the controller a future task adds without thinking about auth. It asserts:
+
+1. anonymous `GET` on the undecorated controller → **401**;
+2. anonymous `POST` → **401**, not 403 — there is no session to hold a token, so "your token was wrong" is the wrong answer;
+3. a forged cookie → **401** (the signature never verifies, so no session is loaded);
+4. `/health` → **200** with no session, and the `@Public()` login route likewise;
+5. with a session, a safe verb needs no token;
+6. with a session, an unsafe verb with **no** token → 403, with a **wrong** token of the same length → 403, with the right one → 201;
+7. `DELETE` is checked the same as `POST` — the rule is "every unsafe verb", not "POST".
+
+Run: `pnpm test`
+Expected: PASS, 43 tests across 8 files.
+
+Then confirm the real process still serves the one route the internet can reach:
+
+```bash
+pnpm build && node dist/src/main.js
+curl -si http://127.0.0.1:4310/health | head -3
+```
+
+Expected: `200`, `{"status":"ok"}`, still no `Set-Cookie`.
+
+- [ ] **Step 7: Commit**
 
 ```bash
 git add nest-api/src/auth
