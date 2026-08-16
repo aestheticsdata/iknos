@@ -2,21 +2,23 @@ import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../generated/prisma/client";
+import { hashPassphrase, MIN_PASSPHRASE, MIN_PASSWORD } from "../src/auth/passphrase.util";
 import { hashPassword } from "../src/auth/password.util";
 
 /**
  * Creates **the** account. Not **an** account.
  *
  * `app_user.singleton` is UNIQUE, so a second run fails in the database rather than on a check
- * anyone could forget. That is also why there is no `POST /users`: the only way in is standing
- * at the machine, and until IKN-21 adds first-run registration it is the only way at all.
+ * anyone could forget. That is also why there is no `POST /users`.
+ *
+ * `POST /api/auth/register` covers the same ground from the browser and seals itself the same
+ * way; this exists for provisioning over SSH, and for the case where the signup screen is not
+ * reachable yet.
  *
  * Usage: `pnpm seed:user you@example.com`
  */
 
 process.loadEnvFile();
-
-const MIN_PASSWORD = 12;
 
 /**
  * Reads without echoing.
@@ -83,6 +85,26 @@ async function main(): Promise<void> {
     fail("The two entries did not match.");
   }
 
+  // Optional here and required by POST /api/auth/register. Someone provisioning over SSH may not
+  // have settled on a phrase yet, and refusing to create the account over it would be worse than
+  // creating one that needs the database to recover.
+  stdout.write(`\n  Recovery passphrase — the only way back in if the password is lost.\n`);
+  stdout.write(`  ${MIN_PASSPHRASE}+ characters. Leave empty to skip.\n\n`);
+
+  const passphrase = await promptHidden("  Passphrase: ");
+  if (passphrase.length > 0) {
+    if (passphrase.length < MIN_PASSPHRASE) {
+      fail(`Recovery passphrase must be at least ${MIN_PASSPHRASE} characters.`);
+    }
+    if ((await promptHidden("  Confirm:    ")) !== passphrase) {
+      fail("The two entries did not match.");
+    }
+  } else {
+    // Loud, because the consequence only shows up on the day it matters. ks-b has no mail
+    // server, so there is no reset link standing behind this choice.
+    stdout.write("\n  ⚠ No passphrase set. This account will only be recoverable in the database.\n");
+  }
+
   const dsn = new URL(process.env.DATABASE_URL ?? "");
   const prisma = new PrismaClient({
     adapter: new PrismaMariaDb({
@@ -95,8 +117,12 @@ async function main(): Promise<void> {
   });
 
   try {
+    const [passwordHash, recoveryPassphraseHash] = await Promise.all([
+      hashPassword(password),
+      passphrase ? hashPassphrase(passphrase) : Promise.resolve(null),
+    ]);
     const user = await prisma.appUser.create({
-      data: { email, passwordHash: await hashPassword(password) },
+      data: { email, passwordHash, recoveryPassphraseHash },
     });
     console.log(`\n  Account created: ${user.email} (id ${user.id})\n`);
   } catch (error) {

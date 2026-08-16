@@ -20,5 +20,14 @@ export default defineConfig({
     // No tests until Task 4, and an empty run must not be a red build — otherwise the first
     // `pnpm test` teaches everyone to ignore its exit code.
     passWithNoTests: true,
+    // One file at a time, against one MySQL and one Redis.
+    //
+    // `app_user.singleton` is UNIQUE: two suites cannot hold an account each, so a parallel run
+    // has them deleting each other's rows and failing with 401s and 409s that look like real
+    // bugs. The rate-limit counters live in a shared keyspace and collide the same way.
+    //
+    // The honest fix would be a database per worker; that is not worth its weight for a suite
+    // this size. This costs about twenty seconds and removes a whole class of phantom failure.
+    fileParallelism: false,
   },
 });
