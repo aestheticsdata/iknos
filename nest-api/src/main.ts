@@ -5,7 +5,11 @@ import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { Logger } from "nestjs-pino";
 import { AppModule } from "./app.module";
+import { buildSessionMiddleware } from "./auth/session.middleware";
 import { parseEnv } from "./config/env.validation";
+import { RedisService } from "./redis/redis.service";
+
+import type { Application } from "express";
 
 async function bootstrap() {
   // bufferLogs holds Nest's startup lines until the pino logger is attached, so the first thing
@@ -19,7 +23,17 @@ async function bootstrap() {
 
   // Already validated by ConfigModule at module load; parsed again here only to get the typed
   // value rather than a string off process.env.
-  const { port } = parseEnv({ ...process.env });
+  const { port, cookieSecret } = parseEnv({ ...process.env });
+
+  // Behind nginx. Without this, req.ip is the proxy — so the login rate limit of Task 10 would
+  // count the whole internet as one client — and a Secure cookie is never set.
+  (app.getHttpAdapter().getInstance() as Application).set("trust proxy", 1);
+
+  // Registered before listen and therefore ahead of every route, including /health, which
+  // stores nothing and so still costs no Redis entry.
+  app.use(
+    buildSessionMiddleware(app.get(RedisService).getClient(), cookieSecret, process.env.NODE_ENV === "production"),
+  );
 
   // Loopback only, never 0.0.0.0 — nginx is the sole thing that should reach this port, and
   // Node with no bind host listens on every interface.

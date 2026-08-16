@@ -7,6 +7,7 @@ import { logger } from "./common/logger";
 import { validate } from "./config/env.validation";
 import { HealthController } from "./health.controller";
 import { PrismaModule } from "./prisma/prisma.module";
+import { RedisModule } from "./redis/redis.module";
 
 /**
  * One Nest app hosts both the HTTP API and the collector — one PM2 process, one Prisma client,
@@ -35,6 +36,7 @@ import { PrismaModule } from "./prisma/prisma.module";
       },
     }),
     PrismaModule,
+    RedisModule,
   ],
   controllers: [HealthController],
   providers: [

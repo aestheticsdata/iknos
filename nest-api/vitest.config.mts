@@ -13,7 +13,7 @@ export default defineConfig({
     // class-validator and class-transformer read their decorators back through the metadata
     // reflection API. Nest's own bootstrap imports this; unit tests never reach bootstrap, so
     // without it every validator silently sees an empty rule set and validation always passes.
-    setupFiles: ["reflect-metadata"],
+    setupFiles: ["reflect-metadata", "./test/setup-env.ts"],
     // `*spec.ts`, not `*.spec.ts`: the e2e files follow Nest's `*.e2e-spec.ts` convention, which
     // a dot-anchored glob silently skips — the run then reports success having executed nothing.
     include: ["src/**/*spec.ts", "test/**/*spec.ts"],
