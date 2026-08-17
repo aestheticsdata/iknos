@@ -1,0 +1,63 @@
+/**
+ * The palette — §3.2 of the UI design doc.
+ *
+ * **Two separate ramps, not one ramp with a dark mode.** A level colour that reads on the chassis
+ * (`#10151C`) is unreadable on the work surface (`#BFCDD4`), so every state exists twice and the
+ * component picks by the surface it sits on. That is why these are `chassis-*` and `work-*` rather
+ * than a single set flipped by a `.dark` class: both surfaces are on screen at the same time.
+ *
+ * Green is the **identity**, not "everything is fine" — dropping the navy direction is the whole
+ * reason the exploration happened. No chart may use `accent` as a neutral series colour.
+ */
+@theme {
+  /* ── Chassis (dark) — bars, rail, status bar, modals, auth screens ─────────────────────────── */
+  --color-chassis-surface: #171e27;
+  --color-chassis-inset: #0c1117;
+  --color-chassis-deep: #10151c;
+  --color-chassis-raised: #1e2733;
+  --color-chassis-border: #27313d;
+  --color-chassis-border-strong: #33404e;
+  --color-chassis-border-focus: #4a5f72;
+  --color-chassis-text: #cbd8d0;
+  --color-chassis-text-bright: #dfe9e4;
+  --color-chassis-text-muted: #8fa99a;
+  --color-chassis-text-dim: #5e7286;
+  --color-chassis-accent: #86b99a;
+  --color-chassis-warn: #e0ae55;
+  --color-chassis-error: #e4736b;
+  --color-chassis-info: #7fa8c4;
+  --color-chassis-error-bg: #22191c;
+
+  /* ── Work surface (light) — cards, tables, signal tiles, route lists ───────────────────────── */
+  --color-work-surface: #bfcdd4;
+  --color-work-inset: #aebfc7;
+  --color-work-border: #93a8b3;
+  --color-work-border-strong: #a3b6bf;
+  --color-work-text: #131e24;
+  --color-work-text-muted: #3f535f;
+  --color-work-text-dim: #556a76;
+  --color-work-accent: #3c6b52;
+  --color-work-warn: #8a6118;
+  --color-work-error: #8e2f2a;
+  --color-work-info: #4e7b96;
+  --color-work-error-bg: #c4a9a6;
+
+  /**
+   * The histogram's own three. Deliberately not the state colours: these are read as areas of
+   * fill twenty pixels tall, where the chassis ramp is tuned for text.
+   */
+  --color-histogram-error: #c1504a;
+  --color-histogram-warn: #c89a3e;
+  --color-histogram-info: #3e5a50;
+}
+
+/**
+ * The accent is themable in the mockup — green, blue, `#C2D4CB`, amber. Green ships; the
+ * indirection is kept because it costs one line and buys the other three for free.
+ *
+ * Anything that means *brand* points here. Anything that means *ok* points at
+ * `--color-chassis-accent` directly, so a future re-theme cannot accidentally recolour "healthy".
+ */
+@theme {
+  --color-brand: var(--color-chassis-accent);
+}

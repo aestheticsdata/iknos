@@ -1,0 +1,17 @@
+/**
+ * Elevation — §3.1, and it is a rule about *what*, not about how much.
+ *
+ * A card never floats: on the work surface it is a 1px border and a flat fill, full stop. Shadow
+ * is reserved for things that genuinely overlay something else — modals, the user menu, toasts,
+ * and the auth card, which sits over the wordmark and the two washes.
+ *
+ * There are therefore only two, and no `sm`. A third step would only ever be used to make a card
+ * float a little.
+ */
+@theme {
+  /* The auth card and modals — sitting over a backdrop that is still visible around them. */
+  --shadow-overlay: 0 24px 70px rgb(0 0 0 / 0.55);
+
+  /* Menus and toasts — smaller things, closer to the surface they cover. */
+  --shadow-menu: 0 12px 32px rgb(0 0 0 / 0.45);
+}

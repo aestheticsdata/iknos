@@ -1,0 +1,70 @@
+/**
+ * Three animations, all short — §3.4. Nothing else in Iknos moves.
+ *
+ * This is a screen people stare at while something is wrong. Motion that is not reporting a change
+ * in the data is noise, and noise on a monitoring tool costs attention exactly when it is scarcest.
+ */
+@theme {
+  /* The liveness dots: the collector's, the auth chrome bar's, the rail's per-service dots. */
+  --animate-pulse-live: ikPulse 2.4s ease-in-out infinite;
+
+  /* Things that appear in place — modals, the expanded log row. */
+  --animate-in: ikIn 0.16s cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  /* Things that cover — overlays, backdrops. */
+  --animate-fade: ikFade 0.14s ease-out;
+
+  @keyframes ikPulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  @keyframes ikIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes ikFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/**
+ * Everything above is off for anyone who asked for it to be. The liveness dot is the one loss that
+ * matters — it is how you tell a live page from a frozen one — so it keeps a static presence
+ * rather than disappearing, and the status bar says the same thing in words anyway.
+ */
+/**
+ * The three `!important`s below are the mechanism, not a shortcut around one: this rule has to
+ * outrank the utility classes that set the animation in the first place, and Tailwind's are more
+ * specific than a bare universal selector. Without them the rule is inert and the preference is
+ * silently ignored — which is the one outcome an accessibility override may not have.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: see above */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: see above */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: see above */
+    transition-duration: 0.01ms !important;
+  }
+}

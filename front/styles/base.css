@@ -1,0 +1,57 @@
+@layer base {
+  /**
+   * The document is chassis-dark. Every screen shipped so far — the four auth pages — is chassis,
+   * and the work surface arrives as light *cards on top of it*, never as a light page. Painting
+   * the root anything else would mean every screen starting by covering it up.
+   */
+  html {
+    background-color: var(--color-chassis-deep);
+    color: var(--color-chassis-text);
+    font-family: var(--font-mono);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+  }
+
+  /**
+   * Focus is visible, always, and on the chassis it is the accent.
+   *
+   * The auth screens are reachable by keyboard alone and one of them is the only way into the
+   * product; a focus ring removed for looks there is a lockout. `:focus-visible` rather than
+   * `:focus` so a mouse click on a button does not leave a ring behind.
+   */
+  :focus-visible {
+    outline: 2px solid var(--color-chassis-accent);
+    outline-offset: 2px;
+  }
+
+  /**
+   * Inputs inherit the family and the size. Left alone, a monospace page still gets the browser's
+   * own 13px sans in every field, which on a screen this dense reads as a different product.
+   */
+  input,
+  button,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  /**
+   * Chrome paints autofilled fields with an opaque near-white it will not let go of through
+   * `background-color` — only through the inset shadow trick. Without this, filling the sign-in
+   * form from a password manager turns two dark inputs into two white bars.
+   */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-chassis-text);
+    -webkit-box-shadow: 0 0 0 1000px var(--color-chassis-inset) inset;
+    caret-color: var(--color-chassis-text);
+    transition: background-color 9999s ease-out 0s;
+  }
+}

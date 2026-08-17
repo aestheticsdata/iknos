@@ -1,0 +1,50 @@
+/**
+ * Typography — §3.3.
+ *
+ * Two families for two jobs. **JetBrains Mono** for anything that is data or chrome: log rows,
+ * tables, metrics, chips, the status bar, and every auth screen. **IBM Plex Sans** for card titles
+ * and prose. The mockup also loads IBM Plex Mono and never uses it; it is not loaded here, because
+ * a third family is page weight with nothing on the other side of it.
+ *
+ * The families arrive as CSS variables from `next/font` — self-hosted at build time, so no request
+ * ever leaves the box to a font CDN. A self-hosted monitor that phones Google on its login screen
+ * would be a poor advertisement for itself.
+ *
+ * The scale runs 9px to 25px in eight steps and is denser than PFA on purpose: this is a tool read
+ * in long columns, not a page browsed. Half-pixel steps look absurd written down and are not — at
+ * 10.5px, the next round size up is 5% taller, which across forty log rows is a row and a half of
+ * lost screen.
+ */
+@theme {
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", monospace;
+  --font-sans: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Letterspaced kickers — `IDENTITY · EMAIL`, the rail's section headers. Always uppercase. */
+  --text-kicker: 0.5625rem; /* 9px */
+
+  /* Hints and fine print under a field. */
+  --text-micro: 0.625rem; /* 10px */
+
+  /* Log rows and table cells — the densest text in the product. */
+  --text-row: 0.65625rem; /* 10.5px */
+
+  /* Inline links and secondary actions. */
+  --text-label: 0.6875rem; /* 11px */
+
+  /* Buttons, and key/value lists — the densest step that is still comfortable to read in prose. */
+  --text-dense: 0.71875rem; /* 11.5px */
+
+  /* Input values and prose. */
+  --text-ui: 0.75rem; /* 12px */
+
+  /* Signal tile values — the biggest number on any screen. */
+  --text-signal: 1.25rem; /* 20px */
+
+  /* The one heading an auth screen has. */
+  --text-title: 1.5625rem; /* 25px */
+
+  /* The kickers' spacing, which is what makes 9px legible at all. */
+  --tracking-kicker: 0.16em;
+  --tracking-chrome: 0.12em;
+  --tracking-control: 0.08em;
+}

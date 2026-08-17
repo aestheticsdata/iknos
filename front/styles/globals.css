@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* Design tokens — by type, the split PFA settled on. Values are Iknos's own. */
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/radius.css";
+@import "./tokens/elevation.css";
+@import "./tokens/breakpoints.css";
+
+/* Base layer + the three animations */
+@import "./base.css";
+@import "./animations.css";

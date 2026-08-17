@@ -1,0 +1,18 @@
+/**
+ * Breakpoints.
+ *
+ * The mockup is drawn for 1440×900 and says nothing about small screens. The position taken in
+ * IKN-5 is **clean degradation, not a mobile redesign**: below `rail` the service rail folds and
+ * tables scroll horizontally. To be reopened if a real mobile use appears — a log reader on a
+ * phone is a plausible thing to want at 3am, and it is not what this layout is.
+ *
+ * Tailwind's own `sm`/`md`/`lg` stay as they are; these are the two widths the chassis itself
+ * cares about.
+ */
+@theme {
+  /* Below this the rail collapses to icons. */
+  --breakpoint-rail: 1100px;
+
+  /* The width the mockup was drawn at — above it nothing more is gained by growing. */
+  --breakpoint-desk: 1440px;
+}

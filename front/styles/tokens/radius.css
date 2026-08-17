@@ -1,0 +1,10 @@
+/**
+ * Radii — §3.4. Four steps, each tied to a kind of thing rather than to a size, so a component
+ * never has to decide: chips are 3, controls are 4–5, cards are 8, overlays are 9–10.
+ */
+@theme {
+  --radius-chip: 3px;
+  --radius-control: 5px;
+  --radius-card: 8px;
+  --radius-overlay: 10px;
+}
