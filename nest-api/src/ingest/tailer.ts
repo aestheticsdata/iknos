@@ -19,11 +19,28 @@ import type { Chunk } from "./writer";
 
 const READ_CHUNK = 256 * 1024;
 
-/** PM2 names its files `<app>-out.log` and `<app>-error.log`. */
-function serviceAndStream(file: string): { service: string; stream: "out" | "err" } {
+/**
+ * PM2 names its files `<app>-out-<pm_id>.log` and `<app>-error-<pm_id>.log`.
+ *
+ * **The trailing process id is the part that matters here.** Without stripping it, `pfa-nest-api`
+ * arrives as `pfa-nest-api-out-39` — a service name nobody recognises, a rail full of duplicates,
+ * and stdout and stderr recorded as two unrelated applications. Worse, the stream is then read as
+ * `out` for an error file, so a line that carried no explicit level is stored as info.
+ *
+ * That id also changes: PM2 hands out a new one on every restart, so the same application has
+ * `…-out-45.log` and `…-out-5.log` side by side. Both must resolve to one service.
+ *
+ * A few apps configure `out_file` explicitly and get a plain `<name>.log` with no suffix at all.
+ * Those fall through to the last line, which is the right answer for them.
+ */
+export function serviceAndStream(file: string): { service: string; stream: "out" | "err" } {
   const stem = path.basename(file, path.extname(file));
-  if (stem.endsWith("-error")) return { service: stem.slice(0, -"-error".length), stream: "err" };
-  if (stem.endsWith("-out")) return { service: stem.slice(0, -"-out".length), stream: "out" };
+  // Only the id, and only at the end. An application legitimately called `foo-2` keeps its name:
+  // its file is `foo-2-out-14.log`, and what is removed is `-14`.
+  const named = stem.replace(/-\d+$/, "");
+
+  if (named.endsWith("-error")) return { service: named.slice(0, -"-error".length), stream: "err" };
+  if (named.endsWith("-out")) return { service: named.slice(0, -"-out".length), stream: "out" };
   return { service: stem, stream: "out" };
 }
 
