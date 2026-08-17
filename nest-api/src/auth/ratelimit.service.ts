@@ -15,6 +15,16 @@ export const LOGIN_LIMIT: Limit = { max: 5, windowSeconds: 60 };
  */
 export const RECOVERY_LIMIT: Limit = { max: 5, windowSeconds: 15 * 60 };
 
+/**
+ * Per client IP, and generous compared to the two above — because this one is not guarding a
+ * secret, it is stopping a runaway page.
+ *
+ * A browser batches its errors, so one request a second is already an app in trouble. The number
+ * that matters is what a render loop throwing on every frame would cost: capped here, it costs
+ * sixty rows a minute instead of filling the table.
+ */
+export const INGEST_LIMIT: Limit = { max: 60, windowSeconds: 60 };
+
 /** Kept for the login spec, which predates the second scope. */
 export const MAX_ATTEMPTS = LOGIN_LIMIT.max;
 export const WINDOW_SECONDS = LOGIN_LIMIT.windowSeconds;
@@ -64,6 +74,11 @@ export class RateLimitService {
 
   allowRecovery(email: string): Promise<boolean> {
     return this.hit("recover", email, RECOVERY_LIMIT);
+  }
+
+  /** No `reset` counterpart: nothing a caller can do proves it deserves a fresh budget. */
+  allowIngest(ip: string): Promise<boolean> {
+    return this.hit("ingest", ip, INGEST_LIMIT);
   }
 
   resetRecovery(email: string): Promise<void> {

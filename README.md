@@ -4,10 +4,11 @@ A self-hosted monitoring console for a small fleet of applications running on a 
 Logs, metrics, issues and alerts for apps you already run, without operating an ELK stack to
 get them.
 
-**Status: design complete, no application code yet.** This repository currently holds the
-specs, the mockup, the M1 implementation plan — and a static mock of the service view, live at
-**<https://iknos.1991computer.com>**, so the design can be argued with in a browser. Work is
-tracked in Spira under the `IKN` project.
+**Status: M1 in progress.** The API and the collector are deployed and running on the box:
+single-account auth, the PM2 log collector, and the log read routes (search, histogram, trace,
+live tail). The four authentication screens are the real Next app; `/` is still the static mock
+of the console at **<https://iknos.1991computer.com>**, because the app chassis and its views
+have not landed yet. Work is tracked in Spira under the `IKN` project.
 
 ---
 
@@ -51,6 +52,76 @@ iknos-web (Next App Router) ── /api/* over localhost, session cookie forward
   visible without going looking.
 - **Self-observation** — Iknos logs through the same pino emitter it asks of everything else,
   so it is monitored by its own pipeline with no special casing.
+
+### Two ways in
+
+Tailing covers everything with a stdout, which is every backend and every server-rendered page.
+It cannot reach a browser: a page has no stdout, so a JavaScript error never touches the host's
+disk. Sentry, OpenTelemetry and pino's HTTP transports all resolve that the same way, because
+there is only one way out of a browser — a POST.
+
+So there is exactly one write route, `POST /api/ingest`, and it accepts **the same ECS JSON the
+app would have printed to stdout**, through the same parser, into the same table. One schema, one
+definition of what a log line is, and a posted browser error is indistinguishable from a tailed
+server line once it lands.
+
+It stays on the collector for everything else, and not out of purism: a process that crashes does
+not POST its own stack trace. Tailing catches the crash, the OOM kill, PM2's restart line and the
+output of libraries nobody controls.
+
+The route is `@Public()` — a page on another domain has no session and never will. Four cheap
+checks stand in for one, and the token is deliberately the weakest: it ships inside a JavaScript
+bundle, so it names a sender rather than authenticating one, exactly like a Sentry DSN key. The
+service registry lookup, the origin allowlist and the rate limit are what actually hold. With no
+token configured the route answers 503 and the rest of the API boots normally.
+
+`front/src/instrumentation-client.ts` is the reference client, meant to be copied into the fleet's
+other frontends rather than imported by them.
+
+### The read routes
+
+Every one of them sits behind the session guard, which is registered globally and denies by
+default — a route is public only if someone wrote `@Public()` on it.
+
+| Route | What it answers |
+|---|---|
+| `GET /api/logs` | Filtered search, keyset-paginated, newest first |
+| `GET /api/logs/histogram` | Counts per interval and per level, server-chosen granularity |
+| `GET /api/logs/trace/:traceId` | The lines sharing a `trace.id`, in order |
+| `GET /api/logs/stream` | Live tail over SSE, straight off the in-process bus |
+| `GET /api/services` | The registry, for the filters and the service rail |
+| `POST /api/ingest` | The one write route — see below |
+
+`from` and `to` are **required** on all of them and a request without both is a 400, never a
+widened default. That single rule is what the partitioning rests on: the range predicate lets
+MySQL discard whole partitions before it evaluates a filter, and one forgotten parameter would
+otherwise turn a page load into a scan of the entire retention window.
+
+### Measured
+
+On **10,240,001 rows** across seven daily partitions (4.5 GB), on a laptop — median of five runs:
+
+| Query | |
+|---|---|
+| Search, one day, one service | **2 ms** |
+| Search, one day, one service, `LIKE` substring | 275 ms |
+| Search, one day, page 20 by cursor | 240 ms |
+| Search, seven days, `level >= 50`, every service | **4,719 ms** |
+| Histogram, one day, 24 buckets, every service | 920 ms |
+| Histogram, one day, one service | 494 ms |
+| Trace lookup, seven days | **4 ms** |
+| `DROP PARTITION` of all 10.2 M rows | 2,043 ms, 4.5 GB returned |
+
+Two things to read out of that. The common case — a day, a service — is instant, and so is a
+trace. The weak spot is a **wide window with no service filter**: seven days of every service at
+`level >= 50` takes nearly five seconds, because a range predicate on `level` cannot also use
+`ts` inside the same index. If the fleet ever grows to this volume, that query needs either a
+mandatory service filter or its own composite index.
+
+This is a ceiling, not an expectation. The fleet these numbers were built for logs a few thousand
+lines a day, not the 1.4 million a day this table holds — roughly **150× more than reality**. At
+the real volume every one of these is sub-millisecond and none of the partitioning matters. It is
+measured here so the number exists before someone needs it, not because it is needed now.
 
 ## The interface
 

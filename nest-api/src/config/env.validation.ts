@@ -1,5 +1,5 @@
 import { plainToInstance } from "class-transformer";
-import { IsIn, IsInt, IsString, Max, Min, MinLength, validateSync } from "class-validator";
+import { IsIn, IsInt, IsOptional, IsString, Max, Min, MinLength, validateSync } from "class-validator";
 
 import type { ValidationError } from "class-validator";
 
@@ -55,6 +55,39 @@ class EnvironmentVariables {
   @IsString()
   @MinLength(1, { message: "IKNOS_PM2_LOG_GLOB must not be empty" })
   IKNOS_PM2_LOG_GLOB!: string;
+
+  /**
+   * The token browsers present on `POST /api/ingest` (IKN-29).
+   *
+   * **Optional, and the route is inert without it.** Every other variable here is required
+   * because the API cannot do its job without one; this one gates a feature, and making it
+   * required would mean an existing deployment refuses to boot after a `git pull` until someone
+   * edits a chmod-600 file on the server. Absent, the route answers 503 — closed, and closed
+   * loudly, without taking the rest of the API down with it.
+   *
+   * It ships inside a JavaScript bundle, so it is **not a secret**: it names a sender, the way
+   * Sentry's DSN key does. The real protection is the service registry, the origin allowlist and
+   * the rate limit. Length is asked for anyway so it cannot be guessed by hand.
+   */
+  @IsOptional()
+  @IsString()
+  @MinLength(24, {
+    message: "IKNOS_INGEST_TOKEN must be at least 24 characters — generate one with `openssl rand -base64 24`",
+  })
+  IKNOS_INGEST_TOKEN?: string;
+
+  /**
+   * Comma-separated origins allowed to POST logs, e.g.
+   * `https://pfa.1991computer.com,https://iknos.1991computer.com`.
+   *
+   * Empty means no origin check, which is what a server-to-server caller needs — a `curl` or a
+   * pino transport sends no `Origin` header at all. The check only ever applies to a request
+   * that presented one, so leaving this unset does not weaken anything a browser could exploit;
+   * it simply stops distinguishing browsers.
+   */
+  @IsOptional()
+  @IsString()
+  IKNOS_INGEST_ORIGINS?: string;
 }
 
 /** What the rest of the application injects. Nothing outside this file reads `process.env`. */
@@ -66,6 +99,10 @@ export type Config = {
   cookieSecret: string;
   retentionDays: number;
   pm2LogGlob: string;
+  /** `null` when unset — the ingestion route is then closed. */
+  ingestToken: string | null;
+  /** Empty means no origin restriction. */
+  ingestOrigins: string[];
 };
 
 /**
@@ -106,6 +143,11 @@ export function parseEnv(source: Record<string, unknown>): Config {
     cookieSecret: parsed.IKNOS_COOKIE_SECRET,
     retentionDays: parsed.IKNOS_RETENTION_DAYS,
     pm2LogGlob: parsed.IKNOS_PM2_LOG_GLOB,
+    ingestToken: parsed.IKNOS_INGEST_TOKEN ?? null,
+    ingestOrigins: (parsed.IKNOS_INGEST_ORIGINS ?? "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter((origin) => origin !== ""),
   };
 }
 

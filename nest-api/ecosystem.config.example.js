@@ -43,6 +43,25 @@ const prodConfig = {
   // What the collector tails. PM2 writes every app's stdout and stderr here, which is the whole
   // reason Iknos needs no agent installed anywhere.
   IKNOS_PM2_LOG_GLOB: "/home/debian/.pm2/logs/*.log",
+
+  // --- Explicit HTTP ingestion (IKN-29) ---------------------------------------------------
+  //
+  // The only two optional variables in this file. Without a token, POST /api/ingest answers 503
+  // and the rest of the API boots normally — deliberately, so that pulling this feature onto an
+  // existing deployment never turns into an API that refuses to start.
+  //
+  // The token travels inside a JavaScript bundle and is therefore NOT a secret: it names a
+  // sender, like Sentry's DSN key. The registry lookup, the origin list and the rate limit are
+  // what hold. Rotating it is harmless — the worst case is a front that stops reporting until
+  // it is redeployed.
+  //
+  // openssl rand -base64 24
+  IKNOS_INGEST_TOKEN: "",
+
+  // Comma-separated, e.g. "https://iknos.1991computer.com,https://pfa.1991computer.com".
+  // Checked only against requests that carried an Origin, so an empty value still admits curl
+  // and server-side senders.
+  IKNOS_INGEST_ORIGINS: "",
 };
 
 module.exports = {

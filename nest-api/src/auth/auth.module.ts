@@ -13,6 +13,9 @@ import { UsersService } from "./users.service";
 @Module({
   controllers: [AuthController, AccountController],
   providers: [UsersService, RateLimitService],
-  exports: [UsersService],
+  // `RateLimitService` is exported for the ingestion route (IKN-29), which is `@Public()` and
+  // therefore needs its own ceiling. One service rather than two: the budgets are separate
+  // scopes in the same Redis keyspace, so they cannot drift on how a window is counted.
+  exports: [UsersService, RateLimitService],
 })
 export class AuthModule {}

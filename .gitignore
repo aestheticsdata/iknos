@@ -21,6 +21,13 @@ coverage/
 .env.*
 !.env.example
 
+# The exception, and it is a real one rather than a convenience: everything in this file is
+# `NEXT_PUBLIC_`, which Next inlines into the JavaScript bundle at build time. Those values are
+# published to every visitor by definition — keeping them out of git would protect nothing and
+# would make a deploy depend on a file that exists on one laptop. `deploy-front.sh` builds on
+# ks-b, so the file has to travel with the sources.
+!front/.env.production
+
 # The production environment. Holds the database password and the cookie secret in clear, and is
 # the file pm2 starts the API with — `ecosystem.config.example.js` is the committed template.
 # Same rule as every other app in the fleet.
