@@ -10,8 +10,17 @@ import { hashPassword, verifyPassword } from "./password.util";
 
 export const MIN_PASSWORD = 12;
 
-/** Longer than the password, because a phrase is easier to type than to guess. */
-export const MIN_PASSPHRASE = 20;
+/**
+ * 13, and nothing else — no digit, no case, no symbol. Same floor Zeus settled on for the same
+ * reason.
+ *
+ * The passphrase can reset the password, so it should not be the weaker of the two, and a long
+ * phrase is still the better choice. That stays a recommendation the form makes, not a rule it
+ * enforces: what actually guards recovery is `RECOVERY_LIMIT` — five attempts per address per
+ * fifteen minutes — which makes an online guess hopeless whatever the length. The floor was never
+ * the load-bearing part, and a high one only pushes people toward a phrase they write down.
+ */
+export const MIN_PASSPHRASE = 13;
 
 /** A real hash of "no passphrase set", generated once with `hashPassword`. */
 export const DUMMY_PASSPHRASE_HASH =

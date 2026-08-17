@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
@@ -18,7 +20,38 @@ import { hashPassword } from "../src/auth/password.util";
  * Usage: `pnpm seed:user you@example.com`
  */
 
-process.loadEnvFile();
+/** Where pm2 keeps the production environment, relative to `nest-api/`. */
+const ECOSYSTEM = "../ecosystem.config.js";
+const PM2_APP_NAME = "iknos-api";
+
+/**
+ * Finds the database URL.
+ *
+ * On the laptop that is `.env`. On ks-b there is none, by design — production credentials live in
+ * `ecosystem.config.js` and pm2 injects them into the API process. This script is started by hand
+ * over SSH, so it inherits none of that and has to read the file itself, exactly as `deploy-api.sh`
+ * does before `prisma migrate deploy`.
+ *
+ * `process.loadEnvFile()` throws on a missing file rather than returning empty, and on the server
+ * that absence is the normal case — hence the guard, and hence the whole function.
+ */
+function loadDatabaseUrl(): string {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+
+  if (existsSync(".env")) {
+    process.loadEnvFile();
+    if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  }
+
+  const ecosystem = resolve(ECOSYSTEM);
+  if (existsSync(ecosystem)) {
+    const config = require(ecosystem) as { apps?: { name?: string; env_production?: Record<string, string> }[] };
+    const url = config.apps?.find((app) => app.name === PM2_APP_NAME)?.env_production?.DATABASE_URL;
+    if (url) return url;
+  }
+
+  fail(`No DATABASE_URL. Looked at the environment, .env, and ${ecosystem}.`);
+}
 
 /**
  * Reads without echoing.
@@ -75,6 +108,10 @@ async function main(): Promise<void> {
     fail("Usage: pnpm seed:user you@example.com");
   }
 
+  // Before the prompts, not after: a box with no reachable configuration should say so while the
+  // terminal is still empty, not once two passwords have been typed into it.
+  const databaseUrl = loadDatabaseUrl();
+
   const password = await promptHidden("  Password: ");
   if (password.length < MIN_PASSWORD) {
     // Names the rule, never repeats the value — this runs in a terminal whose scrollback and
@@ -105,7 +142,7 @@ async function main(): Promise<void> {
     stdout.write("\n  ⚠ No passphrase set. This account will only be recoverable in the database.\n");
   }
 
-  const dsn = new URL(process.env.DATABASE_URL ?? "");
+  const dsn = new URL(databaseUrl);
   const prisma = new PrismaClient({
     adapter: new PrismaMariaDb({
       host: dsn.hostname,
