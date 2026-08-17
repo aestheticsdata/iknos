@@ -5,7 +5,7 @@ import { LoggerModule } from "nestjs-pino";
 import { AuthModule } from "./auth/auth.module";
 import { SessionGuard } from "./auth/session.guard";
 import { AllExceptionsFilter } from "./common/all-exceptions.filter";
-import { logger } from "./common/logger";
+import { httpLoggerOptions, logger } from "./common/logger";
 import { validate } from "./config/env.validation";
 import { HealthController } from "./health.controller";
 import { IngestModule } from "./ingest/ingest.module";
@@ -35,6 +35,9 @@ import { RedisModule } from "./redis/redis.module";
     LoggerModule.forRoot({
       pinoHttp: {
         logger,
+        // Turns the access line into real ECS — method, path, status, duration, client address —
+        // and keeps the request object, cookie and all, out of it entirely (IKN-30).
+        ...httpLoggerOptions,
         // The collector polls these; logging every hit would drown the file the collector is
         // reading, which is a loop worth avoiding on principle.
         autoLogging: { ignore: (req) => req.url === "/health" },
