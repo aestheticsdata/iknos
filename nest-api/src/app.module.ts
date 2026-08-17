@@ -8,6 +8,7 @@ import { AllExceptionsFilter } from "./common/all-exceptions.filter";
 import { logger } from "./common/logger";
 import { validate } from "./config/env.validation";
 import { HealthController } from "./health.controller";
+import { IngestModule } from "./ingest/ingest.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { RedisModule } from "./redis/redis.module";
 
@@ -40,6 +41,7 @@ import { RedisModule } from "./redis/redis.module";
     PrismaModule,
     RedisModule,
     AuthModule,
+    IngestModule,
   ],
   controllers: [HealthController],
   providers: [
