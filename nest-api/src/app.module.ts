@@ -9,6 +9,7 @@ import { logger } from "./common/logger";
 import { validate } from "./config/env.validation";
 import { HealthController } from "./health.controller";
 import { IngestModule } from "./ingest/ingest.module";
+import { LogsModule } from "./logs/logs.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { RedisModule } from "./redis/redis.module";
 
@@ -16,7 +17,8 @@ import { RedisModule } from "./redis/redis.module";
  * One Nest app hosts both the HTTP API and the collector — one PM2 process, one Prisma client,
  * and a live tail served from an in-process event bus rather than by polling MySQL.
  *
- * The rest arrives with its task: auth (Tasks 8–11), ingest (Tasks 12–16), logs (Tasks 17–19).
+ * Auth (IKN-6, IKN-21), the collector (IKN-7) and the log routes (IKN-19) are in. Metrics, issues
+ * and alerts arrive with the milestone that needs them.
  */
 @Module({
   imports: [
@@ -42,6 +44,7 @@ import { RedisModule } from "./redis/redis.module";
     RedisModule,
     AuthModule,
     IngestModule,
+    LogsModule,
   ],
   controllers: [HealthController],
   providers: [

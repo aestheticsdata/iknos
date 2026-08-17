@@ -36,4 +36,15 @@ export class LogBus {
     this.emitter.on("log", fn);
     return () => this.emitter.off("log", fn);
   }
+
+  /**
+   * How many live tails are attached.
+   *
+   * Exists for the test that opens connections, closes them, and asserts the count came back to
+   * where it started. Without a way to observe this, the classic SSE leak — listeners piling up
+   * on requests that ended — is invisible until the process is out of memory.
+   */
+  listenerCount(): number {
+    return this.emitter.listenerCount("log");
+  }
 }

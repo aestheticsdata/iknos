@@ -13,8 +13,15 @@ import type { LogRecord } from "./log-record";
  * collector turns one malformed line in one app into a monitoring outage for all of them.
  */
 
-/** pino's numeric levels, which the UI sorts and filters on. */
-const LEVELS: Record<string, number> = {
+/**
+ * pino's numeric levels, which the UI sorts and filters on.
+ *
+ * Exported because the query side resolves `?level=warn` against the same table. Two maps would
+ * be two chances for a name accepted by the filter to mean something else than it did at
+ * ingestion — the aliases in particular (`warning`, `crit`) only exist because other loggers
+ * emit them, and a filter that did not know them would silently return nothing.
+ */
+export const LEVELS: Record<string, number> = {
   trace: 10,
   debug: 20,
   info: 30,
