@@ -11,6 +11,8 @@ export const ROUTES = {
   recover: "/recover",
   about: "/about",
   logs: "/logs",
+  /** The internal primitive gallery. Reachable, deliberately not in the rail. */
+  design: "/design",
 } as const;
 
 /** Where `/` sends a signed-in visitor: the one view M1 can fill. */
