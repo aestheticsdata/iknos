@@ -1,3 +1,4 @@
+import { ToastProvider } from "@components/ui/Toast";
 import { readServices } from "@lib/services";
 import { ServiceRail } from "./ServiceRail";
 import { StatusBar } from "./StatusBar";
@@ -19,13 +20,19 @@ export const AppChassis = async ({ children }: { children: React.ReactNode }) =>
   const services = await readServices();
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-chassis-deep font-mono">
-      <TopBar />
-      <div className="flex min-h-0 flex-1">
-        <ServiceRail services={services} />
-        <main className="min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
+    /*
+     * The toast host lives above the whole chassis, not inside the work surface: a toast raised by
+     * the rail or the top bar has to outlive the view it was raised from.
+     */
+    <ToastProvider>
+      <div className="flex h-dvh flex-col overflow-hidden bg-chassis-deep font-mono">
+        <TopBar />
+        <div className="flex min-h-0 flex-1">
+          <ServiceRail services={services} />
+          <main className="min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
+        </div>
+        <StatusBar />
       </div>
-      <StatusBar />
-    </div>
+    </ToastProvider>
   );
 };
