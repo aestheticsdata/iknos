@@ -8,6 +8,10 @@ import { DenseTable } from "@components/ui/DenseTable";
 import { Dot } from "@components/ui/Dot";
 import { Field } from "@components/ui/Field";
 import { Modal } from "@components/ui/Modal";
+import { Select } from "@components/ui/Select";
+import { Sparkline } from "@components/ui/Sparkline";
+import { useToast } from "@components/ui/Toast";
+import { Tooltip } from "@components/ui/Tooltip";
 import { useState } from "react";
 
 import type { Surface, Tone } from "@components/ui/surface";
@@ -25,11 +29,34 @@ const TONES: Tone[] = ["ok", "warn", "error", "info", "neutral"];
 
 type Row = { id: string; service: string; level: Tone; route: string; ms: number };
 
+/** A plausible ingest curve — twenty points, the width the rail draws. */
+const SERIES = [4, 6, 5, 9, 12, 8, 7, 11, 18, 24, 19, 13, 9, 7, 8, 6, 5, 9, 14, 11];
+
 const ROWS: Row[] = [
   { id: "1", service: "iknos-api", level: "info", route: "/api/logs", ms: 38 },
   { id: "2", service: "iknos-api", level: "warn", route: "/api/logs/histogram", ms: 412 },
   { id: "3", service: "pfa-api", level: "error", route: "/api/users/42", ms: 1204 },
 ];
+
+const ToastTrigger = () => {
+  const { show } = useToast();
+  return (
+    <>
+      <Button
+        variant="quiet"
+        onClick={() => show("Copied the row as NDJSON.")}
+      >
+        Raise a toast
+      </Button>
+      <Button
+        variant="quiet"
+        onClick={() => show("Could not reach the API.", "error")}
+      >
+        Raise an error toast
+      </Button>
+    </>
+  );
+};
 
 export default function DesignPage() {
   const [open, setOpen] = useState(false);
@@ -39,8 +66,9 @@ export default function DesignPage() {
       <SurfacePanel surface="work" />
       <SurfacePanel surface="chassis" />
 
-      <div className="lg:col-span-2">
+      <div className="flex items-center gap-2 lg:col-span-2">
         <Button onClick={() => setOpen(true)}>Open the modal</Button>
+        <ToastTrigger />
         <Modal
           open={open}
           onClose={() => setOpen(false)}
@@ -140,6 +168,32 @@ const SurfacePanel = ({ surface }: { surface: Surface }) => (
               defaultValue="not-an-email"
               error="Enter a valid address."
             />
+            <Select
+              surface={surface}
+              label="level"
+              defaultValue="warn"
+              options={[
+                { value: "info", label: "info and above" },
+                { value: "warn", label: "warn and above" },
+                { value: "error", label: "error only" },
+              ]}
+            />
+            <div className="flex items-end gap-3">
+              <Tooltip label="Events per minute, last 20 minutes">
+                <Sparkline
+                  values={SERIES}
+                  surface={surface}
+                  tone="ok"
+                  label="Ingest rate, last 20 minutes"
+                />
+              </Tooltip>
+              {/* The empty series renders nothing at all — the rule the service rail depends on. */}
+              <Sparkline
+                values={[]}
+                surface={surface}
+                label="No series yet"
+              />
+            </div>
           </div>
         </div>
       </Card>
