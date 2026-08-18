@@ -92,7 +92,7 @@ describe("sustained ingestion", () => {
         buffer.push(pending.subarray(0, READ_BYTES));
         pending = pending.subarray(READ_BYTES);
 
-        const records = [];
+        const records: LogRecord[] = [];
         for (let line = buffer.nextLine(); line !== null; line = buffer.nextLine()) {
           const record = parse(line, "t", "out");
           if (record !== null) records.push(record);
@@ -112,7 +112,7 @@ describe("sustained ingestion", () => {
     }
 
     buffer.push(pending);
-    const tail = [];
+    const tail: LogRecord[] = [];
     for (let line = buffer.nextLine(); line !== null; line = buffer.nextLine()) {
       const record = parse(line, "t", "out");
       if (record !== null) tail.push(record);
