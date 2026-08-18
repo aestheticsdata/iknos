@@ -71,7 +71,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
               <Link
                 href={view.href}
                 aria-current={pathname.startsWith(view.href) ? "page" : undefined}
-                className={`flex items-center justify-between rounded-xs px-2 py-1.5 text-label ${
+                className={`flex items-center justify-between rounded-chip px-2 py-1.5 text-label ${
                   pathname.startsWith(view.href)
                     ? "bg-chassis-raised text-chassis-text-bright"
                     : "text-chassis-text-muted hover:bg-chassis-raised/60 hover:text-chassis-text"
@@ -112,7 +112,7 @@ const RailRow = ({
     onClick={onClick}
     title={title}
     aria-pressed={selected}
-    className={`flex w-full items-center rounded-xs px-2 py-1.5 text-left text-label ${
+    className={`flex w-full items-center rounded-chip px-2 py-1.5 text-left text-label ${
       selected
         ? "bg-chassis-raised text-chassis-text-bright"
         : "text-chassis-text-muted hover:bg-chassis-raised/60 hover:text-chassis-text"
@@ -150,7 +150,7 @@ const UserMenu = () => {
         type="button"
         onClick={logout}
         disabled={leaving}
-        className="flex w-full items-center rounded-xs px-2 py-1.5 text-label text-chassis-text-muted hover:bg-chassis-raised/60 hover:text-chassis-text disabled:opacity-50"
+        className="flex w-full items-center rounded-chip px-2 py-1.5 text-label text-chassis-text-muted hover:bg-chassis-raised/60 hover:text-chassis-text disabled:opacity-50"
       >
         {leaving ? CHASSIS_TEXT.loggingOut : CHASSIS_TEXT.logOut}
       </button>

@@ -20,7 +20,7 @@ export const TopBar = () => {
     <header className="flex h-9 flex-none items-center gap-3.5 border-b border-chassis-border bg-chassis-surface px-3.5">
       <span className="text-ui font-bold tracking-chrome text-chassis-text">IKNOS</span>
 
-      <span className="rounded-xs border border-chassis-border-strong px-1.5 py-0.5 text-kicker tracking-kicker text-chassis-text-muted">
+      <span className="rounded-chip border border-chassis-border-strong px-1.5 py-0.5 text-kicker tracking-kicker text-chassis-text-muted">
         {CHASSIS_TEXT.host}
       </span>
 
@@ -48,8 +48,8 @@ export const TopBar = () => {
               aria-pressed={range === key}
               className={
                 range === key
-                  ? "rounded-xs bg-chassis-raised px-1.5 py-0.5 text-kicker tracking-control text-chassis-text-bright"
-                  : "rounded-xs px-1.5 py-0.5 text-kicker tracking-control text-chassis-text-dim hover:text-chassis-text"
+                  ? "rounded-chip bg-chassis-raised px-1.5 py-0.5 text-kicker tracking-control text-chassis-text-bright"
+                  : "rounded-chip px-1.5 py-0.5 text-kicker tracking-control text-chassis-text-dim hover:text-chassis-text"
               }
             >
               {key}
