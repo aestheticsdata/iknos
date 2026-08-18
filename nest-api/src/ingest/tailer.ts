@@ -111,6 +111,16 @@ export class Tailer {
         pos += BigInt(bytesRead);
         entry.buffer.push(buf.subarray(0, bytesRead));
 
+        // The in-memory offset moves with the buffer, in the same breath, and never later.
+        //
+        // It used to be assigned once after the loop. Anything thrown in between — a read on a
+        // file being rotated away, an OOM — unwinds to the deliberately empty `catch` in
+        // `poll()`, leaving the buffer holding bytes that the offset did not know about. The next
+        // tick then re-read those same bytes and appended them to the stale fragment: duplicated
+        // rows, plus one corrupted line where the two halves met. Duplication is the one thing
+        // this module exists to prevent, so the two facts move together or not at all.
+        entry.offset = { dev: now.dev, inode: now.inode, byteOffset: pos };
+
         const records: LogRecord[] = [];
         for (let line = entry.buffer.nextLine(); line !== null; line = entry.buffer.nextLine()) {
           const record = parse(line, service, stream);
@@ -128,9 +138,6 @@ export class Tailer {
         });
       }
 
-      // The in-memory position does include the partial line — the bytes were read and are held
-      // in the buffer, so re-reading them next tick would emit the line twice.
-      entry.offset = { dev: now.dev, inode: now.inode, byteOffset: pos };
     } finally {
       await fh.close();
     }
