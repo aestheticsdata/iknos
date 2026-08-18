@@ -23,6 +23,11 @@ export const INGEST_SKIP_MARKER = "IKNOS_SELF_ERR";
  * Both spellings are listed because pino applies redaction **after** `formatters.log`: by then a
  * converted request is `http.request.headers`, and one that failed to convert is still `req`.
  * Covering one shape means the other publishes the credential.
+ *
+ * The secret body fields are spelled out one by one, and every name the auth DTOs use has to be
+ * here: a path matches a key exactly, so `*.password` covers neither `currentPassword` nor
+ * `recoveryPassphrase`. Both were missing while the DTOs carrying them shipped (IKN-21). Adding a
+ * secret field to a DTO means adding it here and to the list in `logger.spec.ts`.
  */
 const REDACTED = [
   "http.request.headers.cookie",
@@ -33,8 +38,12 @@ const REDACTED = [
   'res.headers["set-cookie"]',
   "*.password",
   "*.passphrase",
+  "*.recoveryPassphrase",
+  "*.currentPassword",
   "password",
   "passphrase",
+  "recoveryPassphrase",
+  "currentPassword",
 ];
 
 /**
