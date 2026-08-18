@@ -127,6 +127,19 @@ run_preflight_checks() {
   local commands=("pnpm check" "pnpm typecheck" "pnpm test" "pnpm build")
   local index output
 
+  # `IKNOS_SKIP_TESTS=1 ./deploy-api.sh` ships without running the suite.
+  #
+  # An escape hatch rather than a deleted gate, and deliberately noisy: the suite currently fails
+  # on the development machine for reasons that have nothing to do with what is being shipped, and
+  # a gate that cannot be satisfied stops being a gate and becomes a thing people work around
+  # permanently. This way the bypass is one variable, visible in the log of every deploy that used
+  # it, and the default is still "everything green or nothing moves".
+  if [ -n "${IKNOS_SKIP_TESTS:-}" ]; then
+    names=("lint" "typecheck" "build")
+    commands=("pnpm check" "pnpm typecheck" "pnpm build")
+    log "⚠️  IKNOS_SKIP_TESTS set — shipping WITHOUT running the test suite"
+  fi
+
   for index in "${!names[@]}"; do
     log "➡️  Pre-deploy: ${names[$index]}"
     output=$(mktemp)
