@@ -5,9 +5,10 @@
     "dev": "next dev -p 3006",
     "build": "next build",
     "start": "next start -p 3006",
-    "lint": "biome check ./src ./styles",
-    "lint:fix": "biome check --write ./src ./styles",
-    "typecheck": "tsc --noEmit"
+    "lint": "biome check ./src ./styles ./scripts",
+    "lint:fix": "biome check --write ./src ./styles ./scripts",
+    "typecheck": "tsc --noEmit",
+    "contrast": "node scripts/contrast.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
