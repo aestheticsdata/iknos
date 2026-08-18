@@ -41,3 +41,12 @@ ecosystem.config.js
 
 # Logs
 *.log
+
+# Claude Code — the personal layer only, not the whole directory.
+#
+# `.claude/` holds three kinds of thing and they do not share a fate: `settings.json` is project
+# configuration meant to be shared, `skills/` and `commands/` are work worth keeping, and
+# `settings.local.json` is one machine's permission grants and preferences. Ignoring the folder
+# wholesale would throw away the first two to hide the third — and would silently drop anything
+# added there later.
+.claude/settings.local.json
