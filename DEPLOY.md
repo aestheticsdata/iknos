@@ -20,7 +20,7 @@ Both slots were the last free entries in Zeus's registry, and both were verified
 
 | | Port | pm2 name | state |
 |---|---|---|---|
-| front | `3006` | `iknos-web` | reserved, nothing listening |
+| front | `3006` | `iknos-front` | reserved, nothing listening |
 | api | `6900` (block `6900–6999`) | `iknos-api` | reserved, nothing listening |
 
 **Registered in Zeus on 2026-08-15.** Both rows read *not running*, in red — that is the correct
@@ -106,7 +106,7 @@ are not a signal about your change.
 
 ## Leaving the mock phase
 
-`location /` in the vhost currently serves static files. When `iknos-web` starts listening on 3006,
+`location /` in the vhost currently serves static files. When `iknos-front` starts listening on 3006,
 the switch is two marked edits in that file: delete the block between the `MOCK PHASE` banners, and
 uncomment the proxy blocks below it. The SSE block for `/api/logs/stream` is already written with
 `proxy_buffering off` — the backend design calls that "the one everyone forgets", so it was written

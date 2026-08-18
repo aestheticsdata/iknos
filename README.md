@@ -33,7 +33,7 @@ app (pino + @elastic/ecs-pino-format)
 iknos-api (NestJS)          tailer → parser → batch writer → MySQL
   │                         in-process event bus → SSE live tail
   ▼
-iknos-web (Next App Router) ── /api/* over localhost, session cookie forwarded
+iknos-front (Next App Router) ── /api/* over localhost, session cookie forwarded
 ```
 
 - **Ingestion** tails PM2 log files by `stat` polling, tracking `(dev, inode, byteOffset)` so
@@ -146,7 +146,7 @@ retained mockup.
 | Database | MySQL 8, daily RANGE partitioning on `TO_DAYS(ts)` |
 | Sessions | Redis, opaque cookie, CSRF compared in constant time |
 | Web | Next App Router, Tailwind v4, `nuqs` for URL state |
-| Deployment | Two PM2 processes behind nginx, built on the target host — `iknos-web` on 3006, `iknos-api` on 6900 |
+| Deployment | Two PM2 processes behind nginx, built on the target host — `iknos-front` on 3006, `iknos-api` on 6900 |
 
 The repository is laid out like the rest of the fleet: `nest-api/` and `front/` side by side,
 each an independent pnpm root with its own lockfile, Prisma inside the API, and one deploy

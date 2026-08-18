@@ -28,7 +28,7 @@ MOCK_DIR="$WEB_ROOT/public_html"
 PM2_ECOSYSTEM_FILE="ecosystem.config.cjs"
 
 # The pm2 process name and Iknos's front row in Zeus's registry. Renaming it breaks both.
-PM2_APP_NAME="iknos-web"
+PM2_APP_NAME="iknos-front"
 
 WEB_PORT="3006"
 

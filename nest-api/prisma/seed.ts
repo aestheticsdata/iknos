@@ -51,8 +51,8 @@ const SERVICES = [
     healthUrl: "http://127.0.0.1:6900/health",
   },
   {
-    name: "iknos-web",
-    pm2Name: "iknos-web",
+    name: "iknos-front",
+    pm2Name: "iknos-front",
     metricsUrl: null,
     healthUrl: "http://127.0.0.1:3006/",
   },
