@@ -36,15 +36,13 @@ export const LoginForm = ({ notice, canRegister }: { notice?: "registered" | "re
     try {
       await postJson("/auth/login", values);
       /*
-       * `/` is the static mock until the app chassis lands with the rest of IKN-5. The destination
-       * is right either way — this is where the console lives — so nothing here changes on the day
-       * the real thing replaces it.
-       *
-       * `refresh()` after `replace()` because the register page's seal is read on the server: a
-       * cached RSC payload from before this sign-in would render a stale one.
+       * Straight to the logs view, the same shape as Zeus's sign-in. Not `/`: that costs an extra
+       * server redirect for nothing — and it is how sign-in silently looped back to this screen in
+       * production, when a mock-era `redirects()` in next.config.js still sent `/` to `/login/`.
+       * No `router.refresh()` either: it refetches the *current* route, so called here it races
+       * the navigation it sits next to, and nothing on `/login` needs refetching mid-departure.
        */
-      router.replace("/");
-      router.refresh();
+      router.replace(ROUTES.logs);
     } catch (error) {
       // 429 is worth its own message. "invalid credentials" on a correct password, because the
       // sixth attempt in a minute was refused, sends someone to reset a password that works.
