@@ -1,4 +1,5 @@
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 import type { Metadata, Viewport } from "next";
 
@@ -52,7 +53,14 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => (
     className={`${jetbrainsMono.variable} ${ibmPlexSans.variable}`}
     lang="en"
   >
-    <body>{children}</body>
+    <body>
+      {/*
+       * The chassis keeps the selected service and the time range in the query string, and nuqs
+       * needs its adapter above every hook that reads them. Mounted at the root rather than in the
+       * app group so that a future auth screen with URL state does not have to remember it.
+       */}
+      <NuqsAdapter>{children}</NuqsAdapter>
+    </body>
   </html>
 );
 
