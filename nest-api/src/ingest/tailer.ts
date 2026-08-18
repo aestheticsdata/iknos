@@ -137,7 +137,6 @@ export class Tailer {
           offset: { filePath: file, dev: now.dev, inode: now.inode, byteOffset: committed },
         });
       }
-
     } finally {
       await fh.close();
     }
