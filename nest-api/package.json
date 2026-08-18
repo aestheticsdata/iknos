@@ -17,8 +17,8 @@
     "check": "biome check",
     "check:fix": "biome check --write",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "NODE_OPTIONS=--expose-gc vitest run",
+    "test:watch": "NODE_OPTIONS=--expose-gc vitest"
   },
   "dependencies": {
     "@elastic/ecs-pino-format": "^1.5.0",

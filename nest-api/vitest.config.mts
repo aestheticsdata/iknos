@@ -29,5 +29,10 @@ export default defineConfig({
     // The honest fix would be a database per worker; that is not worth its weight for a suite
     // this size. This costs about twenty seconds and removes a whole class of phantom failure.
     fileParallelism: false,
+    // `--expose-gc` is supplied by the `test` script in package.json, not here: vitest 4 ignores
+    // `poolOptions.forks.execArgv`. The sustained-load test needs it to measure retained memory —
+    // without a forced collection `heapUsed` is dominated by garbage V8 has not swept, and reads
+    // as a 66 MB leak when nothing is retained. That test asserts the flag is present rather than
+    // silently measuring nothing, so this staying broken cannot pass unnoticed.
   },
 });
