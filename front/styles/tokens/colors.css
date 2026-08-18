@@ -36,10 +36,18 @@
   --color-work-text: #131e24;
   --color-work-text-muted: #3f535f;
   --color-work-text-dim: #556a76;
-  --color-work-accent: #3c6b52;
-  --color-work-warn: #8a6118;
-  --color-work-error: #8e2f2a;
-  --color-work-info: #4e7b96;
+  /*
+   * The four states, darkened until they clear 4.5:1 as *text* — the mockup's originals sat
+   * between 2.41 and 4.28 against `work-inset` and were unreadable at 10.5px. Hue and saturation
+   * are the mockup's; only lightness moved, which is why they still read as the same four colours.
+   *
+   * Measured against the worse of the two work backgrounds (`work-inset`, the darker one, where
+   * dark text has less room). `pnpm run contrast` re-checks this and fails if an edit regresses it.
+   */
+  --color-work-accent: #2e523f; /* 5.39 on surface, 4.63 on inset */
+  --color-work-warn: #634511; /* 5.40 / 4.63 */
+  --color-work-error: #862c28; /* 5.36 / 4.61 */
+  --color-work-info: #324e60; /* 5.39 / 4.63 */
   --color-work-error-bg: #c4a9a6;
 
   /**
