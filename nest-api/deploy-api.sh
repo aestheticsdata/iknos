@@ -3,8 +3,20 @@ set -Eeuo pipefail
 
 # Deploys the Iknos API. Same shape as Zeus, spira and pfa: rsync into a fresh release
 # directory, atomic switch keeping the previous version as a backup, install and build on the
-# server, migrate, pm2 reload, verify /health, with automatic rollback if anything fails after
-# the switch.
+# server, pm2 reload, verify /health, with automatic rollback if anything fails after the switch.
+#
+# **This script never migrates**, same rule as pfa — whose deploy script does not mention Prisma
+# at all. `prisma migrate deploy` is run by hand over SSH, deliberately, by someone who has
+# decided what happens if it goes wrong.
+#
+# The reason is the rollback. Restoring a release is a directory swap and takes a second; Prisma
+# has no down-migration. A script that migrates and then rolls back leaves the previous code in
+# front of the new schema — extra columns it ignores, which is survivable, or a table under a
+# name it no longer knows, which is not. Migrating by hand keeps the two decisions separate,
+# which is the only way either of them can be reasoned about.
+#
+# What the script does do is refuse to ship code whose schema is not there yet: see
+# check_pending_migrations, which runs before a single byte is uploaded.
 #
 # Usage: ./deploy-api.sh [deploy|rollback]
 
@@ -548,41 +560,6 @@ DATABASE_URL=$(node -p \
 [ -n "$DATABASE_URL" ] || { echo "❌ ERROR: no env_production.DATABASE_URL for '$PM2_APP_NAME' in $ECOSYSTEM_REMOTE" >&2; exit 1; }
 export DATABASE_URL
 pnpm build
-EOF
-
-  # The release is in place and installed; nothing is serving it yet. Migrating here is the whole
-  # point of the ordering: a failure exits non-zero, the ERR trap rolls the release back, and pm2
-  # is never reloaded — the previous release keeps serving a schema it agrees with.
-  log "➡️  Applying migrations"
-  ssh "$REMOTE_USER_HOST" \
-    NEST_DIR="$NEST_DIR" \
-    ECOSYSTEM_REMOTE="$ECOSYSTEM_REMOTE" \
-    PM2_APP_NAME="$PM2_APP_NAME" \
-    REMOTE_PATH="$REMOTE_PATH" \
-    'bash -s' << 'EOF'
-set -Eeuo pipefail
-export PATH="$REMOTE_PATH:$PATH"
-
-# The production URL, read from the file pm2 starts the API with. There is no .env on this box,
-# by design: two copies of a database URL are two values that must agree with nothing checking
-# that they do, and a migration applied to one database while the app talks to another is not a
-# failure anyone notices quickly.
-PROD_DATABASE_URL=$(node -p \
-  'const c = require(process.env.ECOSYSTEM_REMOTE); const a = (c.apps || []).find(x => x.name === process.env.PM2_APP_NAME); (a && a.env_production && a.env_production.DATABASE_URL) || ""' \
-  2>/dev/null || true)
-[ -n "$PROD_DATABASE_URL" ] || { echo "❌ ERROR: no env_production.DATABASE_URL for '$PM2_APP_NAME'" >&2; exit 1; }
-
-cd "$NEST_DIR"
-
-# The URL goes into the environment of this one command and never onto its command line — `ps`
-# shows the second, and this string carries the database password.
-if ! DATABASE_URL="$PROD_DATABASE_URL" pnpm exec prisma migrate deploy; then
-  echo "❌ ERROR: prisma migrate deploy failed — pm2 was NOT reloaded, the previous release is still serving." >&2
-  echo "   MySQL DDL is not transactional, so a migration that failed partway is recorded as" >&2
-  echo "   failed in _prisma_migrations and every later deploy refuses until it is resolved:" >&2
-  echo "   fix the schema by hand, then \`prisma migrate resolve --rolled-back <migration>\`." >&2
-  exit 1
-fi
 EOF
 
   log "➡️  Reloading pm2"
