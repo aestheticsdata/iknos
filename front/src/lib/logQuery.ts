@@ -46,6 +46,18 @@ export type LogFilterValues = Record<LogFilterKey, string | null>;
  */
 const offParser = parseAsArrayOf(parseAsStringLiteral(LOG_FILTER_KEYS)).withDefault([]);
 
+/**
+ * The `off` list on its own, because `service` has a second writer.
+ *
+ * The rail sets `service` through `@lib/chassisState` rather than through `setValue` below — that
+ * is deliberate, the two are the same parameter — but "off" is a *companion* of the value, and a
+ * writer that sets one without the other leaves the pair inconsistent: the chip keeps saying `+`,
+ * `buildLogQuery` keeps dropping the key, and the rail is inert with no visible reason why. So the
+ * list is exported as its own hook and the rail maintains the same invariant `setValue` does,
+ * against the same parser, instead of hard-coding the parameter name a second time.
+ */
+export const useFilterOff = () => useQueryState("off", offParser);
+
 const valueParsers = {
   service: parseAsString,
   level: parseAsString,
@@ -147,7 +159,7 @@ export const useLogQueryState = (): {
   refresh: () => void;
 } => {
   const [values, setValues] = useQueryStates(valueParsers);
-  const [off, setOff] = useQueryState("off", offParser);
+  const [off, setOff] = useFilterOff();
   const [window, setWindowParams] = useQueryStates(windowParsers);
   const [range] = useQueryState("range", parseAsString);
   const [now, setNow] = useState(() => new Date());
