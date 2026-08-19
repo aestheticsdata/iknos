@@ -82,6 +82,13 @@ die() {
 require_clean_tree() {
   cd "$SCRIPT_DIR"
 
+  # Setup problems before readiness problems, same order as deploy-api.sh checks its own untracked
+  # config. `.env.production` is not committed, and its absence is silent in a way that matters:
+  # the `NEXT_PUBLIC_` values are inlined at build time, so a missing file does not fail the build
+  # — it ships a bundle with browser error reporting switched off and nothing anywhere saying so.
+  [ -f "$SCRIPT_DIR/.env.production" ] \
+    || die "missing front/.env.production — copy .env.example and fill it in. It is not committed."
+
   local dirty
   dirty=$(git status --porcelain)
   if [ -n "$dirty" ]; then
