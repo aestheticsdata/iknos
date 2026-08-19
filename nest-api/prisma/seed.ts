@@ -15,9 +15,29 @@ import { PrismaClient } from "../generated/prisma/client";
  * Idempotent by `name`, so re-running it after adding an app is safe.
  */
 
-process.loadEnvFile();
+/*
+ * The `.env` is the laptop's, and it is the only place DATABASE_URL lives there. On ks-b there is
+ * no `.env` at all — `deploy-api.sh` excludes it from the rsync on purpose, and the production
+ * value is `env_production.DATABASE_URL` in the pm2 ecosystem, injected by whoever runs this.
+ * `loadEnvFile()` throws ENOENT rather than shrugging, so seeding the box was impossible until
+ * this catch existed.
+ */
+try {
+  process.loadEnvFile();
+} catch {
+  // Already in the environment, or about to fail the check below with a message that says so.
+}
 
-const dsn = new URL(process.env.DATABASE_URL ?? "");
+const url = process.env.DATABASE_URL;
+if (!url) {
+  console.error("DATABASE_URL is not set. On ks-b, export it from the pm2 ecosystem first:");
+  console.error(
+    `  export DATABASE_URL=$(node -p "require('/var/www/iknos/ecosystem.config.js').apps.find(a => a.name === 'iknos-api').env_production.DATABASE_URL")`,
+  );
+  process.exit(1);
+}
+
+const dsn = new URL(url);
 
 const prisma = new PrismaClient({
   adapter: new PrismaMariaDb({
@@ -26,6 +46,9 @@ const prisma = new PrismaClient({
     user: decodeURIComponent(dsn.username),
     password: decodeURIComponent(dsn.password),
     database: dsn.pathname.replace(/^\//, ""),
+    // Same reason as `prisma.service.ts`: MySQL 8 wipes its auth cache on restart, and without
+    // this a one-shot script run after a reboot dies as a pool timeout instead of connecting.
+    allowPublicKeyRetrieval: true,
   }),
 });
 
