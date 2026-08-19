@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
+import { PrismaService } from "@db/prisma.service";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { PrismaService } from "../src/prisma/prisma.service";
 import { buildTestApp } from "./helpers";
 
 import type { INestApplication } from "@nestjs/common";

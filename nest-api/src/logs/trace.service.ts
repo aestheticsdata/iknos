@@ -1,8 +1,8 @@
+import { PrismaService } from "@db/prisma.service";
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
 import { ROW_COLUMNS, toLogRow } from "./row";
 
-import type { LogRow } from "../contracts/log-row";
+import type { LogRow } from "@contracts/log-row";
 import type { RawLogRow } from "./row";
 
 /**

@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { Body, Controller, Get, HttpException, Post, Req, Res, UnauthorizedException } from "@nestjs/common";
+import { RedisService } from "@redis/redis.service";
 import { IsEmail, IsString, MinLength } from "class-validator";
-import { RedisService } from "../redis/redis.service";
 import { verifyPassword } from "./password.util";
 import { Public } from "./public.decorator";
 import { RateLimitService } from "./ratelimit.service";

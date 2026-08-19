@@ -1,8 +1,8 @@
+import { CSRF_HEADER } from "@auth/session.guard";
+import { PrismaService } from "@db/prisma.service";
+import { RedisService } from "@redis/redis.service";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { CSRF_HEADER } from "../src/auth/session.guard";
-import { PrismaService } from "../src/prisma/prisma.service";
-import { RedisService } from "../src/redis/redis.service";
 import { buildTestApp, clearRateLimits, nextClientIp, seedTestAccount, TEST_EMAIL, TEST_PASSWORD } from "./helpers";
 
 import type { INestApplication } from "@nestjs/common";

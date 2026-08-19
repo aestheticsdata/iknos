@@ -1,7 +1,7 @@
+import { CSRF_HEADER } from "@auth/session.guard";
+import { PrismaService } from "@db/prisma.service";
 import request from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { CSRF_HEADER } from "../src/auth/session.guard";
-import { PrismaService } from "../src/prisma/prisma.service";
 import { buildTestApp, clearRateLimits, nextClientIp } from "./helpers";
 
 import type { INestApplication } from "@nestjs/common";

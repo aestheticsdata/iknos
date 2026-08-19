@@ -16,13 +16,15 @@
     "baseUrl": "./",
     "paths": {
       "@auth/*": ["./src/auth/*"],
-      "@collector/*": ["./src/collector/*"],
       "@common/*": ["./src/common/*"],
       "@config/*": ["./src/config/*"],
+      "@contracts/*": ["./src/contracts/*"],
+      "@db/*": ["./src/prisma/*"],
+      "@generated/*": ["./generated/*"],
       "@ingest/*": ["./src/ingest/*"],
       "@logs/*": ["./src/logs/*"],
-      "@maintenance/*": ["./src/maintenance/*"],
-      "@search/*": ["./src/search/*"],
+      "@redis/*": ["./src/redis/*"],
+      "@src/*": ["./src/*"],
       "@stream/*": ["./src/stream/*"]
     },
     "incremental": true,

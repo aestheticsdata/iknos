@@ -1,9 +1,9 @@
+import { PrismaService } from "@db/prisma.service";
 import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
 import { hashPassphrase } from "./passphrase.util";
 import { hashPassword } from "./password.util";
 
-import type { AppUser } from "../../generated/prisma/client";
+import type { AppUser } from "@generated/prisma/client";
 
 /**
  * The account. Singular — `app_user.singleton` is UNIQUE, so the database refuses a second one

@@ -70,9 +70,6 @@ module.exports = {
       name: "iknos-api",
       cwd: "/var/www/iknos/nest-api",
       script: "dist/src/main.js",
-      // The tsconfig declares path aliases; this is what makes them resolve at runtime. Harmless
-      // while every import is relative, and one less thing to discover the day one is not.
-      node_args: "-r tsconfig-paths/register",
       instances: 1,
       exec_mode: "fork",
       env_production: {

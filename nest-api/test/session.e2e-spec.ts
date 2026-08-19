@@ -1,13 +1,13 @@
+import { Public } from "@auth/public.decorator";
+import { SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from "@auth/session.constants";
+import { buildSessionMiddleware } from "@auth/session.middleware";
 import { Controller, Get, Module, Param, ParseIntPipe, Post, Req } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { Test } from "@nestjs/testing";
+import { RedisService, SESSION_PREFIX } from "@redis/redis.service";
+import { AppModule } from "@src/app.module";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { AppModule } from "../src/app.module";
-import { Public } from "../src/auth/public.decorator";
-import { SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from "../src/auth/session.constants";
-import { buildSessionMiddleware } from "../src/auth/session.middleware";
-import { RedisService, SESSION_PREFIX } from "../src/redis/redis.service";
 
 import type { INestApplication } from "@nestjs/common";
 import type { Application, Request } from "express";

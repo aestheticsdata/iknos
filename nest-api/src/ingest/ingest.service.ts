@@ -1,7 +1,7 @@
+import { logger } from "@common/logger";
+import { PrismaService } from "@db/prisma.service";
 import { Injectable } from "@nestjs/common";
-import { logger } from "../common/logger";
-import { PrismaService } from "../prisma/prisma.service";
-import { LogBus } from "../stream/log-bus";
+import { LogBus } from "@stream/log-bus";
 import { Tailer } from "./tailer";
 import { FLUSH_INTERVAL_MS, persistBatch, Writer } from "./writer";
 

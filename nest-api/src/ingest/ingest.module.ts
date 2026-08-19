@@ -1,8 +1,8 @@
+import { AuthModule } from "@auth/auth.module";
+import { parseEnv } from "@config/env.validation";
+import { PrismaService } from "@db/prisma.service";
 import { Module } from "@nestjs/common";
-import { AuthModule } from "../auth/auth.module";
-import { parseEnv } from "../config/env.validation";
-import { PrismaService } from "../prisma/prisma.service";
-import { LogBus } from "../stream/log-bus";
+import { LogBus } from "@stream/log-bus";
 import { HttpIngestController } from "./http-ingest.controller";
 import { HttpIngestService } from "./http-ingest.service";
 import { IngestService } from "./ingest.service";

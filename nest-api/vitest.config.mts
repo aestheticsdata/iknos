@@ -7,6 +7,16 @@ export default defineConfig({
   // constructor injection would resolve to `undefined` — and the failure reads as a broken
   // provider, not a missing compiler flag. SWC emits it.
   plugins: [swc.vite({ module: { type: "es6" } })],
+  // The one place the `paths` aliases in tsconfig.json need help. `nest build` rewrites them at
+  // emit time — its own TS transformer hook does it, in watch mode too — so the app and the
+  // compiled output never see an alias specifier. Vitest compiles from source and does not go
+  // through the Nest CLI, so without this every `@config/…` import in a spec is a missing module.
+  //
+  // Native to vite 8; `vite-tsconfig-paths` is deprecated in its favour and prints so on load.
+  // The catch is that vite 6 and 7 do not validate unknown config keys — there it would be
+  // ignored in silence and every aliased import would fail at once. `alias-resolution.spec.ts`
+  // exists to make that loud rather than mysterious.
+  resolve: { tsconfigPaths: true },
   test: {
     globals: false,
     environment: "node",

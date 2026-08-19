@@ -1,11 +1,11 @@
+import { LogQueryDto, parseFilters } from "@logs/log-query";
 import { Controller, Get, Query, Req, Res } from "@nestjs/common";
-import { LogQueryDto, parseFilters } from "../logs/log-query";
 import { LogBus } from "./log-bus";
 
+import type { LogRow } from "@contracts/log-row";
+import type { LogRecord } from "@ingest/log-record";
+import type { LogFilters } from "@logs/log-query";
 import type { Request, Response } from "express";
-import type { LogRow } from "../contracts/log-row";
-import type { LogRecord } from "../ingest/log-record";
-import type { LogFilters } from "../logs/log-query";
 
 /**
  * The live tail.

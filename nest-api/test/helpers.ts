@@ -1,19 +1,19 @@
 import { randomUUID } from "node:crypto";
+import { hashPassword } from "@auth/password.util";
+import { buildSessionMiddleware } from "@auth/session.middleware";
+import { JSON_BODY_LIMIT } from "@config/body-limit";
+import { PrismaService } from "@db/prisma.service";
+import { persistBatch } from "@ingest/writer";
 import { ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { RedisService } from "@redis/redis.service";
+import { AppModule } from "@src/app.module";
 import request from "supertest";
-import { AppModule } from "../src/app.module";
-import { hashPassword } from "../src/auth/password.util";
-import { buildSessionMiddleware } from "../src/auth/session.middleware";
-import { JSON_BODY_LIMIT } from "../src/config/body-limit";
-import { persistBatch } from "../src/ingest/writer";
-import { PrismaService } from "../src/prisma/prisma.service";
-import { RedisService } from "../src/redis/redis.service";
 
+import type { LogRecord } from "@ingest/log-record";
 import type { INestApplication } from "@nestjs/common";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { Application } from "express";
-import type { LogRecord } from "../src/ingest/log-record";
 
 export const TEST_EMAIL = "test@iknos.local";
 export const TEST_PASSWORD = "test-password-1234";

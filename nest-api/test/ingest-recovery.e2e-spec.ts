@@ -2,10 +2,10 @@ import { randomUUID } from "node:crypto";
 import { appendFile, mkdtemp, rename, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { PrismaService } from "@db/prisma.service";
+import { Tailer } from "@ingest/tailer";
+import { persistBatch, Writer } from "@ingest/writer";
 import { afterAll, describe, expect, it } from "vitest";
-import { Tailer } from "../src/ingest/tailer";
-import { persistBatch, Writer } from "../src/ingest/writer";
-import { PrismaService } from "../src/prisma/prisma.service";
 
 /**
  * The two Done items nothing else exercises: a restart in the middle of a batch loses nothing

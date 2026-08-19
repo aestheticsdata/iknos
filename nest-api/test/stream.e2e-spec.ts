@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { get as httpGet } from "node:http";
 import { setTimeout as sleep } from "node:timers/promises";
+import { LogBus } from "@stream/log-bus";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { LogBus } from "../src/stream/log-bus";
 import { buildTestApp, login } from "./helpers";
 
 import type { Server } from "node:http";
+import type { LogRecord } from "@ingest/log-record";
 import type { INestApplication } from "@nestjs/common";
-import type { LogRecord } from "../src/ingest/log-record";
 
 /**
  * The live tail, over a real socket.

@@ -2,12 +2,12 @@ import { randomUUID } from "node:crypto";
 import { appendFile, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { PrismaService } from "@db/prisma.service";
+import { IngestService } from "@ingest/ingest.service";
+import { LogBus } from "@stream/log-bus";
 import { afterAll, describe, expect, it } from "vitest";
-import { IngestService } from "../src/ingest/ingest.service";
-import { PrismaService } from "../src/prisma/prisma.service";
-import { LogBus } from "../src/stream/log-bus";
 
-import type { LogRecord } from "../src/ingest/log-record";
+import type { LogRecord } from "@ingest/log-record";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

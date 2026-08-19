@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
+import { PrismaService } from "@db/prisma.service";
+import { persistBatch } from "@ingest/writer";
 import { afterAll, describe, expect, it } from "vitest";
-import { persistBatch } from "../src/ingest/writer";
-import { PrismaService } from "../src/prisma/prisma.service";
 
-import type { LogRecord } from "../src/ingest/log-record";
+import type { LogRecord } from "@ingest/log-record";
 
 /**
  * The property the whole collector design exists for: rows and the offset that accounts for them

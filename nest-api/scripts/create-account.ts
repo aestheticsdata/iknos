@@ -2,10 +2,10 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline";
+import { hashPassphrase, MIN_PASSPHRASE, MIN_PASSWORD } from "@auth/passphrase.util";
+import { hashPassword } from "@auth/password.util";
+import { PrismaClient } from "@generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { PrismaClient } from "../generated/prisma/client";
-import { hashPassphrase, MIN_PASSPHRASE, MIN_PASSWORD } from "../src/auth/passphrase.util";
-import { hashPassword } from "../src/auth/password.util";
 
 /**
  * Creates **the** account. Not **an** account.

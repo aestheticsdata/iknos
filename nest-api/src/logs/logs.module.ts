@@ -1,6 +1,6 @@
+import { IngestModule } from "@ingest/ingest.module";
 import { Module } from "@nestjs/common";
-import { IngestModule } from "../ingest/ingest.module";
-import { StreamController } from "../stream/stream.controller";
+import { StreamController } from "@stream/stream.controller";
 import { HistogramService } from "./histogram.service";
 import { LogsController } from "./logs.controller";
 import { LogsService } from "./logs.service";

@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
+import { SESSION_PREFIX } from "@redis/redis.service";
 import { RedisStore } from "connect-redis";
 import session from "express-session";
-import { SESSION_PREFIX } from "../redis/redis.service";
 import { SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from "./session.constants";
 
 import type { RequestHandler } from "express";

@@ -1,5 +1,5 @@
+import { INGEST_SKIP_MARKER } from "@common/logger";
 import { describe, expect, it } from "vitest";
-import { INGEST_SKIP_MARKER } from "../common/logger";
 import { parse } from "./parser";
 
 const out = (line: string) => {

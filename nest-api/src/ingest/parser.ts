@@ -1,5 +1,5 @@
 import { stripVTControlCharacters } from "node:util";
-import { INGEST_SKIP_MARKER } from "../common/logger";
+import { INGEST_SKIP_MARKER } from "@common/logger";
 
 import type { LogRecord } from "./log-record";
 

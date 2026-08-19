@@ -1,5 +1,5 @@
+import { PrismaClient } from "@generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { PrismaClient } from "../generated/prisma/client";
 
 /**
  * Seeds the service registry — every PM2 process on ks-b.

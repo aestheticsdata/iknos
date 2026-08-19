@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { RedisService } from "../redis/redis.service";
+import { RedisService } from "@redis/redis.service";
 
 export type Limit = { max: number; windowSeconds: number };
 

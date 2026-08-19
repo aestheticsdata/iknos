@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { RedisService } from "@redis/redis.service";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { RedisService } from "../redis/redis.service";
 import { MAX_ATTEMPTS, RateLimitService, RECOVERY_LIMIT, WINDOW_SECONDS } from "./ratelimit.service";
 
 describe("RateLimitService", () => {

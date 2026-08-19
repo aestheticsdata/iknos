@@ -1,7 +1,7 @@
+import { Prisma } from "@generated/prisma/client";
+import { LEVELS } from "@ingest/parser";
 import { BadRequestException } from "@nestjs/common";
 import { IsOptional, IsString } from "class-validator";
-import { Prisma } from "../../generated/prisma/client";
-import { LEVELS } from "../ingest/parser";
 
 /**
  * The filter vocabulary, parsed once and shared by all four log routes.

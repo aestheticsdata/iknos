@@ -1,8 +1,8 @@
+import { PrismaService } from "@db/prisma.service";
 import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
 import { whereClause } from "./log-query";
 
-import type { Bucket } from "../contracts/histogram";
+import type { Bucket } from "@contracts/histogram";
 import type { LogFilters } from "./log-query";
 
 /**

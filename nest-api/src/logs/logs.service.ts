@@ -1,5 +1,5 @@
+import { PrismaService } from "@db/prisma.service";
 import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
 import { whereClause } from "./log-query";
 import { ROW_COLUMNS } from "./row";
 

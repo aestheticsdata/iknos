@@ -3,9 +3,9 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildTestApp, deleteLogs, login, seedLogs } from "./helpers";
 
+import type { Bucket } from "@contracts/histogram";
+import type { LogRow } from "@contracts/log-row";
 import type { INestApplication } from "@nestjs/common";
-import type { Bucket } from "../src/contracts/histogram";
-import type { LogRow } from "../src/contracts/log-row";
 
 /**
  * The read side, against the real MySQL.

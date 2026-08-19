@@ -1,15 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { setTimeout as sleep } from "node:timers/promises";
+import { PrismaService } from "@db/prisma.service";
+import { INGEST_TOKEN_HEADER } from "@ingest/http-ingest.controller";
+import { MAX_EVENTS_PER_REQUEST } from "@ingest/http-ingest.service";
+import { LogBus } from "@stream/log-bus";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { INGEST_TOKEN_HEADER } from "../src/ingest/http-ingest.controller";
-import { MAX_EVENTS_PER_REQUEST } from "../src/ingest/http-ingest.service";
-import { PrismaService } from "../src/prisma/prisma.service";
-import { LogBus } from "../src/stream/log-bus";
 import { buildTestApp, clearRateLimits, deleteLogs, login } from "./helpers";
 
+import type { LogRecord } from "@ingest/log-record";
 import type { INestApplication } from "@nestjs/common";
-import type { LogRecord } from "../src/ingest/log-record";
 
 /**
  * `POST /api/ingest` — the browser's way in (IKN-29).

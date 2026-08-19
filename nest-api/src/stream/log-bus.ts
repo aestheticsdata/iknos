@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import { Injectable } from "@nestjs/common";
 
-import type { LogRecord } from "../ingest/log-record";
+import type { LogRecord } from "@ingest/log-record";
 
 /**
  * The in-process event bus between the writer and the live tail.

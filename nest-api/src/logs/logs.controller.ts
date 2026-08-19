@@ -6,9 +6,9 @@ import { LogsService } from "./logs.service";
 import { toLogRow } from "./row";
 import { TraceService } from "./trace.service";
 
-import type { Histogram } from "../contracts/histogram";
-import type { LogPage } from "../contracts/log-page";
-import type { Trace } from "../contracts/trace";
+import type { Histogram } from "@contracts/histogram";
+import type { LogPage } from "@contracts/log-page";
+import type { Trace } from "@contracts/trace";
 
 /**
  * The three read routes the Logs view needs. All behind the global session guard — none of them

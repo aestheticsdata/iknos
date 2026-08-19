@@ -1,6 +1,6 @@
-import { Prisma } from "../../generated/prisma/client";
+import { Prisma } from "@generated/prisma/client";
 
-import type { LogRow } from "../contracts/log-row";
+import type { LogRow } from "@contracts/log-row";
 
 /**
  * The one place a `log_entry` row becomes a `LogRow`.

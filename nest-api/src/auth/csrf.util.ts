@@ -1,4 +1,4 @@
-import { timingSafeCompare } from "../common/timing-safe";
+import { timingSafeCompare } from "@common/timing-safe";
 
 /**
  * Constant-time comparison of a session's CSRF token against the one a request presented.

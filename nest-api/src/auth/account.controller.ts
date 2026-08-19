@@ -8,8 +8,8 @@ import {
   Req,
   UnauthorizedException,
 } from "@nestjs/common";
+import { RedisService } from "@redis/redis.service";
 import { IsEmail, IsOptional, IsString, MinLength } from "class-validator";
-import { RedisService } from "../redis/redis.service";
 import { MIN_PASSPHRASE, MIN_PASSWORD, verifyPassphrase } from "./passphrase.util";
 import { verifyPassword } from "./password.util";
 import { Public } from "./public.decorator";

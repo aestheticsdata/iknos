@@ -1,7 +1,7 @@
+import { PrismaService } from "@db/prisma.service";
 import { Controller, Get } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
 
-import type { ServiceList } from "../contracts/service";
+import type { ServiceList } from "@contracts/service";
 
 /**
  * The registry, which feeds both the filter list and the service rail.

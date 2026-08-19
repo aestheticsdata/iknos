@@ -1,8 +1,8 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 // Relative, not aliased: an `@prisma/*` path alias would shadow the npm scope the Prisma
 // packages themselves live in. Same reason trekker keeps this import relative.
-import { PrismaClient } from "../../generated/prisma/client";
+import { PrismaClient } from "@generated/prisma/client";
+import { Injectable, Logger } from "@nestjs/common";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import type { OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 

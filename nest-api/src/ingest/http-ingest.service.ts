@@ -1,6 +1,6 @@
+import { PrismaService } from "@db/prisma.service";
 import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import { LogBus } from "../stream/log-bus";
+import { LogBus } from "@stream/log-bus";
 import { parse } from "./parser";
 import { persistBatch } from "./writer";
 

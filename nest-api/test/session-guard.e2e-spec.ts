@@ -1,13 +1,13 @@
 import { randomBytes } from "node:crypto";
+import { Public } from "@auth/public.decorator";
+import { CSRF_HEADER } from "@auth/session.guard";
+import { buildSessionMiddleware } from "@auth/session.middleware";
 import { Controller, Delete, Get, Param, ParseIntPipe, Post, Req } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { RedisService } from "@redis/redis.service";
+import { AppModule } from "@src/app.module";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { AppModule } from "../src/app.module";
-import { Public } from "../src/auth/public.decorator";
-import { CSRF_HEADER } from "../src/auth/session.guard";
-import { buildSessionMiddleware } from "../src/auth/session.middleware";
-import { RedisService } from "../src/redis/redis.service";
 
 import type { INestApplication } from "@nestjs/common";
 import type { Request } from "express";

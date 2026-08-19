@@ -1,6 +1,6 @@
-import { INGEST_SKIP_MARKER } from "../common/logger";
+import { INGEST_SKIP_MARKER } from "@common/logger";
 
-import type { PrismaService } from "../prisma/prisma.service";
+import type { PrismaService } from "@db/prisma.service";
 import type { LogRecord } from "./log-record";
 
 const MAX_ROWS_PER_FLUSH = 200;
