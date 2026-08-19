@@ -5,11 +5,13 @@ import request from "supertest";
 import { AppModule } from "../src/app.module";
 import { hashPassword } from "../src/auth/password.util";
 import { buildSessionMiddleware } from "../src/auth/session.middleware";
+import { JSON_BODY_LIMIT } from "../src/config/body-limit";
 import { persistBatch } from "../src/ingest/writer";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { RedisService } from "../src/redis/redis.service";
 
 import type { INestApplication } from "@nestjs/common";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { Application } from "express";
 import type { LogRecord } from "../src/ingest/log-record";
 
@@ -26,12 +28,15 @@ const SECRET = "test-secret-at-least-as-long-as-the-real-one-which-is-sixty-four
  */
 export async function buildTestApp(): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-  const app = moduleRef.createNestApplication();
+  const app = moduleRef.createNestApplication<NestExpressApplication>();
 
   // So `X-Forwarded-For` reaches `req.ip` and the rate-limit tests can pose as distinct clients.
   (app.getHttpAdapter().getInstance() as Application).set("trust proxy", 1);
   app.use(buildSessionMiddleware(app.get(RedisService).getClient(), SECRET, false));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  // Ahead of `init`, exactly as `main.ts` puts it ahead of `listen` — a body ceiling the tests
+  // assert and the program does not have would be worth nothing.
+  app.useBodyParser("json", { limit: JSON_BODY_LIMIT });
 
   await app.init();
   await app.get(RedisService).ready();

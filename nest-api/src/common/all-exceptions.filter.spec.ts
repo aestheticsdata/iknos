@@ -59,6 +59,34 @@ describe("AllExceptionsFilter", () => {
     expect(body).not.toContain("ks-b");
   });
 
+  // The body parser throws before any controller runs, so its errors are plain `Error`s. Left
+  // alone they came back 500 — blaming the server for a request it had refused correctly.
+  it("answers 413 to a body over the parser's ceiling, and does not log it", () => {
+    const { host, status, json } = mockHost();
+    const logger = { error: vi.fn() };
+
+    const tooLarge = Object.assign(new Error("request entity too large"), { type: "entity.too.large", status: 413 });
+    new AllExceptionsFilter(logger as never).catch(tooLarge, host as never);
+
+    expect(status).toHaveBeenCalledWith(413);
+    expect(json.mock.calls[0][0]).toEqual({ error: "request body too large" });
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it("answers 400 to malformed JSON without quoting the body back", () => {
+    const { host, status, json } = mockHost();
+
+    // body-parser puts the offending fragment in its own message. It must not reach the client.
+    const bad = Object.assign(new Error('Unexpected token } in JSON at position 42: {"password":"hunter2"}'), {
+      type: "entity.parse.failed",
+      status: 400,
+    });
+    new AllExceptionsFilter({ error: vi.fn() } as never).catch(bad, host as never);
+
+    expect(status).toHaveBeenCalledWith(400);
+    expect(JSON.stringify(json.mock.calls[0][0])).not.toContain("hunter2");
+  });
+
   it("does not log a deliberate client error as an unhandled exception", () => {
     const { host } = mockHost();
     const logger = { error: vi.fn() };

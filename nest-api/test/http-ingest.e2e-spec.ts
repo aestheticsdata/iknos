@@ -179,6 +179,40 @@ describe("POST /api/ingest", () => {
     });
   });
 
+  /**
+   * Two ceilings govern one request, and they have to agree: the event count the controller
+   * enforces, and the byte count the body parser enforces before the controller is ever reached.
+   * Express defaults the second to 100 kB, which a full batch of stack traces clears easily — so
+   * the batch the API advertises came back 413, and the client, silent by design, lost it whole.
+   */
+  describe("the body ceiling", () => {
+    it("takes a full batch of a hundred events carrying real stack traces", async () => {
+      // ~5 kB of stack each, so ~520 kB on the wire: comfortably over the 100 kB Express would
+      // have allowed on its own, and comfortably under the megabyte now configured.
+      const stack = Array.from(
+        { length: 60 },
+        (_, i) => `    at frame${i} (/app/.next/static/chunk-${i}.js:1:${i})`,
+      ).join("\n");
+      const events = Array.from({ length: MAX_EVENTS_PER_REQUEST }, (_, i) =>
+        event({ message: `deep ${i}`, error: { type: "TypeError", message: `deep ${i}`, stack_trace: stack } }),
+      );
+
+      const res = await post({ service, events }).expect(202);
+      expect(res.body).toEqual({ accepted: MAX_EVENTS_PER_REQUEST, rejected: 0 });
+      expect(await prisma.logEntry.count({ where: { service, message: { startsWith: "deep " } } })).toBe(
+        MAX_EVENTS_PER_REQUEST,
+      );
+    });
+
+    it("refuses a body past the byte ceiling", async () => {
+      // Rejected by the parser, so it never reaches the handler and the event count never applies:
+      // one event is enough, as long as it is enormous.
+      await post({ service, events: [event({ message: "too big", padding: "x".repeat(1_200_000) })] }).expect(413);
+
+      expect(await prisma.logEntry.count({ where: { service, message: "too big" } })).toBe(0);
+    });
+  });
+
   describe("the live tail", () => {
     it("publishes ingested lines to the bus, after the commit", async () => {
       const bus = app.get(LogBus);

@@ -7,15 +7,17 @@ import { NestFactory } from "@nestjs/core";
 import { Logger } from "nestjs-pino";
 import { AppModule } from "./app.module";
 import { buildSessionMiddleware } from "./auth/session.middleware";
+import { JSON_BODY_LIMIT } from "./config/body-limit";
 import { parseEnv } from "./config/env.validation";
 import { RedisService } from "./redis/redis.service";
 
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { Application } from "express";
 
 async function bootstrap() {
   // bufferLogs holds Nest's startup lines until the pino logger is attached, so the first thing
   // written to stdout is already ECS rather than Nest's coloured console format.
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
 
   // PM2 sends SIGTERM before SIGKILL. Without hooks a `pm2 reload` cuts requests in flight and
@@ -39,6 +41,11 @@ async function bootstrap() {
   app.use(
     buildSessionMiddleware(app.get(RedisService).getClient(), cookieSecret, process.env.NODE_ENV === "production"),
   );
+
+  // Registered before `listen`, which is what runs `init` and its default parsers: Nest applies
+  // its own JSON parser only when none is on the stack yet, so putting one here is how the 100 kB
+  // default is replaced rather than merely shadowed by a second, later one.
+  app.useBodyParser("json", { limit: JSON_BODY_LIMIT });
 
   // Loopback only, never 0.0.0.0 — nginx is the sole thing that should reach this port, and
   // Node with no bind host listens on every interface.
