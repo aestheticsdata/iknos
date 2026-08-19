@@ -22,11 +22,13 @@ datasource db {
 model Service {
   id Int @id @default(autoincrement())
 
-  /// What the interface calls it.
+  /// What the interface calls it, and the value `log_entry.service` carries — the tailer derives
+  /// that from the PM2 log filename, so for anything PM2 runs the two are the same string. A
+  /// friendlier label here would be a rail whose every entry filters on a value no log has.
   name String @unique @db.VarChar(64)
 
-  /// What PM2 calls it. Deliberately distinct from `name`: the service rail shows what PM2
-  /// reports, but a friendlier label stays possible without renaming a process.
+  /// What PM2 calls it. Equal to `name` for every row today; the column exists for the sources
+  /// that are not PM2 processes at all — nginx arrives with IKN-16 and has no PM2 name to give.
   pm2Name String @map("pm2_name") @db.VarChar(64)
 
   metricsUrl String? @map("metrics_url") @db.VarChar(255)

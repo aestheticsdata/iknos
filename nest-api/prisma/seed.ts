@@ -2,17 +2,34 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../generated/prisma/client";
 
 /**
- * Seeds the service registry.
+ * Seeds the service registry — every PM2 process on ks-b.
  *
- * Iknos' own two processes are in here, and that is not vanity. It watches itself through the
- * same pipeline it asks of everything else (spec §3.3), so without these rows the service rail
- * shows a single application on the day M1 ships — losing the most convincing demonstration
- * the tool has.
+ * **The whole fleet, not a sample.** The tailer globs `~/.pm2/logs/*.log` and does not consult
+ * this table, so every one of these applications is already being read, parsed and stored. A row
+ * missing here does not save a byte of retention: it only makes those bytes unreachable, since the
+ * rail is the one way into them. The registry is what the interface can *show*, and it had drifted
+ * to four rows against seventeen processes.
  *
- * `nginx` is deliberately absent: it is not a PM2 process and its logs come from somewhere
- * else entirely. It joins the registry with IKN-16, which brings its own ingestion source.
+ * Iknos' own two are in here, and that is not vanity. It watches itself through the same pipeline
+ * it asks of everything else (spec §3.3).
  *
- * Idempotent by `name`, so re-running it after adding an app is safe.
+ * `nginx` is deliberately absent: it is not a PM2 process and its logs come from somewhere else
+ * entirely. It joins the registry with IKN-16, which brings its own ingestion source — and it is
+ * the case that will finally make `name` and `pm2Name` differ.
+ *
+ * **`name` is the PM2 name.** The two columns exist so a friendlier label stays possible, and the
+ * first attempt used one: `pfa-api` for the process `pfa-nest-api`. That cannot work. The tailer
+ * derives `log_entry.service` from the log *filename*, so the rows say `pfa-nest-api`; a rail that
+ * selects `pfa-api` would filter against a value no log has ever carried, and IKN-12 would have
+ * found a service list where every entry returns nothing. Renaming costs a re-seed today and a
+ * data migration later.
+ *
+ * Reconciling, not just additive: rows absent from `SERVICES` are removed. This file is the only
+ * way anything gets into the table — there is no UI for it — so a row that is not here is a
+ * leftover from an earlier shape of this list, and `pfa-api` is exactly that. `log_entry` is left
+ * alone; its rows are keyed by the PM2 name and outlive any registry edit.
+ *
+ * Idempotent, and `update: {}` preserves `enabled` — a service someone paused stays paused.
  */
 
 /*
@@ -52,19 +69,23 @@ const prisma = new PrismaClient({
   }),
 });
 
+/**
+ * `metricsUrl` and `healthUrl` are filled only where the port is known from this repository or
+ * from having deployed the app. The rest are null rather than guessed: nothing reads them until
+ * IKN-8 and IKN-24, and a wrong port there would report a healthy service as down.
+ *
+ * Alphabetical, which is also the order `/api/services` returns and therefore the order of the
+ * rail — a list this long is scanned, not read.
+ */
 const SERVICES = [
-  {
-    name: "pfa-api",
-    pm2Name: "pfa-nest-api",
-    metricsUrl: "http://127.0.0.1:6100/api/metrics",
-    healthUrl: "http://127.0.0.1:6100/api/health",
-  },
-  {
-    name: "pfa-front",
-    pm2Name: "pfa-front",
-    metricsUrl: null,
-    healthUrl: null,
-  },
+  { name: "1991chat-backend", pm2Name: "1991chat-backend", metricsUrl: null, healthUrl: null },
+  { name: "1991chat-front", pm2Name: "1991chat-front", metricsUrl: null, healthUrl: null },
+  { name: "bkmk-front", pm2Name: "bkmk-front", metricsUrl: null, healthUrl: null },
+  { name: "bkmk-server", pm2Name: "bkmk-server", metricsUrl: null, healthUrl: null },
+  { name: "conway-gol-api", pm2Name: "conway-gol-api", metricsUrl: null, healthUrl: null },
+  // Stopped in PM2 today, and still enabled here: `enabled` says whether Iknos collects, not
+  // whether the process is up. Its files are on disk and its history stays readable.
+  { name: "hiwaysim", pm2Name: "hiwaysim", metricsUrl: null, healthUrl: null },
   {
     name: "iknos-api",
     pm2Name: "iknos-api",
@@ -73,17 +94,35 @@ const SERVICES = [
     // is the URL Zeus's registry probes too.
     healthUrl: "http://127.0.0.1:6900/health",
   },
+  { name: "iknos-front", pm2Name: "iknos-front", metricsUrl: null, healthUrl: "http://127.0.0.1:3006/" },
+  { name: "pfa-front", pm2Name: "pfa-front", metricsUrl: null, healthUrl: null },
   {
-    name: "iknos-front",
-    pm2Name: "iknos-front",
-    metricsUrl: null,
-    healthUrl: "http://127.0.0.1:3006/",
+    name: "pfa-nest-api",
+    pm2Name: "pfa-nest-api",
+    metricsUrl: "http://127.0.0.1:6100/api/metrics",
+    healthUrl: "http://127.0.0.1:6100/api/health",
   },
+  { name: "shatter-api", pm2Name: "shatter-api", metricsUrl: null, healthUrl: null },
+  { name: "spira-front", pm2Name: "spira-front", metricsUrl: null, healthUrl: null },
+  { name: "spira-nest-api", pm2Name: "spira-nest-api", metricsUrl: null, healthUrl: null },
+  { name: "trekker-api", pm2Name: "trekker-api", metricsUrl: null, healthUrl: null },
+  { name: "trekker-front", pm2Name: "trekker-front", metricsUrl: null, healthUrl: null },
+  { name: "zeus-front", pm2Name: "zeus-front", metricsUrl: null, healthUrl: null },
+  { name: "zeus-nest-api", pm2Name: "zeus-nest-api", metricsUrl: null, healthUrl: null },
 ];
 
 async function main(): Promise<void> {
   for (const service of SERVICES) {
     await prisma.service.upsert({ where: { name: service.name }, update: {}, create: service });
+  }
+
+  const stale = await prisma.service.findMany({
+    where: { name: { notIn: SERVICES.map((s) => s.name) } },
+    select: { name: true },
+  });
+  if (stale.length > 0) {
+    await prisma.service.deleteMany({ where: { name: { in: stale.map((s) => s.name) } } });
+    console.log(`removed ${stale.length} stale row(s): ${stale.map((s) => s.name).join(", ")}`);
   }
 
   const count = await prisma.service.count();
