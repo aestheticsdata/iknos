@@ -37,6 +37,17 @@ export const Modal = ({
 }) => {
   const ref = useRef<HTMLDialogElement>(null);
 
+  /*
+   * Deliberately without a dependency array: this reconciles the DOM against the prop, and the DOM
+   * can change without the prop doing so.
+   *
+   * Esc closes the dialog natively. If the caller's `open` is derived — `loading || error || data`
+   * is the obvious shape for anything that fetches — it can still be `true` at that moment, and
+   * with `[open]` deps the effect never re-runs: React sees no change, while `dialog.open` has
+   * silently become `false`. The modal is then dead for the rest of the session, and nothing
+   * anywhere reports it. Re-asserting every render is idempotent, costs two boolean reads, and
+   * makes the prop the single source of truth it was always documented to be.
+   */
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
@@ -44,7 +55,7 @@ export const Modal = ({
     // inert and traps focus. Setting `open` renders a dialog that looks modal and is not.
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
-  }, [open]);
+  });
 
   return (
     <dialog
