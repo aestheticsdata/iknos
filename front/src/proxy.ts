@@ -34,9 +34,15 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   /**
-   * Everything except Next's own assets and the favicon. The fonts are self-hosted under
+   * Everything except Next's own assets and the site's icons. The fonts are self-hosted under
    * `/_next/static`, so excluding that prefix also keeps the login screen from redirecting its
    * own typeface.
+   *
+   * `webmanifest` is in the list for the same reason the image extensions are, and it had to be
+   * added by hand (IKN-33): without it a signed-out visitor's browser asks for the manifest, is
+   * redirected to `/login`, and is handed an HTML page where it expected JSON. The manifest holds
+   * the app's name, its two chassis colours and three icon URLs — there is nothing in it a login
+   * screen does not already show.
    */
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)"],
 };

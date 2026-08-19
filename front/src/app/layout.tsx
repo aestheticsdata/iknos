@@ -32,15 +32,38 @@ export const metadata: Metadata = {
   description: "A self-hosted monitor for the apps on ks-b",
   // A single-admin monitor for one VPS has no business in an index.
   robots: { index: false, follow: false },
+  /*
+   * IKN-33. Every file here is rasterised from `public/icons/favicon.svg` by `pnpm icons`; none of
+   * them is drawn.
+   *
+   * `favicon.ico` sits next to this file and is not listed: Next special-cases that one name and
+   * emits its tag whatever this field says. The 512 does not get that treatment — declaring any
+   * `icon` here suppresses the file convention's own `<link>`, so an `src/app/icon.png` would
+   * become a route nothing points at. It is served from `public/` and named, like the SVG, which
+   * has no convention at all and which every browser that understands it prefers to the `.ico`.
+   *
+   * `mask-icon` is Safari's pinned tab: a monochrome glyph macOS paints in the colour given here.
+   */
+  icons: {
+    icon: [
+      { url: "/icons/favicon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    other: [{ rel: "mask-icon", url: "/icons/safari-pinned-tab.svg", color: "#86b99a" }],
+  },
+  manifest: "/icons/site.webmanifest",
 };
 
 export const viewport: Viewport = {
   // One colour, not a pair: the chassis is dark on every screen and does not follow the system.
   //
-  // The one hex in the codebase outside `styles/tokens/`. Next serialises this into a `<meta>` tag
-  // at build time, so it has to be a literal — `var(--color-chassis-deep)` in a meta tag is not a
-  // colour, it is a string the browser discards. It must be kept equal to that token, which is why
-  // it is written in the same lowercase form the token file uses: a grep for the value finds both.
+  // One of the three hexes in the codebase outside `styles/tokens/` — the other two are the
+  // pinned-tab colour above and the manifest's, and all three are literals for the same reason.
+  // Next serialises this into a `<meta>` tag at build time, so `var(--color-chassis-deep)` here is
+  // not a colour, it is a string the browser discards. It must be kept equal to that token, which
+  // is why it is written in the same lowercase form the token file uses: a grep for the value
+  // finds both — and finds `site.webmanifest`, whose `theme_color` has to agree with this one or
+  // the installed app and the browser tab disagree about what colour Iknos is.
   themeColor: "#10151c",
 };
 
