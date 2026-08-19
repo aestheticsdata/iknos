@@ -146,7 +146,17 @@ run_preflight_checks() {
 
     # Not left to errexit: the ERR trap installed by deploy() would report a failed deploy
     # upstream before this has said which check failed and why.
-    if ! ( cd "$SCRIPT_DIR" && eval "${commands[$index]}" ) > "$output" 2>&1; then
+    #
+    # The suite is streamed where the other checks stay buffered: it runs a minute against real
+    # MySQL and Redis, and a silent minute reads as a hang. `tee` keeps the capture, so the
+    # failure path below stays identical for every check.
+    if [ "${names[$index]}" = "tests" ]; then
+      # `pipefail` is set at the top of the script, so the pipeline's status is the suite's, not tee's.
+      if ( cd "$SCRIPT_DIR" && eval "${commands[$index]}" ) 2>&1 | tee "$output"; then ok=1; else ok=0; fi
+    else
+      if ( cd "$SCRIPT_DIR" && eval "${commands[$index]}" ) > "$output" 2>&1; then ok=1; else ok=0; fi
+    fi
+    if [ "$ok" != 1 ]; then
       echo "--- ${commands[$index]} ---" >&2
       tail -40 "$output" >&2
       echo "---" >&2
