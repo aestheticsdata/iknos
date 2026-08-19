@@ -7,7 +7,7 @@ const AboutPage = () => (
     <dl className="flex flex-col">
       {LEGAL.map((entry) => (
         <div
-          className="flex items-center gap-[18px] border-b border-chassis-raised py-[9px] last:border-b-0"
+          className="flex items-center gap-4.5 border-b border-chassis-raised py-2.25 last:border-b-0"
           key={entry.k}
         >
           <dt className="w-[88px] flex-none text-dense text-chassis-text-dim">{entry.k}</dt>

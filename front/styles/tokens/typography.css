@@ -43,8 +43,28 @@
   /* The one heading an auth screen has. */
   --text-title: 1.5625rem; /* 25px */
 
+  /* The wordmark bled off the corner of the auth backdrop, and nothing else. Outside the scale on
+     purpose: it is not a step anything else could reach for, it is one piece of furniture. */
+  --text-display: 13rem; /* 208px */
+
   /* The kickers' spacing, which is what makes 9px legible at all. */
   --tracking-kicker: 0.16em;
   --tracking-chrome: 0.12em;
   --tracking-control: 0.08em;
+
+  /* The 25px heading, pulled in a hair — at that size the default spacing reads loose. */
+  --tracking-title: -0.01em;
+
+  /* The display wordmark. Barely open, but it is 208px: 0.16em there would be 33px of air. */
+  --tracking-display: 0.04em;
+
+  /*
+   * Line heights.
+   *
+   * Tailwind's `leading-*` scale is built for prose at 16px; at 9–12px its steps land wrong. These
+   * three are the ones the design actually uses, named for the job rather than the ratio.
+   */
+  --leading-hint: 1.6; /* fine print under a field, and banner bodies */
+  --leading-prose: 1.75; /* the tagline — the only real sentence on an auth screen */
+  --leading-display: 0.8; /* the wordmark, set tight enough to bleed off the corner */
 }

@@ -49,15 +49,28 @@ export const AuthChassis = ({ page, children }: { page: AuthPage; children: Reac
         aria-hidden
         className="pointer-events-none absolute inset-0 overflow-hidden select-none"
       >
-        <div className="absolute inset-0 bg-[radial-gradient(760px_520px_at_50%_42%,rgba(134,185,154,0.10),rgba(16,21,28,0)_68%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(900px_600px_at_88%_96%,rgba(127,168,196,0.07),rgba(16,21,28,0)_70%)]" />
-        <div className="absolute bottom-[34px] left-6 text-[208px] leading-[0.8] font-bold tracking-[0.04em] whitespace-nowrap text-transparent [-webkit-text-stroke:1.5px_rgba(143,169,154,0.11)]">
+        {/*
+         * The mockup writes the far stop as `rgba(16,21,28,0)` — transparent `chassis-deep` rather
+         * than a bare `transparent`. That was the workaround for browsers that interpolated a
+         * gradient's stops without premultiplying alpha, which turned any fade to `transparent`
+         * into a grey bloom across the middle of the ramp. Every engine premultiplies now, so
+         * `to-transparent` renders identically and is the honest spelling: a colour token set to
+         * zero alpha compiles to the same `#0000` anyway, and only looks like it still carries the
+         * backdrop's hue.
+         *
+         * The sizes stay bracketed. They are the geometry of a piece of art, not a scale step.
+         */}
+        <div className="absolute inset-0 bg-radial-[760px_520px_at_50%_42%] from-chassis-accent/10 to-transparent to-68%" />
+        <div className="absolute inset-0 bg-radial-[900px_600px_at_88%_96%] from-chassis-info/7 to-transparent to-70%" />
+        {/* `-webkit-text-stroke` has no utility of its own, so the bracket is the only spelling —
+            but the colour still comes out of the token layer. */}
+        <div className="absolute bottom-[34px] left-6 text-display/display font-bold tracking-display whitespace-nowrap text-transparent [-webkit-text-stroke:1.5px_color-mix(in_srgb,var(--color-chassis-text-muted)_11%,transparent)]">
           IKNOS
         </div>
       </div>
 
       <header className="relative flex h-[38px] flex-none items-center gap-3.5 border-b border-chassis-raised bg-chassis-surface/80 px-3.5">
-        <span className="text-ui font-bold tracking-[0.14em] text-chassis-text">IKNOS</span>
+        <span className="text-ui font-bold tracking-chrome text-chassis-text">IKNOS</span>
         <span className="text-row tracking-chrome text-chassis-text-dim">
           {onAbout ? AUTH_TEXT.chrome.crumbAbout : AUTH_TEXT.chrome.crumb}
         </span>
@@ -78,14 +91,14 @@ export const AuthChassis = ({ page, children }: { page: AuthPage; children: Reac
 
       <div className="relative flex min-h-0 flex-1 items-center justify-center py-10">
         <div className={`flex flex-col ${CARD_WIDTH[page]} max-w-[calc(100vw-2rem)]`}>
-          <div className="mb-[7px] text-kicker tracking-[0.18em] text-chassis-text-dim">{kicker}</div>
-          <h1 className="mb-5 text-title font-bold tracking-[-0.01em] text-chassis-text-bright">{title}</h1>
+          <div className="mb-1.75 text-kicker tracking-kicker text-chassis-text-dim">{kicker}</div>
+          <h1 className="mb-5 text-title font-bold tracking-title text-chassis-text-bright">{title}</h1>
 
-          <div className="rounded-overlay border border-chassis-border bg-chassis-surface/95 px-[22px] py-5 shadow-overlay backdrop-blur-[3px]">
+          <div className="rounded-overlay border border-chassis-border bg-chassis-surface/95 px-5.5 py-5 shadow-overlay backdrop-blur-[3px]">
             {children}
           </div>
 
-          <p className="mt-4 text-row/[1.75] text-chassis-border-focus">{AUTH_TEXT.tagline}</p>
+          <p className="mt-4 text-row/prose text-chassis-border-focus">{AUTH_TEXT.tagline}</p>
 
           <div className="mt-3 flex items-center gap-4">
             <Link

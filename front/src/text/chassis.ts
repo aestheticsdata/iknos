@@ -8,6 +8,10 @@ export const CHASSIS_TEXT = {
   host: "ks-b",
   services: "services",
   allServices: "all",
+  /* The collapsed rail's monograms. Service names are abbreviated mechanically; these two are copy,
+     because `AL` is not a word and a truncated `lo` would read as a rendering fault. */
+  allServicesShort: "ALL",
+  logOutShort: "OUT",
   breadcrumbLabel: "Current scope",
   rangeLabel: "Time range",
   railLabel: "Services and views",

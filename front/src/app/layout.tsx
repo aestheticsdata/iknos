@@ -36,6 +36,11 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   // One colour, not a pair: the chassis is dark on every screen and does not follow the system.
+  //
+  // The one hex in the codebase outside `styles/tokens/`. Next serialises this into a `<meta>` tag
+  // at build time, so it has to be a literal — `var(--color-chassis-deep)` in a meta tag is not a
+  // colour, it is a string the browser discards. It must be kept equal to that token, which is why
+  // it is written in the same lowercase form the token file uses: a grep for the value finds both.
   themeColor: "#10151c",
 };
 

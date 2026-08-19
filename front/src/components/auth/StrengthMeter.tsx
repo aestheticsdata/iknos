@@ -29,7 +29,7 @@ export const StrengthMeter = ({ secret }: { secret: string }) => {
   const points = score(secret);
 
   return (
-    <div className="flex gap-[3px]">
+    <div className="flex gap-0.75">
       {[0, 1, 2, 3].map((segment) => (
         <div
           className={`h-[3px] flex-1 transition-colors duration-200 ${

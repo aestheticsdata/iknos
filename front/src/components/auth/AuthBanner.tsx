@@ -28,12 +28,12 @@ export const AuthBanner = ({
 }) => (
   <div
     className={cn(
-      "mb-4 flex flex-col gap-1 rounded-control border border-chassis-raised border-l-2 bg-chassis-deep/60 px-[11px] py-[9px]",
+      "mb-4 flex flex-col gap-1 rounded-control border border-chassis-raised border-l-2 bg-chassis-deep/60 px-2.75 py-2.25",
       TONE[tone],
     )}
     role="status"
   >
     <span className="text-label font-medium text-chassis-text-bright">{title}</span>
-    {children ? <span className="text-row/[1.6] text-chassis-text-muted">{children}</span> : null}
+    {children ? <span className="text-row/hint text-chassis-text-muted">{children}</span> : null}
   </div>
 );

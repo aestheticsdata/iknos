@@ -16,7 +16,7 @@ import { AUTH_TEXT } from "@text/auth";
 export const RevealToggle = ({ revealed, onToggle }: { revealed: boolean; onToggle: () => void }) => (
   <button
     aria-pressed={revealed}
-    className="rounded-chip border border-chassis-border-strong px-1.5 py-px text-kicker tracking-[0.1em] text-chassis-text-muted hover:border-chassis-border-focus hover:text-chassis-text"
+    className="rounded-chip border border-chassis-border-strong px-1.5 py-px text-kicker tracking-control text-chassis-text-muted hover:border-chassis-border-focus hover:text-chassis-text"
     onClick={onToggle}
     type="button"
   >

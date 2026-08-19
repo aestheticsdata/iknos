@@ -21,7 +21,7 @@ export const AuthField = ({
   error?: string;
   children: React.ReactNode;
 }) => (
-  <div className="flex flex-col gap-[5px]">
+  <div className="flex flex-col gap-1.25">
     <div className="flex items-center gap-2">
       <span className="flex-1 text-kicker tracking-kicker text-chassis-text-dim">{label}</span>
       {hint ? <span className="text-kicker text-chassis-text-dim">{hint}</span> : null}

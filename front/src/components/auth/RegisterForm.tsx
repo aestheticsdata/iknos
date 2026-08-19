@@ -98,7 +98,7 @@ export const RegisterForm = ({ sealed }: { sealed: boolean }) => {
        * which is the actual seal on the client side.
        */}
       <div
-        className={sealed ? "opacity-[0.42]" : undefined}
+        className={sealed ? "opacity-42" : undefined}
         inert={sealed}
       >
         <AuthField
@@ -150,7 +150,7 @@ export const RegisterForm = ({ sealed }: { sealed: boolean }) => {
           </div>
         </div>
 
-        <div className="mb-3.5 flex flex-col gap-[5px]">
+        <div className="mb-3.5 flex flex-col gap-1.25">
           <span className="text-kicker tracking-kicker text-chassis-text-dim">{AUTH_TEXT.fields.strength}</span>
           <StrengthMeter secret={password} />
         </div>
@@ -188,7 +188,7 @@ export const RegisterForm = ({ sealed }: { sealed: boolean }) => {
           />
         </AuthField>
 
-        <p className="mb-4 text-micro/[1.6] text-chassis-text-dim">{t.passphraseWarning}</p>
+        <p className="mb-4 text-micro/hint text-chassis-text-dim">{t.passphraseWarning}</p>
 
         <div className="flex items-center gap-3.5">
           <Button

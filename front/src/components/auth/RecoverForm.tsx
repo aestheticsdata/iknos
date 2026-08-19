@@ -136,7 +136,7 @@ export const RecoverForm = () => {
         </div>
       </div>
 
-      <p className="mb-4 text-micro/[1.6] text-chassis-text-dim">{t.hint}</p>
+      <p className="mb-4 text-micro/hint text-chassis-text-dim">{t.hint}</p>
 
       <div className="flex items-center gap-3.5">
         <Button
