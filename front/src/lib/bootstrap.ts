@@ -1,4 +1,5 @@
 import "server-only";
+import { apiOrigin } from "@lib/apiOrigin";
 
 /**
  * Whether this instance already has its account.
@@ -13,9 +14,6 @@ import "server-only";
  * its own rather than letting the register form infer the seal from a 409.
  */
 
-/** The API over loopback. Never the public hostname: that would leave the box and wait on nginx. */
-const API_ORIGIN = process.env.IKNOS_API_ORIGIN ?? "http://127.0.0.1:6900";
-
 export type Bootstrap = { sealed: boolean };
 
 /**
@@ -29,7 +27,7 @@ export type Bootstrap = { sealed: boolean };
  */
 export const readBootstrap = async (): Promise<Bootstrap> => {
   try {
-    const response = await fetch(`${API_ORIGIN}/api/auth/bootstrap`, {
+    const response = await fetch(`${apiOrigin()}/api/auth/bootstrap`, {
       // The seal changes exactly once in the lifetime of an instance, but caching the *unsealed*
       // answer would keep the form alive after registration. Never cached.
       cache: "no-store",

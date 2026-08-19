@@ -20,6 +20,9 @@ const nextConfig = {
   async rewrites() {
     if (process.env.NODE_ENV !== "development") return [];
 
+    // Keep in step with `src/lib/apiOrigin.ts`, which resolves the same thing for the server
+    // components. This file cannot import it — `next.config.js` is CommonJS and loaded before the
+    // TypeScript pipeline exists — so the development port is written out in both places.
     const api = process.env.IKNOS_API_ORIGIN ?? "http://127.0.0.1:4310";
     return { beforeFiles: [{ source: "/api/:path*", destination: `${api}/api/:path*` }] };
   },

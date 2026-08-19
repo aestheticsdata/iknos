@@ -1,4 +1,5 @@
 import "server-only";
+import { apiOrigin } from "@lib/apiOrigin";
 import { cookies } from "next/headers";
 
 /**
@@ -9,8 +10,6 @@ import { cookies } from "next/headers";
  * be forwarded by hand. A server component has no browser attached to it, and without this the
  * API answers 401 and the rail renders empty for a signed-in user.
  */
-
-const API_ORIGIN = process.env.IKNOS_API_ORIGIN ?? "http://127.0.0.1:6900";
 
 /** Restated from `nest-api/src/contracts/service.ts`, which is the authoritative copy. */
 export type Service = {
@@ -31,7 +30,7 @@ export const readServices = async (): Promise<Service[]> => {
     const jar = await cookies();
     const cookie = jar.toString();
 
-    const response = await fetch(`${API_ORIGIN}/api/services`, {
+    const response = await fetch(`${apiOrigin()}/api/services`, {
       headers: cookie ? { cookie } : {},
       cache: "no-store",
       signal: AbortSignal.timeout(3000),
