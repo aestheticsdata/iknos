@@ -45,6 +45,17 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         // starts, with no error to read.
         connectTimeout: CONNECT_TIMEOUT_MS,
         acquireTimeout: CONNECT_TIMEOUT_MS,
+        // Required against MySQL 8's default `caching_sha2_password`, and the same line
+        // Zeus and Worldweathr carry. That plugin skips the RSA handshake only while the
+        // account sits in the server's in-memory auth cache, and mysqld wipes that cache on
+        // every restart — i.e. every reboot of ks-b. The next connection falls back to full
+        // auth, which cannot send the password over a non-TLS socket without the server's
+        // public key, and without this the driver refuses to fetch it. The symptom is not an
+        // auth error: every query dies as `pool timeout ... (active=0 idle=0)` out of
+        // `onApplicationBootstrap`, a connection failure wearing the costume of pool
+        // exhaustion, and pm2 crashloops the API. Safe over loopback, where it trusts a key
+        // served by a process on the same box; use TLS instead if this ever goes remote.
+        allowPublicKeyRetrieval: true,
       }),
     });
   }
