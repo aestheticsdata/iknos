@@ -1,17 +1,17 @@
+import { AuthModule } from "@auth/auth.module";
+import { SessionGuard } from "@auth/session.guard";
+import { AllExceptionsFilter } from "@common/all-exceptions.filter";
+import { httpLoggerOptions, logger } from "@common/logger";
+import { validate } from "@config/env.validation";
+import { PrismaModule } from "@db/prisma.module";
+import { IngestModule } from "@ingest/ingest.module";
+import { LogsModule } from "@logs/logs.module";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
+import { RedisModule } from "@redis/redis.module";
 import { LoggerModule } from "nestjs-pino";
-import { AuthModule } from "./auth/auth.module";
-import { SessionGuard } from "./auth/session.guard";
-import { AllExceptionsFilter } from "./common/all-exceptions.filter";
-import { httpLoggerOptions, logger } from "./common/logger";
-import { validate } from "./config/env.validation";
 import { HealthController } from "./health.controller";
-import { IngestModule } from "./ingest/ingest.module";
-import { LogsModule } from "./logs/logs.module";
-import { PrismaModule } from "./prisma/prisma.module";
-import { RedisModule } from "./redis/redis.module";
 
 /**
  * One Nest app hosts both the HTTP API and the collector — one PM2 process, one Prisma client,

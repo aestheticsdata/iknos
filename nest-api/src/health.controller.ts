@@ -1,5 +1,5 @@
+import { Public } from "@auth/public.decorator";
 import { Controller, Get } from "@nestjs/common";
-import { Public } from "./auth/public.decorator";
 
 /**
  * The only public route.
