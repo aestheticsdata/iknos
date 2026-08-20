@@ -31,7 +31,26 @@ import type { Service } from "@lib/services";
  */
 export const LogPanel = ({ services }: { services: Service[] }) => {
   const { state, setValue, toggle, clear, setWindow, unpinWindow, refresh } = useLogQueryState();
-  const [live, setLive] = useState(false);
+
+  /*
+   * Live from the first paint — unless the URL already points at a pinned window.
+   *
+   * §5.1 specifies the toggle and never says which state to boot into, and off was the unexamined
+   * default. Opening a log view onto a still list is the one thing that reads as "the system went
+   * quiet" — the same misreading `animate-pulse-live` exists to rule out — and nothing is saved by
+   * it: the tail costs one bus listener and one socket, and the rows are in MySQL either way, so a
+   * tail is a view onto the write path rather than the delivery of it.
+   *
+   * The exception is the whole reason the toggle exists. The stream applies `from` and deliberately
+   * drops `to` (`withinWindow`, IKN-19), so under a pinned window a running tail stacks rows from
+   * now on top of rows from then, in one list with no seam between the two. A link carrying
+   * `?from=…&to=…` is someone being sent to an incident, and it has to open on the incident.
+   *
+   * Read once, at mount, rather than derived from `pinned` on every render: pinning a bucket
+   * *while* watching is a deliberate act with the unpin control right beside it, and making that
+   * click silently stop the stream would be this component overruling the person using it.
+   */
+  const [live, setLive] = useState(!state.pinned);
   const [openTraceId, setOpenTraceId] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
@@ -65,9 +84,20 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
     if (atTop) setShown(tail.items);
   }, [atTop, tail.items]);
 
+  /*
+   * Pausing drops the buffer, not just the view of it.
+   *
+   * `items` below already stops reading `shown` the moment `live` goes false, so the session left
+   * behind inside the hook was invisible rather than gone — and resuming re-adopted it on the next
+   * arrival, putting an hour-old batch at the top of the list as though it had just come in. The
+   * rows are in MySQL and `refresh` is how they come back, which makes the tail buffer the one
+   * copy there is no reason to keep.
+   */
   useEffect(() => {
-    if (!live) setShown([]);
-  }, [live]);
+    if (live) return;
+    setShown([]);
+    tail.clear();
+  }, [live, tail.clear]);
 
   const held = atTop ? 0 : tail.items.length - shown.length;
 
