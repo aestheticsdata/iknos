@@ -104,6 +104,6 @@ export class HttpIngestController {
       throw new BadRequestException(`unknown or disabled service '${body.service}'`);
     }
 
-    return this.ingest.ingest(body.service, body.events);
+    return this.ingest.ingest(body.service, body.events, ip === "unknown" ? null : ip);
   }
 }

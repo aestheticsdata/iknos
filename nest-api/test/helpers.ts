@@ -3,6 +3,7 @@ import { hashPassword } from "@auth/password.util";
 import { buildSessionMiddleware } from "@auth/session.middleware";
 import { JSON_BODY_LIMIT } from "@config/body-limit";
 import { PrismaService } from "@db/prisma.service";
+import { buildIngestCors } from "@ingest/ingest-cors";
 import { persistBatch } from "@ingest/writer";
 import { ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
@@ -21,6 +22,17 @@ export const TEST_PASSWORD = "test-password-1234";
 const SECRET = "test-secret-at-least-as-long-as-the-real-one-which-is-sixty-four-plus";
 
 /**
+ * The same split `parseEnv` applies, read at app-build time — after a suite's `beforeAll` has
+ * placed its origins in the environment, exactly like the controller reads its token.
+ */
+function parseIngestOrigins(): string[] {
+  return (process.env.IKNOS_INGEST_ORIGINS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+/**
  * The app as `main.ts` assembles it — same middleware, same order, same pipe.
  *
  * Anything configured here but not there (or the reverse) is a property the tests prove about a
@@ -32,6 +44,9 @@ export async function buildTestApp(): Promise<INestApplication> {
 
   // So `X-Forwarded-For` reaches `req.ip` and the rate-limit tests can pose as distinct clients.
   (app.getHttpAdapter().getInstance() as Application).set("trust proxy", 1);
+  // Same order as `main.ts`: CORS ahead of the session, reading the same environment the
+  // controller reads its token from.
+  app.use(buildIngestCors(parseIngestOrigins()));
   app.use(buildSessionMiddleware(app.get(RedisService).getClient(), SECRET, false));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   // Ahead of `init`, exactly as `main.ts` puts it ahead of `listen` — a body ceiling the tests

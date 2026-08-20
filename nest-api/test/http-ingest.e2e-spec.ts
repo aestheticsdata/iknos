@@ -180,6 +180,74 @@ describe("POST /api/ingest", () => {
   });
 
   /**
+   * The preflight, for fronts on other domains (pfa-front is the first).
+   *
+   * JSON body + `X-Iknos-Token` make the POST non-simple, so the browser asks first. Without
+   * these answers the report dies in the browser and the API never sees a byte — and the
+   * reporter swallows failures by design, so the OPTIONS below is the only trace there would be.
+   */
+  describe("cross-origin", () => {
+    it("answers the preflight for an allowed origin", async () => {
+      const res = await request(app.getHttpServer())
+        .options("/api/ingest")
+        .set("Origin", ALLOWED_ORIGIN)
+        .set("Access-Control-Request-Method", "POST")
+        .expect(204);
+
+      expect(res.headers["access-control-allow-origin"]).toBe(ALLOWED_ORIGIN);
+      expect(res.headers["access-control-allow-methods"]).toBe("POST");
+      expect(res.headers["access-control-allow-headers"]).toContain("X-Iknos-Token");
+    });
+
+    it("answers the preflight for a disallowed origin without allowing it", async () => {
+      const res = await request(app.getHttpServer())
+        .options("/api/ingest")
+        .set("Origin", "https://evil.test")
+        .set("Access-Control-Request-Method", "POST")
+        .expect(204);
+
+      // 204 with no allow-origin: the browser blocks, and the page learns nothing more.
+      expect(res.headers["access-control-allow-origin"]).toBeUndefined();
+    });
+
+    it("lets the page read the POST response from an allowed origin", async () => {
+      const res = await post({ service, events: [] }).set("Origin", ALLOWED_ORIGIN).expect(202);
+      expect(res.headers["access-control-allow-origin"]).toBe(ALLOWED_ORIGIN);
+    });
+
+    it("leaves every other route without CORS", async () => {
+      const res = await request(app.getHttpServer()).options("/api/logs").set("Origin", ALLOWED_ORIGIN);
+      expect(res.headers["access-control-allow-origin"]).toBeUndefined();
+    });
+  });
+
+  /**
+   * A browser cannot know its own address, so the API fills `client.ip` with the poster's — and
+   * only when the event does not carry one (a server-side relay knows better than we do).
+   */
+  describe("the poster's address", () => {
+    it("stamps the requester's IP on events that carry none", async () => {
+      const marker = randomUUID().slice(0, 8);
+      await post({ service, events: [event({ message: `noip ${marker}` })] })
+        .set("X-Forwarded-For", "198.51.100.7")
+        .expect(202);
+
+      const row = await prisma.logEntry.findFirst({ where: { service, message: `noip ${marker}` } });
+      expect(row?.clientIp).toBe("198.51.100.7");
+    });
+
+    it("keeps an explicit client.ip over the requester's", async () => {
+      const marker = randomUUID().slice(0, 8);
+      await post({ service, events: [event({ message: `hasip ${marker}`, "client.ip": "203.0.113.9" })] })
+        .set("X-Forwarded-For", "198.51.100.7")
+        .expect(202);
+
+      const row = await prisma.logEntry.findFirst({ where: { service, message: `hasip ${marker}` } });
+      expect(row?.clientIp).toBe("203.0.113.9");
+    });
+  });
+
+  /**
    * Two ceilings govern one request, and they have to agree: the event count the controller
    * enforces, and the byte count the body parser enforces before the controller is ever reached.
    * Express defaults the second to 100 kB, which a full batch of stack traces clears easily — so

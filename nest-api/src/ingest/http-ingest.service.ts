@@ -58,8 +58,19 @@ export class HttpIngestService {
    * should reach it as an error it can retry — and a browser dropping one error report is a far
    * smaller loss than the API pretending it stored something it did not.
    */
-  async ingest(service: string, events: unknown[]): Promise<IngestResult> {
-    const records = events.map((event) => toRecord(event, service)).filter((r): r is LogRecord => r !== null);
+  /**
+   * `clientIp` fills `client.ip` for events that do not carry one — and only those.
+   *
+   * A browser cannot know its own address, so a posted event almost never has the field a tailed
+   * line gets from pino-http. The poster's address as nginx saw it is the right value: the page
+   * reporting the event is the page the user has open. An event that does carry `client.ip`
+   * keeps it — a server-side relay forwarding someone else's logs knows better than we do.
+   */
+  async ingest(service: string, events: unknown[], clientIp: string | null = null): Promise<IngestResult> {
+    const records = events
+      .map((event) => toRecord(event, service))
+      .filter((r): r is LogRecord => r !== null)
+      .map((r) => (r.clientIp === null ? { ...r, clientIp } : r));
 
     if (records.length > 0) {
       await persistBatch(this.prisma, records, []);

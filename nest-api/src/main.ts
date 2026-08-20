@@ -2,14 +2,15 @@
 // through the metadata reflection API, and the environment is validated before anything else.
 import "reflect-metadata";
 
+import { buildSessionMiddleware } from "@auth/session.middleware";
+import { JSON_BODY_LIMIT } from "@config/body-limit";
+import { parseEnv } from "@config/env.validation";
+import { buildIngestCors } from "@ingest/ingest-cors";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import { RedisService } from "@redis/redis.service";
 import { Logger } from "nestjs-pino";
 import { AppModule } from "./app.module";
-import { buildSessionMiddleware } from "./auth/session.middleware";
-import { JSON_BODY_LIMIT } from "./config/body-limit";
-import { parseEnv } from "./config/env.validation";
-import { RedisService } from "./redis/redis.service";
 
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { Application } from "express";
@@ -26,7 +27,7 @@ async function bootstrap() {
 
   // Already validated by ConfigModule at module load; parsed again here only to get the typed
   // value rather than a string off process.env.
-  const { port, cookieSecret } = parseEnv({ ...process.env });
+  const { port, cookieSecret, ingestOrigins } = parseEnv({ ...process.env });
 
   // Behind nginx. Without this, req.ip is the proxy — so the login rate limit counts the whole
   // internet as one client — and a Secure cookie is never set.
@@ -35,6 +36,10 @@ async function bootstrap() {
   // whitelist strips properties no DTO declares, so a request cannot smuggle a field a handler
   // was never written to expect.
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+
+  // Ahead of the session middleware: a preflight OPTIONS carries no cookie and must not touch
+  // Redis, and the cross-origin POST it clears runs with `credentials: "omit"` anyway.
+  app.use(buildIngestCors(ingestOrigins));
 
   // Registered before listen and therefore ahead of every route, including /health, which
   // stores nothing and so still costs no Redis entry.
