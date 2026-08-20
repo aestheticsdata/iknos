@@ -36,10 +36,11 @@ iknos-api (NestJS)          tailer → parser → batch writer → MySQL
 iknos-front (Next App Router) ── /api/* over localhost, session cookie forwarded
 ```
 
-- **Ingestion** tails PM2 log files by `stat` polling, tracking `(dev, inode, byteOffset)` so
-  rotation, truncation and restarts resume exactly. The batch insert and the offset update
-  share one transaction, which is what delivers no-loss-no-duplicate rather than careful
-  sequencing.
+- **Ingestion** is `tail -f` as a service. It follows PM2's log files by `stat` polling,
+  tracking `(dev, inode, byteOffset)` so rotation, truncation and restarts resume exactly —
+  the inode is what makes a rotation detectable rather than silently producing garbage from a
+  byte offset that now means something else. The batch insert and the offset update share one
+  transaction, which is what delivers no-loss-no-duplicate rather than careful sequencing.
 - **Storage** is MySQL 8 with `log_entry` in daily `RANGE` partitions. Retention is
   `DROP PARTITION` — instant, and it returns disk to the OS, which a batched `DELETE` never
   does. The cost is full-text search — InnoDB forbids `FULLTEXT` on a partitioned table — so
@@ -122,6 +123,178 @@ This is a ceiling, not an expectation. The fleet these numbers were built for lo
 lines a day, not the 1.4 million a day this table holds — roughly **150× more than reality**. At
 the real volume every one of these is sub-millisecond and none of the partitioning matters. It is
 measured here so the number exists before someone needs it, not because it is needed now.
+
+## The choices, and what they cost
+
+### ECS, and why not OpenTelemetry
+
+A log line here is **ECS** — Elastic Common Schema — which is to say `@timestamp`, `log.level`,
+`message` and `url.path`, rather than whatever each application felt like calling them.
+
+The obvious alternative was OpenTelemetry, and it was declined on what OTel is actually for. It
+is three things: a vocabulary of field names, a wire protocol called **OTLP** for pushing
+telemetry to a backend, and SDKs that instrument your code. Its distinguishing feature is
+**traces** — trees of spans, each carrying a parent and a duration, which is what produces the
+waterfall saying a 340 ms request spent 300 ms inside one query. Iknos stores lines, not spans. A
+log line has a timestamp, not a duration and a parent, and the log half of OTel is exactly what
+ECS already gives.
+
+That is less of a fork than it looks. Elastic donated ECS to OpenTelemetry in 2023 and the two
+vocabularies have been merging into OTel's semantic conventions since — which is why the HTTP
+fields written here (`http.request.method`, `url.path`, `url.query`,
+`http.response.status_code`, `user_agent.original`) are already the names both sides agree on.
+What stays ECS-only is small and mechanical:
+
+| ECS | OTel |
+|---|---|
+| `client.ip` | `client.address` |
+| `@timestamp` | `Timestamp` |
+| `log.level` | `SeverityText` + `SeverityNumber` |
+| `message` | `Body` |
+| `event.duration` (ns) | span duration |
+
+A collector renames those in a processor block. It is a config file, not a re-instrumentation.
+
+What Iknos does not have, and should not be read as having, is **distributed tracing**. Rows
+share a `trace.id` and the trace view assembles them, which answers *show me every line from
+this request across services*. It does not answer *where did the 300 ms go*, and no amount of
+log correlation ever will.
+
+### What portability actually costs
+
+Three layers are worth separating, because they are standard to very different degrees. **The
+format** is what one line looks like — ECS, an industry standard, and the layer baked into every
+monitored app. **The transport** is how the line travels; there are two, one standard and one
+not. **The backend** is what stores and shows it — Iknos, disposable by design.
+
+Measured in lines of application code, deleting Iknos tomorrow and installing Loki instead costs:
+
+| | |
+|---|---|
+| every server-side app in the fleet | **0 lines** |
+| each frontend's browser reporting | **~20 lines**, one `send()` function |
+
+The stdout half is free because nothing in an application knows the collector exists: it prints,
+PM2 writes a file, and Filebeat, Vector, Fluent Bit or an OTel collector's `filelog` receiver all
+read files for a living. The POST half is not free, because the URL, the `X-Iknos-Token` header
+and the `{service, events}` envelope are Iknos's own invention. OTLP is the industry standard for
+that job and is deliberately out of scope — its envelope is deeply nested and its browser SDK
+weighs hundreds of kilobytes, which is machinery without a counterpart for six apps and one user.
+A second OTLP endpoint would sit beside this one without changing anything else.
+
+One distinction the numbers hide: Iknos is not *interchangeable*, it is *disposable*. Nobody
+swaps the collector for Filebeat and keeps Iknos running — the whole thing is deleted and
+something else installed in its place. What has to be portable was never Iknos. It is the
+interface its applications depend on, and they depend on almost nothing.
+
+### pino, and why not winston
+
+winston's central idea is that the application decides where its logs go: file transports,
+rotation, HTTP shipping, each with its own level and format, all configured inside the app.
+pino's is that the application prints and forgets, and the platform routes.
+
+The second one is this project's founding principle. Choosing winston would have meant buying a
+feature set whose entire purpose is the thing the architecture was designed against.
+
+What follows from it:
+
+- pino's default output already **is** the ingestion format. No adapter, no formatter to
+  configure, nothing to get wrong.
+- Expensive work — pretty-printing, shipping over a network — runs in a worker thread rather
+  than on the request path.
+- Its numeric levels, 10 trace through 60 fatal, are the parser's `LEVELS` map rather than a
+  translation of it.
+- `nestjs-pino` gives per-request child loggers, which is where a `trace.id` attaches.
+- Speed matters more here than in an ordinary application, because Iknos logs through the same
+  emitter it demands of everything else. A slow logger would tax the monitoring itself.
+
+**The cost is that pino is less forgiving.** Its redaction runs *after* `formatters.log`, so a
+converted request is `http.request.headers` while one that failed to convert is still `req` —
+cover one shape and the other publishes the credential. That is not hypothetical: it shipped,
+and session cookies were found in the table by reading it. `src/common/logger.ts` now lists both
+spellings and says why. winston's in-process formatting pipeline is easier to reason about, and
+that is the trade which bought the architecture.
+
+None of which disqualifies winston as an emitter elsewhere in the fleet. Elastic ships
+`@elastic/ecs-winston-format` too, and the parser accepts three grades of input — full ECS, bare
+JSON, plain text — so a winston application lands in the table regardless. It simply lands with
+fewer promoted columns unless configured for ECS. The difference is that with pino the right
+thing is the default.
+
+### No adapter layer
+
+The tempting move, when a backend might one day be swapped, is to wrap the sending in a facade so
+the swap is easy. It was not made, for three reasons.
+
+**It already exists.** `front/src/lib/report.ts` exposes `report()` and `initErrorReporting()`;
+application code never sees the URL, the token or the envelope. Another layer would wrap a
+wrapper.
+
+**There is nothing to wrap on the server.** Applications call pino, and pino is not Iknos — swap
+the backend and pino stays exactly where it is. A facade there would defend against a risk that
+does not exist, at the price of re-exposing child loggers and serializers one by one.
+
+**And an interface would not shrink the swap.** What sits behind it is twenty lines with exactly
+one implementation; on the day it changes, those lines are deleted and new ones written. An
+abstraction does not make deletion cheaper.
+
+The abstraction that pays here is the format. An adapter abstracts a function call and only works
+inside one codebase; a data format works across languages, processes and tools nobody has chosen
+yet — which is the layer this project spent its portability budget on, deliberately.
+
+If the swap cost ever needs reducing further, the lever is packaging rather than indirection:
+`report.ts` is meant to be copied into each frontend, so five fronts make a swap five edits
+instead of one. At two fronts, copy-paste still wins.
+
+## Two things this got wrong
+
+Both were found by trying to prove the opposite of what the ticket claimed, and both are recorded
+here because the method is the transferable part, not the bug.
+
+### A dead flag that had never worked
+
+`nest-api/tsconfig.json` declared nine path aliases, PM2 launched the process with
+`-r tsconfig-paths/register` to resolve them, and 209 imports across `src/` and `test/` used none
+of them. The ticket concluded that production, the dev watcher and the test runner were all broken
+by that gap.
+
+Two of those three were false. `@nestjs/cli` rewrites aliases **at emit time** —
+`tsconfigPathsBeforeHookFactory`, a TypeScript transformer the CLI pushes into `transforms.before`
+on every emit, including the incremental ones in watch mode. After a build,
+`dist/src/common/*.js` reads `require("../config/body-limit")`, and a grep across the whole of
+`dist/` finds no alias specifier at all. Raw `tsc` does not do this; the CLI does. Production and
+`pnpm dev` had never been broken. Only vitest was, and that fix was one line.
+
+The register flag was worse than redundant — it was **incapable** of the job its own comment
+claimed. Proven by negative control: raw `tsc` output, aliases left unrewritten, planted in
+`dist/` and launched with PM2's exact flags, which throws `Cannot find module
+'@config/body-limit'` from inside the hook. With `baseUrl` at `./` and the paths pointing at
+`./src/*`, the resolver aims at the TypeScript source, which `require` cannot load. It could never
+have caught a single alias, on any day, in any configuration.
+
+Then removing it broke the deploy. The first release crash-looped on `Cannot find module
+'tsconfig-paths/register'` at preload: the synced ecosystem file no longer carried the flag, but
+**`pm2 reload` never applies a `node_args` change to a running process**. PM2 kept relaunching
+with the old argument list, and because the same commit had dropped the package, dead config
+became fatal config. It took a `pm2 delete` and a `pm2 start` to clear. Deleting something unused
+is not free when a process manager is caching the arguments.
+
+### A limit nobody chose, hiding a bug nobody had hit
+
+`POST /api/ingest` advertises a batch of a hundred events. Express was applying its default 100 kB
+body limit, which nobody in this repository had chosen.
+
+A browser error weighs one to three kilobytes of escaped stack trace, so the body saturated around
+forty events — less than half the advertised batch. The failure mode is what makes it worth
+recording: invisible while a page throws twice, systematic the moment a component loops on every
+render. It broke **exactly** the batch that mattered. And `report.ts` swallows its failures by
+design, so nothing anywhere said so. `JSON_BODY_LIMIT` is 1 MB now, about 10 kB an event.
+
+The test written to prove the 413 found a 500 instead. The body parser runs ahead of the Nest
+router, so what it throws is a bare `Error` rather than an `HttpException` — `AllExceptionsFilter`
+read that as a bug, answered "internal error" and logged a stack trace, blaming the server for a
+request it had just refused correctly. That had been true before the ticket, and on every route
+rather than this one. Malformed JSON now answers 400 across the API instead of 500.
 
 ## The interface
 
