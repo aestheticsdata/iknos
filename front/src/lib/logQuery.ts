@@ -1,6 +1,6 @@
 "use client";
 
-import { boundsFor, isRangeKey } from "@lib/timeRange";
+import { boundsFor, DEFAULT_RANGE, isRangeKey } from "@lib/timeRange";
 import { parseAsArrayOf, parseAsString, parseAsStringLiteral, useQueryState, useQueryStates } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
 
@@ -164,7 +164,10 @@ export const useLogQueryState = (): {
   const [range] = useQueryState("range", parseAsString);
   const [now, setNow] = useState(() => new Date());
 
-  const rangeKey: RangeKey = isRangeKey(range) ? range : "1h";
+  // The constant, not a literal. `useTimeRange` in `@lib/chassisState` defaults the same
+  // parameter through nuqs, so a second copy of the value here is two defaults that drift apart
+  // silently — the range selector reading one window while the panel queries another.
+  const rangeKey: RangeKey = isRangeKey(range) ? range : DEFAULT_RANGE;
 
   const pinned = Boolean(window.from && window.to);
 

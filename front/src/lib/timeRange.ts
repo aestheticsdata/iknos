@@ -13,8 +13,21 @@ export const RANGE_KEYS = ["15m", "1h", "24h", "7d"] as const;
 
 export type RangeKey = (typeof RANGE_KEYS)[number];
 
-/** An hour: long enough to hold a deploy and its aftermath, short enough to stay fast. */
-export const DEFAULT_RANGE: RangeKey = "1h";
+/**
+ * A week.
+ *
+ * An hour was picked for query speed and is wrong for how this is actually read. Most services
+ * here log only when something happens, so they are silent for hours at a stretch — and an
+ * hour-wide window over a quiet service shows an empty list, which reads as an outage rather
+ * than as calm. That misreading has already cost one investigation.
+ *
+ * A week is affordable because nothing in MySQL expires: `IKNOS_RETENTION_DAYS` is validated and
+ * read by nothing, there is no partition-maintenance job, and `log_entry` still has the single
+ * `p_future` partition it was created with. Every line ever ingested is one query away, so the
+ * only cost of a wider default is a heavier query — and what it buys is the difference between
+ * "nothing happened" and "nothing happened *recently*", which are not the same answer.
+ */
+export const DEFAULT_RANGE: RangeKey = "7d";
 
 const MINUTES: Record<RangeKey, number> = {
   "15m": 15,
