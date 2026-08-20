@@ -92,4 +92,47 @@ describe("parse", () => {
   it("skips a blank line", () => {
     expect(parse("   ", "pfa-api", "out")).toBeNull();
   });
+
+  describe("health-probe noise", () => {
+    it("drops a plaintext Nest route line for a health path", () => {
+      // trekker/spira shape: ANSI already stripped by parse, loopback client, node UA.
+      expect(parse("[Route] GET   /api/health \u2192 Nest [127.0.0.1] node", "trekker-api", "out")).toBeNull();
+    });
+
+    it("drops Zeus's own probe access line", () => {
+      expect(
+        parse("[2026-08-20 20:00:04] [Zeus] GET /api/health \u2014 127.0.0.1 \u2014 node", "zeus-nest-api", "out"),
+      ).toBeNull();
+    });
+
+    it("drops a successful ECS health request", () => {
+      const line =
+        '{"@timestamp":"2026-08-20T10:00:00.000Z","log.level":"info","message":"request completed",' +
+        '"http.request.method":"GET","url.path":"/health","http.response.status_code":200}';
+      expect(parse(line, "iknos-api", "out")).toBeNull();
+    });
+
+    it("keeps a failing ECS health request", () => {
+      const line =
+        '{"@timestamp":"2026-08-20T10:00:00.000Z","log.level":"info","message":"request errored",' +
+        '"http.request.method":"GET","url.path":"/health","http.response.status_code":503}';
+      expect(out(line).statusCode).toBe(503);
+    });
+
+    it("keeps a warn-or-worse line even on a health path", () => {
+      expect(out("ERROR health check timed out after GET /api/health").levelName).toBe("error");
+    });
+
+    it("keeps prose that merely mentions a longer path", () => {
+      // \b must not treat "healthcheck" or "/health/deep" prose as the probe route itself.
+      expect(out("scheduling GET /api/healthcheck-partner sync").message).toContain("healthcheck-partner");
+    });
+
+    it("keeps ordinary requests to other routes", () => {
+      const line =
+        '{"@timestamp":"2026-08-20T10:00:00.000Z","log.level":"info","message":"request completed",' +
+        '"http.request.method":"GET","url.path":"/api/users","http.response.status_code":200}';
+      expect(out(line).route).toBe("/api/users");
+    });
+  });
 });

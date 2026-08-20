@@ -114,10 +114,44 @@ function plainText(message: string, service: string, fallback: string): LogRecor
 }
 
 /**
+ * The fleet's health probes, dropped at the door — and only while they are healthy.
+ *
+ * Zeus sweeps every service it registers, and four apps log the probe they receive. Measured on
+ * ks-b, those lines were the *entirety* of the fleet's steady-state log volume: ten lines a
+ * minute, every one of them `GET /health` answered 200, ingested forever by a store with no
+ * retention. A monitoring tool whose own reading is the majority of what it stores has failed at
+ * its one job, so the line is drawn here, where every stdout line already passes.
+ *
+ * Two shapes, one meaning. An instrumented app promotes the path into `route`; an uninstrumented
+ * one leaves it inside the message (`[Route] GET /api/health \u2192 Nest [127.0.0.1] node`), so the
+ * message is only consulted when there is no route to ask. `\b` keeps prose about
+ * `/api/healthcheck-partner` out of the blast radius.
+ *
+ * The guards are the point: nothing at `warn` or above is ever dropped, and neither is a probe
+ * that failed \u2014 a health route answering 503 is the one line about it worth keeping. What this
+ * deliberately does not try to know is *who* asked: a probe aimed at a business route (Zeus pings
+ * shatter at `/api/scores`) is indistinguishable from traffic and is kept, because guessing at
+ * requesters is how real requests disappear.
+ */
+const HEALTH_ROUTE = /^\/(api\/)?health\/?$/;
+const HEALTH_PROBE_LINE = /\bGET\s+\/(api\/)?health\b/;
+
+function isHealthProbeNoise(r: LogRecord): boolean {
+  if (r.level >= LEVELS.warn) return false;
+  if (r.statusCode !== null && r.statusCode >= 400) return false;
+  return r.route !== null ? HEALTH_ROUTE.test(r.route) : HEALTH_PROBE_LINE.test(r.message);
+}
+
+/**
  * `JSON.parse` on every line is safe from the event-loop rule because `LineBuffer` caps a line at
  * 1 MB before it ever reaches this function.
  */
 export function parse(line: string, service: string, stream: "out" | "err"): LogRecord | null {
+  const record = parseLine(line, service, stream);
+  return record !== null && isHealthProbeNoise(record) ? null : record;
+}
+
+function parseLine(line: string, service: string, stream: "out" | "err"): LogRecord | null {
   // Never re-ingest our own write failures — otherwise a database outage becomes an infinite
   // loop: the failure is logged, the log is ingested, the ingestion fails, the failure is logged.
   if (line.includes(INGEST_SKIP_MARKER)) return null;
