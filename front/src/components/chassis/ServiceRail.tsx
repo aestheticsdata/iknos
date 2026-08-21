@@ -1,11 +1,11 @@
 "use client";
 
 import { useSelectedService } from "@lib/chassisState";
-import { postWithCsrf } from "@lib/csrf";
 import { ROUTES } from "@lib/routes";
+import { useLogout } from "@lib/useLogout";
 import { CHASSIS_TEXT } from "@text/chassis";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { IngestCard } from "./IngestCard";
 
@@ -188,26 +188,21 @@ const RailRow = ({
  * toast — that needs the toast primitive, so it arrives with it rather than as a dead row here.
  */
 const UserMenu = () => {
-  const router = useRouter();
+  const logout = useLogout();
   const [leaving, setLeaving] = useState(false);
 
-  const logout = async () => {
+  // Shared with `⌘⇧L` since IKN-22 — one path out, so the button and the shortcut cannot come to
+  // disagree about what signing out does.
+  const leave = async () => {
     setLeaving(true);
-    try {
-      // Authenticated, so it needs the CSRF header — unlike the four public auth routes.
-      await postWithCsrf("/auth/logout");
-    } finally {
-      // Push regardless: a logout that failed server-side still must not leave the chassis up,
-      // and the middleware bounces the next navigation anyway once the cookie is gone.
-      router.push(ROUTES.login);
-    }
+    await logout();
   };
 
   return (
     <section>
       <button
         type="button"
-        onClick={logout}
+        onClick={leave}
         disabled={leaving}
         className="flex w-full items-center rounded-chip px-2 py-1.5 text-label text-chassis-text-muted hover:bg-chassis-raised/60 hover:text-chassis-text disabled:opacity-50 max-rail:justify-center max-rail:px-0"
       >

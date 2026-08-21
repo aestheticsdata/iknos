@@ -5,11 +5,14 @@ import { QueryBar } from "@components/logs/QueryBar";
 import { TraceTimeline } from "@components/logs/TraceTimeline";
 import { VolumeHistogram } from "@components/logs/VolumeHistogram";
 import { useToast } from "@components/ui/Toast";
+import { useCommand } from "@lib/commandState";
 import { useLogQueryState } from "@lib/logQuery";
+import { useTraceParam } from "@lib/traceState";
 import { useHistogram } from "@lib/useHistogram";
 import { useLiveTail } from "@lib/useLiveTail";
 import { useLogSearch } from "@lib/useLogSearch";
 import { useTrace } from "@lib/useTrace";
+import { usePublishViewStatus } from "@lib/viewStatus";
 import { LOGS_TEXT } from "@text/logs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -51,7 +54,15 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
    * click silently stop the stream would be this component overruling the person using it.
    */
   const [live, setLive] = useState(!state.pinned);
-  const [openTraceId, setOpenTraceId] = useState<string | null>(null);
+  /*
+   * In the URL since IKN-22, not in this component.
+   *
+   * The ⌘K palette opens a trace from the chassis, and hoisting this panel's state up there to
+   * reach it would put the whole of IKN-12's internals one level above their only consumer. The
+   * URL is the seam both already share — and it makes a trace a link, which is the most useful
+   * thing one person debugging can hand another.
+   */
+  const [openTraceId, setOpenTraceId] = useTraceParam();
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
@@ -127,6 +138,85 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
     [live, shown, search.rows],
   );
 
+  /** Gaps are not selectable — a dropped-lines marker is a fact about the list, not a row in it. */
+  const selectableKeys = useMemo(() => items.filter((item) => item.kind === "row").map((item) => item.key), [items]);
+
+  /**
+   * Where the cursor was, so it can be put back somewhere sensible when its row disappears.
+   *
+   * A key, once gone, says nothing about where in the list it used to be — so the index is kept
+   * alongside it. This is what makes the clamp below land near where the reader was looking rather
+   * than at the top.
+   */
+  const lastIndex = useRef(0);
+
+  /*
+   * §6: the selection is clamped whenever the list changes.
+   *
+   * Filters change the list under the cursor constantly — that is what filters are — and a
+   * selection pointing at a row that is no longer there is not visibly broken: `⏎` and `⌥⏎` simply
+   * stop doing anything, which reads as the keyboard having died. The tail makes it worse, since
+   * the list also changes when nobody touched anything.
+   */
+  useEffect(() => {
+    if (selectedKey === null) return;
+
+    const index = selectableKeys.indexOf(selectedKey);
+    if (index >= 0) {
+      lastIndex.current = index;
+      return;
+    }
+
+    /*
+     * An empty list is left alone, and that is the whole of the fix.
+     *
+     * Changing a filter empties the list for the render between the query changing and its answer
+     * arriving. Clearing the cursor there looks right and is not: by the time the rows land the
+     * selection is already `null`, this effect returns early, and the cursor is gone for good —
+     * a filter that narrows the list would drop the keyboard entirely, which is the exact failure
+     * §6 asks about. Holding the stale key costs one render with nothing highlighted and restores
+     * the cursor the moment there is a row to put it on.
+     */
+    if (selectableKeys.length === 0) return;
+
+    setSelectedKey(selectableKeys[Math.min(lastIndex.current, selectableKeys.length - 1)] ?? null);
+  }, [selectableKeys, selectedKey]);
+
+  const move = useCallback(
+    (delta: number) => {
+      setSelectedKey((current) => {
+        if (selectableKeys.length === 0) return null;
+
+        const index = current === null ? -1 : selectableKeys.indexOf(current);
+        // From no selection, `j` takes the first row and `k` the last — the two ends somebody
+        // reaching for a keyboard is actually reaching for.
+        if (index < 0) return selectableKeys[delta > 0 ? 0 : selectableKeys.length - 1] ?? null;
+
+        // Clamped rather than wrapped: a list that jumps from the last line to the first while you
+        // are holding `j` loses your place completely, and there is no undo for that.
+        return selectableKeys[Math.min(Math.max(index + delta, 0), selectableKeys.length - 1)] ?? null;
+      });
+    },
+    [selectableKeys],
+  );
+
+  /*
+   * Follow the cursor with the scrollport.
+   *
+   * `block: "nearest"` so a row already on screen is left exactly where it is — clicking a row
+   * would otherwise re-centre the list under the pointer, which is the sort of motion §3.4 rules
+   * out. It only scrolls when the selection has genuinely gone out of view.
+   */
+  useEffect(() => {
+    if (selectedKey === null) return;
+    listRef.current?.querySelector(`[data-row-key="${CSS.escape(selectedKey)}"]`)?.scrollIntoView({ block: "nearest" });
+  }, [selectedKey]);
+
+  const selectedRow = useMemo<LogRow | null>(() => {
+    const item = items.find((candidate) => candidate.kind === "row" && candidate.key === selectedKey);
+    return item?.kind === "row" ? item.row : null;
+  }, [items, selectedKey]);
+
   const copyRow = useCallback(
     (row: LogRow) => {
       // NDJSON, not pretty JSON: the point of copying a line is to paste it into something that
@@ -152,6 +242,36 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
     },
     [toast],
   );
+
+  /*
+   * The keyboard table of §6, bound to the state that answers it (IKN-22).
+   *
+   * The listener itself is in the chrome and there is exactly one of it; these are handlers it
+   * dispatches to while this view is mounted. A page with no list registers none of them and the
+   * keys do nothing, which is the right behaviour rather than a missing feature.
+   */
+  useCommand("selection.next", () => move(1));
+  useCommand("selection.prev", () => move(-1));
+  useCommand("selection.expand", () => {
+    if (selectedKey !== null) setExpandedKey(expandedKey === selectedKey ? null : selectedKey);
+  });
+  useCommand("selection.trace", () => {
+    // Only for a row that has one. A line logged outside any request carries no `traceId`, and
+    // opening an empty timeline for it would be answering a question it never asked.
+    if (selectedRow?.traceId) setOpenTraceId(selectedRow.traceId);
+  });
+  useCommand("selection.copy", () => {
+    if (selectedRow) copyRow(selectedRow);
+  });
+
+  /*
+   * Three cells of the status bar, published rather than hoisted — see `viewStatus`.
+   *
+   * `count` is what is on screen for the window, which is the number the bar can honestly claim:
+   * the total for the range would need a `COUNT(*)` over the same predicate, and IKN-19
+   * deliberately does not run one (the extra row is how the page learns there is more).
+   */
+  usePublishViewStatus({ live, count: items.length, tookMs: search.tookMs });
 
   return (
     <section className="flex h-full min-h-0 flex-col bg-chassis-deep">

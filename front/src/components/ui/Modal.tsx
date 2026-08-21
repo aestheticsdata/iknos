@@ -1,5 +1,6 @@
 "use client";
 
+import { useModalOpen } from "@lib/commandState";
 import { cn } from "@lib/utils";
 import { useEffect, useRef } from "react";
 
@@ -36,6 +37,13 @@ export const Modal = ({
   children: React.ReactNode;
 }) => {
   const ref = useRef<HTMLDialogElement>(null);
+
+  /*
+   * Every overlay in the application goes through this component, so declaring it here is what
+   * makes "under a modal, only `esc` acts" (IKN-22) true by construction rather than by each
+   * modal's author having remembered to opt in.
+   */
+  useModalOpen(open);
 
   /*
    * Deliberately without a dependency array: this reconciles the DOM against the prop, and the DOM

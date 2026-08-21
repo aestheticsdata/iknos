@@ -2,6 +2,7 @@ import { ToastProvider } from "@components/ui/Toast";
 import { readServices } from "@lib/services";
 import { CollectorProvider } from "@lib/useCollector";
 import { ZoneProvider } from "@lib/zoneState";
+import { ChromeShell } from "./ChromeShell";
 import { ServiceRail } from "./ServiceRail";
 import { StatusBar } from "./StatusBar";
 import { TopBar } from "./TopBar";
@@ -36,14 +37,19 @@ export const AppChassis = async ({ children }: { children: React.ReactNode }) =>
             would drift apart, and a dot saying the collector is dead above a card still drawing its
             throughput is not a disagreement anyone should have to arbitrate. */}
         <CollectorProvider>
-          <div className="flex h-dvh flex-col overflow-hidden bg-chassis-deep font-mono">
-            <TopBar />
-            <div className="flex min-h-0 flex-1">
-              <ServiceRail services={services} />
-              <main className="min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
+          {/* The keyboard, the palette and the status channel — IKN-22. Inside the providers above
+              because the palette re-scopes the service and reads the same clock as everything
+              else; outside the layout because it owns a native dialog. */}
+          <ChromeShell>
+            <div className="flex h-dvh flex-col overflow-hidden bg-chassis-deep font-mono">
+              <TopBar />
+              <div className="flex min-h-0 flex-1">
+                <ServiceRail services={services} />
+                <main className="min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
+              </div>
+              <StatusBar />
             </div>
-            <StatusBar />
-          </div>
+          </ChromeShell>
         </CollectorProvider>
       </ZoneProvider>
     </ToastProvider>

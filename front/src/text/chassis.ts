@@ -58,7 +58,30 @@ export const CHASSIS_TEXT = {
   storagePurge: (at: string) => `nightly purge ${at}`,
   storageReadAt: (at: string) => `read ${at}`,
   storageFiles: (n: number) => `${n} file${n === 1 ? "" : "s"} tailed`,
+  /* IKN-22 — the palette. The action word on the right of a row is what enter will do, and the
+     four are genuinely different verbs: a result here is an action, not a link. */
+  paletteTag: "palette",
+  paletteTitle: "Go to",
+  palettePlaceholder: "service, route, trace id, view…",
+  paletteHint: "↑↓ move · ⏎ open · esc close",
+  palettePrompt: "Type to search services, routes and traces in the current window.",
+  paletteSearching: "searching…",
+  paletteEmpty: "Nothing matches in this window.",
+  paletteFailed: "Search is unavailable.",
+  paletteScope: "scope",
+  paletteFilter: "filter",
+  paletteOpen: "open",
+  paletteGo: "go",
+  /* IKN-22 §3 — the status bar's cells. */
   modeNormal: "NORMAL",
-  keyLegend: "j/k move · ⏎ expand · / query · ⌘K palette",
+  modeModal: "MODAL",
+  tailOn: "tail on",
+  tailOff: "tail off",
+  events: (count: string, range: string) => `${count} ev / ${range}`,
+  queryTime: (ms: number) => `q ${ms}ms`,
+  /* The permanent legend. Every entry here is a shortcut that works — `⌘I` is in the design doc's
+     table and is deliberately absent, because issues arrive with M3 and a legend advertising a
+     dead key is worse than a shorter legend. */
+  keyLegend: "j/k move · ⏎ expand · ⌥⏎ trace · / query · ⌘K palette",
   workSurfacePending: "The log panel arrives with IKN-12.",
 } as const;

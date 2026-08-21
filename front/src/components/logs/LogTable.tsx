@@ -340,6 +340,11 @@ const LogTableRow = memo(
         <tr
           onClick={toggle}
           aria-current={selected ? "true" : undefined}
+          /* How the keyboard finds the row it just moved to, so it can be scrolled into view
+             (IKN-22). An attribute rather than an effect per row: the list is built to stay usable
+             at ten thousand rows, and ten thousand scroll effects is exactly the cost `React.memo`
+             is here to avoid. */
+          data-row-key={rowKey}
           className={cn(
             // The whole row toggles the detail pane, not just the button in the time cell, so the
             // whole row admits it under the pointer. The base rule covers buttons and cannot reach

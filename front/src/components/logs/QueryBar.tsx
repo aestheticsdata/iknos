@@ -4,6 +4,7 @@ import { Badge } from "@components/ui/Badge";
 import { Button } from "@components/ui/Button";
 import { Field } from "@components/ui/Field";
 import { Select } from "@components/ui/Select";
+import { useCommand } from "@lib/commandState";
 import { isFilterActive, LOG_FILTER_KEYS } from "@lib/logQuery";
 import { FILTERABLE_LEVELS } from "@lib/logTypes";
 import { cn } from "@lib/utils";
@@ -88,6 +89,23 @@ export const QueryBar = ({
   /** Closed sets open on their first option, so the drawer is submittable the moment it appears. */
   const seedFor = (key: LogFilterKey): string =>
     key === "service" ? (services[0] ?? "") : key === "level" ? FILTERABLE_LEVELS[0] : "";
+
+  /*
+   * `/` — §6's "focus the query bar" (IKN-22).
+   *
+   * Registered here rather than passed down as a prop, because the thing it opens is this
+   * component's own state and nothing above it needs to know the drawer exists. The chrome holds
+   * the one listener; what a key *means* stays where the state is.
+   *
+   * It seeds on `q` when that is still free, because `/` means "search the text" in every tool
+   * this borrows from. With `q` already set it opens on whatever is next, and with every filter set
+   * it does nothing at all — which is the honest answer: the trigger button is gone too.
+   */
+  useCommand("query.focus", () => {
+    if (draft) return;
+    const key = unset.includes("q") ? "q" : unset[0];
+    if (key) setDraft({ key, value: seedFor(key) });
+  });
 
   const commit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
