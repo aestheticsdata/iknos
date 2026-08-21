@@ -124,6 +124,51 @@ lines a day, not the 1.4 million a day this table holds — roughly **150× more
 the real volume every one of these is sub-millisecond and none of the partitioning matters. It is
 measured here so the number exists before someone needs it, not because it is needed now.
 
+### The partition window
+
+Partitions do not appear by themselves. A job runs once at boot and again at 3 a.m., keeps **three
+days of partitions ahead** of today, and drops every partition older than `IKNOS_RETENTION_DAYS`.
+Both halves are `ALTER TABLE`; neither reads or writes a row through the query planner.
+
+Its failure mode is the reason the migration ships a `p_future VALUES LESS THAN MAXVALUE`. If the
+job stops, ingestion does not: rows keep landing in `p_future`, and the only consequence is a
+table that is no longer pruned. Degraded, not broken, and a restart catches the window up. That is
+also why a failure inside it is logged and swallowed rather than thrown — a maintenance job that
+can crash the API at boot is a worse problem than the one it solves.
+
+The names in those statements are interpolated, because DDL cannot be parameterised. What makes
+that acceptable is that a partition name is always either generated from a `Date` or read back
+from `information_schema` and matched against `/^p\d{8}$/` — never from anything a user typed.
+It is checked at the point of use, not assumed.
+
+**Size in steady state.** At the 440 bytes per row the benchmark above works out to — 10.24 M rows
+in 4.5 GB, secondary indexes included — a 14-day window costs:
+
+| Lines per day | Table, at rest |
+|---|---|
+| 5,000 — roughly what this fleet writes | 31 MB |
+| 100,000 | 615 MB |
+| 1,000,000 | 6.2 GB |
+
+So the honest answer for ks-b is tens of megabytes, and the retention window exists for the shape
+of the growth rather than its size: bounded and predictable beats small.
+
+**What it costs while it runs**, measured on a laptop against 200,000-row partitions, with a
+writer and a reader hammering the table throughout:
+
+| Pass | Duration | Slowest insert | Slowest read |
+|---|---|---|---|
+| Daily, nothing to do | 2 ms | — | — |
+| `DROP PARTITION`, 200 k rows | 217 ms | 124 ms | 95 ms |
+| Catch-up `REORGANIZE`, 200 k rows out of `p_future` | 2,131 ms | **2,124 ms** | 132 ms |
+
+The last row is the one to know about: a `REORGANIZE` that has to move rows **blocks writes to the
+table for its whole duration**, while reads carry on. That is the first pass after a deploy, or
+the first after the job has been down — never the daily one, because in steady state `p_future` is
+empty and there is nothing to move. The collector queues 20,000 records before it drops any, so a
+two-second stall is absorbed unless the fleet is writing more than 10,000 lines a second, which is
+roughly two thousand times what it does.
+
 ## The choices, and what they cost
 
 ### ECS, and why not OpenTelemetry

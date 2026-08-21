@@ -23,6 +23,7 @@
       "@generated/*": ["./generated/*"],
       "@ingest/*": ["./src/ingest/*"],
       "@logs/*": ["./src/logs/*"],
+      "@maintenance/*": ["./src/maintenance/*"],
       "@redis/*": ["./src/redis/*"],
       "@src/*": ["./src/*"],
       "@stream/*": ["./src/stream/*"]

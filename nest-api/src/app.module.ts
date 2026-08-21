@@ -6,6 +6,7 @@ import { validate } from "@config/env.validation";
 import { PrismaModule } from "@db/prisma.module";
 import { IngestModule } from "@ingest/ingest.module";
 import { LogsModule } from "@logs/logs.module";
+import { MaintenanceModule } from "@maintenance/maintenance.module";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
@@ -17,8 +18,8 @@ import { HealthController } from "./health.controller";
  * One Nest app hosts both the HTTP API and the collector — one PM2 process, one Prisma client,
  * and a live tail served from an in-process event bus rather than by polling MySQL.
  *
- * Auth (IKN-6, IKN-21), the collector (IKN-7) and the log routes (IKN-19) are in. Metrics, issues
- * and alerts arrive with the milestone that needs them.
+ * Auth (IKN-6, IKN-21), the collector (IKN-7), the log routes (IKN-19) and the partition window
+ * (IKN-11) are in. Metrics, issues and alerts arrive with the milestone that needs them.
  */
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { HealthController } from "./health.controller";
     AuthModule,
     IngestModule,
     LogsModule,
+    MaintenanceModule,
   ],
   controllers: [HealthController],
   providers: [
