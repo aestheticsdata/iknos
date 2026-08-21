@@ -43,6 +43,18 @@ export const config = {
    * redirected to `/login`, and is handed an HTML page where it expected JSON. The manifest holds
    * the app's name, its two chassis colours and three icon URLs — there is nothing in it a login
    * screen does not already show.
+   *
+   * **`api` is excluded, and without it signing in is impossible in development.** This middleware
+   * guards *pages*; the API guards itself, on every single call, with a real Redis lookup that the
+   * Edge runtime cannot make. On ks-b the distinction never comes up because nginx routes `/api/*`
+   * straight to Nest and Next never sees it — but on localhost the dev rewrite carries those calls
+   * through Next, so `POST /api/auth/login` arrived here with no session cookie yet, matched no
+   * public path, and was redirected to `/login`. The request that exists to create a session was
+   * the one request a missing session bounced, and the sign-in form simply reloaded itself.
+   *
+   * It survived because the check is presence-only: any stale `iknos.sid` from an earlier session
+   * lets everything through, so it reproduces only on a clean profile — or immediately after
+   * signing out, which is the worst possible moment to find it.
    */
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)"],
 };
