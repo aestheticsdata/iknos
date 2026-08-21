@@ -51,15 +51,29 @@
    * theoretical: the time zone toggle sat on screen through a whole session without being
    * recognised as a button.
    *
-   * Left off `:disabled`, where `Button` already paints `cursor-not-allowed` — the more specific
-   * and more useful answer. `[aria-disabled]` gets the same treatment for anything that is
-   * disabled without being able to say so natively.
+   * A disabled control says `not-allowed` instead, which is the more useful answer and the one
+   * `Button` already paints for itself. It is declared here as well because `Button` is not the
+   * only way a disabled control reaches the page: the histogram's buckets, its anomaly marker and
+   * the rail's log-out are raw `<button>`s that disable themselves, and they would otherwise fall
+   * back to `default` and be indistinguishable from text.
    */
   button:not(:disabled),
   select:not(:disabled),
   summary,
-  [role="button"]:not([aria-disabled="true"]) {
+  [role="button"]:not([aria-disabled="true"]),
+  /* Bound by `htmlFor` to a `<select>`, which the clause above gives a pointer — the same control
+     with two cursors reads as two different things. Deliberately not every `<label>`: the ones in
+     `ui/Field` point at text inputs, whose I-beam is correct, and a pointer there would promise a
+     click-to-act that does not happen. */
+  label:has(+ div > select),
+  label:has(+ select) {
     cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
   }
 
   /**
