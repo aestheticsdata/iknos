@@ -22,5 +22,6 @@ export type { Bucket, Histogram } from "./histogram";
 export type { LogPage } from "./log-page";
 export type { LogRow } from "./log-row";
 export type { Meta } from "./meta";
+export type { SearchHit, SearchHitType, SearchResults } from "./search";
 export type { Service, ServiceList } from "./service";
 export type { Trace } from "./trace";
