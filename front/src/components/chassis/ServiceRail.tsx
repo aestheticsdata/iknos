@@ -7,6 +7,7 @@ import { CHASSIS_TEXT } from "@text/chassis";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { IngestCard } from "./IngestCard";
 
 import type { Service } from "@lib/services";
 
@@ -130,7 +131,12 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
         </ul>
       </section>
 
-      <UserMenu />
+      {/* `mt-auto` here rather than on the user menu: the mockup puts the ingest card and the user
+          together at the foot of the rail, and the gap has to open above both of them. */}
+      <div className="mt-auto flex flex-col gap-2">
+        <IngestCard />
+        <UserMenu />
+      </div>
     </nav>
   );
 };
@@ -198,7 +204,7 @@ const UserMenu = () => {
   };
 
   return (
-    <section className="mt-auto">
+    <section>
       <button
         type="button"
         onClick={logout}

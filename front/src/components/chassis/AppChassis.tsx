@@ -1,5 +1,6 @@
 import { ToastProvider } from "@components/ui/Toast";
 import { readServices } from "@lib/services";
+import { CollectorProvider } from "@lib/useCollector";
 import { ZoneProvider } from "@lib/zoneState";
 import { ServiceRail } from "./ServiceRail";
 import { StatusBar } from "./StatusBar";
@@ -30,14 +31,20 @@ export const AppChassis = async ({ children }: { children: React.ReactNode }) =>
           are two renders of one decision, and a provider that wrapped only the work surface would
           let them disagree — which is exactly the failure IKN-38 exists to end. */}
       <ZoneProvider>
-        <div className="flex h-dvh flex-col overflow-hidden bg-chassis-deep font-mono">
-          <TopBar />
-          <div className="flex min-h-0 flex-1">
-            <ServiceRail services={services} />
-            <main className="min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
+        {/* One poll of `/api/collector/status` for the whole shell. The pastille in the top bar and
+            the ingest card in the rail are two renderings of one snapshot — polled separately they
+            would drift apart, and a dot saying the collector is dead above a card still drawing its
+            throughput is not a disagreement anyone should have to arbitrate. */}
+        <CollectorProvider>
+          <div className="flex h-dvh flex-col overflow-hidden bg-chassis-deep font-mono">
+            <TopBar />
+            <div className="flex min-h-0 flex-1">
+              <ServiceRail services={services} />
+              <main className="min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
+            </div>
+            <StatusBar />
           </div>
-          <StatusBar />
-        </div>
+        </CollectorProvider>
       </ZoneProvider>
     </ToastProvider>
   );

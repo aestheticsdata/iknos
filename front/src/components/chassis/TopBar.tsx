@@ -6,14 +6,16 @@ import { timeLabel } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
 import { CHASSIS_TEXT } from "@text/chassis";
 import { useEffect, useState } from "react";
+import { CollectorPill } from "./CollectorPill";
 import { ZoneToggle } from "./ZoneToggle";
 
 /**
  * The top bar — brand, host badge, breadcrumb, the global time range.
  *
- * Three things the mockup draws here are **absent, not stubbed**: the ⌘K trigger belongs to
- * IKN-22, and collector lag to IKN-24. A control that is visible and dead is the "grisée à venir"
- * the design doc rules out in as many words, so they arrive with the tickets that can answer them.
+ * The ⌘K trigger the mockup draws here is still **absent, not stubbed** — it belongs to IKN-22. A
+ * control that is visible and dead is the "grisée à venir" the design doc rules out in as many
+ * words, so it arrives with the ticket that can answer it. Collector lag was in that list until
+ * IKN-24 gave it something true to say.
  */
 export const TopBar = () => {
   const [service] = useSelectedService();
@@ -37,6 +39,13 @@ export const TopBar = () => {
       </nav>
 
       <div className="ml-auto flex items-center gap-3.5">
+        {/* Left of the range buttons and the clock: it describes the tool, not the query, and the
+            two kinds of control should not be interleaved. Hidden on the narrow layout, where the
+            range buttons and the clock have first claim on the width — the rail's ingest card
+            still carries the collector's state there. */}
+        <span className="hidden rail:flex">
+          <CollectorPill />
+        </span>
         {/* A fieldset rather than a div with role="group": same semantics, and the native element
             is what assistive tech already understands without being told. */}
         <fieldset
