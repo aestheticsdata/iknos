@@ -42,6 +42,27 @@
   }
 
   /**
+   * Anything clickable says so under the pointer.
+   *
+   * Tailwind v4's preflight sets `button { cursor: default }`, following the native control instead
+   * of the convention the web has taught for thirty years. On a chassis this flat the pointer is
+   * often the *only* thing separating a control from a label — a `quiet` button is a thin border
+   * and a word, and the kicker-sized ones in the top bar are barely that. The cost is not
+   * theoretical: the time zone toggle sat on screen through a whole session without being
+   * recognised as a button.
+   *
+   * Left off `:disabled`, where `Button` already paints `cursor-not-allowed` — the more specific
+   * and more useful answer. `[aria-disabled]` gets the same treatment for anything that is
+   * disabled without being able to say so natively.
+   */
+  button:not(:disabled),
+  select:not(:disabled),
+  summary,
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  /**
    * Chrome paints autofilled fields with an opaque near-white it will not let go of through
    * `background-color` — only through the inset shadow trick. Without this, filling the sign-in
    * form from a password manager turns two dark inputs into two white bars.

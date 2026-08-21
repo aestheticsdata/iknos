@@ -341,7 +341,10 @@ const LogTableRow = memo(
           onClick={toggle}
           aria-current={selected ? "true" : undefined}
           className={cn(
-            "group border-b",
+            // The whole row toggles the detail pane, not just the button in the time cell, so the
+            // whole row admits it under the pointer. The base rule covers buttons and cannot reach
+            // a `<tr>` that is clickable without being a control.
+            "group cursor-pointer border-b",
             SURFACE_BORDER.chassis,
             // The error tint is a *row* fact, so it is painted on the row rather than on the level
             // cell: what makes an error findable while scrolling past it at speed is the band, not
