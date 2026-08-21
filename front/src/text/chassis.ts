@@ -22,6 +22,10 @@ export const CHASSIS_TEXT = {
   noServices: "No services — the API is unreachable or the registry is empty.",
   logOut: "log out",
   loggingOut: "signing out…",
+  /* IKN-38. The button says which clock is in force; the hint says what the clock governs, which
+     the three or four letters on their own cannot. */
+  zoneHint: "The clock every timestamp in the panel is read on",
+  zoneSwitch: (to: string) => `switch to ${to}`,
   modeNormal: "NORMAL",
   keyLegend: "j/k move · ⏎ expand · / query · ⌘K palette",
   workSurfacePending: "The log panel arrives with IKN-12.",

@@ -39,8 +39,16 @@ export const LOGS_TEXT = {
 
   /* Table */
   columns: {
-    // Labelled, because the panel is UTC throughout and the chassis clock beside it is not.
-    time: "time · utc",
+    /*
+     * Labelled with the zone in force, because the column shows a time of day and nothing else —
+     * the reader has no other way to tell a UTC panel from a local one, and guessing wrong is how
+     * an incident gets described two hours off.
+     *
+     * Bare `time` before the zone is known: this header is one of the few things in the panel that
+     * *does* render on the server, where the answer is unknowable, and a label that guesses `utc`
+     * for one frame would be wrong for most readers on every single page load.
+     */
+    time: (zone: string | null) => (zone === null ? "time" : `time · ${zone.toLowerCase()}`),
     level: "lvl",
     service: "service",
     route: "route",
@@ -55,7 +63,12 @@ export const LOGS_TEXT = {
   endOfResults: "That is every line in the range.",
   expandRow: "Show the raw event",
   collapseRow: "Hide the raw event",
-  rawEvent: "event",
+  /*
+   * The raw event is the wire payload and its `ts` is UTC whatever the column beside it reads, so
+   * the heading says so — but only when the two actually differ. A panel already in UTC would gain
+   * nothing from `event · utc` except a second place to read the same word.
+   */
+  rawEvent: (zone: string | null) => (zone === null || zone.toLowerCase() === "utc" ? "event" : "event · utc"),
   context: "context",
   stack: "stack",
   openTrace: "trace",

@@ -2,6 +2,8 @@
 
 import { Button } from "@components/ui/Button";
 import { cn } from "@lib/utils";
+import { timeLabel } from "@lib/zone";
+import { useZone } from "@lib/zoneState";
 import { LOGS_TEXT } from "@text/logs";
 import { useCallback, useMemo, useRef, useState } from "react";
 
@@ -117,31 +119,17 @@ const findAnomaly = (buckets: readonly Bucket[]): { index: number; excess: numbe
   return { index, excess: Math.round(excess) };
 };
 
-/**
- * Bucket start → the label on the axis, at the granularity the bucket actually has.
+/*
+ * The axis label formatter is `timeLabel` in `@lib/zone`, shared with the table's time column.
+ *
+ * It used to live here, hardcoded to UTC, and the comment it carried is worth keeping because it
+ * is still the rule: the axis said `17:18` while the row it pointed at said `15:23`, two clocks
+ * for one dataset, one panel apart. Whichever zone wins has to win everywhere here — which is why
+ * both surfaces now read one `tz` out of one provider instead of each deciding for itself.
  *
  * Seconds only when a bucket is under a minute, because `02:14:00` repeated across a 24h range is
  * noise, and `02:14` on a 30-second bucket is a label that names two different bars.
- *
- * **UTC**, like the table under it and like the `from`/`to` in the URL.
- *
- * Local time is the tempting choice — it is the wall clock of whoever is staring at this at 3am,
- * and it is what the chassis clock in `TopBar` shows. It was the first thing this axis did, and on
- * screen it was plainly wrong: the axis said `17:18` and the row it pointed at said `15:23`, two
- * clocks for one dataset, one panel apart. Whichever zone wins has to win everywhere here, and UTC
- * is the one the rest of the system already speaks — the API, the keyset cursor, and the bounds in
- * the address bar. The column header says so out loud rather than leaving it to be inferred.
- *
- * Safe to format at render, unlike the clock, which is mount-gated: a histogram only exists after a
- * client fetch, so the server never renders one of these labels.
  */
-const timeLabel = (ms: number, bucketMs: number): string => {
-  if (!Number.isFinite(ms)) return "";
-  const at = new Date(ms);
-  if (bucketMs < 60_000) return at.toISOString().slice(11, 19);
-  if (bucketMs < 86_400_000) return at.toISOString().slice(11, 16);
-  return at.toISOString().slice(5, 10);
-};
 
 /** One drawn bucket: its geometry, its bounds, and the sentence a screen reader gets. */
 type Column = {
@@ -181,6 +169,9 @@ export const VolumeHistogram = ({
   const [active, setActive] = useState(0);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
 
+  /* One zone for the axis and the rows beneath it — see the note above `Column`. */
+  const { tz } = useZone();
+
   const columns = useMemo<Column[]>(() => {
     if (!histogram) return [];
 
@@ -204,7 +195,7 @@ export const VolumeHistogram = ({
         return { fill: series.fill, y, height };
       });
 
-      const label = timeLabel(start, histogram.bucketMs);
+      const label = timeLabel(start, histogram.bucketMs, tz);
 
       return {
         key: bucket.t,
@@ -216,11 +207,11 @@ export const VolumeHistogram = ({
          * reader is through the controls layered over the chart. Errors are named first because
          * that is the number the marker is about and the number anyone is here for.
          */
-        name: `${label}–${timeLabel(end, histogram.bucketMs)} · ${bucket.error} error · ${bucket.warn} warn · ${bucket.info} info · ${LOGS_TEXT.bucketHint}`,
+        name: `${label}–${timeLabel(end, histogram.bucketMs, tz)} · ${bucket.error} error · ${bucket.warn} warn · ${bucket.info} info · ${LOGS_TEXT.bucketHint}`,
         segments,
       };
     });
-  }, [histogram]);
+  }, [histogram, tz]);
 
   const anomaly = useMemo(() => (histogram ? findAnomaly(histogram.buckets) : null), [histogram]);
 

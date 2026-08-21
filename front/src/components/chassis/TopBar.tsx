@@ -2,8 +2,11 @@
 
 import { useSelectedService, useTimeRange } from "@lib/chassisState";
 import { RANGE_KEYS } from "@lib/timeRange";
+import { timeLabel } from "@lib/zone";
+import { useZone } from "@lib/zoneState";
 import { CHASSIS_TEXT } from "@text/chassis";
 import { useEffect, useState } from "react";
+import { ZoneToggle } from "./ZoneToggle";
 
 /**
  * The top bar — brand, host badge, breadcrumb, the global time range.
@@ -56,6 +59,7 @@ export const TopBar = () => {
             </button>
           ))}
         </fieldset>
+        <ZoneToggle />
         <Clock />
       </div>
     </header>
@@ -68,16 +72,23 @@ export const TopBar = () => {
  * The server and the browser do not agree on what time it is — they are separated by the flight
  * time of the page — and React treats that disagreement as a hydration error. An empty slot for
  * one frame is the cost of not having the console log a mismatch on every single page load.
+ *
+ * Since IKN-38 it reads the same zone as the panel below it, through the same formatter. This
+ * clock used to be the app's one local-time render, and the log header said `utc` out loud
+ * precisely to warn that the two disagreed; there is nothing left to warn about. `timeLabel` at a
+ * one-second bucket is `HH:MM:SS` — the shape `w-[62px]` is cut for, and no zone suffix is
+ * appended here because the toggle sitting beside it already names the zone.
  */
 const Clock = () => {
+  const { tz } = useZone();
   const [now, setNow] = useState<string | null>(null);
 
   useEffect(() => {
-    const tick = () => setNow(new Date().toLocaleTimeString([], { hour12: false }));
+    const tick = () => setNow(timeLabel(Date.now(), 1_000, tz));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [tz]);
 
   return (
     <span

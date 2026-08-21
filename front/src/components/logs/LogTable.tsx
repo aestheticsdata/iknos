@@ -14,6 +14,8 @@ import {
 } from "@components/ui/surface";
 import { severityOf } from "@lib/logTypes";
 import { cn } from "@lib/utils";
+import { fullInstant, timeOfDay } from "@lib/zone";
+import { useZone } from "@lib/zoneState";
 import { LOGS_TEXT } from "@text/logs";
 import { memo, useEffect, useMemo, useRef } from "react";
 
@@ -61,28 +63,17 @@ const SEVERITY_TONE: Record<ReturnType<typeof severityOf>, Tone> = {
  */
 const statusTone = (status: number): Tone => (status >= 500 ? "error" : status >= 400 ? "warn" : "neutral");
 
-/**
- * The time of day, sliced out of the ISO string rather than formatted.
+/*
+ * The time column's formatter moved to `@lib/zone` with IKN-38, because the histogram axis needs
+ * the same one. Two formatters were two chances for the axis to date a bar differently from the
+ * rows it points at, which is a bug this panel has already shipped once.
  *
- * `TopBar`'s clock has to defer its first paint to an effect because it reads the browser's own
- * `Date` — the server and the client cannot agree on *now*, and React calls that disagreement a
- * hydration error. This is the other half of that problem and it has a better answer: the instant
- * comes from the payload, so slicing `2026-08-19T14:03:22.481Z` at fixed offsets yields the same
- * string on both sides by construction. `Intl.DateTimeFormat` would not: it reads the runtime's
- * locale and time zone, which are the server's during SSR and the reader's afterwards.
- *
- * The consequence is that the column is **UTC**, matching the API, the cursor and every `from`/`to`
- * in the URL. A column silently in local time next to a URL in UTC is how two people comparing the
- * same link end up describing different incidents.
+ * The hydration objection that kept it here — `Intl` reads the runtime's zone, which is the
+ * server's during SSR and the reader's afterwards — is answered upstream rather than avoided: the
+ * zone arrives from `ZoneProvider`, which resolves nothing until mount, and no row reaches the
+ * server renderer anyway. The one thing that *does* render on the server is the column header, and
+ * it says a bare `time` until the zone is known.
  */
-const timeOfDay = (ts: string): string => {
-  const t = ts.indexOf("T");
-  if (t < 0) return ts;
-  const clock = ts.slice(t + 1, t + 9);
-  // Milliseconds are optional in ISO-8601 and the ingest does not promise them, so they are taken
-  // only when the separator is actually there — never padded, which would invent precision.
-  return ts.charAt(t + 9) === "." ? clock + ts.slice(t + 9, t + 13) : clock;
-};
 
 /**
  * The id the expanded pane is announced by.
@@ -160,6 +151,8 @@ export const LogTable = ({
    * mutation the compiler is entitled to move; the window in which `latest` is one render stale is
    * between commit and the passive effect, and nothing in it can be clicked.
    */
+  const { tz, abbrev } = useZone();
+
   const latest = useRef({ onSelect, onExpand, onOpenTrace, onCopyRow });
   useEffect(() => {
     latest.current = { onSelect, onExpand, onOpenTrace, onCopyRow };
@@ -196,7 +189,7 @@ export const LogTable = ({
             {/* `time` is left-aligned despite being numeric: it is the column the eye returns to
                 between rows, and an anchor belongs at the edge it is read from. `tabular-nums` on
                 the table already gives it the alignment right-justifying would have bought. */}
-            <HeaderCell>{LOGS_TEXT.columns.time}</HeaderCell>
+            <HeaderCell>{LOGS_TEXT.columns.time(abbrev)}</HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.level}</HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.service}</HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.route}</HeaderCell>
@@ -223,6 +216,7 @@ export const LogTable = ({
                 selected={item.key === selectedKey}
                 expanded={item.key === expandedKey}
                 actions={actions}
+                tz={tz}
               />
             ),
           )}
@@ -308,12 +302,20 @@ const LogTableRow = memo(
     selected,
     expanded,
     actions,
+    tz,
   }: {
     row: LogRow;
     rowKey: string;
     selected: boolean;
     expanded: boolean;
     actions: RowActions;
+    /*
+     * Threaded as a prop rather than read from context in each row: two hundred rows would be two
+     * hundred context subscriptions, and a plain string is exactly what `React.memo`'s default
+     * comparison is good at. Changing the zone changes the prop, so every row re-renders — which
+     * is the required behaviour, not a cost to avoid.
+     */
+    tz: string;
   }) => {
     const severity = severityOf(row.level);
     const tone = SEVERITY_TONE[severity];
@@ -374,18 +376,19 @@ const LogTableRow = memo(
              *
              * `title` is where the full instant lives, since the column shows a time of day with no
              * date on it. The accessible name is that same full instant plus what pressing this
-             * does, which the column alone cannot say; the visible text is a substring of the ISO
-             * string, so WCAG's label-in-name still holds and "activate 14:03:22" still works.
+             * does, which the column alone cannot say; the visible text is a substring of it in
+             * either zone — `14:03:22.481` of `2026-08-21 14:03:22.481 CEST` as much as of the raw
+             * ISO string — so WCAG's label-in-name holds and "activate 14:03:22" still works.
              */}
             <button
               type="button"
-              title={row.ts}
+              title={fullInstant(row.ts, tz)}
               aria-expanded={expanded}
               aria-controls={expanded ? detailId(rowKey) : undefined}
-              aria-label={`${row.ts} · ${expanded ? LOGS_TEXT.collapseRow : LOGS_TEXT.expandRow}`}
+              aria-label={`${fullInstant(row.ts, tz)} · ${expanded ? LOGS_TEXT.collapseRow : LOGS_TEXT.expandRow}`}
               className="text-left"
             >
-              {timeOfDay(row.ts)}
+              {timeOfDay(row.ts, tz)}
             </button>
           </td>
 
@@ -504,6 +507,13 @@ const RowDetail = ({
   isError: boolean;
   actions: RowActions;
 }) => {
+  /*
+   * Read from context here rather than threaded down like the row's `tz`, because this pane exists
+   * at most once in the document — `expandedKey` is a single value — so there is no subscription
+   * count to keep down, and it needs the zone's *name* as well as the zone itself.
+   */
+  const { tz, abbrev } = useZone();
+
   // Same narrowing problem as in the row above, same answer.
   const traceId = row.traceId;
 
@@ -518,11 +528,16 @@ const RowDetail = ({
             side would each be too narrow to hold a line of it. */}
         <div className="grid grid-cols-1 gap-3 rail:grid-cols-2">
           <section>
-            <PaneHeading>{LOGS_TEXT.rawEvent}</PaneHeading>
+            <PaneHeading>{LOGS_TEXT.rawEvent(abbrev)}</PaneHeading>
             {/*
              * The row serialised, which *is* the raw event as far as the client has one — the same
              * object `copy NDJSON` puts on the clipboard, pretty-printed. Reading it back off the
              * row rather than keeping a second copy of the response body keeps the two honest.
+             *
+             * Its `ts` stays UTC when the column above has been switched to a local zone, and that
+             * is the point rather than an oversight: this is what the API said and what `jq` will
+             * read, so converting it would make the pane a paraphrase of the event instead of the
+             * event. The heading carries the `· utc` that says so whenever the two differ.
              */}
             <pre
               className={cn(
@@ -550,7 +565,7 @@ const RowDetail = ({
                * names rather than a second vocabulary, so the pane reads as the row unfolded.
                */}
               <dl className="flex flex-col gap-1 text-row">
-                <DetailField label={LOGS_TEXT.columns.time}>{row.ts}</DetailField>
+                <DetailField label={LOGS_TEXT.columns.time(abbrev)}>{fullInstant(row.ts, tz)}</DetailField>
                 <DetailField label={LOGS_TEXT.columns.service}>{row.service}</DetailField>
                 <DetailField label={LOGS_TEXT.columns.level}>
                   {row.levelName} ({row.level})

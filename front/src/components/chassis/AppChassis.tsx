@@ -1,5 +1,6 @@
 import { ToastProvider } from "@components/ui/Toast";
 import { readServices } from "@lib/services";
+import { ZoneProvider } from "@lib/zoneState";
 import { ServiceRail } from "./ServiceRail";
 import { StatusBar } from "./StatusBar";
 import { TopBar } from "./TopBar";
@@ -25,14 +26,19 @@ export const AppChassis = async ({ children }: { children: React.ReactNode }) =>
      * the rail or the top bar has to outlive the view it was raised from.
      */
     <ToastProvider>
-      <div className="flex h-dvh flex-col overflow-hidden bg-chassis-deep font-mono">
-        <TopBar />
-        <div className="flex min-h-0 flex-1">
-          <ServiceRail services={services} />
-          <main className="min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
+      {/* Above the whole chassis for the same reason: the top bar's clock and the panel's table
+          are two renders of one decision, and a provider that wrapped only the work surface would
+          let them disagree — which is exactly the failure IKN-38 exists to end. */}
+      <ZoneProvider>
+        <div className="flex h-dvh flex-col overflow-hidden bg-chassis-deep font-mono">
+          <TopBar />
+          <div className="flex min-h-0 flex-1">
+            <ServiceRail services={services} />
+            <main className="min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
+          </div>
+          <StatusBar />
         </div>
-        <StatusBar />
-      </div>
+      </ZoneProvider>
     </ToastProvider>
   );
 };
