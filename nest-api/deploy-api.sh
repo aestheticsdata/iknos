@@ -124,7 +124,25 @@ require_clean_tree() {
 # would be a rollback trigger rather than a gate.
 run_preflight_checks() {
   local names=("lint" "typecheck" "tests" "build")
-  local commands=("pnpm check" "pnpm typecheck" "pnpm test" "pnpm build")
+
+  # The suite's entry carries two settings the other three do not need, both about what the
+  # streamed step actually shows (IKN-43).
+  #
+  # `--reporter=verbose`: once its output is a pipe rather than a terminal — and this one is
+  # piped through `tee` — vitest's default reporter prints the closing summary and nothing else,
+  # no test names at all. Streaming a step that says nothing until it is over defeats the reason
+  # it is streamed.
+  #
+  # `IKNOS_LOG_LEVEL=error`: the e2e suites boot the real application, `.env` sets `debug` on this
+  # machine, and every request and every maintenance tick then writes its ECS line — hundreds of
+  # them, with the test names lost somewhere in between. `error` and not `silent` because
+  # env.validation accepts trace|debug|info|warn|error and nothing else, so `silent` would fail
+  # the app's own boot in every e2e: a red suite rather than a quiet one. It beats the `.env`
+  # because `process.loadEnvFile()` leaves a variable that is already in the environment alone.
+  #
+  # Set here rather than exported around the loop so that the hint printed on failure — "re-run
+  # it on its own with: ${commands[$index]}" — reproduces exactly the run that failed.
+  local commands=("pnpm check" "pnpm typecheck" "IKNOS_LOG_LEVEL=error pnpm test --reporter=verbose" "pnpm build")
   local index output
 
   # `IKNOS_SKIP_TESTS=1 ./deploy-api.sh` ships without running the suite.
