@@ -59,8 +59,8 @@ export const TopBar = () => {
             </button>
           ))}
         </fieldset>
-        <ZoneToggle />
         <Clock />
+        <ZoneToggle />
       </div>
     </header>
   );
