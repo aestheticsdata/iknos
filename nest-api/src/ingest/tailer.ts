@@ -45,7 +45,23 @@ export function serviceAndStream(file: string): { service: string; stream: "out"
 }
 
 export class Tailer {
-  private readonly state = new Map<string, { offset: StoredOffset; buffer: LineBuffer }>();
+  /** `committed` is the last position handed downstream, which is how a chunk's byte span is measured. */
+  private readonly state = new Map<string, { offset: StoredOffset; buffer: LineBuffer; committed: bigint }>();
+
+  /** Bytes lifted off disk since this process started. Served by `/api/collector/status`. */
+  bytesRead = 0;
+
+  /**
+   * When the last full pass finished — the collector's heartbeat (IKN-24).
+   *
+   * **This, and not "when a line last arrived", is what tells the pastille the collector is
+   * alive.** ks-b is one person's server: it goes genuinely quiet for hours, and a liveness check
+   * keyed on lines arriving would call that an outage every night. A pass sets this whether it
+   * found bytes or not, so it goes stale only when the loop itself has stopped — which is exactly
+   * the failure worth a red dot, and it shows within seconds rather than within a retention
+   * window.
+   */
+  lastPollAt: Date | null = null;
 
   constructor(
     private readonly pattern: string,
@@ -62,6 +78,7 @@ export class Tailer {
       this.state.set(o.filePath, {
         offset: { dev: o.dev, inode: o.inode, byteOffset: o.byteOffset },
         buffer: new LineBuffer(),
+        committed: o.byteOffset,
       });
     }
   }
@@ -81,6 +98,16 @@ export class Tailer {
         // the others.
       }
     }
+    // Stamped after the whole sweep, and only on the way out. A pass that threw before reaching
+    // here — the glob itself failing, the pattern pointing at a directory that has gone — leaves
+    // the previous stamp standing and lets it go stale, which is the honest reading: the loop is
+    // running but it is not working.
+    this.lastPollAt = new Date();
+  }
+
+  /** How many files are being followed, for the status route. */
+  get trackedFiles(): number {
+    return this.state.size;
   }
 
   private async pollOne(file: string): Promise<void> {
@@ -94,7 +121,11 @@ export class Tailer {
     if (!entry || action.kind === "restart") {
       // A replaced file means any carried partial line belongs to a file that no longer exists.
       // Discarding it is correct.
-      entry = { offset: { dev: now.dev, inode: now.inode, byteOffset: 0n }, buffer: new LineBuffer() };
+      entry = {
+        offset: { dev: now.dev, inode: now.inode, byteOffset: 0n },
+        buffer: new LineBuffer(),
+        committed: action.from,
+      };
       this.state.set(file, entry);
     }
 
@@ -109,6 +140,7 @@ export class Tailer {
         if (bytesRead === 0) break;
 
         pos += BigInt(bytesRead);
+        this.bytesRead += bytesRead;
         entry.buffer.push(buf.subarray(0, bytesRead));
 
         // The in-memory offset moves with the buffer, in the same breath, and never later.
@@ -132,9 +164,17 @@ export class Tailer {
         // head: bytes still in the buffer have not been stored anywhere, and an offset that
         // includes them would skip them forever after a restart.
         const committed = pos - BigInt(entry.buffer.pendingBytes);
+        // The chunk's own byte span: how far the committed position moved. Measured here rather
+        // than added up from the records because the parser drops blank lines and health-probe
+        // noise and clamps long messages — summing what was stored would report a fraction of
+        // what the disk actually served, on the one card whose job is to say how much that was.
+        const bytes = Number(committed - entry.committed);
+        entry.committed = committed;
+
         this.submit({
           records,
           offset: { filePath: file, dev: now.dev, inode: now.inode, byteOffset: committed },
+          bytes,
         });
       }
     } finally {

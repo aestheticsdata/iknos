@@ -92,9 +92,17 @@ function inferLevel(message: string, fallback: string): string {
   return fallback;
 }
 
-function plainText(message: string, service: string, fallback: string): LogRecord {
+/**
+ * `degraded` distinguishes the two reasons a line ends up here. A line that was never JSON — most
+ * of what `console.log` and every non-pino library emits — is *normal*, and counting it as damage
+ * would leave the counter permanently pegged and therefore useless. A line that looked like JSON
+ * and would not parse is the one worth surfacing: a truncated write, a rotation that cut a line in
+ * half, a logger emitting something malformed.
+ */
+function plainText(message: string, service: string, fallback: string, degraded = false): LogRecord {
   const levelName = inferLevel(message, fallback);
   return {
+    ...(degraded ? { degraded: true as const } : {}),
     ts: new Date(),
     service,
     level: LEVELS[levelName] ?? 30,
@@ -143,6 +151,12 @@ function isHealthProbeNoise(r: LogRecord): boolean {
 }
 
 /**
+ * Whether a line was *trying* to be JSON. Only these count towards the degraded tally — plain
+ * `console.log` output is not a fault, and counting it as one makes the number meaningless.
+ */
+const looksLikeJson = (line: string): boolean => line.startsWith("{") || line.startsWith("[");
+
+/**
  * `JSON.parse` on every line is safe from the event-loop rule because `LineBuffer` caps a line at
  * 1 MB before it ever reaches this function.
  */
@@ -172,7 +186,7 @@ function parseLine(line: string, service: string, stream: "out" | "err"): LogRec
   } catch {
     // Truncated or malformed JSON — a rotated file cut mid-line, a logger interrupted mid-write.
     // Stored as text: degraded beats dropped, and the raw line is the whole evidence.
-    return plainText(clean, service, fallbackLevel);
+    return plainText(clean, service, fallbackLevel, looksLikeJson(clean));
   }
 
   const isEcs = "@timestamp" in obj || lookup(obj, "log.level") !== undefined;

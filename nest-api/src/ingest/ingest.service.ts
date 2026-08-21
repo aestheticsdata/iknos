@@ -6,6 +6,7 @@ import { Tailer } from "./tailer";
 import { FLUSH_INTERVAL_MS, persistBatch, Writer } from "./writer";
 
 import type { OnApplicationBootstrap, OnApplicationShutdown } from "@nestjs/common";
+import type { RateSnapshot } from "./rate-window";
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -18,8 +19,15 @@ const POLL_INTERVAL_MS = 1000;
 export type IngestStats = {
   written: number;
   dropped: number;
+  degraded: number;
   queued: number;
+  bytesRead: number;
+  lagMs: number | null;
   lastWrittenAt: Date | null;
+  /** The tailer's heartbeat — see `Tailer.lastPollAt`. */
+  lastPollAt: Date | null;
+  /** The last hour of throughput, or `null` before the first line landed. */
+  rate: RateSnapshot | null;
   files: { filePath: string; byteOffset: number }[];
 };
 
@@ -90,12 +98,38 @@ export class IngestService implements OnApplicationBootstrap, OnApplicationShutd
     }
   }
 
+  /**
+   * Answers before `onApplicationBootstrap` has run, and that is not a theoretical case: Nest
+   * serves requests the moment the HTTP adapter is listening, and a browser reloading during a
+   * deploy lands there. Reading `this.writer.written` on an unassigned field would throw a 500
+   * from the one route whose job is to say what state the collector is in.
+   */
   stats(): IngestStats {
+    if (!this.writer || !this.tailer) {
+      return {
+        written: 0,
+        dropped: 0,
+        degraded: 0,
+        queued: 0,
+        bytesRead: 0,
+        lagMs: null,
+        lastWrittenAt: null,
+        lastPollAt: null,
+        rate: null,
+        files: [],
+      };
+    }
+
     return {
       written: this.writer.written,
       dropped: this.writer.dropped,
+      degraded: this.writer.degraded,
       queued: this.writer.queuedRecords,
+      bytesRead: this.tailer.bytesRead,
+      lagMs: this.writer.lagMs,
       lastWrittenAt: this.writer.lastWrittenAt,
+      lastPollAt: this.tailer.lastPollAt,
+      rate: this.writer.rate.snapshot(Date.now()),
       files: [...this.offsets.entries()].map(([filePath, byteOffset]) => ({
         filePath,
         byteOffset: Number(byteOffset),

@@ -10,6 +10,15 @@ export const FUTURE_PARTITION = "p_future";
 /** How many days ahead the window is kept. Three, so two missed runs still have somewhere to go. */
 export const DAYS_AHEAD = 3;
 
+/**
+ * When the nightly pass runs, in words — the storage panel's footer line prints it.
+ *
+ * Declared beside the job rather than in the panel so that moving the cron moves the label with
+ * it. A footer that advertises a purge at an hour nothing happens is worse than no footer: it is
+ * the line someone reads to decide whether a disk that is still full means the job failed.
+ */
+export const PURGE_AT = "03:00";
+
 export type Plan = { toCreate: string[]; toDrop: string[] };
 
 const DAY_MS = 24 * 60 * 60 * 1000;

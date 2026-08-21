@@ -62,7 +62,7 @@ describe("sustained ingestion", () => {
     buffer.push(Buffer.from(ecsLine(0)));
     const warmLine = buffer.nextLine();
     const warmRecord = warmLine === null ? null : parse(warmLine, "t", "out");
-    if (warmRecord !== null) w.submit({ records: [warmRecord], offset: OFFSET });
+    if (warmRecord !== null) w.submit({ records: [warmRecord], offset: OFFSET, bytes: 100 });
     await drain();
 
     // The warm-up line is real ingestion and counts toward the writer's totals; measure the run
@@ -100,7 +100,7 @@ describe("sustained ingestion", () => {
 
         if (records.length > 0) {
           submitted += records.length;
-          w.submit({ records, offset: OFFSET });
+          w.submit({ records, offset: OFFSET, bytes: records.length * 100 });
           peakQueued = Math.max(peakQueued, w.queuedRecords);
         }
         peakPending = Math.max(peakPending, buffer.pendingBytes);
@@ -119,7 +119,7 @@ describe("sustained ingestion", () => {
     }
     if (tail.length > 0) {
       submitted += tail.length;
-      w.submit({ records: tail, offset: OFFSET });
+      w.submit({ records: tail, offset: OFFSET, bytes: tail.length * 100 });
     }
     await drain();
 

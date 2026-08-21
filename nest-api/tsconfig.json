@@ -16,6 +16,7 @@
     "baseUrl": "./",
     "paths": {
       "@auth/*": ["./src/auth/*"],
+      "@collector/*": ["./src/collector/*"],
       "@common/*": ["./src/common/*"],
       "@config/*": ["./src/config/*"],
       "@contracts/*": ["./src/contracts/*"],

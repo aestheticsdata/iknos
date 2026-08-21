@@ -63,6 +63,7 @@ export class MaintenanceService implements OnApplicationBootstrap {
     await this.safeRun();
   }
 
+  // Kept in step with `PURGE_AT`, which is what the storage panel tells the reader (IKN-24).
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async daily(): Promise<void> {
     await this.safeRun();

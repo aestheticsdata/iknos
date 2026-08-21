@@ -1,4 +1,5 @@
 import { INGEST_SKIP_MARKER } from "@common/logger";
+import { RateWindow } from "./rate-window";
 
 import type { PrismaService } from "@db/prisma.service";
 import type { LogRecord } from "./log-record";
@@ -15,8 +16,16 @@ export const MAX_QUEUED_RECORDS = 20_000;
 
 export type OffsetRow = { filePath: string; dev: bigint; inode: bigint; byteOffset: bigint };
 
-/** What the tailer hands over: records and the offset that accounts for exactly them. */
-export type Chunk = { records: LogRecord[]; offset: OffsetRow };
+/**
+ * What the tailer hands over: records, the offset that accounts for exactly them, and the number
+ * of bytes those lines occupied on disk.
+ *
+ * `bytes` is the read side's own measurement rather than anything recomputed from the records —
+ * the parser drops blank lines and health-probe noise, and clamps long messages, so adding the
+ * stored messages back up would report a volume well under what the disk actually served. It is
+ * required rather than optional so that a future caller cannot silently halve the ingest card.
+ */
+export type Chunk = { records: LogRecord[]; offset: OffsetRow; bytes: number };
 
 /** The one method the writer needs from the live tail. `LogBus` satisfies it structurally. */
 export type RecordSink = { emit: (record: LogRecord) => void };
@@ -107,6 +116,27 @@ export class Writer {
   written = 0;
   lastWrittenAt: Date | null = null;
 
+  /** Lines whose JSON could not be read and which were stored as plain text (IKN-24). */
+  degraded = 0;
+
+  /** The last hour of throughput, for the rail's `INGEST · 60m` sparkline. */
+  readonly rate = new RateWindow();
+
+  /**
+   * How far behind the pipeline was at the last flush: the gap between the newest line in the
+   * batch and the moment its transaction committed. `null` until something has been written.
+   *
+   * **Measured at write time, never against `now`.** The obvious formula — now minus the newest
+   * line's timestamp — climbs on its own the moment ks-b goes quiet, so a host doing nothing at
+   * four in the morning would show a lag of hours and paint the pastille amber for a collector
+   * that is perfectly healthy. What this number answers is "when a line is emitted, how long
+   * until I can see it", and that answer does not change while nothing is being emitted.
+   *
+   * Liveness is a separate question with a separate signal — `Tailer.lastPollAt` — precisely
+   * because conflating the two is what produces an alarm nobody believes.
+   */
+  lagMs: number | null = null;
+
   constructor(
     private readonly db: { persist: (records: LogRecord[], offsets: OffsetRow[]) => Promise<void> },
     private readonly bus?: RecordSink,
@@ -120,16 +150,23 @@ export class Writer {
     const room = MAX_QUEUED_RECORDS - this.queued;
 
     let records = chunk.records;
+    let bytes = chunk.bytes;
     if (records.length > room) {
-      this.dropped += records.length - Math.max(room, 0);
-      records = records.slice(0, Math.max(room, 0));
+      const kept = Math.max(room, 0);
+      this.dropped += records.length - kept;
+      // Pro-rated, because the chunk's byte span covers lines that are about to be thrown away.
+      // Exact byte accounting per line would mean carrying a length on every record for a number
+      // that is only ever wrong during an overflow — the one moment when the counter being read
+      // is `dropped`, not this one.
+      bytes = records.length === 0 ? 0 : Math.round((bytes * kept) / records.length);
+      records = records.slice(0, kept);
     }
     if (records.length === 0) return;
 
     // The offset still advances past dropped lines: the tailer's read head already has, so
     // holding the offset back would not save them — it would only re-ingest their neighbours
     // as duplicates after a restart. Dropped means dropped, and counted.
-    this.queue.push({ records, offset: chunk.offset });
+    this.queue.push({ records, offset: chunk.offset, bytes });
     this.queued += records.length;
   }
 
@@ -167,9 +204,27 @@ export class Writer {
 
     this.queued -= records.length;
     this.written += records.length;
-    this.lastWrittenAt = new Date();
 
-    // Publish only after the commit, so live tail never shows a rolled-back row.
-    if (this.bus) for (const r of records) this.bus.emit(r);
+    // Everything below is counted only on the success path. A failed batch goes back to the front
+    // of the queue and is counted when it lands, so counting it here would double it — and would
+    // draw a rising ingest line through an outage in which nothing was being stored at all.
+    const at = Date.now();
+    this.lastWrittenAt = new Date(at);
+    this.rate.record(
+      at,
+      records.length,
+      batch.reduce((sum, c) => sum + c.bytes, 0),
+    );
+
+    let newest = 0;
+    for (const r of records) {
+      if (r.degraded) this.degraded += 1;
+      newest = Math.max(newest, r.ts.getTime());
+      // Publish only after the commit, so live tail never shows a rolled-back row.
+      this.bus?.emit(r);
+    }
+    // Clamped at zero: a service whose clock runs fast, or one stamping its own future, would
+    // otherwise report negative lag — which renders as a collector that is ahead of time.
+    this.lagMs = Math.max(0, at - newest);
   }
 }

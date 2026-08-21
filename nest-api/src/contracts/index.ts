@@ -10,6 +10,14 @@
  * lives; that one is a transcription.
  */
 
+export type {
+  CollectorFile,
+  CollectorStatus,
+  CollectorStorage,
+  DiskUsage,
+  IngestRate,
+  StorageTable,
+} from "./collector";
 export type { Bucket, Histogram } from "./histogram";
 export type { LogPage } from "./log-page";
 export type { LogRow } from "./log-row";
