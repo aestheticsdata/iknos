@@ -30,7 +30,7 @@ import type { Service } from "@lib/services";
  * is in.
  */
 export const LogPanel = ({ services }: { services: Service[] }) => {
-  const { state, setValue, toggle, clear, setWindow, unpinWindow, refresh } = useLogQueryState();
+  const { state, range, setValue, toggle, clear, setWindow, unpinWindow, refresh } = useLogQueryState();
 
   /*
    * Live from the first paint — unless the URL already points at a pinned window.
@@ -56,7 +56,9 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const search = useLogSearch(state);
-  const histogram = useHistogram(state);
+  /* The chart follows the tail — see `useHistogram`. It is handed `live` rather than deciding for
+   * itself, so that the one toggle in the bar governs both surfaces and they cannot disagree. */
+  const histogram = useHistogram(state, range, live);
   const tail = useLiveTail(state, live);
   const trace = useTrace(openTraceId, state);
   const toast = useToast();
