@@ -1,6 +1,8 @@
 import "server-only";
 import { apiOrigin } from "@lib/apiOrigin";
+import { ROUTES } from "@lib/routes";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 /**
  * The service registry, read on the server — the rail's only data source in M1.
@@ -19,13 +21,18 @@ export type Service = {
 };
 
 /**
- * Fails to an **empty list**, never to invented rows.
+ * Fails to an **empty list**, never to invented rows — and to `null` on a 401, which is a different
+ * thing entirely.
  *
  * An unreachable API means "I do not know what is running", and a rail that answers that question
  * with a plausible-looking list of services is worse than one that answers it with nothing. The
  * empty state says so in words.
+ *
+ * A 401 means the API knows perfectly well and will not tell *this* caller, which is a session that
+ * has ended. Folded into the empty list it would render a chassis with an empty rail over a log
+ * panel about to 401 on its own — the screen IKN-44 is about.
  */
-export const readServices = async (): Promise<Service[]> => {
+const fetchServices = async (): Promise<Service[] | null> => {
   try {
     const jar = await cookies();
     const cookie = jar.toString();
@@ -35,6 +42,7 @@ export const readServices = async (): Promise<Service[]> => {
       cache: "no-store",
       signal: AbortSignal.timeout(3000),
     });
+    if (response.status === 401) return null;
     if (!response.ok) return [];
 
     const body = (await response.json()) as { services?: unknown };
@@ -47,4 +55,22 @@ export const readServices = async (): Promise<Service[]> => {
   } catch {
     return [];
   }
+};
+
+/**
+ * The registry — and the one real session check a page load gets (IKN-44).
+ *
+ * `proxy.ts` can only see that a cookie *exists*: it runs on the Edge, where the Redis client does
+ * not work. This is the first thing on the path that has asked the API whether that cookie still
+ * means anything, so it is where a session that expired overnight — or was cleared by signing in
+ * somewhere else — turns into the login screen rather than into an empty chassis.
+ *
+ * The redirect lives out here rather than inside `fetchServices` because `redirect` works by
+ * throwing, and that function's own `catch` — the one that turns an unreachable API into an empty
+ * rail — would swallow it and hand back `[]`.
+ */
+export const readServices = async (): Promise<Service[]> => {
+  const services = await fetchServices();
+  if (services === null) redirect(`${ROUTES.login}?expired=1`);
+  return services;
 };

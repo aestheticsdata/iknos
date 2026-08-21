@@ -1,4 +1,5 @@
 import { AppChassis } from "@components/chassis/AppChassis";
+import { SessionWatcher } from "@components/chassis/SessionWatcher";
 
 /**
  * Never prerendered.
@@ -12,7 +13,16 @@ export const dynamic = "force-dynamic";
 /**
  * Everything behind a session renders inside the chassis. The auth screens sit outside this group
  * on purpose — they have a chassis of their own and no rail to scope.
+ *
+ * The watcher is mounted here rather than in `AppChassis` for the same reason: this file *is* the
+ * "behind a session" boundary, and a component whose only job is to notice that the session ended
+ * belongs to the boundary rather than to the layout it draws. It renders nothing (IKN-44).
  */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return <AppChassis>{children}</AppChassis>;
+  return (
+    <AppChassis>
+      <SessionWatcher />
+      {children}
+    </AppChassis>
+  );
 }

@@ -17,13 +17,30 @@ import type { LoginValues } from "@components/auth/schemas";
 const t = AUTH_TEXT.login;
 
 /**
+ * Why this screen is being shown, when it is not simply because someone asked for it.
+ *
+ * Tone is part of the notice rather than of the banner call: the first two are the tail end of
+ * something that went right, and `expired` is a state — the same distinction `AuthBanner`'s own
+ * `ok` / `warn` already draws. Painting a session that ran out in the accent colour would file it
+ * under good news.
+ */
+const NOTICE = {
+  registered: { tone: "ok", title: t.registered },
+  reset: { tone: "ok", title: t.reset },
+  expired: { tone: "warn", title: t.expired },
+} as const;
+
+export type LoginNotice = keyof typeof NOTICE;
+
+/**
  * `/login` — three outcomes, all of them explicit (§5.7).
  *
- * @param notice what just happened on another screen: a registration, or a password reset.
+ * @param notice why you are here: a registration, a password reset, or a session that ended while
+ *   you were away (IKN-44).
  * @param canRegister false once the instance is sealed, which greys the REGISTER link rather than
  *   hiding it. A missing link reads as a broken page; a dim one reads as a door that is shut.
  */
-export const LoginForm = ({ notice, canRegister }: { notice?: "registered" | "reset"; canRegister: boolean }) => {
+export const LoginForm = ({ notice, canRegister }: { notice?: LoginNotice; canRegister: boolean }) => {
   const router = useRouter();
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -59,8 +76,8 @@ export const LoginForm = ({ notice, canRegister }: { notice?: "registered" | "re
     >
       {notice ? (
         <AuthBanner
-          tone="ok"
-          title={notice === "registered" ? t.registered : t.reset}
+          tone={NOTICE[notice].tone}
+          title={NOTICE[notice].title}
         />
       ) : null}
       {failure ? (

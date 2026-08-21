@@ -45,6 +45,14 @@ export const AUTH_TEXT = {
     rateLimited: "too many attempts · wait a minute and try again",
     registered: "account created · sign in with your new password",
     reset: "password reset · sign in with the new one",
+    /**
+     * Shown when Iknos sent you here rather than when you walked in — IKN-44.
+     *
+     * "session expired" and not "you were logged out": nobody logged anyone out, a two-hour rolling
+     * window ran out while the tab sat there. It says what happened and what to do about it, in
+     * that order, because the person reading it was in the middle of something else.
+     */
+    expired: "session expired · sign in again",
   },
 
   register: {
