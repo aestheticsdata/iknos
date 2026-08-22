@@ -1,5 +1,12 @@
 import { cn } from "@lib/utils";
-import { SURFACE_BORDER, SURFACE_INSET_BG, SURFACE_SCROLL_X, SURFACE_TEXT, SURFACE_TEXT_DIM } from "./surface";
+import {
+  SURFACE_BORDER,
+  SURFACE_HEAD_BAND,
+  SURFACE_INSET_BG,
+  SURFACE_SCROLL_X,
+  SURFACE_TEXT,
+  SURFACE_TEXT_DIM,
+} from "./surface";
 
 import type { Surface } from "./surface";
 
@@ -38,8 +45,13 @@ export const DenseTable = <Row,>({
 }) => (
   /* `ik-scroll-head` because this box scrolls in both axes — `overflow-x: auto` computes the other
      one to `auto` as well — and the heading band above sticks inside it. Without it the vertical
-     bar starts level with the column titles and its thumb sits across them. */
-  <div className={cn(SURFACE_SCROLL_X[surface], "ik-scroll-head overflow-x-auto", className)}>
+     bar starts level with the column titles and its thumb sits across them, and the band itself
+     stops 9px short of the edge in a notch. `SURFACE_HEAD_BAND` is the ink it paints that last
+     9px with; below the band the rail stays transparent and shows the card underneath, which is
+     the same ground the rows are on. */
+  <div
+    className={cn(SURFACE_SCROLL_X[surface], SURFACE_HEAD_BAND[surface], "ik-scroll-head overflow-x-auto", className)}
+  >
     <table className="w-full border-collapse text-row tabular-nums">
       <thead>
         <tr>

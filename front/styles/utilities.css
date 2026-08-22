@@ -116,10 +116,27 @@
  * columns to the widest route on the page. Split in two it would need every width pinned, and a
  * route column that no longer grows to fit is a worse answer than a bar three pixels too tall.
  *
- * Pair it with `ik-scroll` or `ik-scroll-work`; it carries no ink of its own.
+ * **And the band itself runs the whole width, rail included.** Moving the bar down is only half of
+ * it. A styled `::-webkit-scrollbar` is not an overlay bar: it takes its 9px out of the content
+ * box, so the table — and with it the heading cells — stops 9px short of the panel's edge and the
+ * band ends in a notch at the top right, with the rule under it stopping there too. The headings
+ * cannot reach into the rail; they are inside the box the rail was carved out of.
  *
- * ⚠️ Chrome and Safari only. Firefox has no track to put a margin on, and its bar still runs the
- * full height. That is the same trade `ik-scroll` already makes for the width.
+ * The scroller's own background can, though. It is painted across the border box, *under* the
+ * scrollbar, and a transparent track lets it through — so a two-stop gradient on the scroller
+ * paints the band and its rule right across the rail, behind the real heading cells, in the same
+ * two colours they already use. `background-attachment` is `scroll`, not `local`, so it stays
+ * where it is put while ten thousand rows go past underneath it.
+ *
+ * Pass the two inks in — `SURFACE_HEAD_BAND` in `ui/surface.ts` is the lookup, and the log stream
+ * writes its own pair because its band is *raised* above the stream rather than inset into it.
+ * Both default to transparent, so the utility with no ink is the clearance alone.
+ *
+ * Pair it with `ik-scroll` or `ik-scroll-work`, which carry the bar itself.
+ *
+ * ⚠️ The clearance is Chrome and Safari only. Firefox has no track to put a margin on, and its bar
+ * still runs the full height. That is the same trade `ik-scroll` already makes for the width — the
+ * band below is painted by a plain gradient and is there in every engine.
  */
 @utility ik-scroll-head {
   /* `:vertical` is load-bearing. `::-webkit-scrollbar-track` on its own is both tracks, and the
@@ -128,6 +145,18 @@
   &::-webkit-scrollbar-track:vertical {
     margin-block-start: var(--spacing-head-band);
   }
+
+  /* The band, then its rule in the last pixel of the band, then nothing — below the heading the
+     rail shows whatever the scroller is standing on, which is what makes the strip beside the rows
+     the same ground as the rows. The stops are hard (no interpolation): each colour ends exactly
+     where the next begins. */
+  background-image: linear-gradient(
+    to bottom,
+    var(--ik-head-bg, transparent) 0 calc(var(--spacing-head-band) - 1px),
+    var(--ik-head-line, transparent) calc(var(--spacing-head-band) - 1px) var(--spacing-head-band),
+    transparent var(--spacing-head-band)
+  );
+  background-repeat: no-repeat;
 }
 
 /**

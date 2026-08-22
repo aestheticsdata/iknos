@@ -103,3 +103,17 @@ export const SURFACE_SCROLL_X: Record<Surface, string> = {
   chassis: "ik-scroll-x",
   work: "ik-scroll-work-x",
 };
+
+/**
+ * The two inks `ik-scroll-head` paints the heading band with, so the band reaches across the
+ * scrollbar's rail instead of stopping 9px short of the panel's edge.
+ *
+ * They are the same two a sticky `<th>` already uses — `SURFACE_INSET_BG` and `SURFACE_BORDER` —
+ * written here as custom properties because a gradient cannot read a class. A table whose band is
+ * *raised* above its rows rather than inset into them passes its own pair; the log stream is the
+ * one place in Iknos that inverts the two.
+ */
+export const SURFACE_HEAD_BAND: Record<Surface, string> = {
+  chassis: "[--ik-head-bg:var(--color-chassis-inset)] [--ik-head-line:var(--color-chassis-border)]",
+  work: "[--ik-head-bg:var(--color-work-inset)] [--ik-head-line:var(--color-work-border)]",
+};

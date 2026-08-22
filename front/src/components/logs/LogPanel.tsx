@@ -12,12 +12,24 @@ import { useHistogram } from "@lib/useHistogram";
 import { useLiveTail } from "@lib/useLiveTail";
 import { useLogSearch } from "@lib/useLogSearch";
 import { useTrace } from "@lib/useTrace";
+import { cn } from "@lib/utils";
 import { usePublishViewStatus } from "@lib/viewStatus";
 import { LOGS_TEXT } from "@text/logs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { LogFeedItem, LogRow } from "@lib/logTypes";
 import type { Service } from "@lib/services";
+
+/**
+ * The heading band's two inks, handed to `ik-scroll-head` so it can carry the band across the
+ * scrollbar's rail — the 9px the bar takes out of the content box, which the table inside cannot
+ * reach into.
+ *
+ * Not `SURFACE_HEAD_BAND.chassis`: that pair is the inset one every other table uses, and this one
+ * is inverted. `chassis-surface` over `chassis-inset` is `LogTable`'s "chrome above the stream,
+ * not its first line" — a step lighter, where a `DenseTable` heading is a step darker.
+ */
+const HEAD_BAND = "[--ik-head-bg:var(--color-chassis-surface)] [--ik-head-line:var(--color-chassis-border)]";
 
 /**
  * The log panel — the view that justifies M1, IKN-12.
@@ -312,15 +324,24 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
       )}
 
       {/*
-       * The stream's scroller, and the one place in the app that needs `ik-scroll-head`: the
-       * table's column headings are `sticky` *inside* this box — which is what keeps them the same
-       * width as the rows sliding under them — so without the clearance the bar starts level with
-       * them and the thumb sits across the titles at the top of every list.
+       * The stream's scroller, and the reason `ik-scroll-head` exists: the table's column headings
+       * are `sticky` *inside* this box — which is what keeps them the same width as the rows
+       * sliding under them — so without it the bar starts level with the titles and the thumb sits
+       * across them, and the band stops 9px short of the edge where the rail was carved out.
+       *
+       * `HEAD_BAND` rather than `SURFACE_HEAD_BAND.chassis`: this table inverts the usual pair.
+       * `DenseTable`'s band is inset into its rows; the stream's is `chassis-surface`, a step
+       * *lighter* than the `chassis-inset` it sits above, so the headings read as chrome over the
+       * stream rather than as its first line (`LogTable` has the long version). The ink the
+       * gradient paints across the rail has to be the ink the cells beside it are painted with.
+       *
+       * `bg-chassis-inset` on the scroller, not only on the table inside it, so the strip beside
+       * the rows is the stream's own ground and not the `chassis-deep` of the section behind.
        */}
       <div
         ref={listRef}
         onScroll={onScroll}
-        className="ik-scroll ik-scroll-head min-h-0 flex-1 overflow-y-auto"
+        className={cn("ik-scroll ik-scroll-head min-h-0 flex-1 overflow-y-auto bg-chassis-inset", HEAD_BAND)}
       >
         <LogTable
           items={items}
