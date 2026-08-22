@@ -130,3 +130,125 @@ model LogEntry {
   @@index([route, ts])
   @@map("log_entry")
 }
+
+/// One scraped Prometheus sample (IKN-8). Histogram series are stored as their raw `_bucket`,
+/// `_sum` and `_count` parts, untouched: a correct p95 is recomputed later by interpolating on
+/// the buckets, the way `histogram_quantile` does. Collapsing them at scrape time would throw
+/// that information away for good.
+///
+/// Partitioned by day like `log_entry` — see the hand-written clause in this table's migration.
+model MetricSample {
+  id BigInt   @default(autoincrement()) @db.UnsignedBigInt
+  ts DateTime @db.DateTime(3)
+
+  service String @db.VarChar(64)
+  name    String @db.VarChar(128)
+
+  /// The label set as scraped, sorted by key. Null when the series has no labels.
+  labels Json?
+
+  /// Stable hash of the sorted label set — the indexable identity of a series. Indexing JSON
+  /// would be both slower and collation-dependent; sixteen hex characters are neither.
+  labelsHash String @map("labels_hash") @db.Char(16)
+
+  value Float
+
+  @@id([id, ts])
+  @@index([service, name, labelsHash, ts])
+  @@map("metric_sample")
+}
+
+/// Hourly aggregates of `metric_sample`, filled by IKN-20. The table exists from IKN-8 so the
+/// raw table and its rollup are created by the same migration and partitioned the same way —
+/// a thirty-day chart cannot be answered from raw points without becoming slow exactly when it
+/// becomes interesting.
+model MetricRollup {
+  id BigInt   @default(autoincrement()) @db.UnsignedBigInt
+  ts DateTime @db.DateTime(3)
+
+  service    String @db.VarChar(64)
+  name       String @db.VarChar(128)
+  labels     Json?
+  labelsHash String @map("labels_hash") @db.Char(16)
+
+  count Int
+  sum   Float
+  min   Float
+  max   Float
+  last  Float
+
+  @@id([id, ts])
+  @@unique([service, name, labelsHash, ts])
+  @@map("metric_rollup")
+}
+
+/// One health probe result (IKN-8). A failed probe is a row, never an exception: unreachable is
+/// exactly the fact the table exists to record.
+model HealthCheck {
+  id BigInt   @default(autoincrement()) @db.UnsignedBigInt
+  ts DateTime @db.DateTime(3)
+
+  service String @db.VarChar(64)
+
+  /// The HTTP status the probe got, or null when no response came back at all.
+  httpStatus Int?    @map("http_status") @db.SmallInt
+  ok         Boolean
+  latencyMs  Int?    @map("latency_ms")
+  error      String? @db.VarChar(255)
+
+  /// The per-dependency breakdown from the probed body (`{ db: { status, latencyMs }, ... }`),
+  /// kept whole: the `mysql 3ms` / `redis 1ms` pills need the parts, not an aggregate.
+  checks Json?
+
+  /// The version the probed service reports about itself — from its release marker, or absent.
+  version String? @db.VarChar(64)
+
+  @@id([id, ts])
+  @@index([service, ts])
+  @@map("health_check")
+}
+
+/// One reading of the machine (IKN-8, consumed by IKN-25). CPU is a delta between consecutive
+/// samples, so the first sample after boot honestly has none.
+model HostSample {
+  id BigInt   @default(autoincrement()) @db.UnsignedBigInt
+  ts DateTime @db.DateTime(3)
+
+  cpuPct Float? @map("cpu_pct")
+  load1  Float
+  load5  Float
+  load15 Float
+
+  memUsedBytes  BigInt @map("mem_used_bytes") @db.UnsignedBigInt
+  memTotalBytes BigInt @map("mem_total_bytes") @db.UnsignedBigInt
+
+  diskUsedBytes  BigInt? @map("disk_used_bytes") @db.UnsignedBigInt
+  diskTotalBytes BigInt? @map("disk_total_bytes") @db.UnsignedBigInt
+
+  @@id([id, ts])
+  @@index([ts])
+  @@map("host_sample")
+}
+
+/// One `pm2 jlist` reading per process (IKN-8). Feeds the service header chips: pm2 id, node
+/// version, uptime, restart count. `startedAt` rather than a computed uptime — the reading does
+/// not age, the arithmetic happens at display time.
+model ProcessSample {
+  id BigInt   @default(autoincrement()) @db.UnsignedBigInt
+  ts DateTime @db.DateTime(3)
+
+  pm2Name String @map("pm2_name") @db.VarChar(64)
+  pm2Id   Int?   @map("pm2_id")
+  status  String @db.VarChar(16)
+
+  restarts Int
+  cpuPct   Float?  @map("cpu_pct")
+  memBytes BigInt? @map("mem_bytes") @db.UnsignedBigInt
+
+  startedAt   DateTime? @map("started_at") @db.DateTime(3)
+  nodeVersion String?   @map("node_version") @db.VarChar(16)
+
+  @@id([id, ts])
+  @@index([pm2Name, ts])
+  @@map("process_sample")
+}
