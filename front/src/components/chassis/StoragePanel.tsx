@@ -69,7 +69,7 @@ export const StoragePanel = ({ storage }: { storage: CollectorStorage }) => {
         <Sep />
         {/* The reading is cached for minutes at a time. A panel that hid that would be claiming a
             freshness it does not have. */}
-        <span className="ik-zone-flash">
+        <span className="ik-zone-flash ik-zone-lift">
           {CHASSIS_TEXT.storageReadAt(timeLabel(Date.parse(storage.computedAt), 60_000, tz))}
         </span>
       </footer>

@@ -178,11 +178,20 @@ export const LogTable = ({
      * lines would keep yanking the reader away from the row they were looking at. The panel scrolls;
      * the header below sticks to whatever that scroller turns out to be.
      *
-     * `isolate` so the sticky header's `z-10` is spent inside this panel rather than coming out to
-     * compete with the chassis around it — the toast stack sits at `z-50` and the header has no
-     * business anywhere near it. Modals are native `<dialog>`s in the top layer and are unaffected.
+     * **`isolate` was here and had to go — IKN-49.** It kept the sticky header's `z-10` inside this
+     * panel rather than letting it out to compete with the chassis. What broke it is that the zone
+     * dim's scrim is a chassis-level element, and every timestamp has to rise *above* that scrim to
+     * be left out of the dim — including the ten thousand time handles in the rows below. From
+     * inside an isolated panel none of them can: an isolated subtree paints as one unit, so a
+     * `z-index` on a row is spent against its siblings and never against the chassis.
+     *
+     * So the panel's stacking is now the chassis's, and the two numbers that used to be private
+     * are declared out loud instead: the time handles at `z-40` (`ik-zone-lift`) and the heading
+     * band at `z-45`, which must stay above them or the rows would scroll through it. Both remain
+     * clear of the toast stack at `z-50`, which is the one thing the isolation was protecting.
+     * Modals are native `<dialog>`s in the top layer and are unaffected either way.
      */
-    <div className={cn("isolate", SURFACE_INSET_BG.chassis, SURFACE_TEXT.chassis)}>
+    <div className={cn(SURFACE_INSET_BG.chassis, SURFACE_TEXT.chassis)}>
       <table className="w-full border-collapse text-row tabular-nums">
         <thead>
           <tr>
@@ -193,7 +202,7 @@ export const LogTable = ({
                 IKN-47. On a span rather than on the `<th>`, whose `SURFACE_TEXT_DIM` is the ink
                 the flash has to mix *from*; see `ik-zone-flash`. */}
             <HeaderCell>
-              <span className="ik-zone-flash">{LOGS_TEXT.columns.time(abbrev)}</span>
+              <span className="ik-zone-flash ik-zone-lift">{LOGS_TEXT.columns.time(abbrev)}</span>
             </HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.level}</HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.service}</HeaderCell>
@@ -279,7 +288,12 @@ const HeaderCell = ({
       // `TIME · CEST` at 0.16em of tracking breaks after the middot as soon as the column is narrow
       // enough — a two-line band of 28px, with the rail still held clear of 21 and the thumb back
       // across the headings. A column heading that wraps was never right anyway.
-      "sticky top-0 z-10 h-head-band border-b px-2 text-left text-kicker tracking-kicker whitespace-nowrap uppercase",
+      // `z-45` rather than `z-10` since IKN-49, and it is forced: the rows sliding under this band
+      // now carry lifted time handles at `z-40`, and a heading below them would have ten thousand
+      // timestamps scrolling *through* it. Above the zone dim's scrim at `z-30` as a consequence,
+      // which is why the band carries `ik-zone-dim-box` — it darkens in place, on its own, rather
+      // than under the screen-wide one. The heading that names the zone is lifted back out of it.
+      "sticky top-0 z-[45] ik-zone-dim-box h-head-band border-b px-2 text-left text-kicker tracking-kicker whitespace-nowrap uppercase",
       SURFACE_BG.chassis,
       SURFACE_BORDER.chassis,
       SURFACE_TEXT_DIM.chassis,
@@ -415,7 +429,7 @@ const LogTableRow = memo(
               aria-expanded={expanded}
               aria-controls={expanded ? detailId(rowKey) : undefined}
               aria-label={`${fullInstant(row.ts, tz)} · ${expanded ? LOGS_TEXT.collapseRow : LOGS_TEXT.expandRow}`}
-              className="ik-zone-flash text-left"
+              className="ik-zone-flash ik-zone-lift text-left"
             >
               {timeOfDay(row.ts, tz)}
             </button>
@@ -598,7 +612,7 @@ const RowDetail = ({
                */}
               <dl className="flex flex-col gap-1 text-row">
                 <DetailField label={LOGS_TEXT.columns.time(abbrev)}>
-                  <span className="ik-zone-flash">{fullInstant(row.ts, tz)}</span>
+                  <span className="ik-zone-flash ik-zone-lift">{fullInstant(row.ts, tz)}</span>
                 </DetailField>
                 <DetailField label={LOGS_TEXT.columns.service}>{row.service}</DetailField>
                 <DetailField label={LOGS_TEXT.columns.level}>

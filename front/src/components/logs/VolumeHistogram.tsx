@@ -354,12 +354,14 @@ export const VolumeHistogram = ({
       <div className="flex h-[14px] items-center justify-between text-kicker tabular-nums text-chassis-text-dim">
         {columns.length > 0 && (
           <>
-            <span className="ik-zone-flash">{columns[0].label}</span>
+            <span className="ik-zone-flash ik-zone-lift">{columns[0].label}</span>
             {/* Below six buckets the two middle ticks would repeat the first one back at you. */}
             {columns.length >= 6 && (
               <>
-                <span className="ik-zone-flash">{columns[Math.floor(columns.length / 3)].label}</span>
-                <span className="ik-zone-flash">{columns[Math.floor((columns.length * 2) / 3)].label}</span>
+                <span className="ik-zone-flash ik-zone-lift">{columns[Math.floor(columns.length / 3)].label}</span>
+                <span className="ik-zone-flash ik-zone-lift">
+                  {columns[Math.floor((columns.length * 2) / 3)].label}
+                </span>
               </>
             )}
             {marker && anomaly ? (
@@ -383,7 +385,7 @@ export const VolumeHistogram = ({
                     zone did, and a flash on it would say it had. Its resting ink is the button's
                     `chassis-info`, which is a third one and needs no more configuration than the
                     other two. */}
-                <span className="ik-zone-flash">{marker.label}</span> · {LOGS_TEXT.anomaly(anomaly.excess)}
+                <span className="ik-zone-flash ik-zone-lift">{marker.label}</span> · {LOGS_TEXT.anomaly(anomaly.excess)}
               </button>
             ) : (
               <span>{columns[columns.length - 1].label}</span>

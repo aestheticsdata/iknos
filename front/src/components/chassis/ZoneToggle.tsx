@@ -103,17 +103,17 @@ export const ZoneToggle = () => {
          * can be a flat 50% rather than something that has to measure a string.
          */
         /*
-         * `z-40` is what keeps the control lit while the screen behind it goes dark — IKN-49. The
-         * scrim is a `::after` on `ChassisFrame` at `z-30`, and nothing between here and there
-         * opens a stacking context (`header` and the frame are both unpositioned flex boxes), so
-         * this `z-index` is spent in the root context, against that one. It is also the whole
-         * reason the exemption is affordable: this is *one* element. The timestamps are ten
-         * thousand and are spared underneath the scrim instead, by the flash outrunning it.
+         * `ik-zone-lift` is what keeps the control lit while the screen behind it goes dark —
+         * IKN-49. It is the same `z-40` every timestamp wears, against the scrim's `z-30`, and
+         * nothing between here and the chassis opens a stacking context (`header` and the frame
+         * are both unpositioned flex boxes), so it is spent in the root context against that one.
          *
-         * It costs a stacking context here, which is free — the block and the labels below already
-         * sort themselves by document order inside it, exactly as they did before.
+         * The utility rather than the two classes written out, because this is the same exemption
+         * the flash sites take and there should be one way to ask for it. It carries the `relative`
+         * this box needed anyway. The stacking context it opens is free — the block and the labels
+         * below already sort themselves by document order inside it, exactly as before.
          */
-        "relative z-40 grid h-6 grid-cols-2 select-none overflow-hidden rounded-control",
+        "ik-zone-lift grid h-6 grid-cols-2 select-none overflow-hidden rounded-control",
         "border border-chassis-border-strong bg-chassis-inset",
         !known && "invisible",
       )}

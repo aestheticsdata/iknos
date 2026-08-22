@@ -46,6 +46,29 @@
   initial-value: 0;
 }
 
+/**
+ * The zone *dim*'s carrier — IKN-49, and the reason it is a second number rather than a reuse of
+ * the one above.
+ *
+ * The two halves of the gesture no longer share a curve. The flash is full on the first frame and
+ * decays, which is IKN-47's argued shape: there is no peak to miss. The dim is a fade in *and*
+ * out — 0 to 1 and back inside the same 180ms — because a scrim that is already at full depth in
+ * the frame it appears reads as a cut, not as a room going dark, and the thing it is asking the
+ * eye to notice is the *change* of light rather than any particular level of it.
+ *
+ * Two numbers, one animation shorthand, one class: the `--animate-zone-flash-*` tokens below carry
+ * both keyframes as a comma list, so the pair still restarts together on a single class change and
+ * there is still nothing that can drift.
+ *
+ * Registered for the same reason as `--ik-flash`: unregistered it would flip 0→1→0 in two steps
+ * instead of ramping, which on an opacity is a blink of the whole screen.
+ */
+@property --ik-dim {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 @theme {
   /* The liveness dots: the collector's, the auth chrome bar's, the rail's per-service dots. */
   --animate-pulse-live: ikPulse 2.4s ease-in-out infinite;
@@ -64,8 +87,8 @@
    * a no-op. So the chassis alternates between these two on each press. The keyframes below are
    * deliberately identical and must stay that way; the pair is a restart mechanism, not a choice.
    */
-  --animate-zone-flash-a: ikZoneFlashA 0.18s ease-out;
-  --animate-zone-flash-b: ikZoneFlashB 0.18s ease-out;
+  --animate-zone-flash-a: ikZoneFlashA 0.18s ease-out, ikZoneDimA 0.18s ease-in-out;
+  --animate-zone-flash-b: ikZoneFlashB 0.18s ease-out, ikZoneDimB 0.18s ease-in-out;
 
   @keyframes ikPulse {
     0%,
@@ -127,6 +150,40 @@
     }
     100% {
       --ik-flash: 0;
+    }
+  }
+
+  /*
+   * The room going down and coming back, inside the flash's own 180ms — IKN-49.
+   *
+   * A triangle rather than the flash's hold-and-decay, and the difference is the point. The flash
+   * is a thing appearing, so it starts at full: there is nothing to watch arrive. The dim is a
+   * thing *changing* — the light in the room dropping — and a level that is simply already there
+   * in the first frame is read as a cut. `ease-in-out` on both legs so neither end has a corner.
+   *
+   * Darkest at 90ms, by which point the flash is 51% decayed. They are deliberately not aligned:
+   * the timestamps are lifted clear of the scrim (see `ik-zone-lift`), so the two curves never
+   * multiply and there is no instant either of them has to be measured against the other.
+   *
+   * Two names, identical bodies, same restart mechanism as the flash above — they are one class.
+   */
+  @keyframes ikZoneDimA {
+    0%,
+    100% {
+      --ik-dim: 0;
+    }
+    50% {
+      --ik-dim: 1;
+    }
+  }
+
+  @keyframes ikZoneDimB {
+    0%,
+    100% {
+      --ik-dim: 0;
+    }
+    50% {
+      --ik-dim: 1;
     }
   }
 }

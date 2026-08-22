@@ -108,7 +108,7 @@ const Clock = () => {
           `ik-zone-flash` mixes from `currentcolor`, and inside the `color` property that resolves
           to the *inherited* colour. Both on one element would be the class mixing with itself. */}
       <span
-        className="ik-zone-flash"
+        className="ik-zone-flash ik-zone-lift"
         suppressHydrationWarning
       >
         {now ?? ""}
