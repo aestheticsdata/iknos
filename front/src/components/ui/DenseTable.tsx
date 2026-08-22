@@ -1,5 +1,5 @@
 import { cn } from "@lib/utils";
-import { SURFACE_BORDER, SURFACE_INSET_BG, SURFACE_TEXT, SURFACE_TEXT_DIM } from "./surface";
+import { SURFACE_BORDER, SURFACE_INSET_BG, SURFACE_SCROLL_X, SURFACE_TEXT, SURFACE_TEXT_DIM } from "./surface";
 
 import type { Surface } from "./surface";
 
@@ -36,7 +36,10 @@ export const DenseTable = <Row,>({
   empty?: string;
   className?: string;
 }) => (
-  <div className={cn("overflow-x-auto", className)}>
+  /* `ik-scroll-head` because this box scrolls in both axes — `overflow-x: auto` computes the other
+     one to `auto` as well — and the heading band above sticks inside it. Without it the vertical
+     bar starts level with the column titles and its thumb sits across them. */
+  <div className={cn(SURFACE_SCROLL_X[surface], "ik-scroll-head overflow-x-auto", className)}>
     <table className="w-full border-collapse text-row tabular-nums">
       <thead>
         <tr>
@@ -45,7 +48,11 @@ export const DenseTable = <Row,>({
               key={column.key}
               scope="col"
               className={cn(
-                "sticky top-0 border-b px-2 py-1 text-left text-kicker tracking-kicker uppercase",
+                /* The band's height is pinned rather than left to `py-1` and a 9px line box,
+                   because `ik-scroll-head` holds exactly `--spacing-head-band` of rail clear of
+                   it. Two numbers that have to agree, written once — and `whitespace-nowrap` so a
+                   heading cannot wrap to two lines and put the band back past the clearance. */
+                "sticky top-0 h-head-band border-b px-2 text-left text-kicker tracking-kicker whitespace-nowrap uppercase",
                 SURFACE_INSET_BG[surface],
                 SURFACE_BORDER[surface],
                 SURFACE_TEXT_DIM[surface],

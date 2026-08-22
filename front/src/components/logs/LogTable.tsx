@@ -265,7 +265,16 @@ const HeaderCell = ({
       // Sticky, for `DenseTable`'s reason and more so: scrolling ten thousand rows and losing which
       // column is which is the failure this header exists to prevent. It needs an opaque background
       // of its own — the stream slides underneath it, not behind a transparent strip.
-      "sticky top-0 z-10 border-b px-2 py-1 text-left text-kicker tracking-kicker uppercase",
+      //
+      // `h-head-band` rather than `py-1`: the panel's scroller holds exactly that much of the rail
+      // clear of this band (`ik-scroll-head`), so the height cannot be whatever the padding and the
+      // font's line box happen to add up to. It is the same 21px the padding was giving.
+      //
+      // `whitespace-nowrap` is the other half of pinning it, and it is not cosmetic. Left to wrap,
+      // `TIME · CEST` at 0.16em of tracking breaks after the middot as soon as the column is narrow
+      // enough — a two-line band of 28px, with the rail still held clear of 21 and the thumb back
+      // across the headings. A column heading that wraps was never right anyway.
+      "sticky top-0 z-10 h-head-band border-b px-2 text-left text-kicker tracking-kicker whitespace-nowrap uppercase",
       SURFACE_BG.chassis,
       SURFACE_BORDER.chassis,
       SURFACE_TEXT_DIM.chassis,
@@ -549,7 +558,10 @@ const RowDetail = ({
              */}
             <pre
               className={cn(
-                "overflow-x-auto rounded-chip border p-2 text-row leading-hint",
+                // `ik-scroll-x`, not `ik-scroll`: this box only moves sideways, and the vertical
+                // variant's `overscroll-behavior: none` would eat every wheel event the pointer
+                // spends over it rather than passing it up to the stream.
+                "ik-scroll-x overflow-x-auto rounded-chip border p-2 text-row leading-hint",
                 SURFACE_BORDER.chassis,
                 SURFACE_INSET_BG.chassis,
                 SURFACE_TEXT_MUTED.chassis,

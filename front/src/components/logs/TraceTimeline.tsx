@@ -158,7 +158,7 @@ const TraceBody = ({ trace, loading, error }: { trace: Trace | null; loading: bo
        */}
       <ol
         aria-label={LOGS_TEXT.traceTitle}
-        className="flex max-h-[46vh] flex-col gap-1.5 overflow-y-auto"
+        className="ik-scroll flex max-h-[46vh] flex-col gap-1.5 overflow-y-auto"
       >
         {lanes.map((lane) => (
           <li

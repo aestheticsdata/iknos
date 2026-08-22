@@ -85,3 +85,21 @@ export const TONE_FILL: Record<Surface, Record<Tone, string>> = {
     neutral: "bg-work-text-dim",
   },
 };
+
+/**
+ * The scrollbar, per surface — `styles/utilities.css`.
+ *
+ * A scroller is told which ground it is on for the same reason a badge is: the thumb is the
+ * surface's own border ink, and the dark ramp's on a light card is a slate bar across a pale
+ * panel. Add `overflow-*` yourself — this is the ink and the geometry, not the decision to scroll.
+ */
+export const SURFACE_SCROLL: Record<Surface, string> = {
+  chassis: "ik-scroll",
+  work: "ik-scroll-work",
+};
+
+/** The same bar for a box that only moves sideways — it keeps vertical scroll chaining on. */
+export const SURFACE_SCROLL_X: Record<Surface, string> = {
+  chassis: "ik-scroll-x",
+  work: "ik-scroll-work-x",
+};

@@ -1,0 +1,27 @@
+/**
+ * Scrolling — the two measurements every scrolling surface in Iknos shares.
+ *
+ * In `@theme` under the `--spacing-*` namespace rather than as loose custom properties, so the
+ * same numbers are reachable as utilities (`h-head-band`, `w-scroll-bar`) as well as through
+ * `var()`. A measurement that has to hold across a scroll boundary is exactly the kind that goes
+ * wrong when it is written twice.
+ */
+@theme {
+  /* The rail the scrollbar is drawn in. `utilities.css` paints a 3px thumb inside it, held off
+     each edge by a 3px transparent border — so the bar you see is 3px and the rail it lives in is
+     9px. Widening the rail rather than thickening the thumb is what buys the thumb its clearance:
+     a webkit thumb has no margin of its own. */
+  --spacing-scroll-bar: 0.5625rem; /* 9px */
+
+  /**
+   * The height of a sticky heading band — the log stream's column headings, `DenseTable`'s.
+   *
+   * It is a *token* rather than whatever `py-1` and a 9px line box happen to add up to because the
+   * scrollbar has to know it: `ik-scroll-head` holds the top of the rail clear of exactly this
+   * much, and a band that quietly grew by a pixel when a font metric changed would put the thumb
+   * back over the headings it was moved off. Pinning the height is what keeps the two honest.
+   *
+   * 21px is the height the bands already had — `py-1` around a 9px kicker plus the rule under it.
+   */
+  --spacing-head-band: 1.3125rem; /* 21px */
+}

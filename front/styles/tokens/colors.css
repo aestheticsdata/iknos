@@ -27,6 +27,13 @@
   --color-chassis-error: #e4736b;
   --color-chassis-info: #7fa8c4;
   --color-chassis-error-bg: #22191c;
+  /*
+   * The scrollbar, on the dark ground. The thumb is the panel's own border ink and the hover step
+   * is the next border up, so a bar that is not being used reads as one more edge in the chassis
+   * rather than as a control — and finding it under the pointer is what makes it one.
+   */
+  --color-chassis-scrollbar: var(--color-chassis-border-strong);
+  --color-chassis-scrollbar-hover: var(--color-chassis-border-focus);
 
   /* ── Work surface (light) — cards, tables, signal tiles, route lists ───────────────────────── */
   --color-work-surface: #bfcdd4;
@@ -49,6 +56,14 @@
   --color-work-error: #862c28; /* 5.36 / 4.61 */
   --color-work-info: #324e60; /* 5.39 / 4.63 */
   --color-work-error-bg: #c4a9a6;
+  /*
+   * The same idea on the light ground, and the direction reverses with it: the thumb is the work
+   * border and it *darkens* under the pointer instead of lightening. This is the reason the
+   * scrollbar is two tokens and not one — `chassis-scrollbar` on `work-surface` is a hard slate
+   * bar across a pale card, which reads as a piece of the content rather than as chrome.
+   */
+  --color-work-scrollbar: var(--color-work-border);
+  --color-work-scrollbar-hover: var(--color-work-text-dim);
 
   /**
    * The histogram's own three. Deliberately not the state colours: these are read as areas of

@@ -57,7 +57,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
   return (
     <nav
       aria-label={CHASSIS_TEXT.railLabel}
-      className="flex w-[188px] flex-none flex-col gap-4 overflow-y-auto border-r border-chassis-border bg-chassis-surface px-2 py-3 max-rail:w-[52px] max-rail:px-1"
+      className="ik-scroll flex w-[188px] flex-none flex-col gap-4 overflow-y-auto border-r border-chassis-border bg-chassis-surface px-2 py-3 max-rail:w-[52px] max-rail:px-1"
     >
       <section>
         <RailHeading>{CHASSIS_TEXT.services}</RailHeading>

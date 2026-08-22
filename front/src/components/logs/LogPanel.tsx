@@ -311,10 +311,16 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         </button>
       )}
 
+      {/*
+       * The stream's scroller, and the one place in the app that needs `ik-scroll-head`: the
+       * table's column headings are `sticky` *inside* this box — which is what keeps them the same
+       * width as the rows sliding under them — so without the clearance the bar starts level with
+       * them and the thumb sits across the titles at the top of every list.
+       */}
       <div
         ref={listRef}
         onScroll={onScroll}
-        className="min-h-0 flex-1 overflow-y-auto"
+        className="ik-scroll ik-scroll-head min-h-0 flex-1 overflow-y-auto"
       >
         <LogTable
           items={items}

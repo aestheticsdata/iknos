@@ -6,7 +6,11 @@
 @import "./tokens/radius.css";
 @import "./tokens/elevation.css";
 @import "./tokens/breakpoints.css";
+@import "./tokens/scroll.css";
 
 /* Base layer + the three animations */
 @import "./base.css";
 @import "./animations.css";
+
+/* The scrollbar, which is a class rather than a base rule on purpose — see the file. */
+@import "./utilities.css";

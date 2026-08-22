@@ -1,0 +1,155 @@
+/**
+ * Utilities Tailwind has no vocabulary for, declared with `@utility` so they behave like any other
+ * class — same layer, same ability to be overridden by a later utility.
+ *
+ * Ported from Zeus's `zeus-scroll`, which is itself bkmk's `gr-scroll` and by now the fleet's
+ * convention, with Iknos's tokens and one thing neither of them needed: two surfaces.
+ */
+
+/* ═══ SCROLLBAR ══════════════════════════════════════════════════════════════════════════════
+ *
+ * `ik-scroll` — on any element that scrolls, on the chassis. `ik-scroll-work` is the same bar in
+ * the light ramp's ink; pick by the ground the scroller is standing on, exactly as every other
+ * primitive does (`SURFACE_SCROLL` in `ui/surface.ts` is the lookup).
+ *
+ * The native bar is wrong on a console this dense for three reasons: it is 15px wide on macOS with
+ * a mouse attached, it paints a track that reads as a gutter cut into the panel, and its thumb is
+ * the one rounded grey rectangle in the interface nobody chose.
+ *
+ * So: 3px, no track, and a thumb in the surface's own border ink that lifts when the pointer is
+ * over the area. `scrollbar-color` covers Firefox, `::-webkit-scrollbar` covers Chrome and Safari,
+ * and both have to be written because neither engine reads the other's property.
+ *
+ * ⚠️ **`scrollbar-gutter` is deliberately not set**, and neither is the `padding-inline-end` Zeus
+ * carries. Reserving the channel leaves a panel looking as though it has a margin down one side
+ * only. Every scroller in Iknos already holds its content off the edge — log rows and table cells
+ * are `px-2`, the rail is `px-2`, the palette's rows are padded — so the last character of a row
+ * sits 8px from the rail and 11px from the thumb inside it. A gutter on top of that would be a
+ * second inset, not a first one.
+ */
+@utility ik-scroll {
+  /* Kills two things at once: the macOS rubber-band bounce when you drag past the top of a list
+     that is already at the top, and scroll chaining into whatever is behind the panel. Both are
+     browser-document behaviours that read as broken inside an app shell whose page does not scroll
+     at all — `ChromeShell` is `h-dvh` and clips. */
+  overscroll-behavior: none;
+
+  /* ⚠️ **`scrollbar-width` only where the pseudo-elements do not exist.**
+   *
+   * Chrome and Safari support both, and when the standard properties are present they *ignore*
+   * `::-webkit-scrollbar` entirely — setting `scrollbar-width: thin` unconditionally leaves
+   * Chrome's own thin bar, which measures 11px, not the 3 below. Firefox, which has no scrollbar
+   * pseudo-elements, is the engine that actually needs them.
+   *
+   * The support query is the split: false where `::-webkit-scrollbar` is implemented, true where
+   * it is not.
+   *
+   * Firefox stops at `thin` — the property is a keyword, not a length, so it cannot follow the bar
+   * down to 3px, and it has no way to hold the rail clear of a heading band either (see
+   * `ik-scroll-head`). It renders a little wider and a little taller there, and that is as far as
+   * the engine goes. */
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-chassis-scrollbar) transparent;
+  }
+
+  /* 9px of rail carrying a 3px thumb, with 3px of clearance on each side. The rail is deliberately
+     wider than the bar you see: a webkit thumb has no margin, so the transparent border below,
+     with `background-clip: padding-box`, is the only way to buy it breathing room. */
+  &::-webkit-scrollbar {
+    width: var(--spacing-scroll-bar);
+    height: var(--spacing-scroll-bar);
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-chassis-scrollbar);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: var(--color-chassis-scrollbar-hover);
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/** `ik-scroll-work` — the same bar on the light ramp. Only the ink changes; the geometry is shared,
+ *  which is why this applies the chassis one and then overrides the three colour declarations
+ *  rather than restating it. */
+@utility ik-scroll-work {
+  @apply ik-scroll;
+
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-color: var(--color-work-scrollbar) transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-work-scrollbar);
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: var(--color-work-scrollbar-hover);
+  }
+}
+
+/**
+ * `ik-scroll-head` — hold the top of the rail clear of a sticky heading band.
+ *
+ * A `<thead>` that sticks lives *inside* the scroller, which is what keeps its columns the same
+ * width as the rows sliding under it. The scrollbar's rail spans that whole box, so the bar starts
+ * level with the headings and the thumb sits across the column titles at the top of every list —
+ * the native bar in the screenshot that opened this ticket, doing exactly that.
+ *
+ * A margin on the track is the fix, and the only one that does not cost the band its alignment:
+ * webkit lays the thumb out inside the track, so shortening the track from the top moves the bar
+ * down to where the rows actually start. Taking the headings out of the scroller instead would
+ * work too, and is what Zeus's `PanelTable` does — but Zeus's columns are a grid template it can
+ * repeat on both sides of the boundary, and this table is `table-layout: auto` sizing eight
+ * columns to the widest route on the page. Split in two it would need every width pinned, and a
+ * route column that no longer grows to fit is a worse answer than a bar three pixels too tall.
+ *
+ * Pair it with `ik-scroll` or `ik-scroll-work`; it carries no ink of its own.
+ *
+ * ⚠️ Chrome and Safari only. Firefox has no track to put a margin on, and its bar still runs the
+ * full height. That is the same trade `ik-scroll` already makes for the width.
+ */
+@utility ik-scroll-head {
+  /* `:vertical` is load-bearing. `::-webkit-scrollbar-track` on its own is both tracks, and the
+     horizontal one is 9px tall — a 21px margin on it does not push anything down, it collapses the
+     bar the box scrolls sideways with. `DenseTable` has both bars at once. */
+  &::-webkit-scrollbar-track:vertical {
+    margin-block-start: var(--spacing-head-band);
+  }
+}
+
+/**
+ * `ik-scroll-x` / `ik-scroll-work-x` — the same bar on a box that only ever moves sideways.
+ *
+ * `overscroll-behavior: none` is right for something that scrolls vertically: the wheel stops at
+ * the panel's edge instead of dragging the page behind it. On a horizontal-only scroller it is a
+ * trap, and an invisible one (ZEU-52, learned there). `overflow-x: auto` makes an element a scroll
+ * container in **both** axes — the vertical one simply has nothing to scroll — so `none` there does
+ * not mean "nothing to chain", it means "chain nothing". Every wheel event over the box is
+ * swallowed, and the modal or page around it sits frozen for as long as the pointer rests on an
+ * expanded row's JSON.
+ *
+ * So: chaining stays off along x, the one axis where these boxes can reach an edge worth
+ * defending, and back on along y, where they have no scroll of their own to protect.
+ */
+@utility ik-scroll-x {
+  @apply ik-scroll;
+  overscroll-behavior: none auto;
+}
+
+@utility ik-scroll-work-x {
+  @apply ik-scroll-work;
+  overscroll-behavior: none auto;
+}

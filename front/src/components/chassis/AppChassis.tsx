@@ -45,7 +45,7 @@ export const AppChassis = async ({ children }: { children: React.ReactNode }) =>
               <TopBar />
               <div className="flex min-h-0 flex-1">
                 <ServiceRail services={services} />
-                <main className="min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
+                <main className="ik-scroll-work min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
               </div>
               <StatusBar />
             </div>

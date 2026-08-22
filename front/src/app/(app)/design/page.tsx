@@ -10,8 +10,10 @@ import { Field } from "@components/ui/Field";
 import { Modal } from "@components/ui/Modal";
 import { Select } from "@components/ui/Select";
 import { Sparkline } from "@components/ui/Sparkline";
+import { SURFACE_SCROLL, SURFACE_TEXT_MUTED } from "@components/ui/surface";
 import { useToast } from "@components/ui/Toast";
 import { Tooltip } from "@components/ui/Tooltip";
+import { cn } from "@lib/utils";
 import { useState } from "react";
 
 import type { Surface, Tone } from "@components/ui/surface";
@@ -31,6 +33,12 @@ type Row = { id: string; service: string; level: Tone; route: string; ms: number
 
 /** A plausible ingest curve — twenty points, the width the rail draws. */
 const SERIES = [4, 6, 5, 9, 12, 8, 7, 11, 18, 24, 19, 13, 9, 7, 8, 6, 5, 9, 14, 11];
+
+/** Enough lines to overflow the box below and give the bar something to do. */
+const SCROLL_LINES = Array.from(
+  { length: 14 },
+  (_, index) => `line ${String(index + 1).padStart(2, "0")} · the thumb is the surface's own border ink`,
+);
 
 const ROWS: Row[] = [
   { id: "1", service: "iknos-api", level: "info", route: "/api/logs", ms: 38 },
@@ -225,6 +233,29 @@ const SurfacePanel = ({ surface }: { surface: Surface }) => (
             { key: "ms", header: "ms", numeric: true, render: (row) => row.ms },
           ]}
         />
+      </Card>
+
+      {/*
+       * The scrollbar is the one primitive you cannot see in a screenshot of a box that fits, so
+       * the box here is deliberately too short for its content. Both surfaces are on the page at
+       * once for the usual reason: the thumb is the surface's own border ink, and the pair is only
+       * judgeable side by side.
+       */}
+      <Card
+        surface={surface}
+        title="Scrollbar"
+        kicker="3px"
+      >
+        <div className={cn(SURFACE_SCROLL[surface], "h-24 overflow-y-auto")}>
+          {SCROLL_LINES.map((line) => (
+            <p
+              key={line}
+              className={cn("py-0.5 text-row", SURFACE_TEXT_MUTED[surface])}
+            >
+              {line}
+            </p>
+          ))}
+        </div>
       </Card>
     </div>
   </div>

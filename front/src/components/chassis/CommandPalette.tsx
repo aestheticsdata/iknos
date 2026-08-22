@@ -166,7 +166,7 @@ export const CommandPalette = () => {
         />
 
         {results.length > 0 ? (
-          <ul className="flex max-h-[320px] flex-col overflow-y-auto">
+          <ul className="ik-scroll flex max-h-[320px] flex-col overflow-y-auto">
             {results.map((hit, index) => (
               <Row
                 key={`${hit.type}:${hit.value}`}
