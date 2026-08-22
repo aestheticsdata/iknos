@@ -1,9 +1,35 @@
 /**
- * Three animations, all short — §3.4. Nothing else in Iknos moves.
+ * Four gestures, all short — §3.4. Nothing else in Iknos moves.
  *
  * This is a screen people stare at while something is wrong. Motion that is not reporting a change
  * in the data is noise, and noise on a monitoring tool costs attention exactly when it is scarcest.
+ * The fourth arrived under that rule rather than in spite of it: the zone flash is the only thing
+ * that reports the reader changing which clock every timestamp on screen is read on.
  */
+
+/**
+ * The zone flash's carrier — IKN-47.
+ *
+ * *Registered*, not merely used, and both lines of the declaration are load-bearing.
+ *
+ * `syntax` is what makes it interpolable: an unregistered custom property has no type, so a
+ * keyframe animation over it flips from `1` to `0` halfway through instead of decaying. Declaring
+ * it a `<number>` is the difference between a flash and a blink.
+ *
+ * `inherits: true` is the whole mechanism. The animation runs **once**, on the chassis's root box,
+ * and every timestamp on screen reads the same falling number back out of inheritance — see
+ * `ik-zone-flash` in `utilities.css` for the other half. The alternative is an animation per
+ * timestamp, and the log stream does not virtualise: that is ten thousand of them.
+ *
+ * Outside `@theme` on purpose. This is a CSS registration, not a design token — nothing generates
+ * a utility from it and nothing should.
+ */
+@property --ik-flash {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 @theme {
   /* The liveness dots: the collector's, the auth chrome bar's, the rail's per-service dots. */
   --animate-pulse-live: ikPulse 2.4s ease-in-out infinite;
@@ -13,6 +39,17 @@
 
   /* Things that cover — overlays, backdrops. */
   --animate-fade: ikFade 0.14s ease-out;
+
+  /*
+   * Every timestamp on screen, the instant the reader changes which clock they are on — IKN-47.
+   *
+   * **Two names for one gesture.** Pressing the toggle a second time has to replay the flash, and a
+   * CSS animation only restarts when its `animation-name` changes — re-applying the same class is
+   * a no-op. So the chassis alternates between these two on each press. The keyframes below are
+   * deliberately identical and must stay that way; the pair is a restart mechanism, not a choice.
+   */
+  --animate-zone-flash-a: ikZoneFlashA 0.18s ease-out;
+  --animate-zone-flash-b: ikZoneFlashB 0.18s ease-out;
 
   @keyframes ikPulse {
     0%,
@@ -43,12 +80,51 @@
       opacity: 1;
     }
   }
+
+  /*
+   * Full brightness on the first frame painted after the press, held long enough to be caught, then
+   * out — 45ms of hold and 135ms of decay.
+   *
+   * The hold is the point. An up-and-down inside 50ms is three frames at 60Hz with the peak in one
+   * of them, and the eye is on the button that was just clicked rather than on the column two
+   * hundred pixels below it; there is a real chance of the whole thing landing between two
+   * glances. Starting at full instead of ramping up means there is no peak to miss either — the
+   * bright state is already there in the first frame that carries the new digits.
+   *
+   * 0.18s keeps it in the house's range (`--animate-in` 0.16s, `--animate-fade` 0.14s) rather than
+   * inventing a scale for one gesture.
+   */
+  @keyframes ikZoneFlashA {
+    0%,
+    25% {
+      --ik-flash: 1;
+    }
+    100% {
+      --ik-flash: 0;
+    }
+  }
+
+  @keyframes ikZoneFlashB {
+    0%,
+    25% {
+      --ik-flash: 1;
+    }
+    100% {
+      --ik-flash: 0;
+    }
+  }
 }
 
 /**
  * Everything above is off for anyone who asked for it to be. The liveness dot is the one loss that
  * matters — it is how you tell a live page from a frozen one — so it keeps a static presence
  * rather than disappearing, and the status bar says the same thing in words anyway.
+ *
+ * The zone flash loses nothing: it is a redundant confirmation of a change three other things on
+ * screen already carry in text — the toggle's own label, the log column's heading, and
+ * `aria-pressed` on the button that was just pressed. Collapsed to 0.01ms the animation ends
+ * before it paints, `--ik-flash` falls back to its initial `0`, and every timestamp keeps exactly
+ * the ink it has today.
  */
 /**
  * The three `!important`s below are the mechanism, not a shortcut around one: this rule has to

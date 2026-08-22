@@ -46,6 +46,21 @@ type ZoneContextValue = {
   abbrev: string | null;
   /** What pressing the toggle would switch to, named the same way. */
   otherAbbrev: string | null;
+  /**
+   * How many times the toggle has been pressed in this tab — the zone flash's clock, IKN-47.
+   *
+   * Two things are asked of it and one number answers both. `0` means *never pressed*, which is
+   * what keeps the flash from firing on its own at mount, when the zone arrives from
+   * `localStorage` and nothing was decided by anybody. And its parity is what alternates the two
+   * animation names the chassis wears, because a CSS animation restarts only when its name
+   * changes — re-applying the class it already has is a no-op, and pressing the toggle twice has
+   * to flash twice.
+   *
+   * It is raised in the same `setState` as the zone, which is what makes the flash and the new
+   * digits one commit and therefore one paint. Split across two updates they would be two events
+   * a frame apart, which is exactly what this is meant not to look like.
+   */
+  pulse: number;
   toggle: () => void;
 };
 
@@ -75,9 +90,9 @@ export const ZoneProvider = ({ children }: { children: React.ReactNode }) => {
    * the first client paint disagree with the HTML — the same disagreement `TopBar`'s clock has
    * always deferred an effect to avoid.
    */
-  const [state, setState] = useState<{ zone: Zone; at: Date } | null>(null);
+  const [state, setState] = useState<{ zone: Zone; at: Date; pulse: number } | null>(null);
 
-  useEffect(() => setState({ zone: readStored(), at: new Date() }), []);
+  useEffect(() => setState({ zone: readStored(), at: new Date(), pulse: 0 }), []);
 
   const toggle = useCallback(() => {
     setState((current) => {
@@ -89,12 +104,12 @@ export const ZoneProvider = ({ children }: { children: React.ReactNode }) => {
       } catch {
         // The choice still applies to this tab; it simply will not outlive it.
       }
-      return { ...current, zone: next };
+      return { ...current, zone: next, pulse: current.pulse + 1 };
     });
   }, []);
 
   const value = useMemo<ZoneContextValue>(() => {
-    if (state === null) return { tz: "UTC", zone: null, abbrev: null, otherAbbrev: null, toggle };
+    if (state === null) return { tz: "UTC", zone: null, abbrev: null, otherAbbrev: null, pulse: 0, toggle };
 
     const tz = resolveZone(state.zone);
     const other = resolveZone(state.zone === "utc" ? "local" : "utc");
@@ -103,6 +118,7 @@ export const ZoneProvider = ({ children }: { children: React.ReactNode }) => {
       zone: state.zone,
       abbrev: zoneAbbrev(tz, state.at),
       otherAbbrev: zoneAbbrev(other, state.at),
+      pulse: state.pulse,
       toggle,
     };
   }, [state, toggle]);

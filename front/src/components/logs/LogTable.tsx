@@ -189,7 +189,12 @@ export const LogTable = ({
             {/* `time` is left-aligned despite being numeric: it is the column the eye returns to
                 between rows, and an anchor belongs at the edge it is read from. `tabular-nums` on
                 the table already gives it the alignment right-justifying would have bought. */}
-            <HeaderCell>{LOGS_TEXT.columns.time(abbrev)}</HeaderCell>
+            {/* The one heading that changes with the zone, so the one that flashes with it —
+                IKN-47. On a span rather than on the `<th>`, whose `SURFACE_TEXT_DIM` is the ink
+                the flash has to mix *from*; see `ik-zone-flash`. */}
+            <HeaderCell>
+              <span className="ik-zone-flash">{LOGS_TEXT.columns.time(abbrev)}</span>
+            </HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.level}</HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.service}</HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.route}</HeaderCell>
@@ -397,13 +402,20 @@ const LogTableRow = memo(
              * either zone — `14:03:22.481` of `2026-08-21 14:03:22.481 CEST` as much as of the raw
              * ISO string — so WCAG's label-in-name holds and "activate 14:03:22" still works.
              */}
+            {/*
+             * `ik-zone-flash` is on the handle that was already here, which is the point of the
+             * whole mechanism — IKN-47. This element exists ten thousand times over on a full
+             * page, so the flash may not cost it a wrapper, a state subscription or an animation
+             * of its own. It reads an inherited number the chassis animates once, and mixes it
+             * against the `<td>`'s ink.
+             */}
             <button
               type="button"
               title={fullInstant(row.ts, tz)}
               aria-expanded={expanded}
               aria-controls={expanded ? detailId(rowKey) : undefined}
               aria-label={`${fullInstant(row.ts, tz)} · ${expanded ? LOGS_TEXT.collapseRow : LOGS_TEXT.expandRow}`}
-              className="text-left"
+              className="ik-zone-flash text-left"
             >
               {timeOfDay(row.ts, tz)}
             </button>
@@ -585,7 +597,9 @@ const RowDetail = ({
                * names rather than a second vocabulary, so the pane reads as the row unfolded.
                */}
               <dl className="flex flex-col gap-1 text-row">
-                <DetailField label={LOGS_TEXT.columns.time(abbrev)}>{fullInstant(row.ts, tz)}</DetailField>
+                <DetailField label={LOGS_TEXT.columns.time(abbrev)}>
+                  <span className="ik-zone-flash">{fullInstant(row.ts, tz)}</span>
+                </DetailField>
                 <DetailField label={LOGS_TEXT.columns.service}>{row.service}</DetailField>
                 <DetailField label={LOGS_TEXT.columns.level}>
                   {row.levelName} ({row.level})

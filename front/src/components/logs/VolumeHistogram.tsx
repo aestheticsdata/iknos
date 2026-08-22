@@ -348,15 +348,18 @@ export const VolumeHistogram = ({
        * is a couple of pixels, and the row has to hold its height in every state anyway, which
        * absolute positioning inside a collapsing row does not.
        */}
+      {/* The ticks flash with the rows they point at — IKN-47. The row holds the ink and each tick
+          holds the flash, which is what lets `ik-zone-flash` mix from `currentcolor` without any of
+          them naming a colour. */}
       <div className="flex h-[14px] items-center justify-between text-kicker tabular-nums text-chassis-text-dim">
         {columns.length > 0 && (
           <>
-            <span>{columns[0].label}</span>
+            <span className="ik-zone-flash">{columns[0].label}</span>
             {/* Below six buckets the two middle ticks would repeat the first one back at you. */}
             {columns.length >= 6 && (
               <>
-                <span>{columns[Math.floor(columns.length / 3)].label}</span>
-                <span>{columns[Math.floor((columns.length * 2) / 3)].label}</span>
+                <span className="ik-zone-flash">{columns[Math.floor(columns.length / 3)].label}</span>
+                <span className="ik-zone-flash">{columns[Math.floor((columns.length * 2) / 3)].label}</span>
               </>
             )}
             {marker && anomaly ? (
@@ -376,7 +379,11 @@ export const VolumeHistogram = ({
                 className="text-chassis-info hover:brightness-125"
               >
                 <span aria-hidden="true">▲ </span>
-                {marker.label} · {LOGS_TEXT.anomaly(anomaly.excess)}
+                {/* Only the timestamp, not the count beside it: the excess did not move when the
+                    zone did, and a flash on it would say it had. Its resting ink is the button's
+                    `chassis-info`, which is a third one and needs no more configuration than the
+                    other two. */}
+                <span className="ik-zone-flash">{marker.label}</span> · {LOGS_TEXT.anomaly(anomaly.excess)}
               </button>
             ) : (
               <span>{columns[columns.length - 1].label}</span>

@@ -87,6 +87,9 @@ export const TopBar = () => {
  * precisely to warn that the two disagreed; there is nothing left to warn about. `timeLabel` at a
  * one-second bucket is `HH:MM:SS` — the shape `w-[62px]` is cut for, and no zone suffix is
  * appended here because the toggle sitting beside it already names the zone.
+ *
+ * It is also the timestamp closest to the toggle, so it is the one whose flash is read as the
+ * button's own feedback — IKN-47.
  */
 const Clock = () => {
   const { tz } = useZone();
@@ -100,11 +103,16 @@ const Clock = () => {
   }, [tz]);
 
   return (
-    <span
-      className="w-[62px] text-right text-row tabular-nums text-chassis-text-muted"
-      suppressHydrationWarning
-    >
-      {now ?? ""}
+    <span className="w-[62px] text-right text-row tabular-nums text-chassis-text-muted">
+      {/* The flash sits on a child of the box that carries the ink, never on the box itself:
+          `ik-zone-flash` mixes from `currentcolor`, and inside the `color` property that resolves
+          to the *inherited* colour. Both on one element would be the class mixing with itself. */}
+      <span
+        className="ik-zone-flash"
+        suppressHydrationWarning
+      >
+        {now ?? ""}
+      </span>
     </span>
   );
 };

@@ -182,3 +182,64 @@
   @apply ik-scroll-work;
   overscroll-behavior: none auto;
 }
+
+/* ═══ ZONE FLASH ═════════════════════════════════════════════════════════════════════════════
+ *
+ * `ik-zone-flash` — on any text that is re-rendered when the reader changes time zone. IKN-47.
+ *
+ * Pressing `CEST` / `UTC` used to be silent: the only feedback was the button's own three letters,
+ * in the corner the eye is already on, while the change it caused happened everywhere else. This
+ * is the other end of that press — a brief lift toward the ramp's high ink, on every timestamp,
+ * in the same paint as the new digits.
+ *
+ * **It carries no animation of its own.** The animation is `--animate-zone-flash-a` / `-b`, played
+ * once on the chassis's root box, which drives the inherited `--ik-flash` from 1 down to 0 (see
+ * `animations.css`). Everything here does is *read* that number. That split is the reason the
+ * log stream can wear this on ten thousand rows: the browser is running one animation, not ten
+ * thousand, and the table does not virtualise.
+ *
+ * **Mixing from `currentcolor`, not from a colour passed in.** The seven places a timestamp is
+ * rendered rest on three different inks — `chassis-text-muted` for the rows and the chassis clock,
+ * `chassis-text-dim` for the column heading and the histogram axis, `chassis-info` for the
+ * anomaly marker — so a single animated colour could not be the resting value of all three. Inside
+ * the `color` property `currentcolor` resolves to the *inherited* colour, which means this class
+ * belongs on a child of whatever sets the ink and needs to know nothing about which ink that is.
+ *
+ * That also decides where it goes: on the element that already exists wherever there is one (the
+ * row's time button, the axis's tick spans), and on a wrapping span where there is not. The row
+ * case is the one that matters, and it is the one that costs no extra element.
+ *
+ * ⚠️ It must go on a child, never on the element carrying the `text-*` class itself. Two rules
+ * setting `color` in the same layer are settled by source order, not by the order the classes are
+ * written in, and `cn` cannot arbitrate — `tailwind-merge` does not know this class exists.
+ *
+ * **Every degradation has to land on "no flash, right colour", never on a wrong colour**, and it
+ * takes all three lines below to get there.
+ *
+ * `var(--ik-flash, 0)` covers an engine without `@property`: an unregistered custom property
+ * inside `calc()` makes the whole `color-mix` invalid at computed-value time, and with the `0` it
+ * resolves to `0%` instead — today's ink exactly. If `color-mix` fails at used-value time anyway,
+ * `color` is inherited, so the invalid value falls back to the parent's, which is the resting ink
+ * a third time.
+ *
+ * ⚠️ **The `@supports` is not redundant and must not be removed.** Lightning CSS emits a static
+ * fallback ahead of any `color-mix` it cannot evaluate at build time — and it cannot evaluate
+ * this one, because the percentage is a variable. Left unguarded it wrote
+ * `.ik-zone-flash{color:#dfe9e4}` as that fallback, which is the mix at *100%*: every timestamp in
+ * the app pinned to the brightest ink in the ramp, permanently, on any engine old enough to take
+ * the fallback path. Inside a `@supports` the declaration is already guarded and no fallback is
+ * generated, and the `currentcolor` above it is the one that should be taken there — inside the
+ * `color` property `currentcolor` means the inherited value, so it is the resting ink written as
+ * a no-op.
+ *
+ * The high ink is the chassis ramp's. Every timestamp in Iknos is chassis-inked today, including
+ * the log stream, which is a dark window on a `work-*` page. A timestamp on the light ramp would
+ * need a second class; there is none to write yet.
+ */
+@utility ik-zone-flash {
+  color: currentcolor;
+
+  @supports (color: color-mix(in oklab, currentcolor 0%, currentcolor)) {
+    color: color-mix(in oklab, var(--color-chassis-text-bright) calc(var(--ik-flash, 0) * 100%), currentcolor);
+  }
+}

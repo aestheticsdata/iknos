@@ -2,6 +2,7 @@ import { ToastProvider } from "@components/ui/Toast";
 import { readServices } from "@lib/services";
 import { CollectorProvider } from "@lib/useCollector";
 import { ZoneProvider } from "@lib/zoneState";
+import { ChassisFrame } from "./ChassisFrame";
 import { ChromeShell } from "./ChromeShell";
 import { ServiceRail } from "./ServiceRail";
 import { StatusBar } from "./StatusBar";
@@ -17,7 +18,9 @@ import { TopBar } from "./TopBar";
  *
  * `h-dvh` with `overflow-hidden` is the layout rule from the design doc: the screen fits 1440×900
  * without a page scrollbar and only the lists inside it scroll. A page that scrolls as a whole
- * puts the status bar below the fold, which is the one thing it must never be.
+ * puts the status bar below the fold, which is the one thing it must never be. Since IKN-47 that
+ * box is `ChassisFrame`, which is where the zone flash is played from — it has to read the
+ * provider mounted here, and this component cannot read a provider it renders.
  */
 export const AppChassis = async ({ children }: { children: React.ReactNode }) => {
   const services = await readServices();
@@ -41,14 +44,14 @@ export const AppChassis = async ({ children }: { children: React.ReactNode }) =>
               because the palette re-scopes the service and reads the same clock as everything
               else; outside the layout because it owns a native dialog. */}
           <ChromeShell>
-            <div className="flex h-dvh flex-col overflow-hidden bg-chassis-deep font-mono">
+            <ChassisFrame>
               <TopBar />
               <div className="flex min-h-0 flex-1">
                 <ServiceRail services={services} />
                 <main className="ik-scroll-work min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
               </div>
               <StatusBar />
-            </div>
+            </ChassisFrame>
           </ChromeShell>
         </CollectorProvider>
       </ZoneProvider>
