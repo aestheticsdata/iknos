@@ -22,7 +22,10 @@ import { MaintenanceService } from "./maintenance.service";
   providers: [
     {
       provide: MaintenanceService,
-      useFactory: (prisma: PrismaService) => new MaintenanceService(parseEnv({ ...process.env }).retentionDays, prisma),
+      useFactory: (prisma: PrismaService) => {
+        const env = parseEnv({ ...process.env });
+        return new MaintenanceService(env.retentionDays, prisma, undefined, env.metricRetentionDays);
+      },
       inject: [PrismaService],
     },
   ],

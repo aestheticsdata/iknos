@@ -52,6 +52,17 @@ class EnvironmentVariables {
   @Min(1, { message: "IKNOS_RETENTION_DAYS must be at least 1" })
   IKNOS_RETENTION_DAYS!: number;
 
+  /**
+   * Days of raw metric, probe and machine samples kept (IKN-8). Its own knob and not the logs':
+   * raw metrics run to ~1.4M rows per day per scraped service, and shortening their window must
+   * never shorten the log window with it. Optional — three days unless said otherwise; long
+   * ranges are the hourly rollups' job (IKN-20).
+   */
+  @IsOptional()
+  @IsInt({ message: "IKNOS_METRIC_RETENTION_DAYS must be a number" })
+  @Min(1, { message: "IKNOS_METRIC_RETENTION_DAYS must be at least 1" })
+  IKNOS_METRIC_RETENTION_DAYS?: number;
+
   @IsString()
   @MinLength(1, { message: "IKNOS_PM2_LOG_GLOB must not be empty" })
   IKNOS_PM2_LOG_GLOB!: string;
@@ -98,6 +109,7 @@ export type Config = {
   logLevel: string;
   cookieSecret: string;
   retentionDays: number;
+  metricRetentionDays: number;
   pm2LogGlob: string;
   /** `null` when unset — the ingestion route is then closed. */
   ingestToken: string | null;
@@ -142,6 +154,7 @@ export function parseEnv(source: Record<string, unknown>): Config {
     logLevel: parsed.IKNOS_LOG_LEVEL,
     cookieSecret: parsed.IKNOS_COOKIE_SECRET,
     retentionDays: parsed.IKNOS_RETENTION_DAYS,
+    metricRetentionDays: parsed.IKNOS_METRIC_RETENTION_DAYS ?? 3,
     pm2LogGlob: parsed.IKNOS_PM2_LOG_GLOB,
     ingestToken: parsed.IKNOS_INGEST_TOKEN ?? null,
     ingestOrigins: (parsed.IKNOS_INGEST_ORIGINS ?? "")

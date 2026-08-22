@@ -1,10 +1,22 @@
 import { logger } from "@common/logger";
 import { PrismaService } from "@db/prisma.service";
+import { Prisma } from "@generated/prisma/client";
 import { Injectable } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { assertDayPartition, boundaryOf, DAYS_AHEAD, dateOf, FUTURE_PARTITION, plan } from "./partitions";
 
 import type { OnApplicationBootstrap } from "@nestjs/common";
+
+/**
+ * Every raw time-series table the pass manages (IKN-11 for `log_entry`, extended by IKN-8 for
+ * the metric and probe tables). Membership here is the whole authorization: table names reach
+ * `$executeRawUnsafe` from this list and nowhere else.
+ *
+ * `metric_rollup` is deliberately absent — empty until IKN-20, which owns its retention.
+ */
+export const MANAGED_TABLES = ["log_entry", "metric_sample", "health_check", "host_sample", "process_sample"] as const;
+
+type ManagedTable = (typeof MANAGED_TABLES)[number];
 
 /** What one pass did, for the summary line and for the tests. */
 export type MaintenanceReport = {
@@ -56,6 +68,12 @@ export class MaintenanceService implements OnApplicationBootstrap {
      * `p_future` to reach a day they can write to.
      */
     private readonly daysAhead: number = DAYS_AHEAD,
+    /**
+     * The sample tables' own window (IKN-8). Raw metrics run to ~1.4M rows per day per scraped
+     * service — they cannot ride the logs' knob, and shortening theirs must never shorten the
+     * log window with it. Long ranges are the rollups' job (IKN-20).
+     */
+    private readonly metricRetentionDays: number = retentionDays,
   ) {}
 
   /** Once at boot, so a fresh deploy is correct immediately rather than at three tomorrow morning. */
@@ -105,25 +123,56 @@ export class MaintenanceService implements OnApplicationBootstrap {
   private async execute(): Promise<MaintenanceReport> {
     const startedAt = Date.now();
 
-    const rows = await this.prisma.$queryRaw<{ PARTITION_NAME: string }[]>`
-      SELECT PARTITION_NAME FROM information_schema.PARTITIONS
-       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'log_entry'
+    const rows = await this.prisma.$queryRaw<{ TABLE_NAME: string; PARTITION_NAME: string }[]>`
+      SELECT TABLE_NAME, PARTITION_NAME FROM information_schema.PARTITIONS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN (${Prisma.join([...MANAGED_TABLES])})
          AND PARTITION_NAME IS NOT NULL`;
 
-    const existing = rows.map((r) => r.PARTITION_NAME);
-    const { toCreate, toDrop } = plan(existing, new Date(), this.retentionDays, this.daysAhead);
+    const created: string[] = [];
+    const dropped: string[] = [];
+    const perTable: Record<string, { created: string[]; dropped: string[] }> = {};
+    let logExisting: string[] = [];
+    let logCreated: string[] = [];
+    let logDropped: string[] = [];
 
-    for (const name of toCreate) await this.create(name);
-    for (const name of toDrop) await this.drop(name);
+    // Tables absent from the result — a database restored from before their migration — are
+    // skipped, not failed on: the pass keeps maintaining what exists.
+    for (const table of MANAGED_TABLES) {
+      const existing = rows.filter((r) => r.TABLE_NAME === table).map((r) => r.PARTITION_NAME);
+      if (existing.length === 0) continue;
 
+      const { toCreate, toDrop } = plan(existing, new Date(), this.retentionFor(table), this.daysAhead);
+      for (const name of toCreate) await this.create(table, name);
+      for (const name of toDrop) await this.drop(table, name);
+
+      created.push(...toCreate);
+      dropped.push(...toDrop);
+      perTable[table] = { created: toCreate, dropped: toDrop };
+      if (table === "log_entry") {
+        logExisting = existing;
+        logCreated = toCreate;
+        logDropped = toDrop;
+      }
+    }
+
+    const toCreate = created;
+    const toDrop = dropped;
     const durationMs = Date.now() - startedAt;
     this.lastRunAt = new Date();
-    this.oldest = oldestDay(existing, toCreate, toDrop);
+    // The storage panel talks about the logs; the metric tables ride the same window silently.
+    this.oldest = oldestDay(logExisting, logCreated, logDropped);
 
     // The summary line the ticket asks for, and it is ingested like any other: this job's own
-    // history is readable in the tool it maintains.
+    // history is readable in the tool it maintains. Per table, because "p20260808 dropped" is
+    // only a statement once it says which table lost it.
     logger.info(
-      { created: toCreate, dropped: toDrop, durationMs, retentionDays: this.retentionDays, oldest: this.oldest },
+      {
+        tables: perTable,
+        durationMs,
+        retentionDays: this.retentionDays,
+        metricRetentionDays: this.metricRetentionDays,
+        oldest: this.oldest,
+      },
       "partition maintenance",
     );
 
@@ -136,18 +185,32 @@ export class MaintenanceService implements OnApplicationBootstrap {
    * accumulated there into the partition they belong in, at no cost once the window is being
    * kept, because in steady state `p_future` is empty.
    */
-  private async create(name: string): Promise<void> {
+  /** `log_entry` keeps the log window; every raw sample table gets the shorter metric one. */
+  private retentionFor(table: ManagedTable): number {
+    return table === "log_entry" ? this.retentionDays : this.metricRetentionDays;
+  }
+
+  private async create(table: ManagedTable, name: string): Promise<void> {
+    assertManagedTable(table);
     assertDayPartition(name);
     await this.prisma.$executeRawUnsafe(
-      `ALTER TABLE log_entry REORGANIZE PARTITION ${FUTURE_PARTITION} INTO (` +
+      `ALTER TABLE ${table} REORGANIZE PARTITION ${FUTURE_PARTITION} INTO (` +
         `PARTITION ${name} VALUES LESS THAN (TO_DAYS('${boundaryOf(name)}')), ` +
         `PARTITION ${FUTURE_PARTITION} VALUES LESS THAN MAXVALUE)`,
     );
   }
 
-  private async drop(name: string): Promise<void> {
+  private async drop(table: ManagedTable, name: string): Promise<void> {
+    assertManagedTable(table);
     assertDayPartition(name);
-    await this.prisma.$executeRawUnsafe(`ALTER TABLE log_entry DROP PARTITION ${name}`);
+    await this.prisma.$executeRawUnsafe(`ALTER TABLE ${table} DROP PARTITION ${name}`);
+  }
+}
+
+/** The companion of `assertDayPartition`: both halves of every DDL string are checked, always. */
+function assertManagedTable(table: string): void {
+  if (!(MANAGED_TABLES as readonly string[]).includes(table)) {
+    throw new Error(`refusing to build DDL: ${JSON.stringify(table)} is not a managed table`);
   }
 }
 
