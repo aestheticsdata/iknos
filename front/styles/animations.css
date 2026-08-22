@@ -51,9 +51,9 @@
  * the one above.
  *
  * The two halves of the gesture do not share a curve, and since they are staged they do not share
- * a duration either. The flash is full on the first frame and decays over 180ms, which is IKN-47's
- * argued shape. The dim is a four-beat sequence over 800ms that *contains* it: down, hold through
- * the flash, hold 300ms longer with the times back at their resting ink, then up.
+ * a duration either. The times go up over 125ms, hold the high ink for a second, and come back
+ * over 125ms. The scrim is the sequence that *contains* that: down over 120ms, held flat for the
+ * whole of it, and released only once the times are home.
  *
  * Two numbers, one animation shorthand, one class: the `--animate-zone-flash-*` tokens below carry
  * both keyframes as a comma list — with the flash's `0.12s` delay in the same declaration, so the
@@ -87,8 +87,8 @@
    * a no-op. So the chassis alternates between these two on each press. The keyframes below are
    * deliberately identical and must stay that way; the pair is a restart mechanism, not a choice.
    */
-  --animate-zone-flash-a: ikZoneFlashA 0.18s ease-out 0.12s, ikZoneDimA 0.8s;
-  --animate-zone-flash-b: ikZoneFlashB 0.18s ease-out 0.12s, ikZoneDimB 0.8s;
+  --animate-zone-flash-a: ikZoneFlashA 1.25s 0.12s, ikZoneDimA 1.55s;
+  --animate-zone-flash-b: ikZoneFlashB 1.25s 0.12s, ikZoneDimB 1.55s;
 
   @keyframes ikPulse {
     0%,
@@ -121,22 +121,33 @@
   }
 
   /*
-   * Full brightness on the first frame painted after the press, held long enough to be caught, then
-   * out — 45ms of hold and 135ms of decay.
+   * The times going up to the ramp's high ink, **staying there for a full second**, and coming
+   * back — 1.25s, on the `0.12s` delay in the token above, which is what puts all of it inside the
+   * dark. 10% up, 80% held, 10% down: 125ms, 1000ms, 125ms.
    *
-   * The hold is the point. An up-and-down inside 50ms is three frames at 60Hz with the peak in one
-   * of them, and the eye is on the button that was just clicked rather than on the column two
-   * hundred pixels below it; there is a real chance of the whole thing landing between two
-   * glances. Starting at full instead of ramping up means there is no peak to miss either — the
-   * bright state is already there in the first frame that carries the new digits.
+   * **This replaces IKN-47's shape, and it is worth saying what stops applying.** That ticket
+   * started at full brightness in the first frame and decayed over 135ms, on the argument that an
+   * up-and-down inside a few frames has a peak the eye can land between — so there must not *be*
+   * a peak to miss. None of that survives the room going dark first. The rise is no longer
+   * competing with anything for attention: the screen has already stepped back, the reader is
+   * looking at the only thing still lit, and a second of hold cannot be missed by anyone. What was
+   * a defensive shape becomes a legible one — the times visibly *come up*, stay, and go back.
    *
-   * 0.18s keeps it in the house's range (`--animate-in` 0.16s, `--animate-fade` 0.14s) rather than
-   * inventing a scale for one gesture.
+   * The 125ms legs are the fast part the sequence needs at both ends, and they are the only place
+   * this still touches the house scale (`--animate-in` is 0.16s). The second in the middle is not
+   * a duration in that sense; it is a state the interface holds.
    */
   @keyframes ikZoneFlashA {
-    0%,
-    25% {
+    0% {
+      --ik-flash: 0;
+      animation-timing-function: ease-out;
+    }
+    10% {
       --ik-flash: 1;
+    }
+    90% {
+      --ik-flash: 1;
+      animation-timing-function: ease-in-out;
     }
     100% {
       --ik-flash: 0;
@@ -144,9 +155,16 @@
   }
 
   @keyframes ikZoneFlashB {
-    0%,
-    25% {
+    0% {
+      --ik-flash: 0;
+      animation-timing-function: ease-out;
+    }
+    10% {
       --ik-flash: 1;
+    }
+    90% {
+      --ik-flash: 1;
+      animation-timing-function: ease-in-out;
     }
     100% {
       --ik-flash: 0;
@@ -157,23 +175,28 @@
    * The room going down, staying down, and coming back — IKN-49. Four beats over 800ms, and the
    * percentages below are the only place the sequence is written down:
    *
-   *   0 → 120ms   the light drops, `ease-out` so it arrives rather than snaps
-   *   120ms       full dark — and the flash starts here, on a `0.12s` delay in the token above
-   *   120 → 300   the flash runs its own 180ms in a room that is already dark
-   *   300 → 600   **300ms of hold with the timestamps back at their resting ink**, lit against a
-   *               screen that is not. This is the beat the whole thing exists for: it is the only
-   *               moment the reader is looking at nothing but times.
-   *   600 → 800   `ease-in-out` back up
+   *   0 → 120ms      the light drops, `ease-out` so it arrives rather than snaps
+   *   120ms          full dark — and the times start rising here, on a `0.12s` delay
+   *   245 → 1245ms   **the second**: the times sit at the ramp's high ink, alone, on a screen
+   *                  that is 79% darker than it was. This is what the whole thing is for.
+   *   1245 → 1370    the times come back down, 125ms
+   *   1370 → 1550    and only then the light comes back, `ease-in-out`
    *
-   * **This is by a long way the longest gesture in Iknos, and the file's opening rule is why that
-   * needs saying.** Everything else here is 140-180ms, because motion that is not reporting a
-   * change is noise. This one is 800ms because it is not a blink: it is a sequence with a held
-   * middle, and the hold is the content. Shortening it back toward the house scale would remove
-   * the only part a reader actually reads.
+   * The last beat is an ordering rule, not a duration: **the scrim does not start lifting until
+   * the times are home.** 1370ms is exactly where the other animation ends — `0.12s` of delay plus
+   * its 1.25s — and the two numbers are kept in step by hand because CSS has no way to say "after
+   * that one". If either changes, both change. That is the one thing in this file a future edit
+   * can silently get wrong.
    *
-   * The two curves no longer overlap in any way that has to be reasoned about — the flash happens
-   * inside the plateau, and the timestamps are lifted clear of the scrim (`ik-zone-lift`) so
-   * nothing multiplies. That is what lets each be timed on its own terms.
+   * **1.55s is by a long way the longest thing in Iknos, and the file's opening rule is why that
+   * gets written down rather than just done.** Everything else here is 140-180ms, on the rule that
+   * motion which is not reporting a change is noise on a panel people stare at while something is
+   * wrong. This is not a blink: it is staged, with a second of stillness in the middle, and the
+   * stillness is the content. Shortening it toward the house scale would delete the only part a
+   * reader actually reads.
+   *
+   * The two curves never overlap in any way that has to be reasoned about — the times move inside
+   * the plateau, and they are lifted clear of the scrim (`ik-zone-lift`) so nothing multiplies.
    *
    * Two names, identical bodies, same restart mechanism as the flash above — they are one class,
    * so the delay, the drop, the flash, the hold and the lift all restart on a single change.
@@ -183,10 +206,12 @@
       --ik-dim: 0;
       animation-timing-function: ease-out;
     }
-    15% {
+    /* 120ms of 1550 */
+    7.742% {
       --ik-dim: 1;
     }
-    75% {
+    /* 1370ms of 1550 — where the times finish coming back, and not a frame before */
+    88.387% {
       --ik-dim: 1;
       animation-timing-function: ease-in-out;
     }
@@ -200,10 +225,12 @@
       --ik-dim: 0;
       animation-timing-function: ease-out;
     }
-    15% {
+    /* 120ms of 1550 */
+    7.742% {
       --ik-dim: 1;
     }
-    75% {
+    /* 1370ms of 1550 — where the times finish coming back, and not a frame before */
+    88.387% {
       --ik-dim: 1;
       animation-timing-function: ease-in-out;
     }
