@@ -243,3 +243,76 @@
     color: color-mix(in oklab, var(--color-chassis-text-bright) calc(var(--ik-flash, 0) * 100%), currentcolor);
   }
 }
+
+/* ═══ ZONE DIM ═════════════════════════════════════════════════════════════════════════════════
+ *
+ * `ik-zone-dim` — on the chassis's root box, beside the flash animation it reads. IKN-49.
+ *
+ * The other half of the same gesture. IKN-47 lifted every timestamp toward the ramp's high ink at
+ * the instant the reader changes clock; this drops everything that is *not* a timestamp by the
+ * same clock, so the thing that moved rises and the screen around it steps back. One press, one
+ * decay, two directions.
+ *
+ * **A scrim, and it has to be a scrim.** `opacity` on an ancestor cannot be undone by a
+ * descendant — a box at 0.8 renders its children at 0.8 whatever they ask for — and the
+ * timestamps are inside every region there is: the top bar's clock, the rail's storage line, the
+ * stream, the histogram's axis. So there is no container to dim that does not take the dates with
+ * it. Something painted *over* the interface is the only shape that can leave anything out.
+ *
+ * **The toggle is left out by stacking; the dates are left out by arithmetic.** The control is one
+ * element and rises above the scrim on a `z-index` (`z-40` in `ZoneToggle`, against the `30`
+ * below). Ten thousand timestamps cannot do that — each would need its own stacking context, on
+ * the one table in the app that does not virtualise. They do not need to: they are being flashed
+ * bright underneath the scrim at the same instant, and the lift outruns the drop. See the depth.
+ *
+ * **The depth is set by the two ramps, not by taste**, and they set it from both sides:
+ *
+ * - *Above* 0.30 the gesture inverts. A flashed timestamp is `chassis-text-bright` under a
+ *   `chassis-deep` scrim, and the green channel of that composite falls through resting
+ *   `text-muted` at exactly α = 0.302 (233 − 212α = 169). Past there the dates get *darker* when
+ *   the reader changes clock, which is the opposite of what the press is reporting.
+ * - *Below* that, the light ramp is what binds. `work-text-dim` on `work-surface` is 3.48:1 at
+ *   rest and reaches the 3:1 floor at α = 0.200. A dark scrim costs a light ground far more than
+ *   a dark one — it moves the surface toward the ink instead of away from it — and the work
+ *   surface is most of the screen.
+ *
+ * 0.20 is the smaller of the two, so it is the one that governs. At the peak the chassis's body
+ * ink is 4.72:1 (from 6.64:1, still over AA), the lowest ink on the light ramp is exactly 3.00:1,
+ * and a flashed timestamp comes out at `rgb(182 191 188)` against a resting `rgb(143 169 154)` —
+ * 39% more luminant than it is at rest, at the moment everything else is 20% less.
+ *
+ * Those two numbers are the transient, not the state: 45ms of hold and 135ms of decay, after which
+ * every contrast in the app is exactly what it was. And there is no decay at all for a reader who
+ * asked for none — see below.
+ *
+ * **It carries no animation and no colour logic of its own.** `--ik-flash` is already registered,
+ * already inherited, and already being driven from 1 to 0 once per press on this very element; the
+ * scrim is its second reader and multiplies it by a constant. Nothing here has a duration to keep
+ * in step with the flash's, because there is no second animation to be out of step with — the two
+ * halves are the same number read twice, in one commit, on one clock. That is also why
+ * `prefers-reduced-motion` needs no clause here: the global rule collapses the animation before it
+ * paints, `--ik-flash` falls back to its initial `0`, and this resolves to `opacity: 0`.
+ *
+ * Every other failure lands there too. No `@property`, or the variable never set, and
+ * `var(--ik-flash, 0)` is `0` — the scrim is present, transparent, and inert.
+ *
+ * ⚠️ **Two things are above it and stay lit, both on purpose.** Modals and the ⌘K palette are
+ * native `<dialog>`s in the top layer, which no `z-index` reaches — and a dialog is not the
+ * background this is stepping back. The toast stack is `z-50`: a message that has just arrived has
+ * to stay readable through a gesture it has nothing to do with. Neither inherits `--ik-flash`
+ * either, being portalled outside the chassis, which is the same boundary `ChassisFrame` already
+ * documents for the flash.
+ */
+@utility ik-zone-dim {
+  &::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    /* Never in the way: the scrim is over the whole viewport for 180ms, and a click that landed on
+       it instead of on the row under it would make the gesture cost the reader an action. */
+    pointer-events: none;
+    background-color: var(--color-chassis-deep);
+    opacity: calc(var(--ik-flash, 0) * 0.2);
+  }
+}

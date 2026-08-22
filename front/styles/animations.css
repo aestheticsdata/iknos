@@ -4,7 +4,11 @@
  * This is a screen people stare at while something is wrong. Motion that is not reporting a change
  * in the data is noise, and noise on a monitoring tool costs attention exactly when it is scarcest.
  * The fourth arrived under that rule rather than in spite of it: the zone flash is the only thing
- * that reports the reader changing which clock every timestamp on screen is read on.
+ * that reports the reader changing which clock every timestamp on screen is read on. It is still
+ * the fourth and not the fifth after IKN-49 put a scrim over the rest of the screen on the way
+ * past: one animation, one duration, one press — the scrim reads the number this file already
+ * drives rather than running a gesture of its own. Counting it twice would be counting the
+ * property, not the movement.
  *
  * One thing moves that is not here: the block inside the zone toggle, travelling one half-width
  * when the reader changes clock — inside the control under the pointer, reporting that press and
@@ -26,6 +30,12 @@
  * and every timestamp on screen reads the same falling number back out of inheritance — see
  * `ik-zone-flash` in `utilities.css` for the other half. The alternative is an animation per
  * timestamp, and the log stream does not virtualise: that is ten thousand of them.
+ *
+ * It has a second reader since IKN-49, and that is what makes one registered number worth more
+ * than two animations: `ik-zone-dim` multiplies the same falling value by a constant to fade a
+ * scrim over everything the flash is *not* lifting. Two halves of one gesture, in opposite
+ * directions, that cannot drift apart because there is only one thing moving. Nothing else may
+ * read it without saying so here — the point of a single carrier is that its readers are countable.
  *
  * Outside `@theme` on purpose. This is a CSS registration, not a design token — nothing generates
  * a utility from it and nothing should.
@@ -131,6 +141,10 @@
  * `aria-pressed` on the half that was just pressed. Collapsed to 0.01ms the animation ends
  * before it paints, `--ik-flash` falls back to its initial `0`, and every timestamp keeps exactly
  * the ink it has today.
+ *
+ * The dim goes with it and needs no rule of its own, which is the second dividend of one carrier:
+ * `ik-zone-dim`'s opacity is that same `0` times a constant, so the scrim is transparent and the
+ * momentary contrast it costs the two ramps is never spent on a reader who asked for stillness.
  */
 /**
  * The three `!important`s below are the mechanism, not a shortcut around one: this rule has to
