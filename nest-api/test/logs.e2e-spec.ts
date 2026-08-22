@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { PrismaService } from "@db/prisma.service";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildTestApp, deleteLogs, login, seedLogs } from "./helpers";
@@ -297,15 +298,46 @@ describe("GET /api/logs/trace/:traceId", () => {
 });
 
 describe("GET /api/services", () => {
-  it("returns the registry with a meta", async () => {
+  it("returns the registry with health, sparkline and a meta", async () => {
     const res = await get("/api/services").expect(200);
 
     expect(Array.isArray(res.body.services)).toBe(true);
     expect(res.body.meta.tookMs).toBeGreaterThanOrEqual(0);
     for (const service of res.body.services) {
-      expect(Object.keys(service).sort()).toEqual(["enabled", "name", "pm2Name"]);
-      // Health and sparkline arrive with IKN-8. Absent, never present and zero.
-      expect(service).not.toHaveProperty("health");
+      expect(Object.keys(service).sort()).toEqual(["enabled", "health", "name", "pm2Name", "sparkline"]);
+      expect(service.sparkline).toHaveLength(60);
+      // A dot is earned by a probe row; a never-probed service is told null, not a zeroed object.
+      if (service.health !== null) {
+        expect(["ok", "error", "stale"]).toContain(service.health.status);
+      }
+    }
+  });
+
+  it("carries the last probe as the dot and the last hour of lines as the sparkline (IKN-8)", async () => {
+    const prisma = app.get(PrismaService);
+    const service = await track(app, 3, { ts: () => new Date(Date.now() - 30_000) });
+    await prisma.service.create({ data: { name: service, pm2Name: service } });
+    await prisma.healthCheck.create({
+      data: {
+        service,
+        ts: new Date(),
+        httpStatus: 200,
+        ok: true,
+        latencyMs: 4,
+        checks: { db: { status: "ok", latencyMs: 2 }, redis: { status: "ok", latencyMs: 1 } },
+      },
+    });
+
+    try {
+      const res = await get("/api/services").expect(200);
+
+      const row = res.body.services.find((s: { name: string }) => s.name === service);
+      expect(row.health).toMatchObject({ status: "ok", httpStatus: 200, latencyMs: 4 });
+      expect(row.health.checks.db.latencyMs).toBe(2);
+      expect(row.sparkline.reduce((a: number, b: number) => a + b, 0)).toBe(3);
+    } finally {
+      await prisma.healthCheck.deleteMany({ where: { service } });
+      await prisma.service.delete({ where: { name: service } });
     }
   });
 });
