@@ -1,10 +1,16 @@
 /**
- * Four gestures, all short — §3.4. Nothing else in Iknos moves.
+ * Four gestures, all short — §3.4. Nothing else in Iknos moves, bar the one exception below.
  *
  * This is a screen people stare at while something is wrong. Motion that is not reporting a change
  * in the data is noise, and noise on a monitoring tool costs attention exactly when it is scarcest.
  * The fourth arrived under that rule rather than in spite of it: the zone flash is the only thing
  * that reports the reader changing which clock every timestamp on screen is read on.
+ *
+ * One thing moves that is not here: the block inside the zone toggle, travelling one half-width
+ * when the reader changes clock — inside the control under the pointer, reporting that press and
+ * nothing else. It is a `transition` on that component rather than a fifth gesture in this file,
+ * which is where movement belonging to one control goes, rather than beside the four the interface
+ * itself owns.
  */
 
 /**
@@ -121,8 +127,8 @@
  * rather than disappearing, and the status bar says the same thing in words anyway.
  *
  * The zone flash loses nothing: it is a redundant confirmation of a change three other things on
- * screen already carry in text — the toggle's own label, the log column's heading, and
- * `aria-pressed` on the button that was just pressed. Collapsed to 0.01ms the animation ends
+ * screen already carry without motion — the toggle's lit half, the log column's heading, and
+ * `aria-pressed` on the half that was just pressed. Collapsed to 0.01ms the animation ends
  * before it paints, `--ik-flash` falls back to its initial `0`, and every timestamp keeps exactly
  * the ink it has today.
  */

@@ -44,12 +44,26 @@ type ZoneContextValue = {
    * would buy that one afternoon and cost an `Intl` call per frame.
    */
   abbrev: string | null;
-  /** What pressing the toggle would switch to, named the same way. */
-  otherAbbrev: string | null;
   /**
-   * How many times the toggle has been pressed in this tab — the zone flash's clock, IKN-47.
+   * Both zones' abbreviations at once, in fixed slots — `{ utc: "UTC", local: "CEST" }`. `null`
+   * until mounted, for the same reason the two above are.
    *
-   * Two things are asked of it and one number answers both. `0` means *never pressed*, which is
+   * The segmented toggle paints a half for each zone and lights the one in force, so it needs the
+   * pair named *side by side* rather than "the one in force and the other one": which half is lit
+   * is the state, and a pair that reshuffled itself under a state change would swap the two
+   * labels' positions on every press — the one thing a segmented control may not do.
+   */
+  abbrevs: Record<Zone, string> | null;
+  /**
+   * How many times the zone has actually changed in this tab — the zone flash's clock, IKN-47.
+   *
+   * *Changed*, not *pressed*, and the distinction only appeared with IKN-48: the segmented control
+   * has a half for each zone, so pressing the lit one asks for the zone already in force. That
+   * press is answered below by handing back the same state object, which leaves this number where
+   * it is — a flash there would be the app reporting a change that did not happen, which is the
+   * same rule that keeps the first paint dark.
+   *
+   * Two things are asked of it and one number answers both. `0` means *never changed*, which is
    * what keeps the flash from firing on its own at mount, when the zone arrives from
    * `localStorage` and nothing was decided by anybody. And its parity is what alternates the two
    * animation names the chassis wears, because a CSS animation restarts only when its name
@@ -61,7 +75,8 @@ type ZoneContextValue = {
    * a frame apart, which is exactly what this is meant not to look like.
    */
   pulse: number;
-  toggle: () => void;
+  /** The zone the reader asked for. A no-op when it is the one already in force — see `pulse`. */
+  setZone: (next: Zone) => void;
 };
 
 const ZoneContext = createContext<ZoneContextValue | null>(null);
@@ -94,11 +109,15 @@ export const ZoneProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => setState({ zone: readStored(), at: new Date(), pulse: 0 }), []);
 
-  const toggle = useCallback(() => {
+  const setZone = useCallback((next: Zone) => {
     setState((current) => {
-      if (current === null) return current;
+      /*
+       * The identity return is the mechanism and not a tidy guard: React bails out of the
+       * re-render when an updater hands back the object it was given, so pressing the half that is
+       * already lit costs a comparison and — the part that matters — does not raise `pulse`.
+       */
+      if (current === null || current.zone === next) return current;
 
-      const next: Zone = current.zone === "utc" ? "local" : "utc";
       try {
         window.localStorage.setItem(STORAGE_KEY, next);
       } catch {
@@ -109,19 +128,24 @@ export const ZoneProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const value = useMemo<ZoneContextValue>(() => {
-    if (state === null) return { tz: "UTC", zone: null, abbrev: null, otherAbbrev: null, pulse: 0, toggle };
+    if (state === null) return { tz: "UTC", zone: null, abbrev: null, abbrevs: null, pulse: 0, setZone };
 
-    const tz = resolveZone(state.zone);
-    const other = resolveZone(state.zone === "utc" ? "local" : "utc");
-    return {
-      tz,
-      zone: state.zone,
-      abbrev: zoneAbbrev(tz, state.at),
-      otherAbbrev: zoneAbbrev(other, state.at),
-      pulse: state.pulse,
-      toggle,
+    /* Both names are taken in the same pass and off the same instant, so the two halves of the
+       toggle can never disagree about which side of a DST boundary they are on. */
+    const abbrevs: Record<Zone, string> = {
+      utc: zoneAbbrev(resolveZone("utc"), state.at),
+      local: zoneAbbrev(resolveZone("local"), state.at),
     };
-  }, [state, toggle]);
+
+    return {
+      tz: resolveZone(state.zone),
+      zone: state.zone,
+      abbrev: abbrevs[state.zone],
+      abbrevs,
+      pulse: state.pulse,
+      setZone,
+    };
+  }, [state, setZone]);
 
   return <ZoneContext.Provider value={value}>{children}</ZoneContext.Provider>;
 };

@@ -22,10 +22,12 @@ export const CHASSIS_TEXT = {
   noServices: "No services — the API is unreachable or the registry is empty.",
   logOut: "log out",
   loggingOut: "signing out…",
-  /* IKN-38. The button says which clock is in force; the hint says what the clock governs, which
-     the three or four letters on their own cannot. */
+  /* IKN-38, then IKN-48. The two halves name the two clocks and the lit one says which is in
+     force, so nothing is left for a label to spell out; the hint still says what that clock
+     governs, which three or four letters on their own cannot. The group carries a name of its own
+     because a screen reader announces the pair before it reads either half. */
+  zoneLabel: "Time zone",
   zoneHint: "The clock every timestamp in the panel is read on",
-  zoneSwitch: (to: string) => `switch to ${to}`,
   /* IKN-24 — Iknos describing itself. `collectorState` is what the dot means in words: the colour
      alone is unreadable to roughly one man in twelve, and `unknown` in particular has no colour of
      its own to read. */
