@@ -50,15 +50,15 @@
  * The zone *dim*'s carrier — IKN-49, and the reason it is a second number rather than a reuse of
  * the one above.
  *
- * The two halves of the gesture no longer share a curve. The flash is full on the first frame and
- * decays, which is IKN-47's argued shape: there is no peak to miss. The dim is a fade in *and*
- * out — 0 to 1 and back inside the same 180ms — because a scrim that is already at full depth in
- * the frame it appears reads as a cut, not as a room going dark, and the thing it is asking the
- * eye to notice is the *change* of light rather than any particular level of it.
+ * The two halves of the gesture do not share a curve, and since they are staged they do not share
+ * a duration either. The flash is full on the first frame and decays over 180ms, which is IKN-47's
+ * argued shape. The dim is a four-beat sequence over 800ms that *contains* it: down, hold through
+ * the flash, hold 300ms longer with the times back at their resting ink, then up.
  *
  * Two numbers, one animation shorthand, one class: the `--animate-zone-flash-*` tokens below carry
- * both keyframes as a comma list, so the pair still restarts together on a single class change and
- * there is still nothing that can drift.
+ * both keyframes as a comma list — with the flash's `0.12s` delay in the same declaration, so the
+ * beat it waits for cannot be edited apart from the drop it is waiting on. The pair restarts
+ * together on a single class change and there is nothing that can drift.
  *
  * Registered for the same reason as `--ik-flash`: unregistered it would flip 0→1→0 in two steps
  * instead of ramping, which on an opacity is a blink of the whole screen.
@@ -87,8 +87,8 @@
    * a no-op. So the chassis alternates between these two on each press. The keyframes below are
    * deliberately identical and must stay that way; the pair is a restart mechanism, not a choice.
    */
-  --animate-zone-flash-a: ikZoneFlashA 0.18s ease-out, ikZoneDimA 0.18s ease-in-out;
-  --animate-zone-flash-b: ikZoneFlashB 0.18s ease-out, ikZoneDimB 0.18s ease-in-out;
+  --animate-zone-flash-a: ikZoneFlashA 0.18s ease-out 0.12s, ikZoneDimA 0.8s;
+  --animate-zone-flash-b: ikZoneFlashB 0.18s ease-out 0.12s, ikZoneDimB 0.8s;
 
   @keyframes ikPulse {
     0%,
@@ -154,36 +154,61 @@
   }
 
   /*
-   * The room going down and coming back, inside the flash's own 180ms — IKN-49.
+   * The room going down, staying down, and coming back — IKN-49. Four beats over 800ms, and the
+   * percentages below are the only place the sequence is written down:
    *
-   * A triangle rather than the flash's hold-and-decay, and the difference is the point. The flash
-   * is a thing appearing, so it starts at full: there is nothing to watch arrive. The dim is a
-   * thing *changing* — the light in the room dropping — and a level that is simply already there
-   * in the first frame is read as a cut. `ease-in-out` on both legs so neither end has a corner.
+   *   0 → 120ms   the light drops, `ease-out` so it arrives rather than snaps
+   *   120ms       full dark — and the flash starts here, on a `0.12s` delay in the token above
+   *   120 → 300   the flash runs its own 180ms in a room that is already dark
+   *   300 → 600   **300ms of hold with the timestamps back at their resting ink**, lit against a
+   *               screen that is not. This is the beat the whole thing exists for: it is the only
+   *               moment the reader is looking at nothing but times.
+   *   600 → 800   `ease-in-out` back up
    *
-   * Darkest at 90ms, by which point the flash is 51% decayed. They are deliberately not aligned:
-   * the timestamps are lifted clear of the scrim (see `ik-zone-lift`), so the two curves never
-   * multiply and there is no instant either of them has to be measured against the other.
+   * **This is by a long way the longest gesture in Iknos, and the file's opening rule is why that
+   * needs saying.** Everything else here is 140-180ms, because motion that is not reporting a
+   * change is noise. This one is 800ms because it is not a blink: it is a sequence with a held
+   * middle, and the hold is the content. Shortening it back toward the house scale would remove
+   * the only part a reader actually reads.
    *
-   * Two names, identical bodies, same restart mechanism as the flash above — they are one class.
+   * The two curves no longer overlap in any way that has to be reasoned about — the flash happens
+   * inside the plateau, and the timestamps are lifted clear of the scrim (`ik-zone-lift`) so
+   * nothing multiplies. That is what lets each be timed on its own terms.
+   *
+   * Two names, identical bodies, same restart mechanism as the flash above — they are one class,
+   * so the delay, the drop, the flash, the hold and the lift all restart on a single change.
    */
   @keyframes ikZoneDimA {
-    0%,
+    0% {
+      --ik-dim: 0;
+      animation-timing-function: ease-out;
+    }
+    15% {
+      --ik-dim: 1;
+    }
+    75% {
+      --ik-dim: 1;
+      animation-timing-function: ease-in-out;
+    }
     100% {
       --ik-dim: 0;
-    }
-    50% {
-      --ik-dim: 1;
     }
   }
 
   @keyframes ikZoneDimB {
-    0%,
+    0% {
+      --ik-dim: 0;
+      animation-timing-function: ease-out;
+    }
+    15% {
+      --ik-dim: 1;
+    }
+    75% {
+      --ik-dim: 1;
+      animation-timing-function: ease-in-out;
+    }
     100% {
       --ik-dim: 0;
-    }
-    50% {
-      --ik-dim: 1;
     }
   }
 }
