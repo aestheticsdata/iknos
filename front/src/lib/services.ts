@@ -14,10 +14,22 @@ import { redirect } from "next/navigation";
  */
 
 /** Restated from `nest-api/src/contracts/service.ts`, which is the authoritative copy. */
+export type ServiceHealth = {
+  status: "ok" | "error" | "stale";
+  httpStatus: number | null;
+  latencyMs: number | null;
+  checkedAt: string;
+  checks: Record<string, { status: string; latencyMs: number }> | null;
+};
+
 export type Service = {
   name: string;
   pm2Name: string;
   enabled: boolean;
+  /** Null for a service never probed — the rail draws no dot rather than a reassuring one (IKN-8). */
+  health: ServiceHealth | null;
+  /** Log lines per minute, last hour, oldest first. Sixty zeros is a true fact about an idle service. */
+  sparkline: number[];
 };
 
 /**
@@ -48,10 +60,23 @@ const fetchServices = async (): Promise<Service[] | null> => {
     const body = (await response.json()) as { services?: unknown };
     if (!Array.isArray(body.services)) return [];
 
-    // The health state and the sparkline join this payload with IKN-8; nothing here invents them.
-    return body.services.filter(
-      (s): s is Service => typeof s === "object" && s !== null && typeof (s as Service).name === "string",
-    );
+    // Normalised rather than trusted: against an API one deploy older than this front, a row
+    // without the IKN-8 fields still renders — dotless and flat, never crashed.
+    return body.services.flatMap((s): Service[] => {
+      if (typeof s !== "object" || s === null || typeof (s as { name?: unknown }).name !== "string") return [];
+      const row = s as { name: string } & Partial<Service>;
+      return [
+        {
+          name: row.name,
+          pm2Name: typeof row.pm2Name === "string" ? row.pm2Name : row.name,
+          enabled: row.enabled !== false,
+          health: typeof row.health === "object" ? (row.health ?? null) : null,
+          sparkline: Array.isArray(row.sparkline)
+            ? row.sparkline.filter((n): n is number => typeof n === "number")
+            : [],
+        },
+      ];
+    });
   } catch {
     return [];
   }

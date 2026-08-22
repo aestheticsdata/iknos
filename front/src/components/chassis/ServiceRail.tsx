@@ -1,5 +1,7 @@
 "use client";
 
+import { Sparkline } from "@components/ui/Sparkline";
+import { TONE_FILL } from "@components/ui/surface";
 import { useSelectedService } from "@lib/chassisState";
 import { ROUTES } from "@lib/routes";
 import { useLogout } from "@lib/useLogout";
@@ -9,7 +11,14 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { IngestCard } from "./IngestCard";
 
-import type { Service } from "@lib/services";
+import type { Tone } from "@components/ui/surface";
+import type { Service, ServiceHealth } from "@lib/services";
+
+/**
+ * Probe state → dot tone. `stale` is warn, not error: the service may be fine — it is the
+ * *answer* that stopped arriving, and amber is the colour of "go look", not "it is down".
+ */
+const HEALTH_TONE: Record<ServiceHealth["status"], Tone> = { ok: "ok", error: "error", stale: "warn" };
 
 /** The one view M1 can fill. Metrics, issues and alerts join this list with their own tickets. */
 const VIEWS = [{ key: "logs", label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs, badge: "L" }] as const;
@@ -37,11 +46,12 @@ const monogram = (name: string) => {
 /**
  * The service rail — selection scopes every view.
  *
- * **No status dot and no sparkline.** Both are drawn in the mockup and both describe health, which
- * arrives with IKN-8; the contract leaves those fields out of the payload rather than sending
- * zeroes, and the rail omits them rather than drawing a flat line for a service nobody has probed.
- * `enabled` is the one fact that *is* known, and it says whether Iknos is collecting — which is
- * why a paused service is dimmed and labelled rather than given a grey dot that reads as "down".
+ * **The dot and the sparkline are earned, not decorative** (IKN-8). The dot exists only for a
+ * service whose health endpoint has actually been probed — `health` is null otherwise, and the
+ * rail draws nothing rather than a reassuring green. The sparkline is log volume over the last
+ * hour, which every collected service truthfully has — sixty zeros included. A paused service
+ * stays dimmed and labelled rather than given a grey dot that reads as "down": `enabled` is a
+ * decision, not a measurement.
  *
  * **Below `--breakpoint-rail` it collapses to 52px** — §breakpoints. The names are replaced by
  * monograms, not truncated: 36px of content clips `worldweathr` at `worldw`, and three services
@@ -78,9 +88,26 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
                 onClick={() => setSelected(service.name)}
                 muted={!service.enabled}
                 monogram={monogram(service.name)}
-                title={service.enabled ? service.pm2Name : `${service.name} · ${CHASSIS_TEXT.pausedHint}`}
+                dot={service.health ? HEALTH_TONE[service.health.status] : null}
+                trailing={
+                  <Sparkline
+                    values={service.sparkline}
+                    tone="neutral"
+                    surface="chassis"
+                    width={40}
+                    height={12}
+                    label={CHASSIS_TEXT.sparklineLabel(service.name)}
+                  />
+                }
+                title={railTitle(service)}
               >
                 {service.name}
+                {service.health && (
+                  <span className="sr-only">
+                    {" — "}
+                    {CHASSIS_TEXT.healthWord[service.health.status] ?? service.health.status}
+                  </span>
+                )}
                 {!service.enabled && (
                   <span className="ml-1.5 text-kicker text-chassis-text-dim">{CHASSIS_TEXT.paused}</span>
                 )}
@@ -141,6 +168,19 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
   );
 };
 
+/**
+ * The hover title: pm2 name (or the paused hint), then the last probe when one exists — the
+ * words behind the dot, for whoever wants the number rather than the colour.
+ */
+const railTitle = (service: Service): string => {
+  const base = service.enabled ? service.pm2Name : `${service.name} · ${CHASSIS_TEXT.pausedHint}`;
+  if (!service.health) return base;
+
+  const word = CHASSIS_TEXT.healthWord[service.health.status] ?? service.health.status;
+  const latency = service.health.latencyMs === null ? "" : ` · ${service.health.latencyMs}ms`;
+  return `${base} · ${CHASSIS_TEXT.healthHint(word, latency)}`;
+};
+
 const RailHeading = ({ children }: { children: React.ReactNode }) => (
   <h2 className="px-2 pb-1 text-kicker tracking-kicker text-chassis-text-dim uppercase max-rail:sr-only">{children}</h2>
 );
@@ -151,6 +191,8 @@ const RailRow = ({
   muted,
   title,
   monogram: collapsed,
+  dot,
+  trailing,
   onClick,
 }: {
   children: React.ReactNode;
@@ -158,6 +200,10 @@ const RailRow = ({
   muted?: boolean;
   title?: string;
   monogram: string;
+  /** Health tone for the leading dot; null draws nothing — a dot must be earned (IKN-8). */
+  dot?: Tone | null;
+  /** Right-aligned extra — the sparkline. Hidden collapsed, like the name it annotates. */
+  trailing?: React.ReactNode;
   onClick: () => void;
 }) => (
   <button
@@ -171,7 +217,14 @@ const RailRow = ({
         : "text-chassis-text-muted hover:bg-chassis-raised/60 hover:text-chassis-text"
     } ${muted ? "opacity-60" : ""}`}
   >
-    <span className="max-rail:sr-only">{children}</span>
+    {dot != null && (
+      <span
+        aria-hidden="true"
+        className={`mr-1.5 inline-block size-1.5 flex-none rounded-full ${TONE_FILL.chassis[dot]} max-rail:hidden`}
+      />
+    )}
+    <span className="min-w-0 flex-1 truncate max-rail:sr-only">{children}</span>
+    {trailing != null && <span className="ml-1.5 flex-none max-rail:hidden">{trailing}</span>}
     <span
       aria-hidden="true"
       className="hidden max-rail:block"
