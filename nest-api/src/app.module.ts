@@ -12,6 +12,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { RedisModule } from "@redis/redis.module";
+import { ScrapeModule } from "@src/scrape/scrape.module";
 import { LoggerModule } from "nestjs-pino";
 import { HealthController } from "./health.controller";
 
@@ -52,6 +53,7 @@ import { HealthController } from "./health.controller";
     IngestModule,
     LogsModule,
     MaintenanceModule,
+    ScrapeModule,
     CollectorModule,
   ],
   controllers: [HealthController],
