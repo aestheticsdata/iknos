@@ -93,7 +93,7 @@ const detailId = (key: string) => `log-detail:${key}`;
  * replace the tint rather than sit over it, and `brightness` — the house hover elsewhere — is worth
  * nothing on a surface this close to black.
  */
-const CELL = "px-2 py-1 group-hover:bg-chassis-raised/40";
+const CELL = "px-2 py-1 transition-colors duration-150 ease-out group-hover:bg-chassis-raised/40";
 
 /**
  * The stable half of the row's props.
@@ -377,7 +377,7 @@ const LogTableRow = memo(
             // The whole row toggles the detail pane, not just the button in the time cell, so the
             // whole row admits it under the pointer. The base rule covers buttons and cannot reach
             // a `<tr>` that is clickable without being a control.
-            "group cursor-pointer border-b",
+            "group cursor-pointer border-b transition-colors duration-150 ease-out",
             SURFACE_BORDER.chassis,
             // The error tint is a *row* fact, so it is painted on the row rather than on the level
             // cell: what makes an error findable while scrolling past it at speed is the band, not
@@ -401,7 +401,7 @@ const LogTableRow = memo(
             <span
               aria-hidden="true"
               className={cn(
-                "absolute inset-y-0 left-0 w-0.5",
+                "absolute inset-y-0 left-0 w-0.5 transition-colors duration-150 ease-out",
                 selected ? "bg-brand" : isError ? TONE_FILL.chassis.error : "bg-transparent",
               )}
             />
@@ -485,7 +485,7 @@ const LogTableRow = memo(
                 title={traceId}
                 aria-label={`${LOGS_TEXT.openTrace} ${traceId}`}
                 className={cn(
-                  "underline decoration-dotted underline-offset-2 hover:brightness-125",
+                  "underline decoration-dotted underline-offset-2 transition-[filter] duration-150 ease-out hover:brightness-125",
                   TONE_TEXT.chassis.info,
                 )}
               >

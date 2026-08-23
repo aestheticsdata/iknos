@@ -317,7 +317,7 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         <button
           type="button"
           onClick={backToTop}
-          className="border-y border-chassis-border bg-chassis-raised px-3 py-1 text-label text-chassis-accent hover:brightness-110"
+          className="border-y border-chassis-border bg-chassis-raised px-3 py-1 text-label text-chassis-accent transition-[filter] duration-150 ease-out hover:brightness-110"
         >
           {LOGS_TEXT.newLines(held)} · {LOGS_TEXT.resume}
         </button>

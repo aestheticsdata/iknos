@@ -271,7 +271,7 @@ const FilterChip = ({
 }) => (
   <span
     className={cn(
-      "inline-flex items-center gap-1 rounded-chip border border-chassis-border-strong bg-chassis-inset px-1.5 py-0.5 text-row",
+      "inline-flex items-center gap-1 rounded-chip border border-chassis-border-strong bg-chassis-inset px-1.5 py-0.5 text-row transition-opacity duration-150 ease-out",
       !active && "opacity-60",
     )}
   >
@@ -289,7 +289,7 @@ const FilterChip = ({
       aria-pressed={active}
       aria-label={`${name}:${value}`}
       title={active ? LOGS_TEXT.filterOn : LOGS_TEXT.filterOff}
-      className="ml-0.5 px-0.5 leading-none text-chassis-text-dim hover:text-chassis-text"
+      className="ml-0.5 px-0.5 leading-none text-chassis-text-dim transition-colors duration-150 ease-out hover:text-chassis-text"
     >
       {active ? "×" : "+"}
     </button>
@@ -298,7 +298,7 @@ const FilterChip = ({
       onClick={onRemove}
       aria-label={`${LOGS_TEXT.removeFilter} — ${name}:${value}`}
       title={LOGS_TEXT.removeFilter}
-      className="px-0.5 text-kicker leading-none text-chassis-text-dim hover:text-chassis-text"
+      className="px-0.5 text-kicker leading-none text-chassis-text-dim transition-colors duration-150 ease-out hover:text-chassis-text"
     >
       rm
     </button>
@@ -459,7 +459,13 @@ const LiveToggle = ({ live, onToggle }: { live: boolean; onToggle: () => void })
     onClick={onToggle}
     aria-pressed={live}
     title={LOGS_TEXT.liveHint}
-    className={cn("h-6 gap-1.5 px-2", live && "border-chassis-accent text-chassis-accent hover:text-chassis-accent")}
+    /* The four properties written out rather than `transition-colors`: `Button` already sets
+       `transition-[filter,background-color]`, and tailwind-merge keeps only the last transition
+       utility — a bare `transition-colors` here would silently delete the hover brightness. */
+    className={cn(
+      "h-6 gap-1.5 px-2 transition-[color,border-color,filter,background-color] duration-150 ease-out",
+      live && "border-chassis-accent text-chassis-accent hover:text-chassis-accent",
+    )}
   >
     {live ? (
       <span

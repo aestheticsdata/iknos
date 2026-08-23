@@ -35,7 +35,10 @@ export const MeterBar = ({
       className={cn("h-1 flex-1 overflow-hidden rounded-full", SURFACE_INSET_BG[surface], className)}
     >
       <span
-        className={cn("block h-full", TONE_FILL[surface][tone])}
+        className={cn(
+          "block h-full transition-[width,background-color] duration-150 ease-out",
+          TONE_FILL[surface][tone],
+        )}
         /*
          * A percentage of a parent's width is the one thing that cannot be a class here: the value
          * is data, and a class built from it is a class Tailwind's scanner never sees and never

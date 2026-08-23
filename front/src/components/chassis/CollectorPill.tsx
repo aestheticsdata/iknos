@@ -4,6 +4,7 @@ import { Dot } from "@components/ui/Dot";
 import { ageOfPoll, HEALTH_TONE, healthOf } from "@lib/collectorTypes";
 import { formatLag } from "@lib/format";
 import { useCollectorStatus } from "@lib/useCollector";
+import { cn } from "@lib/utils";
 import { CHASSIS_TEXT } from "@text/chassis";
 
 /**
@@ -44,7 +45,7 @@ export const CollectorPill = () => {
         // The label is the state in words — the dot is six pixels of colour, and roughly one man
         // in twelve cannot read the red from the green.
         label={CHASSIS_TEXT.collectorState[health]}
-        className={health === "ok" ? "animate-pulse-live" : undefined}
+        className={cn("transition-colors duration-150 ease-out", health === "ok" && "animate-pulse-live")}
       />
       <span className="text-chassis-text-muted">{CHASSIS_TEXT.collector}</span>
       {lag !== null ? (

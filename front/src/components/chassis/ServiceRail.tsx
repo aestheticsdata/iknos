@@ -154,7 +154,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
               <Link
                 href={withScope(view.href)}
                 aria-current={pathname.startsWith(view.href) ? "page" : undefined}
-                className={`flex items-center justify-between rounded-chip px-2 py-1.5 text-label max-rail:justify-center max-rail:px-0 ${
+                className={`flex items-center justify-between rounded-chip px-2 py-1.5 text-label transition-colors duration-150 ease-out max-rail:justify-center max-rail:px-0 ${
                   pathname.startsWith(view.href)
                     ? "bg-chassis-raised text-chassis-text-bright"
                     : "text-chassis-text-muted hover:bg-chassis-raised/60 hover:text-chassis-text"
@@ -229,7 +229,7 @@ const RailRow = ({
     onClick={onClick}
     title={title}
     aria-pressed={selected}
-    className={`flex w-full items-center rounded-chip px-2 py-1.5 text-left text-label max-rail:justify-center max-rail:px-0 ${
+    className={`flex w-full items-center rounded-chip px-2 py-1.5 text-left text-label transition-colors duration-150 ease-out max-rail:justify-center max-rail:px-0 ${
       selected
         ? "bg-chassis-raised text-chassis-text-bright"
         : "text-chassis-text-muted hover:bg-chassis-raised/60 hover:text-chassis-text"
@@ -275,7 +275,7 @@ const UserMenu = () => {
         type="button"
         onClick={leave}
         disabled={leaving}
-        className="flex w-full items-center rounded-chip px-2 py-1.5 text-label text-chassis-text-muted hover:bg-chassis-raised/60 hover:text-chassis-text disabled:opacity-50 max-rail:justify-center max-rail:px-0"
+        className="flex w-full items-center rounded-chip px-2 py-1.5 text-label text-chassis-text-muted transition-[color,background-color,opacity] duration-150 ease-out hover:bg-chassis-raised/60 hover:text-chassis-text disabled:opacity-50 max-rail:justify-center max-rail:px-0"
       >
         <span className="max-rail:sr-only">{leaving ? CHASSIS_TEXT.loggingOut : CHASSIS_TEXT.logOut}</span>
         <span

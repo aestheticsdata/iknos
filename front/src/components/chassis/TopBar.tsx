@@ -2,6 +2,7 @@
 
 import { useSelectedService, useTimeRange } from "@lib/chassisState";
 import { RANGE_KEYS } from "@lib/timeRange";
+import { cn } from "@lib/utils";
 import { timeLabel } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
 import { CHASSIS_TEXT } from "@text/chassis";
@@ -58,11 +59,14 @@ export const TopBar = () => {
               type="button"
               onClick={() => setRange(key)}
               aria-pressed={range === key}
-              className={
+              className={cn(
+                // On the shared base rather than in either branch: a transition present on only
+                // one side of a swap animates in one direction and snaps back in the other.
+                "rounded-chip px-1.5 py-0.5 text-kicker tracking-control transition-colors duration-150 ease-out",
                 range === key
-                  ? "rounded-chip bg-chassis-raised px-1.5 py-0.5 text-kicker tracking-control text-chassis-text-bright"
-                  : "rounded-chip px-1.5 py-0.5 text-kicker tracking-control text-chassis-text-dim hover:text-chassis-text"
-              }
+                  ? "bg-chassis-raised text-chassis-text-bright"
+                  : "text-chassis-text-dim hover:text-chassis-text",
+              )}
             >
               {key}
             </button>

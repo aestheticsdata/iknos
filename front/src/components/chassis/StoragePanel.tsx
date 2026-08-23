@@ -99,7 +99,7 @@ const Row = ({ table, share }: { table: StorageTable; share: number }) => (
       className="h-1 flex-1 overflow-hidden rounded-full bg-chassis-inset"
     >
       <span
-        className="block h-full bg-chassis-accent"
+        className="block h-full bg-chassis-accent transition-[width] duration-150 ease-out"
         // Percentages of a parent width are the one thing Tailwind cannot express as a class here:
         // the value is data, and a class built from it is a class the scanner never emits.
         style={{ width: `${Math.max(share * 100, 1)}%` }}

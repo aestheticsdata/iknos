@@ -3,6 +3,7 @@
 import { useSelectedService, useTimeRange } from "@lib/chassisState";
 import { useChromeMode } from "@lib/commandState";
 import { formatCount } from "@lib/format";
+import { cn } from "@lib/utils";
 import { useViewStatus } from "@lib/viewStatus";
 import { CHASSIS_TEXT } from "@text/chassis";
 
@@ -42,7 +43,7 @@ export const StatusBar = () => {
       {live !== null && (
         <>
           <Divider />
-          <span className={live ? "text-chassis-accent" : undefined}>
+          <span className={cn("transition-colors duration-150 ease-out", live && "text-chassis-accent")}>
             {live ? CHASSIS_TEXT.tailOn : CHASSIS_TEXT.tailOff}
           </span>
         </>

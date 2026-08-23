@@ -169,7 +169,7 @@ export const CommandPalette = () => {
           aria-label={CHASSIS_TEXT.paletteTitle}
           /* The global listener suppresses every shortcut while focus is in a field, so the arrows
              and enter above are the palette's alone and cannot also move the log selection. */
-          className="w-full rounded-chip border border-chassis-border-strong bg-chassis-inset px-2 py-1.5 text-ui text-chassis-text-bright outline-none placeholder:text-chassis-text-dim focus:border-chassis-accent"
+          className="w-full rounded-chip border border-chassis-border-strong bg-chassis-inset px-2 py-1.5 text-ui text-chassis-text-bright outline-none transition-colors duration-150 ease-out placeholder:text-chassis-text-dim focus:border-chassis-accent"
         />
 
         {results.length > 0 ? (
@@ -219,7 +219,7 @@ const Row = ({
       /* The keyboard owns the cursor and the mouse follows it, rather than the two keeping separate
          highlights — the row under enter and the row under the pointer must be the same row. */
       className={cn(
-        "flex w-full items-center gap-2 rounded-chip px-2 py-1.5 text-left text-row",
+        "flex w-full items-center gap-2 rounded-chip px-2 py-1.5 text-left text-row transition-colors duration-150 ease-out",
         active ? "bg-chassis-raised text-chassis-text-bright" : "text-chassis-text-muted",
       )}
     >

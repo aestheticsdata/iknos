@@ -333,7 +333,7 @@ export const VolumeHistogram = ({
                     else return;
                     event.preventDefault();
                   }}
-                  className="min-w-0 flex-1 hover:bg-chassis-text/10"
+                  className="min-w-0 flex-1 transition-colors duration-150 ease-out hover:bg-chassis-text/10"
                 />
               ))}
             </div>
@@ -378,7 +378,7 @@ export const VolumeHistogram = ({
                 disabled={marker.bounds === null}
                 title={LOGS_TEXT.bucketHint}
                 aria-label={`${marker.label} · ${LOGS_TEXT.anomaly(anomaly.excess)} · ${LOGS_TEXT.anomalyHint}`}
-                className="text-chassis-info hover:brightness-125"
+                className="text-chassis-info transition-[filter] duration-150 ease-out hover:brightness-125"
               >
                 <span aria-hidden="true">▲ </span>
                 {/* Only the timestamp, not the count beside it: the excess did not move when the

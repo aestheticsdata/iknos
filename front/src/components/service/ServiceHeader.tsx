@@ -117,7 +117,7 @@ export const SignalsToggle = ({ open, onToggle }: { open: boolean; onToggle: () 
     onClick={onToggle}
     aria-expanded={open}
     title={SERVICE_TEXT.signalsHint}
-    className="flex-none rounded-chip border border-work-border-strong bg-work-inset px-1.75 py-0.5 text-row whitespace-nowrap text-work-text-muted hover:border-work-text-dim hover:text-work-text"
+    className="flex-none rounded-chip border border-work-border-strong bg-work-inset px-1.75 py-0.5 text-row whitespace-nowrap text-work-text-muted transition-colors duration-150 ease-out hover:border-work-text-dim hover:text-work-text"
   >
     {open ? SERVICE_TEXT.hideSignals : SERVICE_TEXT.showSignals}
   </button>
