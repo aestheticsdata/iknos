@@ -199,14 +199,13 @@ describe("signal tiles", () => {
     expect(html).toContain("width:100%");
     expect(html).toContain("10/10 · 2 waiting");
     expect(html).toContain("140ms");
-    expect(html).toContain("interpolated from prom-client buckets");
   });
 
-  it("says where the older intervals came from, and links the error tile to the period", () => {
+  it("links the error tile to the period", () => {
     const html = renderToStaticMarkup(
       h(Signals, {
         service: "pfa-nest-api",
-        signals: signals({ source: "mixed" }),
+        signals: signals(),
         runtime: null,
         range: "7d",
         loading: false,
@@ -215,7 +214,6 @@ describe("signal tiles", () => {
       }),
     );
 
-    expect(html).toContain("older intervals read from hourly rollups");
     expect(html).toContain("/logs?service=pfa-nest-api&amp;level=error&amp;range=7d");
   });
 

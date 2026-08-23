@@ -33,10 +33,6 @@ import type { RangeKey } from "@lib/timeRange";
  * reading is a fact about this instant and has nothing to do with the window the top bar is
  * showing. Putting them in one row anyway is the design's call and the right one: they are four
  * answers to the same question, and only one of them is about time.
- *
- * The **provenance line** underneath is not decoration. A p95 interpolated from ten bucket bounds
- * looks exactly like a measured one, and §5.3 is explicit that the footnote is what stops a reader
- * treating it as a request that really took that long.
  */
 export const Signals = ({
   service,
@@ -67,11 +63,9 @@ export const Signals = ({
        * one, about a service that exposes no `/metrics` at all rather than a range that happens to
        * be quiet.
        */
-      /* 121px, not 100: the tile row plus the provenance line it replaces. The sentence below is
-         about scraping, and a service nobody scrapes must not be told how often it is — so the line
-         is dropped and its height is taken here, and the log panel underneath stays put whichever
-         service the rail is on. */
-      <section className="flex h-[121px] flex-none items-center rounded-card border border-work-border bg-work-surface px-3">
+      /* 100px, matching the tile row: a service nobody scrapes gets one sentence instead of four
+         tiles, and the log panel underneath must stay put whichever service the rail is on. */
+      <section className="flex h-[100px] flex-none items-center rounded-card border border-work-border bg-work-surface px-3">
         <p className="text-row text-work-text-muted">{SERVICE_TEXT.notScraped}</p>
       </section>
     ) : (
@@ -103,20 +97,6 @@ export const Signals = ({
           loading={runtimeLoading}
         />
       </div>
-    )}
-
-    {/* Not rendered for an unscraped service — see the height note above. It is a claim about a
-        collection cadence, and there is nothing being collected to have one. */}
-    {(signals === null || signals.scraped) && (
-      <p className="text-micro text-work-text-dim">
-        {SERVICE_TEXT.provenance}
-        {/* Said only when it is true. Beyond the raw window the hourly aggregates answer, and until
-          IKN-20 writes any there is a visible gap on the left of every long range — this line is
-          what tells the reader that the gap is a source boundary and not an outage. */}
-        {signals !== null && signals.source !== "raw" && signals.source !== "none"
-          ? ` · ${SERVICE_TEXT.provenanceRollup}`
-          : ""}
-      </p>
     )}
   </div>
 );

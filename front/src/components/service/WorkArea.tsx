@@ -121,8 +121,8 @@ export const WorkArea = ({ services }: { services: Service[] }) => {
        * The fold, and why it is a grid rather than a height.
        *
        * `height` cannot be transitioned from a number to `auto`, and the row's height is not a
-       * constant anybody should be writing down — it is four tiles and a provenance line, and the
-       * line is dropped for a service nobody scrapes. A single grid row going `1fr → 0fr` animates
+       * constant anybody should be writing down — it is four tiles, or one sentence for a service
+       * nobody scrapes. A single grid row going `1fr → 0fr` animates
        * to whatever the content happens to be, with the child clipped inside it, and needs no
        * measurement at all.
        *

@@ -78,17 +78,6 @@ export const SERVICE_TEXT = {
   failed: "Could not read this service.",
   retry: "retry",
 
-  /**
-   * The provenance line under the tiles — §5.3's doctrine, applied here.
-   *
-   * It is not decoration. A p95 interpolated from ten bucket bounds looks exactly like a measured
-   * one, and this sentence is what stops a reader treating `412ms` as a request that actually took
-   * 412 milliseconds. The cadences are the collector's own (IKN-8).
-   */
-  provenance: "scraped from /metrics every 15s · p95 interpolated from prom-client buckets",
-  /* Appended when the range reaches back past the raw window and the hourly aggregates answer for it. */
-  provenanceRollup: "older intervals read from hourly rollups",
-
   /* ── Links ────────────────────────────────────────────────────────────────────────────────── */
   /* Two, because two blocks have somewhere real to lead today. The throughput and latency tiles
      point at the routes table (IKN-23) and carry no affordance until it exists — a link that lands
