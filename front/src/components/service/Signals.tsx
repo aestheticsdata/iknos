@@ -268,7 +268,12 @@ const RuntimeTile = ({ runtime, loading }: { runtime: NodeRuntime | null; loadin
         /* "No reading" is a claim, and it cannot be made while the reading is still in flight. */
         <TileEmpty>{loading ? SERVICE_TEXT.loading : SERVICE_TEXT.runtimeSilent}</TileEmpty>
       ) : (
-        <div className="flex w-full flex-col gap-0.75">
+        /* The two rows have to fit the tile's 26px chart box, which they only do at a line height
+           of 1: `text-micro` inherits the document's 1.5 and two rows of it are 33px, which
+           overflows a box that is aligned to its bottom edge — the number above ends up underneath
+           them. Centred rather than bottom-aligned, because a pair of meters is the tile's content
+           and not a chart sitting on an axis. */
+        <div className="flex h-full w-full flex-col justify-center gap-1">
           {lag !== null && (
             <MeterRow
               label={SERVICE_TEXT.loopLag}
@@ -308,15 +313,24 @@ const MeterRow = ({
 }) => (
   <div
     title={title}
-    className="flex items-center gap-1.5 text-micro text-work-text-muted"
+    className="flex items-center gap-1.5 text-micro leading-none text-work-text-muted"
   >
-    <span className="w-[52px] flex-none">{label}</span>
+    {/* 60px, not 52: `event loop` is ten characters, and at 10px of JetBrains Mono that is exactly
+        60. A column an em too narrow wraps it onto a second line, which is how two rows of meters
+        became three and climbed over the heap figure above them. */}
+    <span className="w-[60px] flex-none whitespace-nowrap">{label}</span>
     <MeterBar
       share={share}
       tone={tone}
     />
     {/* The figure, always — the bar is `aria-hidden` and a colour alone is not a reading. */}
-    <span className={tone === "error" ? "flex-none text-work-error" : "flex-none tabular-nums"}>{value}</span>
+    <span
+      className={
+        tone === "error" ? "flex-none whitespace-nowrap text-work-error" : "flex-none whitespace-nowrap tabular-nums"
+      }
+    >
+      {value}
+    </span>
   </div>
 );
 
