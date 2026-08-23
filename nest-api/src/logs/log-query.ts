@@ -4,10 +4,10 @@ import { BadRequestException } from "@nestjs/common";
 import { IsOptional, IsString } from "class-validator";
 
 /**
- * The filter vocabulary, parsed once and shared by all four log routes.
+ * The filter vocabulary, parsed once and shared by every log route.
  *
- * Search, histogram, trace and the live tail take the same parameters and must interpret them
- * identically — otherwise the histogram totals stop matching the search below it, and the live
+ * Search, histogram, trace, the row detail and the live tail take the same parameters and must
+ * interpret them identically — otherwise the histogram totals stop matching the search below it, and the live
  * tail shows lines the filter above it excludes. One parser, one `WHERE` builder, no copies.
  */
 
@@ -111,6 +111,27 @@ export function parseFilters(p: LogQueryDto): LogFilters {
     statusCode: p.status ? toInt("status", p.status) : undefined,
     q: q || undefined,
   };
+}
+
+/** The largest `UNSIGNED BIGINT` there is. Past it the driver has nothing to bind. */
+const MAX_ROW_ID = 18_446_744_073_709_551_615n;
+
+/**
+ * A row id off the URL, as the BIGINT it addresses.
+ *
+ * Digits only — `Number` is not an option here at all, since `log_entry.id` is an `UNSIGNED
+ * BIGINT` and the whole reason it crosses the wire as a string is that past 2^53 a JSON number
+ * rounds silently. A rounded id would not 404; it would answer with the wrong line, confidently.
+ *
+ * The ceiling is checked rather than left to the driver: an id nobody could have is a malformed
+ * request, and a 400 says so where a bind error would surface as a 500 on a crafted URL.
+ */
+export function parseRowId(raw: string): bigint {
+  if (!/^\d{1,20}$/.test(raw)) throw new BadRequestException("'id' must be a row id");
+
+  const id = BigInt(raw);
+  if (id > MAX_ROW_ID) throw new BadRequestException("'id' must be a row id");
+  return id;
 }
 
 export function parseLimit(raw: string | undefined): number {

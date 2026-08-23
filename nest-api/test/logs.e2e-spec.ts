@@ -341,3 +341,93 @@ describe("GET /api/services", () => {
     }
   });
 });
+
+describe("GET /api/logs/entry/:id", () => {
+  /** The row the whole ticket is about: a 404 on a route the app never had, and who asked for it. */
+  const seedScannerLine = async () =>
+    track(app, 1, {
+      route: () => "/api/auth/signin",
+      statusCode: () => 404,
+      clientIp: () => "203.0.113.7",
+      hostname: () => "ks-b",
+      attrs: () => ({ "user_agent.original": "curl/8.4.0", "url.query": "next=%2F" }),
+    });
+
+  const idOf = async (service: string): Promise<string> => {
+    const res = await get(`/api/logs?${WIDE}&service=${service}`).expect(200);
+    return (res.body.rows as LogRow[])[0].id;
+  };
+
+  it("does not shadow the sibling routes that share this prefix", async () => {
+    // `entry/:id` earns its segment here. A bare `:id` would be registered ahead of
+    // `StreamController`, which mounts `/api/logs/stream` on the same prefix from further down
+    // the `controllers` array, and the live tail would become a 400 for no visible reason.
+    await get(`/api/logs/histogram?${WIDE}`).expect(200);
+    await get(`/api/logs/trace/deadbeef?${WIDE}`).expect(200);
+  });
+
+  it("refuses a caller with no cookie", async () => {
+    await request(app.getHttpServer()).get(`/api/logs/entry/1?${WIDE}`).expect(401);
+  });
+
+  it("rejects a lookup with no time range", async () => {
+    // The primary key is `(id, ts)` on a table partitioned by day: without the range this is a
+    // point read of every partition in the retention window.
+    await get("/api/logs/entry/1").expect(400);
+    await get("/api/logs/entry/1?from=2026-08-09T00:00:00Z").expect(400);
+  });
+
+  it("rejects an id that is not one", async () => {
+    await get(`/api/logs/entry/abc?${WIDE}`).expect(400);
+    await get(`/api/logs/entry/-1?${WIDE}`).expect(400);
+    await get(`/api/logs/entry/18446744073709551616?${WIDE}`).expect(400);
+  });
+
+  it("answers 404 for a row that is not in the range", async () => {
+    const service = await seedScannerLine();
+    const id = await idOf(service);
+
+    // The row exists; this window is simply not the one it is in. Unlike an unknown trace id,
+    // that is worth saying rather than answering with an empty shape.
+    await get(`/api/logs/entry/${id}?from=2019-01-01T00:00:00Z&to=2019-01-02T00:00:00Z`).expect(404);
+    await get(`/api/logs/entry/99999999999999999?${WIDE}`).expect(404);
+  });
+
+  it("carries the four columns the list leaves behind", async () => {
+    const service = await seedScannerLine();
+    const id = await idOf(service);
+
+    const res = await get(`/api/logs/entry/${id}?${WIDE}`).expect(200);
+
+    expect(res.body).toMatchObject({
+      id,
+      service,
+      route: "/api/auth/signin",
+      statusCode: 404,
+      clientIp: "203.0.113.7",
+      hostname: "ks-b",
+      userId: null,
+    });
+    // Dotted ECS keys are keys, not paths — this is the user-agent being readable at all.
+    expect(res.body.attrs["user_agent.original"]).toBe("curl/8.4.0");
+  });
+
+  it("is the list's row, widened — never a second reading of the same event", async () => {
+    const service = await seedScannerLine();
+    const listed = (await get(`/api/logs?${WIDE}&service=${service}`).expect(200)).body.rows[0] as LogRow;
+
+    const detail = (await get(`/api/logs/entry/${listed.id}?${WIDE}`).expect(200)).body;
+
+    expect(detail).toMatchObject(listed as unknown as Record<string, unknown>);
+  });
+
+  it("keeps attrs out of the list payload", async () => {
+    // The reason this endpoint exists at all: two hundred rows of arbitrary JSON is a cost every
+    // page would pay for a field only ever read one row at a time.
+    const service = await seedScannerLine();
+    const res = await get(`/api/logs?${WIDE}&service=${service}`).expect(200);
+
+    expect(res.body.rows[0]).not.toHaveProperty("attrs");
+    expect(res.body.rows[0]).not.toHaveProperty("clientIp");
+  });
+});

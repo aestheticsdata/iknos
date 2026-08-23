@@ -19,6 +19,7 @@ export type {
   StorageTable,
 } from "./collector";
 export type { Bucket, Histogram } from "./histogram";
+export type { LogDetail } from "./log-detail";
 export type { LogPage } from "./log-page";
 export type { LogRow } from "./log-row";
 export type { Meta } from "./meta";

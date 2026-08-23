@@ -1,17 +1,18 @@
-import { Controller, Get, Param, Query } from "@nestjs/common";
+import { Controller, Get, NotFoundException, Param, Query } from "@nestjs/common";
 import { decodeCursor, encodeCursor } from "./cursor";
 import { HistogramService } from "./histogram.service";
-import { LogQueryDto, parseFilters, parseLimit, parseWindow } from "./log-query";
+import { LogQueryDto, parseFilters, parseLimit, parseRowId, parseWindow } from "./log-query";
 import { LogsService } from "./logs.service";
-import { toLogRow } from "./row";
+import { toLogDetail, toLogRow } from "./row";
 import { TraceService } from "./trace.service";
 
 import type { Histogram } from "@contracts/histogram";
+import type { LogDetail } from "@contracts/log-detail";
 import type { LogPage } from "@contracts/log-page";
 import type { Trace } from "@contracts/trace";
 
 /**
- * The three read routes the Logs view needs. All behind the global session guard — none of them
+ * The four read routes the Logs view needs. All behind the global session guard — none of them
  * carries `@Public()`, which is the whole point of the guard being deny-by-default.
  *
  * Every one of them requires `from` and `to`. That is not validation politeness: `log_entry` is
@@ -78,5 +79,33 @@ export class LogsController {
     const { rows, totalMs, truncated } = await this.traces.byTraceId(traceId, from, to);
 
     return { traceId, rows, totalMs, truncated, meta: { tookMs: Math.round(performance.now() - startedAt) } };
+  }
+
+  /**
+   * One row in full — the columns the list leaves behind, for the line that was expanded (IKN-58).
+   *
+   * **`entry/:id`, not `:id`, and that is not decoration.** Express matches in registration order,
+   * Nest registers in the order of the `controllers` array, and `StreamController` mounts
+   * `GET /api/logs/stream` on this very prefix from further down that array. A bare `:id` here
+   * would match `stream` first and the live tail would quietly become a 400 — a breakage whose
+   * cause would be an array's order in another file. A segment of its own cannot collide with
+   * anything, whoever edits that array later.
+   *
+   * Bounded like every other route, and here the *primary key* is what needs it — see
+   * `LogsService.byId`.
+   *
+   * An id that is not in the range is a **404**, unlike an unknown trace id, which is an empty
+   * result. The difference is what the caller is claiming: a trace id is a question that may have
+   * no answer, while a row id came off a line the caller has already been shown, so nothing there
+   * means the row has aged out of retention or the window is wrong — and both are worth saying.
+   */
+  @Get("entry/:id")
+  async detail(@Param("id") id: string, @Query() p: LogQueryDto): Promise<LogDetail> {
+    const { from, to } = parseWindow(p);
+
+    const row = await this.logs.byId(parseRowId(id), from, to);
+    if (row === null) throw new NotFoundException("no such log line in this range");
+
+    return toLogDetail(row);
   }
 }

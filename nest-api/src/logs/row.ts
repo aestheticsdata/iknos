@@ -1,5 +1,7 @@
+import { readJsonColumn } from "@common/json-column";
 import { Prisma } from "@generated/prisma/client";
 
+import type { LogDetail } from "@contracts/log-detail";
 import type { LogRow } from "@contracts/log-row";
 
 /**
@@ -41,5 +43,35 @@ export function toLogRow(r: RawLogRow): LogRow {
     // a BigInt, and a `Date` would serialise to a local-time-flavoured string.
     id: r.id.toString(),
     ts: r.ts.toISOString(),
+  };
+}
+
+/**
+ * The same row, plus the four columns the list leaves in the table — `GET /api/logs/entry/:id`.
+ *
+ * Deliberately expressed as `ROW_COLUMNS` widened rather than as a second hand-written list. The
+ * contract says a `LogDetail` *is* a `LogRow` with more on it, and two independent lists would let
+ * the expanded pane and the line above it drift into disagreeing about the same event.
+ */
+export const DETAIL_COLUMNS = Prisma.sql`
+  ${ROW_COLUMNS}, client_ip AS clientIp, user_id AS userId, hostname, attrs`;
+
+export type RawLogDetail = RawLogRow & {
+  clientIp: string | null;
+  userId: string | null;
+  hostname: string | null;
+  /** Whatever the driver made of the JSON column — see `readJsonColumn`. */
+  attrs: unknown;
+};
+
+export function toLogDetail(r: RawLogDetail): LogDetail {
+  return {
+    ...toLogRow(r),
+    clientIp: r.clientIp,
+    userId: r.userId,
+    hostname: r.hostname,
+    // A blob that will not parse is a line with no extra attributes, not a 500: the row itself is
+    // still the answer to what was asked, and the four fields beside it are still true.
+    attrs: readJsonColumn(r.attrs),
   };
 }

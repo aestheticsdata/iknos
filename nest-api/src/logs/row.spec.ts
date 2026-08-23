@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { toLogRow } from "./row";
+import { toLogDetail, toLogRow } from "./row";
 
-import type { RawLogRow } from "./row";
+import type { RawLogDetail, RawLogRow } from "./row";
 
 const raw = (over: Partial<RawLogRow> = {}): RawLogRow => ({
   id: 1n,
@@ -36,5 +36,52 @@ describe("toLogRow", () => {
 
   it("emits the timestamp as ISO-8601 in UTC", () => {
     expect(toLogRow(raw()).ts).toBe("2026-08-09T10:11:12.345Z");
+  });
+});
+
+const rawDetail = (over: Partial<RawLogDetail> = {}): RawLogDetail => ({
+  ...raw(),
+  clientIp: "203.0.113.7",
+  userId: null,
+  hostname: "ks-b",
+  attrs: null,
+  ...over,
+});
+
+describe("toLogDetail", () => {
+  it("is the row it widens, id and timestamp included", () => {
+    const detail = toLogDetail(rawDetail({ id: 9_007_199_254_740_993n }));
+
+    // The pane and the line above it must never describe the same event differently.
+    expect(detail).toMatchObject(toLogRow(raw({ id: 9_007_199_254_740_993n })));
+  });
+
+  it("carries the four columns the list leaves behind", () => {
+    const detail = toLogDetail(rawDetail({ userId: "42" }));
+
+    expect(detail.clientIp).toBe("203.0.113.7");
+    expect(detail.userId).toBe("42");
+    expect(detail.hostname).toBe("ks-b");
+  });
+
+  it("reads attrs whether the driver parsed them or handed back their text", () => {
+    // The one behaviour that decides whether the user-agent is readable in production or is
+    // `undefined` on every single line — the driver's shape for a JSON column is not a constant.
+    const parsed = toLogDetail(rawDetail({ attrs: { "user_agent.original": "curl/8.4.0" } }));
+    const text = toLogDetail(rawDetail({ attrs: '{"user_agent.original":"curl/8.4.0"}' }));
+
+    expect(parsed.attrs).toEqual({ "user_agent.original": "curl/8.4.0" });
+    expect(text.attrs).toEqual({ "user_agent.original": "curl/8.4.0" });
+  });
+
+  it("treats a blob that will not parse as a line with no attrs", () => {
+    // Not a 500: the row is still the answer to what was asked, and the columns beside it are
+    // still true.
+    expect(toLogDetail(rawDetail({ attrs: "{not json" })).attrs).toBeNull();
+    expect(toLogDetail(rawDetail({ attrs: null })).attrs).toBeNull();
+  });
+
+  it("survives JSON.stringify with attrs on it", () => {
+    expect(() => JSON.stringify(toLogDetail(rawDetail({ attrs: { a: 1 } })))).not.toThrow();
   });
 });

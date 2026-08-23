@@ -131,6 +131,10 @@ export type SeedOptions = {
   route?: (i: number) => string | null;
   statusCode?: (i: number) => number | null;
   durationMs?: (i: number) => number | null;
+  clientIp?: (i: number) => string | null;
+  userId?: (i: number) => string | null;
+  hostname?: (i: number) => string | null;
+  attrs?: (i: number) => Record<string, unknown> | null;
 };
 
 const LEVEL_NAMES: Record<number, string> = {
@@ -170,10 +174,10 @@ export async function seedLogs(app: INestApplication, count: number, options: Se
       route: options.route?.(i) ?? null,
       statusCode: options.statusCode?.(i) ?? null,
       durationMs: options.durationMs?.(i) ?? null,
-      clientIp: null,
-      userId: null,
-      hostname: null,
-      attrs: null,
+      clientIp: options.clientIp?.(i) ?? null,
+      userId: options.userId?.(i) ?? null,
+      hostname: options.hostname?.(i) ?? null,
+      attrs: options.attrs?.(i) ?? null,
     };
   });
 
