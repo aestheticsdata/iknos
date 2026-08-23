@@ -12,15 +12,21 @@
  * property, not the movement.
  *
  * The fifth and sixth arrived together — IKN-57 — and they pass the same test from the other
- * side. They report a change nothing in this app reported at all: a question having been asked and
+ * side, though the sixth had to be built twice to do it. They report a change nothing in this app reported at all: a question having been asked and
  * not yet answered. Every in-flight state used to be a dim sentence in the same element, the same
  * ink and the same box as the answer that replaced it, so the one moment the reader most needs to
  * be told "not yet" was the one moment the interface said nothing. The pending mark is that report
  * at reading distance; the spinner is the same report at arm's length, because the mark alone was
  * shipped first and the reader it was built for could not see it — a 10px line does not carry
  * across a desk, and "I could not tell it was loading" is the exact complaint twice. They are the
- * only animations here that do not end on their own: waiting has no duration, so both run until
- * the answer lands, and the answer landing is the only thing that stops them.
+ * only animations here that do not end on their own: waiting has no end it can name, so both run
+ * until the answer lands, and the answer landing is the only thing that stops them.
+ *
+ * The spinner is also the one thing in this file that glides rather than steps, and the exception
+ * is the rule holding rather than bending: everything else animates a state passing into another
+ * state, which has two ends to move between. A wait has no steps in it, and drawing one as though
+ * it did was the first attempt at this — an eight-spoke throbber, twenty years out of date, and
+ * the reason `--animate-pending-spin` reads `linear`.
  *
  * Two things move that are not keyframes here, and both are transitions for the same reason: one
  * element passing between two states, rather than something playing.
@@ -128,21 +134,24 @@
    * The mark above is the pending state at reading distance; this is the same state at arm's
    * length. It exists because the mark alone was tried and failed the person it was built for: a
    * 10px line in the corner of a tile does not carry across a desk, and the complaint came back a
-   * second time as "I cannot see that it is loading". Scale, not vocabulary — the spinner says
-   * nothing the mark does not.
+   * second time as "I cannot see that it is loading". Scale, not vocabulary — the ring says nothing
+   * the mark does not.
    *
-   * **It steps, it does not glide.** Eight positions in 1.2s — one revolution on the same clock as
-   * the mark's three dots and half of `ikPulse`, so everything pending on a screen counts at a
-   * pace that shares a downbeat with the liveness dot. A smoothly rotating arc would be the only
-   * thing in Iknos that glides, and it would read as an import from someone else's design system —
-   * every motion here is a discrete state change, and a spinner drawn as eight ticks stepping is
-   * that same language at tile scale.
+   * **`linear`, and the only thing in Iknos that glides.** It was written as `steps(8)` first, on
+   * the reasoning that everything here is a discrete state change and a stepping ring is that same
+   * language — and what came out was the eight-spoke throbber every OS shipped in 2005, rejected on
+   * sight. The reasoning was wrong in a way worth writing down: the rule this file opens with is
+   * about motion that reports a *change*, and every other animation here is one state passing into
+   * another. Waiting is not a state change. It is a duration, and stepping a duration claims
+   * discrete progress that nothing is measuring — on a monitoring panel, a lie about data.
+   * `ikPulse` has been `ease-in-out` since the beginning for exactly this reason.
    *
-   * `steps(8)` with the default jump-end, not `jump-none`: this rotation wraps. 0° and 360° are
-   * the same frame, and `jump-none` would hold that frame twice per cycle — a stutter every 1.2s,
-   * where the mark's `jump-none` exists because its two ends are *different* frames.
+   * **0.9s, deliberately not the mark's 1.2s.** A full turn has to finish inside the time a fast
+   * answer takes, or a 400ms response shows a twitch rather than a sweep and reads as a glitch. The
+   * two are different kinds of motion; a shared downbeat would buy nothing anyone can see, and the
+   * `steps(8)` version bought its symmetry at the cost of looking twenty years old.
    */
-  --animate-pending-spin: ikSpin 1.2s steps(8) infinite;
+  --animate-pending-spin: ikSpin 0.9s linear infinite;
 
   /* Things that appear in place — the expanded log row and the auth banner. Deliberately no longer
      "modals": none ever used this, and since IKN-53 they have a gesture of their own. A row
@@ -210,11 +219,10 @@
   }
 
   /*
-   * A full turn, quantised by the `steps(8)` in the shorthand above. The SVG's eight ticks sit 45°
-   * apart with a baked-in opacity tail, so each step lands the bright tick exactly where the next
-   * tick was — the gradient appears to advance while every drawn element holds still. Rotating the
-   * gradient rather than animating eight opacities is one compositor-friendly transform instead of
-   * eight paint invalidations.
+   * A full turn. One transform on the compositor, and nothing inside the SVG animates: the arc is a
+   * static `stroke-dasharray` on a static ring, and turning the whole drawing is what moves it. The
+   * alternative — animating `stroke-dashoffset` — repaints the path every frame to say the same
+   * thing.
    */
   @keyframes ikSpin {
     from {
@@ -385,9 +393,9 @@
  * app ends in. The motion is the whole of the loss here and the reading is not — the same trade the
  * liveness dot takes above, and the reason neither needed an exception written for it.
  *
- * The pending spinner freezes into a dial: eight ticks with their opacity tail, still. No answer
- * in this app draws anything ring-shaped, so even motionless it cannot be read as data — and the
- * mark beside it still says "reading..." in words, which is the half a stilled screen keeps.
+ * The pending spinner freezes as a ring with its one arc resting at twelve o'clock. No answer in
+ * this app draws anything ring-shaped, so even motionless it cannot be read as data — and the mark
+ * beside it still says "reading..." in words, which is the half a stilled screen keeps.
  */
 /**
  * The three `!important`s below are the mechanism, not a shortcut around one: this rule has to
