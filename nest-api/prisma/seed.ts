@@ -17,6 +17,10 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
  * entirely. It joins the registry with IKN-16, which brings its own ingestion source — and it is
  * the case that will finally make `name` and `pm2Name` differ.
  *
+ * WorldWeathr's two joined with IKN-52, which is what the drift above looks like from the other
+ * side: both processes had been running on ks-b, and their logs had been read and stored, for as
+ * long as this file said the fleet was seventeen processes.
+ *
  * **`name` is the PM2 name.** The two columns exist so a friendlier label stays possible, and the
  * first attempt used one: `pfa-api` for the process `pfa-nest-api`. That cannot work. The tailer
  * derives `log_entry.service` from the log *filename*, so the rows say `pfa-nest-api`; a rail that
@@ -107,6 +111,28 @@ const SERVICES = [
   { name: "spira-nest-api", pm2Name: "spira-nest-api", metricsUrl: null, healthUrl: null },
   { name: "trekker-api", pm2Name: "trekker-api", metricsUrl: null, healthUrl: null },
   { name: "trekker-front", pm2Name: "trekker-front", metricsUrl: null, healthUrl: null },
+  // The two that arrive with IKN-52. Their lines were already being tailed — the glob does not
+  // consult this table — so what these rows unlock is reaching them: the rail is the only way in.
+  //
+  // Both URLs are filled because the ticket instruments the app in the same breath (ECS logs,
+  // `/api/metrics`, a health that probes MySQL and Redis). Seed AFTER `deploy-api.sh` has run,
+  // or the collector spends the gap writing scrape and probe failures for routes that answer 404
+  // and `{ ok: true }`.
+  {
+    name: "worldweathr-api",
+    pm2Name: "worldweathr-api",
+    metricsUrl: "http://127.0.0.1:6500/api/metrics",
+    healthUrl: "http://127.0.0.1:6500/api/health",
+  },
+  // Root, like `iknos-front`: a Next front has no health route, and the page it renders is the
+  // only honest answer to "is it up". Set this back to null if rendering `/` every 15 s ever
+  // shows up in the front's own numbers.
+  {
+    name: "worldweathr-front",
+    pm2Name: "worldweathr-front",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:3002/",
+  },
   { name: "zeus-front", pm2Name: "zeus-front", metricsUrl: null, healthUrl: null },
   { name: "zeus-nest-api", pm2Name: "zeus-nest-api", metricsUrl: null, healthUrl: null },
 ];
