@@ -52,7 +52,7 @@ export const useServiceRuntime = (service: string | null) =>
  * current instant, so a bare call would produce a new URL on every keystroke elsewhere on the page
  * and re-fetch three aggregates each time.
  */
-export const useServiceSignals = (service: string | null, range: RangeKey) => {
+export const useServiceSignals = (service: string | null, range: RangeKey, active = true) => {
   const [anchor, setAnchor] = useState(() => new Date());
 
   useEffect(() => {
@@ -72,8 +72,15 @@ export const useServiceSignals = (service: string | null, range: RangeKey) => {
   }, []);
 
   const bounds = boundsFor(range, anchor);
+  /*
+   * `active` is the tiles being on screen — collapsed, there is nothing to pay three aggregates
+   * for. It gates the *URL* and deliberately not the identity below: the payload is still about
+   * this service over this range, so the last one read stays readable and the row keeps its numbers
+   * while it folds away. Gating both would blank the tiles in the first frame of a 150ms collapse,
+   * which is the animation showing its own machinery.
+   */
   const url =
-    service === null
+    service === null || !active
       ? null
       : `/services/${encodeURIComponent(service)}/signals?from=${encodeURIComponent(bounds.from)}&to=${encodeURIComponent(bounds.to)}`;
 
