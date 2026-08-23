@@ -33,7 +33,7 @@ export const AUTH_TEXT = {
     kicker: "IKNOS",
     title: "sign in",
     submit: "Sign in",
-    submitting: "verifying…",
+    submitting: "verifying",
     register: "REGISTER",
     recover: "RECOVER ACCOUNT →",
     or: "OR",
@@ -59,7 +59,7 @@ export const AUTH_TEXT = {
     kicker: "NEW ACCOUNT",
     title: "create an account",
     submit: "REGISTER",
-    submitting: "creating…",
+    submitting: "creating",
     signIn: "SIGN IN",
     /**
      * The mockup's banner reads `IKNOS_ALLOW_SIGNUP=false`. No such variable exists and none will:
@@ -76,7 +76,7 @@ export const AUTH_TEXT = {
     kicker: "RECOVERY",
     title: "reset your password",
     submit: "RESET",
-    submitting: "resetting…",
+    submitting: "resetting",
     signIn: "SIGN IN",
     hint: "the passphrase you chose when you registered. an account without one can only be reset by the owner, in the database.",
     /** Same silence as login: a wrong phrase, an unknown address and no phrase on file read alike. */

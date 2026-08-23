@@ -1,6 +1,7 @@
 "use client";
 
 import { LogPanel } from "@components/logs/LogPanel";
+import { Pending } from "@components/ui/Pending";
 import { useSelectedService, useSignalsOpen, useTimeRange } from "@lib/chassisState";
 import { useServiceRuntime, useServiceSignals } from "@lib/useServiceView";
 import { cn } from "@lib/utils";
@@ -113,7 +114,10 @@ export const WorkArea = ({ services }: { services: Service[] }) => {
           signalsOpen={signalsOpen}
           onToggleSignals={toggleSignals}
         >
-          {SERVICE_TEXT.loading}
+          {/* The same 52px box as the failure branch above, and now it is the mark rather than
+              the `retry` button that tells them apart — a waiting header and a failed one used
+              to differ by one word and one link (IKN-57). */}
+          <Pending>{SERVICE_TEXT.loading}</Pending>
         </Notice>
       )}
 

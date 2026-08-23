@@ -74,7 +74,14 @@ export const SERVICE_TEXT = {
      these has to fit on one line of 10px text inside a tile a quarter of the work surface wide. */
   noSeries: "One reading — too few for a line.",
   runtimeSilent: "No reading in the last few minutes.",
-  loading: "reading…",
+  /* The stem only — `<Pending>` draws the dots, and both halves of that are the ticket (IKN-57).
+     `…` is a single character cell carrying all three marks, and at this paragraph's `text-micro`
+     they stop being separable: the reader who reported "reading.." was reading what was painted.
+     Three periods are three cells. And the drawn dots count, which is the half no string could do —
+     this line and `noSamples` three lines up were the same element in the same ink in the same 26px
+     box, one glance apart, and neither moved. The budget is unchanged: the word plus three cells is
+     ten characters. */
+  loading: "reading",
   failed: "Could not read this service.",
   retry: "retry",
 

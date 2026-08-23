@@ -347,6 +347,68 @@
   z-index: 40;
 }
 
+/* ═══ PENDING ══════════════════════════════════════════════════════════════════════════════════
+ *
+ * `ik-pending` — the three dots after a word that is waiting for an answer. IKN-57.
+ *
+ * On the empty `<span>` inside `ui/Pending`, and nowhere else. The mark means one thing — "asked,
+ * not yet answered" — and it is worth exactly as much as it is rare.
+ *
+ * **It carries the animation but not the number**: `--animate-pending` is declared in
+ * `animations.css` beside the four it has to be read against, and this rule reads it. Same split as
+ * `ik-modal` and `--ik-modal-ms`, for the same reason — every duration in Iknos is in one file.
+ *
+ * **One animation per mark, and deliberately not the `--ik-flash` carrier trick.** That exists
+ * because ten thousand log rows cannot each run their own. There are at most five pending lines on
+ * screen at once — four tiles and a header — and they mount together, so they count together
+ * without being told to. A shared carrier would buy nothing here and would put a fourth reader on a
+ * number whose own comment says its readers have to stay countable.
+ *
+ * **No surface variant, and it is the only primitive here without one.** The mark has no colour of
+ * its own: it paints in whatever ink it inherits, which is right on the chassis, right on the light
+ * work ramp, and right inside a solid `Button`. `SURFACE_SCROLL`'s "pick by the ground you stand
+ * on" has nothing to pick between when there is nothing to pick.
+ */
+@utility ik-pending {
+  &::after {
+    /* Drawn rather than typed, and this is the fix rather than a detail of it. `…` is a single
+       character cell carrying all three marks, and at `text-micro` they stop being separable — the
+       reader who reported counting two was counting what was painted. Three periods are three
+       cells, which resolve at every size this renders at.
+
+       Drawing them is also what lets CSS own the count. No string can be animated into another
+       string; a `content` that is three real dots can be uncovered one at a time. */
+    content: "...";
+
+    /* A box, so there is something to clip. `clip-path` on a bare inline is defined against the
+       union of its fragment boxes and is the one thing here engines have disagreed about; an
+       inline-block is a single box and unambiguous.
+
+       The line height is inherited on purpose. The mark's box is then exactly the box of the text
+       it follows, so it cannot grow a line box under it — which is what keeps a tile's 26px chart
+       slot holding one line whether it shows a sentence or a sentence still on its way. */
+    display: inline-block;
+
+    /* Three dots wide in every frame, painted or not, and the resting value is all three. Both
+       halves matter.
+
+       The obvious implementation — swapping `content` between ".", ".." and "..." — changes the box
+       on every step, and three of the places this renders centre their line: the histogram's box,
+       the log table's footer strip, the palette's row. A string that grows by one cell rocks half a
+       cell to the left, four times a second, which is a worse tic than the one it replaces.
+       Uncovering moves nothing.
+
+       And the still state has to be the correct one, because it is the state a reader who asked for
+       stillness is left with: `prefers-reduced-motion` ends the animation before it paints and this
+       value is what remains — `reading...`, the three dots, spelled the way they were asked for.
+       Every other failure lands there too: no `@property` is involved, there is no variable to go
+       missing, and a `clip-path` an engine cannot parse leaves the whole ellipsis visible. */
+    clip-path: inset(0 0 0 0);
+
+    animation: var(--animate-pending);
+  }
+}
+
 /* ═══ MODAL ════════════════════════════════════════════════════════════════════════════════════
  *
  * `ik-modal` — how a modal arrives and how it leaves. IKN-53.

@@ -2,6 +2,7 @@
 
 import { Badge } from "@components/ui/Badge";
 import { Button } from "@components/ui/Button";
+import { Pending } from "@components/ui/Pending";
 import {
   SURFACE_BG,
   SURFACE_BORDER,
@@ -788,7 +789,7 @@ const Footer = ({
           disabled={loadingMore}
           aria-busy={loadingMore}
         >
-          {loadingMore ? LOGS_TEXT.loading : LOGS_TEXT.loadMore}
+          {loadingMore ? <Pending>{LOGS_TEXT.loading}</Pending> : LOGS_TEXT.loadMore}
         </Button>
       </FooterStrip>
     );
@@ -797,7 +798,11 @@ const Footer = ({
   if (loadingMore) {
     return (
       <FooterStrip>
-        <span className={SURFACE_TEXT_DIM.chassis}>{LOGS_TEXT.loading}</span>
+        <span className={SURFACE_TEXT_DIM.chassis}>
+          {/* Same strip, same span, same ink as `endOfResults` below — the mark is the whole of
+              what tells a page still arriving from the last page there is (IKN-57). */}
+          <Pending>{LOGS_TEXT.loading}</Pending>
+        </span>
       </FooterStrip>
     );
   }

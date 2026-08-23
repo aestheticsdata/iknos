@@ -11,6 +11,7 @@ import { Dot } from "@components/ui/Dot";
 import { Field } from "@components/ui/Field";
 import { MeterBar } from "@components/ui/MeterBar";
 import { Modal } from "@components/ui/Modal";
+import { Pending } from "@components/ui/Pending";
 import { Select } from "@components/ui/Select";
 import { Sparkline } from "@components/ui/Sparkline";
 import { SURFACE_SCROLL, SURFACE_TEXT_MUTED } from "@components/ui/surface";
@@ -157,6 +158,19 @@ const SurfacePanel = ({ surface }: { surface: Surface }) => (
                 </span>
               </span>
             ))}
+          </div>
+
+          {/* The pending mark — IKN-57. It is here because it is the only motion-carrying affordance
+              in the app and the only one that cannot otherwise be looked at: seeing it anywhere else
+              means inducing a fetch and catching it before the answer lands. It has no surface
+              variant, so it paints in whichever ink this panel already sets. */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className={surface === "chassis" ? "text-row text-chassis-text-dim" : "text-row text-work-text-dim"}>
+              <Pending>reading</Pending>
+            </span>
+            <span className={surface === "chassis" ? "text-row text-chassis-text-dim" : "text-row text-work-text-dim"}>
+              <Pending />
+            </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">

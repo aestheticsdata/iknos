@@ -24,7 +24,8 @@ export const CHASSIS_TEXT = {
   sparklineLabel: (name: string) => `${name} log volume, last hour`,
   noServices: "No services — the API is unreachable or the registry is empty.",
   logOut: "log out",
-  loggingOut: "signing out…",
+  /* Stem only; `<Pending>` draws the dots — see `SERVICE_TEXT.loading` (IKN-57). */
+  loggingOut: "signing out",
   /* IKN-38, then IKN-48. The two halves name the two clocks and the lit one says which is in
      force, so nothing is left for a label to spell out; the hint still says what that clock
      governs, which three or four letters on their own cannot. The group carries a name of its own
@@ -53,7 +54,8 @@ export const CHASSIS_TEXT = {
   ingestDegraded: (count: string) => `${count} unreadable`,
   storageTitle: "Storage & retention",
   storageTag: "collector",
-  storageLoading: "reading…",
+  /* Stem only; `<Pending>` draws the dots — see `SERVICE_TEXT.loading` (IKN-57). */
+  storageLoading: "reading",
   storageFailed: "Could not read storage usage.",
   storageRetry: "retry",
   storageForever: "∞",
@@ -67,10 +69,14 @@ export const CHASSIS_TEXT = {
      four are genuinely different verbs: a result here is an action, not a link. */
   paletteTag: "palette",
   paletteTitle: "Go to",
+  /* This ellipsis stays, and it is not an exception to the rule above: it means "and so on", not
+     "in flight". A `placeholder` attribute could not carry the mark in any case — there is no
+     element there to hang a pseudo-element on. */
   palettePlaceholder: "service, route, trace id, view…",
   paletteHint: "↑↓ move · ⏎ open · esc close",
   palettePrompt: "Type to search services, routes and traces in the current window.",
-  paletteSearching: "searching…",
+  /* Stem only; `<Pending>` draws the dots — see `SERVICE_TEXT.loading` (IKN-57). */
+  paletteSearching: "searching",
   paletteEmpty: "Nothing matches in this window.",
   paletteFailed: "Search is unavailable.",
   paletteScope: "scope",

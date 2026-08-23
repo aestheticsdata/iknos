@@ -1,6 +1,6 @@
 /**
- * Four animations, all short — §3.4 — and two transitions that live elsewhere. Nothing else in
- * Iknos moves.
+ * Five animations, all short but one — §3.4 — and two transitions that live elsewhere. Nothing
+ * else in Iknos moves.
  *
  * This is a screen people stare at while something is wrong. Motion that is not reporting a change
  * in the data is noise, and noise on a monitoring tool costs attention exactly when it is scarcest.
@@ -10,6 +10,14 @@
  * past: one animation, one duration, one press — the scrim reads the number this file already
  * drives rather than running a gesture of its own. Counting it twice would be counting the
  * property, not the movement.
+ *
+ * The fifth is the pending mark — IKN-57 — and it passes the same test from the other side. It
+ * reports a change nothing in this app reported at all: a question having been asked and not yet
+ * answered. Every in-flight state used to be a dim sentence in the same element, the same ink and
+ * the same box as the answer that replaced it, so the one moment the reader most needs to be told
+ * "not yet" was the one moment the interface said nothing. It is also the only animation here that
+ * does not end on its own: waiting has no duration, so the mark runs until the answer lands, and
+ * the answer landing is the only thing that stops it.
  *
  * Two things move that are not keyframes here, and both are transitions for the same reason: one
  * element passing between two states, rather than something playing.
@@ -83,6 +91,32 @@
   /* The liveness dots: the collector's, the auth chrome bar's, the rail's per-service dots. */
   --animate-pulse-live: ikPulse 2.4s ease-in-out infinite;
 
+  /*
+   * The pending mark — IKN-57. `ik-pending` in `utilities.css`.
+   *
+   * Directly under the dot above because the two are the only infinite animations in Iknos, and a
+   * reader has to be able to tell them apart at a glance: the dot means the page is *receiving*,
+   * the mark means one thing on the page has asked and not been answered. Which is why this one
+   * counts and does not throb — nothing here fades, and nothing pulses. Reusing `pulse-live` for a
+   * pending state would have collided with the single meaning motion already carries here.
+   *
+   * **1.2s in three steps of 400ms, and both numbers are chosen against something.** 400ms is slow
+   * enough that four tiles are not flickering at somebody at 3am, and fast enough that a glance
+   * lands on a change rather than on a still frame — which is the entire complaint this answers:
+   * the old state was legible only to a reader who already knew what it said. 1.2s is exactly half
+   * of `ikPulse`, so on a screen carrying both they are in step instead of beating against each
+   * other.
+   *
+   * Far off the house's 140–180ms, and legitimately: those are all one state passing into another
+   * and ending. This does not end. It is the shape of waiting, in the same way the zone flash's
+   * held second is the shape of the change it reports.
+   *
+   * `jump-none` is the mechanism and not a taste: plain `steps(3)` spends a third of every cycle on
+   * a fourth frame that is either no dots at all or three of them twice. With `jump-none` the three
+   * stops are the three states, each held for exactly one third.
+   */
+  --animate-pending: ikPending 1.2s steps(3, jump-none) infinite;
+
   /* Things that appear in place — the expanded log row and the auth banner. Deliberately no longer
      "modals": none ever used this, and since IKN-53 they have a gesture of their own. A row
      unfolding is the same surface getting taller, which is why it keeps the shorter 0.16s and the
@@ -122,6 +156,29 @@
     }
     50% {
       opacity: 0.35;
+    }
+  }
+
+  /*
+   * One dot, two, three — by uncovering a box that is always three dots wide, never by growing one.
+   *
+   * The percentages are thirds of the mark's own box, so they land between the dots whatever the
+   * font, the size or the tracking. That is not tidiness: the mark rides `text-dense` with
+   * `tracking-control` on the auth buttons and `text-micro` with none in the tiles, and the obvious
+   * way to write this — a `2ch` inset — is measured in a character width the tracking has already
+   * changed, so the clip would land inside a dot on one of them instead of between two.
+   *
+   * **Reduced motion needs no rule of its own and gets the right thing for free.** The global block
+   * at the foot of this file collapses the animation to one 0.01ms cycle with no fill mode, so what
+   * remains on screen is `ik-pending`'s own resting `clip-path` — the whole ellipsis, three dots,
+   * still. It is the only animation here whose still state is the state that carries the meaning.
+   */
+  @keyframes ikPending {
+    from {
+      clip-path: inset(0 66.6667% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
     }
   }
 
@@ -279,6 +336,11 @@
  * The dim goes with it and needs no rule of its own, which is the second dividend of one carrier:
  * `ik-zone-dim`'s opacity is that same `0` times a constant, so the scrim is transparent and the
  * momentary contrast it costs the two ramps is never spent on a reader who asked for stillness.
+ *
+ * The pending mark loses its count and keeps all three of its dots: `ik-pending`'s resting
+ * `clip-path` is the whole ellipsis, so a waiting line still ends in something no answer in this
+ * app ends in. The motion is the whole of the loss here and the reading is not — the same trade the
+ * liveness dot takes above, and the reason neither needed an exception written for it.
  */
 /**
  * The three `!important`s below are the mechanism, not a shortcut around one: this rule has to

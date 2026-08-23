@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@components/ui/Modal";
+import { Pending } from "@components/ui/Pending";
 import { Sparkline } from "@components/ui/Sparkline";
 import { formatBytes, formatCount } from "@lib/format";
 import { useCollectorStatus, useCollectorStorage } from "@lib/useCollector";
@@ -86,7 +87,9 @@ export const IngestCard = () => {
         {storage !== null ? (
           <StoragePanel storage={storage} />
         ) : loading ? (
-          <p className="text-row text-chassis-text-dim">{CHASSIS_TEXT.storageLoading}</p>
+          <p className="text-row text-chassis-text-dim">
+            <Pending>{CHASSIS_TEXT.storageLoading}</Pending>
+          </p>
         ) : (
           <p className="flex items-center gap-2 text-row text-chassis-text-muted">
             {CHASSIS_TEXT.storageFailed}

@@ -3,6 +3,7 @@
 import { AreaSpark } from "@components/ui/AreaSpark";
 import { BarSpark } from "@components/ui/BarSpark";
 import { MeterBar } from "@components/ui/MeterBar";
+import { Pending } from "@components/ui/Pending";
 import { Sparkline } from "@components/ui/Sparkline";
 import { formatBytes } from "@lib/format";
 import { logsHref } from "@lib/logsHref";
@@ -119,6 +120,7 @@ const ThroughputTile = ({
       kicker={SERVICE_TEXT.throughput}
       value={formatRate(signals?.throughput.value ?? null)}
       unit={SERVICE_TEXT.throughputUnit}
+      pending={loading}
     >
       {hasSeries(points) ? (
         <AreaSpark
@@ -127,7 +129,11 @@ const ThroughputTile = ({
           label={SERVICE_TEXT.throughputChart(service)}
         />
       ) : (
-        <TileEmpty>{emptyWords(loading, error, points)}</TileEmpty>
+        <NoChart
+          loading={loading}
+          error={error}
+          points={points}
+        />
       )}
     </SignalTile>
   );
@@ -162,6 +168,7 @@ const ErrorRateTile = ({
       kicker={SERVICE_TEXT.errorRate}
       value={formatPercent(value)}
       unit={SERVICE_TEXT.errorRateUnit}
+      pending={loading}
       tone={value !== null && value > 0 ? "error" : "neutral"}
       href={known ? logsHref({ range, values: { service, level: "error" } }) : null}
       title={known ? `${SERVICE_TEXT.errorRateHint} · ${SERVICE_TEXT.toErrorLogs}` : SERVICE_TEXT.errorRateHint}
@@ -176,7 +183,11 @@ const ErrorRateTile = ({
           label={SERVICE_TEXT.errorChart(service)}
         />
       ) : (
-        <TileEmpty>{emptyWords(loading, error, points)}</TileEmpty>
+        <NoChart
+          loading={loading}
+          error={error}
+          points={points}
+        />
       )}
     </SignalTile>
   );
@@ -201,6 +212,7 @@ const LatencyTile = ({
       kicker={SERVICE_TEXT.latency}
       value={formatMs(value)}
       unit={SERVICE_TEXT.latencyUnit}
+      pending={loading}
       title={value === null ? undefined : SERVICE_TEXT.latencyReference(formatMs(value))}
     >
       {hasSeries(points) ? (
@@ -217,7 +229,11 @@ const LatencyTile = ({
           className="h-full w-full"
         />
       ) : (
-        <TileEmpty>{emptyWords(loading, error, points)}</TileEmpty>
+        <NoChart
+          loading={loading}
+          error={error}
+          points={points}
+        />
       )}
     </SignalTile>
   );
@@ -241,13 +257,16 @@ const RuntimeTile = ({ runtime, loading }: { runtime: NodeRuntime | null; loadin
       kicker={SERVICE_TEXT.runtime}
       value={heap.value}
       unit={heap.unit}
+      pending={loading}
       /* The ceiling V8 has allocated, in the title rather than beside the number: the tile has room
          for one figure and two meters, and "318 of 512 MB" is the context for the one it shows. */
       title={heapTitle(runtime)}
     >
       {lag === null && pool === null ? (
-        /* "No reading" is a claim, and it cannot be made while the reading is still in flight. */
-        <TileEmpty>{loading ? SERVICE_TEXT.loading : SERVICE_TEXT.runtimeSilent}</TileEmpty>
+        /* "No reading" is a claim, and it cannot be made while the reading is still in flight —
+           which this line said in a comment and then printed in the same ink, in the same box, not
+           moving, as the claim itself (IKN-57). */
+        <TileEmpty>{loading ? <Pending>{SERVICE_TEXT.loading}</Pending> : SERVICE_TEXT.runtimeSilent}</TileEmpty>
       ) : (
         /* The two rows have to fit the tile's 26px chart box, which they only do at a line height
            of 1: `text-micro` inherits the document's 1.5 and two rows of it are 33px, which
@@ -323,13 +342,39 @@ const heapTitle = (runtime: NodeRuntime | null): string | undefined => {
 };
 
 /**
+ * The chart slot when there is no chart — and it holds two different kinds of thing, which is why
+ * it is no longer one string (IKN-57).
+ *
+ * A question while the answer is in flight, a sentence once it is not. The old shape handed four
+ * strings to one `<TileEmpty>`, so "reading…" and "One reading — too few for a line." were the same
+ * element in the same ink in the same 26px box, one glance apart, and neither moved.
+ *
+ * Still the same `<TileEmpty>` on both branches, and that is deliberate rather than left over: one
+ * element means one line box and one baseline, so nothing shifts at the moment the answer lands.
+ * What tells the two apart is the mark, which no answer can produce.
+ */
+const NoChart = ({
+  loading,
+  error,
+  points,
+}: {
+  loading: boolean;
+  error: string | null;
+  points: { v: number | null }[];
+}) => <TileEmpty>{loading ? <Pending>{SERVICE_TEXT.loading}</Pending> : emptyWords(error, points)}</TileEmpty>;
+
+/**
  * Why a tile has no chart, in the fewest honest words.
  *
- * Three different absences, and they are not interchangeable: nothing has arrived yet, the range
- * holds no readings at all, or it holds one and a line needs two.
+ * Two different absences, and they are not interchangeable: the range holds no readings at all, or
+ * it holds one and a line needs two.
+ *
+ * **"Nothing has arrived yet" is no longer one of them**, and taking it out is the ticket. A
+ * request that failed is not a range that was quiet, and a request still open is not an answer of
+ * any kind — but all three used to come back as a `string` and land in the same paragraph, so the
+ * distinction this function's own comment drew was erased by its return type.
  */
-const emptyWords = (loading: boolean, error: string | null, points: { v: number | null }[]): string => {
-  if (loading) return SERVICE_TEXT.loading;
+const emptyWords = (error: string | null, points: { v: number | null }[]): string => {
   // A request that failed is not a range that was quiet. Reporting the second for the first is the
   // one thing a monitoring tool must never do.
   if (error !== null) return error;

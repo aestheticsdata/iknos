@@ -59,7 +59,8 @@ export const LOGS_TEXT = {
   },
   empty: "No lines match these filters in this range.",
   loadMore: "load more",
-  loading: "loading…",
+  /* Stem only; `<Pending>` draws the dots — see `SERVICE_TEXT.loading` (IKN-57). */
+  loading: "loading",
   endOfResults: "That is every line in the range.",
   expandRow: "Show the raw event",
   collapseRow: "Hide the raw event",
@@ -86,7 +87,11 @@ export const LOGS_TEXT = {
 
   /* Live tail */
   gap: (n: number) => `${n} ${n === 1 ? "line" : "lines"} dropped — the tail could not keep up`,
-  disconnected: "connection lost — reconnecting…",
+  /* Stem only, like the rest — though nothing renders this yet: `useLiveTail` computes `connected`
+     and no caller reads it, so a dropped stream is invisible today. Wiring it is its own ticket with
+     its own question in it (is a reconnect an attempt or a fault), and stripping the ellipsis here
+     now is what keeps the rule from having an exception waiting inside it. */
+  disconnected: "connection lost — reconnecting",
   reconnected: "reconnected",
 
   /* Failures */

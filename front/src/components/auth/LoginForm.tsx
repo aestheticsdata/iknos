@@ -5,6 +5,7 @@ import { AuthField, AuthInput } from "@components/auth/AuthField";
 import { loginSchema } from "@components/auth/schemas";
 import { useAuthForm } from "@components/auth/useAuthForm";
 import { Button } from "@components/ui/Button";
+import { Pending } from "@components/ui/Pending";
 import { postJson, readApiError, statusOf } from "@lib/api";
 import { ROUTES } from "@lib/routes";
 import { AUTH_TEXT } from "@text/auth";
@@ -118,7 +119,7 @@ export const LoginForm = ({ notice, canRegister }: { notice?: LoginNotice; canRe
           disabled={busy}
           type="submit"
         >
-          {busy ? t.submitting : t.submit}
+          {busy ? <Pending>{t.submitting}</Pending> : t.submit}
         </Button>
         <span className="text-row text-chassis-text-dim">{t.or}</span>
         {canRegister ? (

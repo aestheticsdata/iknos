@@ -6,6 +6,7 @@ import { RevealToggle } from "@components/auth/RevealToggle";
 import { recoverSchema } from "@components/auth/schemas";
 import { useAuthForm } from "@components/auth/useAuthForm";
 import { Button } from "@components/ui/Button";
+import { Pending } from "@components/ui/Pending";
 import { postJson, readApiError, statusOf } from "@lib/api";
 import { SECRET_RULES } from "@lib/fieldLimits";
 import { ROUTES } from "@lib/routes";
@@ -143,7 +144,7 @@ export const RecoverForm = () => {
           disabled={busy}
           type="submit"
         >
-          {busy ? t.submitting : t.submit}
+          {busy ? <Pending>{t.submitting}</Pending> : t.submit}
         </Button>
         <span className="text-row text-chassis-text-dim">{AUTH_TEXT.login.or}</span>
         <Link

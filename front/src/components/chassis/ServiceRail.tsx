@@ -1,5 +1,6 @@
 "use client";
 
+import { Pending } from "@components/ui/Pending";
 import { Sparkline } from "@components/ui/Sparkline";
 import { TONE_FILL } from "@components/ui/surface";
 import { useSelectedService } from "@lib/chassisState";
@@ -277,12 +278,16 @@ const UserMenu = () => {
         disabled={leaving}
         className="flex w-full items-center rounded-chip px-2 py-1.5 text-label text-chassis-text-muted transition-[color,background-color,opacity] duration-150 ease-out hover:bg-chassis-raised/60 hover:text-chassis-text disabled:opacity-50 max-rail:justify-center max-rail:px-0"
       >
-        <span className="max-rail:sr-only">{leaving ? CHASSIS_TEXT.loggingOut : CHASSIS_TEXT.logOut}</span>
+        <span className="max-rail:sr-only">
+          {leaving ? <Pending>{CHASSIS_TEXT.loggingOut}</Pending> : CHASSIS_TEXT.logOut}
+        </span>
         <span
           aria-hidden="true"
           className="hidden max-rail:block"
         >
-          {leaving ? "…" : CHASSIS_TEXT.logOutShort}
+          {/* The mark alone, counting, in the 52px rail — this was a lone `…`, the worst case in
+              the app: one cell of marks with no word beside it to be read against (IKN-57). */}
+          {leaving ? <Pending /> : CHASSIS_TEXT.logOutShort}
         </span>
       </button>
     </section>

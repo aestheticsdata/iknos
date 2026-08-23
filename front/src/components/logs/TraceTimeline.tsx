@@ -3,6 +3,7 @@
 import { Button } from "@components/ui/Button";
 import { Dot } from "@components/ui/Dot";
 import { Modal } from "@components/ui/Modal";
+import { Pending } from "@components/ui/Pending";
 import { SURFACE_TEXT, SURFACE_TEXT_DIM, SURFACE_TEXT_MUTED, TONE_FILL, TONE_TEXT } from "@components/ui/surface";
 import { severityOf } from "@lib/logTypes";
 import { cn } from "@lib/utils";
@@ -123,7 +124,12 @@ const TraceBody = ({ trace, loading, error }: { trace: Trace | null; loading: bo
   // Before the `trace === null` check, not after it: a hook that keeps the previous trace while
   // fetching the next one would otherwise render the old rows under the new id, with nothing on
   // screen saying a request was in flight.
-  if (loading) return <p className={cn("text-ui", SURFACE_TEXT_DIM.chassis)}>{LOGS_TEXT.loading}</p>;
+  if (loading)
+    return (
+      <p className={cn("text-ui", SURFACE_TEXT_DIM.chassis)}>
+        <Pending>{LOGS_TEXT.loading}</Pending>
+      </p>
+    );
 
   // Nothing asked for, nothing in flight, nothing failed — the modal is closed above and this only
   // exists because the element stays mounted to keep the `<dialog>` focus return working.

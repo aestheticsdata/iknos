@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@components/ui/Modal";
+import { Pending } from "@components/ui/Pending";
 import { useSelectedService } from "@lib/chassisState";
 import { usePalette } from "@lib/commandState";
 import { useLogQueryState } from "@lib/logQuery";
@@ -186,13 +187,15 @@ export const CommandPalette = () => {
           </ul>
         ) : (
           <p className="px-1 py-2 text-row text-chassis-text-dim">
-            {failed
-              ? CHASSIS_TEXT.paletteFailed
-              : loading
-                ? CHASSIS_TEXT.paletteSearching
-                : term.trim().length === 0
-                  ? CHASSIS_TEXT.palettePrompt
-                  : CHASSIS_TEXT.paletteEmpty}
+            {failed ? (
+              CHASSIS_TEXT.paletteFailed
+            ) : loading ? (
+              <Pending>{CHASSIS_TEXT.paletteSearching}</Pending>
+            ) : term.trim().length === 0 ? (
+              CHASSIS_TEXT.palettePrompt
+            ) : (
+              CHASSIS_TEXT.paletteEmpty
+            )}
           </p>
         )}
       </div>

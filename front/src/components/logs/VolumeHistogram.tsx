@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@components/ui/Button";
+import { Pending } from "@components/ui/Pending";
 import { cn } from "@lib/utils";
 import { timeLabel } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
@@ -254,7 +255,11 @@ export const VolumeHistogram = ({
           </div>
         ) : !histogram ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-micro text-chassis-text-dim">{LOGS_TEXT.loading}</span>
+            <span className="text-micro text-chassis-text-dim">
+              {/* The mark, because this branch and the `noVolume` one below it were the same
+                  div, span and classes character for character (IKN-57). */}
+              <Pending>{LOGS_TEXT.loading}</Pending>
+            </span>
           </div>
         ) : silent ? (
           <div className="absolute inset-0 flex items-center justify-center">
