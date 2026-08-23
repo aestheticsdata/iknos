@@ -13,7 +13,7 @@ import {
   TONE_FILL,
   TONE_TEXT,
 } from "@components/ui/surface";
-import { severityOf } from "@lib/logTypes";
+import { severityOf, userAgentOf } from "@lib/logTypes";
 import { cn } from "@lib/utils";
 import { fullInstant, timeOfDay } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
@@ -22,6 +22,7 @@ import { memo, useEffect, useMemo, useRef } from "react";
 
 import type { Tone } from "@components/ui/surface";
 import type { LogFeedItem, LogRow } from "@lib/logTypes";
+import type { LogDetailState } from "@lib/useLogDetail";
 
 /**
  * The log stream itself — IKN-12 §3, design doc §5.1 item 3.
@@ -116,6 +117,7 @@ export const LogTable = ({
   onSelect,
   onExpand,
   onOpenTrace,
+  detail,
   loading,
   hasMore,
   loadingMore,
@@ -130,6 +132,11 @@ export const LogTable = ({
   onSelect: (key: string) => void;
   onExpand: (key: string | null) => void;
   onOpenTrace: (traceId: string) => void;
+  /**
+   * The expanded row's fetch, owned by the panel like every other request on this screen — this
+   * table is still purely presentational and still opens no socket of its own.
+   */
+  detail: LogDetailState;
   /** The first page is in flight. Distinct from `loadingMore`, which appends to a list already up. */
   loading: boolean;
   hasMore: boolean;
@@ -230,6 +237,7 @@ export const LogTable = ({
                 row={item.row}
                 selected={item.key === selectedKey}
                 expanded={item.key === expandedKey}
+                detail={item.key === expandedKey ? detail : null}
                 actions={actions}
                 tz={tz}
               />
@@ -330,6 +338,7 @@ const LogTableRow = memo(
     rowKey,
     selected,
     expanded,
+    detail,
     actions,
     tz,
   }: {
@@ -337,6 +346,14 @@ const LogTableRow = memo(
     rowKey: string;
     selected: boolean;
     expanded: boolean;
+    /**
+     * The panel's fetch, handed **only to the open row** — `null` for every other, on every render.
+     *
+     * That null is what keeps the memo working. The state changes twice per expansion (in flight,
+     * then answered); threaded to all two hundred rows it would be two hundred re-renders to paint
+     * one pane, which is exactly the cost `RowActions` above exists to avoid.
+     */
+    detail: LogDetailState | null;
     actions: RowActions;
     /*
      * Threaded as a prop rather than read from context in each row: two hundred rows would be two
@@ -511,11 +528,12 @@ const LogTableRow = memo(
 
         {/* Mounted for the one expanded row and no other — `expandedKey` is a single value, so the
             detail pane exists at most once in the document however long the list grows. */}
-        {expanded && (
+        {expanded && detail !== null && (
           <RowDetail
             row={row}
             rowKey={rowKey}
             isError={isError}
+            state={detail}
             actions={actions}
           />
         )}
@@ -529,12 +547,16 @@ LogTableRow.displayName = "LogTableRow";
 /**
  * The expanded row — the raw event on the left, the line's context on the right.
  *
- * **What is not here is the point.** `LogRow` carries no `attrs` and no `stack`: IKN-19 leaves both
- * out of the list payload deliberately, because two hundred rows of arbitrary JSON is a payload
- * nobody reads and everybody pays for. So this pane renders what the row genuinely has and nothing
- * else — no invented keys, no empty `attrs: {}`. The deeper detail wants a per-row fetch
- * (`GET /api/logs/:id`) that IKN-19 does not expose yet; when it does, it lands here and the two
- * panes stop being redundant.
+ * **`LogRow` still carries no `attrs`, and that is still the point.** IKN-19 leaves it out of the
+ * list payload deliberately, because two hundred rows of arbitrary JSON is a payload nobody reads
+ * and everybody pays for. What IKN-58 adds is the other half of that decision: the per-row fetch
+ * (`GET /api/logs/entry/:id`) this comment used to say did not exist yet. It lands in `detail`,
+ * and the two panes have stopped being redundant — the left one is now the event as the API has
+ * it, `attrs` included, rather than the list row re-serialised.
+ *
+ * Until it arrives — and forever, for a live-tail row that has no id to fetch by — the pane still
+ * renders what the line genuinely carries and nothing else. No invented keys, no empty
+ * `attrs: {}`, and no `—` beside a label for a field this event does not have.
  *
  * For an error the right pane is headed `stack` and leads with the message unclipped and
  * pre-wrapped, because a pino-serialised error folds `err.stack` into exactly that field. That is
@@ -544,11 +566,14 @@ const RowDetail = ({
   row,
   rowKey,
   isError,
+  state,
   actions,
 }: {
   row: LogRow;
   rowKey: string;
   isError: boolean;
+  /** The panel's fetch for this row: `detail` is null while it is in flight, and for a live row. */
+  state: LogDetailState;
   actions: RowActions;
 }) => {
   /*
@@ -558,8 +583,14 @@ const RowDetail = ({
    */
   const { tz, abbrev } = useZone();
 
+  const { detail, loading: detailLoading, error: detailError } = state;
+
   // Same narrowing problem as in the row above, same answer.
   const traceId = row.traceId;
+
+  // `user_agent.original` is a key and not a path — see `userAgentOf`, which is where that is
+  // spelled out and tested, because reaching for it as a path finds `undefined` every time.
+  const agent = userAgentOf(detail?.attrs);
 
   return (
     <tr className={cn("border-b bg-chassis-deep", SURFACE_BORDER.chassis)}>
@@ -574,9 +605,14 @@ const RowDetail = ({
           <section>
             <PaneHeading>{LOGS_TEXT.rawEvent(abbrev)}</PaneHeading>
             {/*
-             * The row serialised, which *is* the raw event as far as the client has one — the same
-             * object `copy NDJSON` puts on the clipboard, pretty-printed. Reading it back off the
-             * row rather than keeping a second copy of the response body keeps the two honest.
+             * The event serialised — the same object `copy NDJSON` puts on the clipboard, pretty
+             * printed, which is why both read `detail ?? row` rather than one of them keeping a
+             * second copy. Before the fetch answers (and forever, for a live row) that is the list
+             * row itself, which is genuinely all the client has.
+             *
+             * Capped rather than left to grow: `attrs` is arbitrary and a serialised `err.stack`
+             * is not small, so without a ceiling one expanded line can be taller than the window
+             * it opened in.
              *
              * Its `ts` stays UTC when the column above has been switched to a local zone, and that
              * is the point rather than an oversight: this is what the API said and what `jq` will
@@ -585,16 +621,17 @@ const RowDetail = ({
              */}
             <pre
               className={cn(
-                // `ik-scroll-x`, not `ik-scroll`: this box only moves sideways, and the vertical
-                // variant's `overscroll-behavior: none` would eat every wheel event the pointer
-                // spends over it rather than passing it up to the stream.
-                "ik-scroll-x overflow-x-auto rounded-chip border p-2 text-row leading-hint",
+                // `ik-scroll-x`, not `ik-scroll`: the vertical variant's `overscroll-behavior:
+                // none` would eat every wheel event the pointer spends over it rather than passing
+                // it up to the stream. `ik-scroll-x` turns chaining back on along y — which is
+                // what makes the ceiling below safe to add.
+                "ik-scroll-x max-h-64 overflow-auto rounded-chip border p-2 text-row leading-hint",
                 SURFACE_BORDER.chassis,
                 SURFACE_INSET_BG.chassis,
                 SURFACE_TEXT_MUTED.chassis,
               )}
             >
-              {JSON.stringify(row, null, 2)}
+              {JSON.stringify(detail ?? row, null, 2)}
             </pre>
           </section>
 
@@ -631,6 +668,39 @@ const RowDetail = ({
                   <DetailField label={LOGS_TEXT.columns.duration}>{row.durationMs} ms</DetailField>
                 )}
                 {traceId !== null && <DetailField label={LOGS_TEXT.columns.trace}>{traceId}</DetailField>}
+                {/*
+                 * The half of the line that had to be fetched — IKN-58, and the reason this pane
+                 * can now answer "who". Same rule as the pairs above: a field the event does not
+                 * carry gets no line, because `client —` on a worker's log line describes nothing.
+                 *
+                 * `clientIp` is what the *service* reported. An app behind nginx that does not
+                 * trust its proxy logs every caller as `127.0.0.1`, and that is a true fact about
+                 * that app's logger rather than something for this pane to second-guess.
+                 */}
+                {detail?.clientIp != null && (
+                  <DetailField label={LOGS_TEXT.columns.client}>{detail.clientIp}</DetailField>
+                )}
+                {detail?.userId != null && <DetailField label={LOGS_TEXT.columns.user}>{detail.userId}</DetailField>}
+                {detail?.hostname != null && (
+                  <DetailField label={LOGS_TEXT.columns.host}>{detail.hostname}</DetailField>
+                )}
+                {agent !== null && <DetailField label={LOGS_TEXT.columns.agent}>{agent}</DetailField>}
+                {/*
+                 * One line while the fetch is in flight, so the list grows into its answer from
+                 * somewhere rather than appearing out of nothing. The mark is what makes it read as
+                 * a question and not as a field called `loading` (IKN-57).
+                 */}
+                {detailLoading && (
+                  <div className={SURFACE_TEXT_DIM.chassis}>
+                    <Pending>{LOGS_TEXT.loading}</Pending>
+                  </div>
+                )}
+                {/*
+                 * Said here rather than over the stream: the line itself is on screen and readable,
+                 * and only the fetched half is missing. A banner above the list would suggest the
+                 * search had failed, which it has not.
+                 */}
+                {detailError !== null && <p className={TONE_TEXT.chassis.warn}>{detailError}</p>}
               </dl>
             </div>
           </section>
@@ -656,7 +726,7 @@ const RowDetail = ({
               is a component that cannot be rendered in a test without a permission prompt. */}
           <Button
             variant="quiet"
-            onClick={() => actions.copy(row)}
+            onClick={() => actions.copy(detail ?? row)}
           >
             {LOGS_TEXT.copyRow}
           </Button>

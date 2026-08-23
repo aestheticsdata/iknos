@@ -131,6 +131,32 @@ export const logHistogramUrl = (state: LogQueryState): string => `/logs/histogra
  */
 export const logStreamUrl = (state: LogQueryState): string => `/logs/stream?${buildLogQuery(state)}`;
 
+/**
+ * One row in full, for the line that was expanded (IKN-58).
+ *
+ * **The window is the row's own millisecond, not the panel's range** — the one builder here that
+ * does not read `LogQueryState`, and deliberately.
+ *
+ * The endpoint needs bounds because `log_entry` is keyed `(id, ts)` on a table partitioned by day:
+ * without them the point read is a point read of every partition in the retention window. But
+ * *which* bounds is the caller's to choose, and the panel's are the wrong ones. They move —
+ * `refresh` re-takes `now` and every relative range slides with it — so a line expanded at the
+ * bottom of a 15-minute window would answer 404 a minute later, having aged out of a range it is
+ * still visibly sitting in. The row's own timestamp cannot move, and it is a tighter prune than
+ * the panel's range ever was.
+ *
+ * `+1 ms` because the endpoint compares `ts >= from AND ts < to` and `log_entry.ts` is a
+ * `DATETIME(3)`: one millisecond is the smallest window that contains a row at all.
+ */
+export const logDetailUrl = (row: { id: string; ts: string }): string => {
+  const at = new Date(row.ts);
+  const params = new URLSearchParams({
+    from: at.toISOString(),
+    to: new Date(at.getTime() + 1).toISOString(),
+  });
+  return `/logs/entry/${encodeURIComponent(row.id)}?${params}`;
+};
+
 /** The trace endpoint takes only the window — it is keyed by id, not by the filter set. */
 export const logTraceUrl = (traceId: string, state: LogQueryState): string => {
   const params = new URLSearchParams({ from: state.bounds.from, to: state.bounds.to });

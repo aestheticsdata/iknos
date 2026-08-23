@@ -10,6 +10,7 @@ import { useLogQueryState } from "@lib/logQuery";
 import { useTraceParam } from "@lib/traceState";
 import { useHistogram } from "@lib/useHistogram";
 import { useLiveTail } from "@lib/useLiveTail";
+import { useLogDetail } from "@lib/useLogDetail";
 import { useLogSearch } from "@lib/useLogSearch";
 import { useTrace } from "@lib/useTrace";
 import { cn } from "@lib/utils";
@@ -229,6 +230,24 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
     return item?.kind === "row" ? item.row : null;
   }, [items, selectedKey]);
 
+  /*
+   * The expanded row's own fetch — IKN-58.
+   *
+   * Here rather than in `RowDetail`, because the table opens no sockets: it is handed its rows, its
+   * cursor and its selection, and this is the fourth of those. Keeping it here is also what lets
+   * the pane be rendered in a test, or against a trace, without a server behind it.
+   *
+   * `useLogDetail` keys on the row's id and timestamp rather than on this object, which matters
+   * precisely here: `items` is rebuilt on every tailed line, so the memo below yields a new object
+   * several times a second while a live tail runs.
+   */
+  const expandedRow = useMemo<LogRow | null>(() => {
+    const item = items.find((candidate) => candidate.kind === "row" && candidate.key === expandedKey);
+    return item?.kind === "row" ? item.row : null;
+  }, [items, expandedKey]);
+
+  const detail = useLogDetail(expandedRow);
+
   const copyRow = useCallback(
     (row: LogRow) => {
       // NDJSON, not pretty JSON: the point of copying a line is to paste it into something that
@@ -347,6 +366,7 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
           items={items}
           selectedKey={selectedKey}
           expandedKey={expandedKey}
+          detail={detail}
           onSelect={setSelectedKey}
           onExpand={setExpandedKey}
           onOpenTrace={setOpenTraceId}

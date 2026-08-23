@@ -56,6 +56,13 @@ export const LOGS_TEXT = {
     message: "message",
     trace: "trace",
     duration: "dur",
+    /* The detail pane's four, which have no column above them to borrow a name from. `client` and
+       not `ip`: it is the address of whoever called, and the pane already says `host` for the
+       machine that answered — two words that would be one letter apart as `ip` and `host`. */
+    client: "client",
+    user: "user",
+    host: "host",
+    agent: "agent",
   },
   empty: "No lines match these filters in this range.",
   loadMore: "load more",
@@ -98,5 +105,8 @@ export const LOGS_TEXT = {
   searchFailed: "Could not load logs.",
   histogramFailed: "Could not load the volume chart.",
   traceFailed: "Could not load this trace.",
+  /* Said inside the pane and not over the stream: the line is still on screen and still readable,
+     and only the half that had to be fetched is missing. */
+  detailFailed: "Could not load the rest of this line.",
   retry: "retry",
 } as const;

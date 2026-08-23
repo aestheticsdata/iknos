@@ -41,6 +41,39 @@ export type LogRow = {
 };
 
 /**
+ * Mirrors `contracts/log-detail.ts`.
+ *
+ * One row in full — what `GET /api/logs/entry/:id` answers for the line that was expanded. The
+ * four fields below are exactly the ones the list payload leaves in the table, and the reason
+ * they are fetched one row at a time rather than shipped with two hundred of them.
+ */
+export type LogDetail = LogRow & {
+  /**
+   * The caller's address **as the service reported it**. An app behind nginx that does not trust
+   * its proxy logs every caller as `127.0.0.1`; that is a fact about that app's logger, and Iknos
+   * shows what it was told rather than guessing.
+   */
+  clientIp: string | null;
+  userId: string | null;
+  hostname: string | null;
+  /** Everything the columns do not claim, under the keys the service used. */
+  attrs: Record<string, unknown> | null;
+};
+
+/**
+ * The user-agent out of `attrs`, and the one line in this file that has to be exactly right.
+ *
+ * **`user_agent.original` is a key, not a path.** pino's ECS formatter emits dotted keys flat, so
+ * the value lives under that literal string — reaching for `attrs.user_agent.original` finds
+ * `undefined` on every single line, and does it quietly, which is how a field ships looking empty
+ * rather than looking broken.
+ */
+export const userAgentOf = (attrs: Record<string, unknown> | null | undefined): string | null => {
+  const value = attrs?.["user_agent.original"];
+  return typeof value === "string" && value.length > 0 ? value : null;
+};
+
+/**
  * Mirrors `contracts/log-page.ts`.
  *
  * `nextCursor` is opaque and the only contract with it is to hand it back. `null` means this was
