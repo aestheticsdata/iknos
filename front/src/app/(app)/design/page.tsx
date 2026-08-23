@@ -22,8 +22,8 @@ import { useState } from "react";
 import type { Surface, Tone } from "@components/ui/surface";
 
 /**
- * The internal primitive gallery — the checklist's "page de démo interne", rendering every
- * primitive **on both surfaces at once**.
+ * The internal primitive gallery — the checklist's internal demo page, rendering every primitive
+ * **on both surfaces at once**.
  *
  * Side by side rather than behind a toggle, deliberately: the two ramps exist because both grounds
  * are on screen together, and a toggle would let a colour that only works on one of them ship

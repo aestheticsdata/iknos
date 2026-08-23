@@ -228,7 +228,7 @@ const LatencyTile = ({
           tone="warn"
           width={120}
           height={26}
-          /* The "repère" §5.2 asks for, referencing something a reader can name: the window's own
+          /* The reference mark §5.2 asks for, pointing at something a reader can name: the window's own
              p95. Every interval above the dash was worse than the range as a whole. The mockup's
              dash sits at a fixed height and refers to nothing at all. */
           reference={value}

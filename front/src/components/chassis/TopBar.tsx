@@ -13,8 +13,8 @@ import { ZoneToggle } from "./ZoneToggle";
  * The top bar — brand, host badge, breadcrumb, the global time range.
  *
  * The ⌘K trigger the mockup draws here is still **absent, not stubbed** — it belongs to IKN-22. A
- * control that is visible and dead is the "grisée à venir" the design doc rules out in as many
- * words, so it arrives with the ticket that can answer it. Collector lag was in that list until
+ * control that is visible and dead is the greyed-out coming-soon the design doc rules out in as
+ * many words, so it arrives with the ticket that can answer it. Collector lag was in that list until
  * IKN-24 gave it something true to say.
  */
 export const TopBar = () => {

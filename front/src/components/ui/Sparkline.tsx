@@ -43,8 +43,8 @@ export const Sparkline = ({
   width?: number;
   height?: number;
   /**
-   * A horizontal rule at one value, in the series' own units — the "repère" §5.2 asks the p95 tile
-   * for.
+   * A horizontal rule at one value, in the series' own units — the reference mark §5.2 asks the p95
+   * tile for.
    *
    * It has to *reference* something the reader can name, which is why it is a value and not a
    * position: the mockup's dash sits at a fixed y and refers to nothing at all. The p95 tile passes
