@@ -123,7 +123,7 @@ export const LoginForm = ({ notice, canRegister }: { notice?: LoginNotice; canRe
         <span className="text-row text-chassis-text-dim">{t.or}</span>
         {canRegister ? (
           <Link
-            className="text-label tracking-control text-chassis-accent hover:brightness-125"
+            className="text-label tracking-control text-chassis-accent transition-[filter] duration-150 ease-out hover:brightness-125"
             href={ROUTES.register}
           >
             {t.register}
@@ -135,7 +135,7 @@ export const LoginForm = ({ notice, canRegister }: { notice?: LoginNotice; canRe
 
       <div className="border-t border-chassis-border pt-3.5">
         <Link
-          className="text-label tracking-control text-chassis-accent hover:text-chassis-text"
+          className="text-label tracking-control text-chassis-accent transition-colors duration-150 ease-out hover:text-chassis-text"
           href={ROUTES.recover}
         >
           {t.recover}

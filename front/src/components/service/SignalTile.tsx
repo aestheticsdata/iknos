@@ -44,7 +44,7 @@ export const SignalTile = ({
       <div className="flex items-baseline gap-1.5">
         <span
           className={cn(
-            "text-signal font-medium tabular-nums",
+            "text-signal font-medium tabular-nums transition-[color] duration-150 ease-out",
             tone === "error" ? "text-work-error" : "text-work-text",
           )}
         >
@@ -74,7 +74,7 @@ export const SignalTile = ({
     <Link
       href={href}
       title={title}
-      className={cn(skin, "hover:border-work-text-dim")}
+      className={cn(skin, "transition-[border-color] duration-150 ease-out hover:border-work-text-dim")}
     >
       {body}
     </Link>

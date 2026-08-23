@@ -101,7 +101,7 @@ export const WorkArea = ({ services }: { services: Service[] }) => {
           <button
             type="button"
             onClick={runtime.reload}
-            className="underline underline-offset-2 hover:text-work-text"
+            className="underline underline-offset-2 transition-colors duration-150 ease-out hover:text-work-text"
           >
             {SERVICE_TEXT.retry}
           </button>

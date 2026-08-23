@@ -46,7 +46,7 @@ export const Field = ({
         aria-invalid={error ? true : undefined}
         aria-describedby={note ? noteId : undefined}
         className={cn(
-          "h-7 rounded-control border px-2 text-ui outline-none",
+          "h-7 rounded-control border px-2 text-ui outline-none transition-[border-color] duration-150 ease-out",
           SURFACE_INSET_BG[surface],
           SURFACE_TEXT[surface],
           error ? "border-work-error" : SURFACE_BORDER_STRONG[surface],

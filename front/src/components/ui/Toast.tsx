@@ -81,7 +81,7 @@ const ToastHost = ({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: num
           type="button"
           onClick={() => onDismiss(toast.id)}
           aria-label="Dismiss"
-          className="text-chassis-text-dim hover:text-chassis-text"
+          className="text-chassis-text-dim transition-colors duration-150 ease-out hover:text-chassis-text"
         >
           ×
         </button>

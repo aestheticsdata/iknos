@@ -102,7 +102,7 @@ export const AuthChassis = ({ page, children }: { page: AuthPage; children: Reac
 
           <div className="mt-3 flex items-center gap-4">
             <Link
-              className="text-label tracking-control text-chassis-accent/70 hover:text-chassis-text"
+              className="text-label tracking-control text-chassis-accent/70 transition-colors duration-150 ease-out hover:text-chassis-text"
               href={onAbout ? ROUTES.login : ROUTES.about}
             >
               {onAbout ? AUTH_TEXT.aboutBack : AUTH_TEXT.aboutLink}

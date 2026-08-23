@@ -18,7 +18,9 @@ export const Button = ({
   <button
     className={cn(
       "flex h-8 items-center rounded-control px-4 text-dense font-medium tracking-control",
-      "transition-[filter,background-color] hover:brightness-110",
+      // `color` belongs in the list: the quiet variant recolours its ink on hover and both
+      // variants dim it when disabled, so without it the border travels and the letters jump.
+      "transition-[filter,background-color,color] hover:brightness-110",
       variant === "solid" && "bg-chassis-accent text-chassis-deep",
       variant === "quiet" && "border border-chassis-border-strong text-chassis-text-muted hover:text-chassis-text",
       "disabled:cursor-not-allowed disabled:bg-chassis-border-strong disabled:text-chassis-text-muted disabled:hover:brightness-100",

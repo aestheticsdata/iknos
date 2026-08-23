@@ -177,7 +177,7 @@ const Chip = ({
   <li
     title={title}
     className={cn(
-      "flex-none rounded-chip border px-1.75 py-0.5 text-row whitespace-nowrap",
+      "flex-none rounded-chip border px-1.75 py-0.5 text-row whitespace-nowrap transition-colors duration-150 ease-out",
       /*
        * The red chip is a red *fill*, not red ink.
        *
@@ -309,7 +309,7 @@ const Pill = ({
   hrefTitle?: string;
 }) => {
   const skin = cn(
-    "inline-flex flex-none items-center gap-1.5 rounded-control border px-2 py-[3px] text-row font-medium whitespace-nowrap",
+    "inline-flex flex-none items-center gap-1.5 rounded-control border px-2 py-[3px] text-row font-medium whitespace-nowrap transition-colors duration-150 ease-out",
     tone === "ok" && "border-work-border-strong bg-work-ok-bg text-work-text",
     // `work-text` rather than `work-error`: see the chip above — the ink on this tint measures
     // 3.98:1, and the dot beside it is what carries the hue.
@@ -321,7 +321,7 @@ const Pill = ({
     <span
       aria-hidden="true"
       className={cn(
-        "inline-block size-1.5 flex-none rounded-full",
+        "inline-block size-1.5 flex-none rounded-full transition-colors duration-150 ease-out",
         tone === "ok" && "bg-work-accent",
         tone === "error" && "bg-work-error",
         tone === "stale" && "bg-work-warn",
@@ -345,7 +345,7 @@ const Pill = ({
     <Link
       href={href}
       title={`${title} · ${hrefTitle}`}
-      className={cn(skin, "hover:brightness-[1.06]")}
+      className={cn(skin, "transition-[filter] duration-150 ease-out hover:brightness-[1.06]")}
     >
       {dot}
       {label}

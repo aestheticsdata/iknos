@@ -46,7 +46,7 @@ export const Select = ({
           id={id}
           aria-describedby={hint ? hintId : undefined}
           className={cn(
-            "h-7 w-full appearance-none rounded-control border pr-6 pl-2 text-ui outline-none",
+            "h-7 w-full appearance-none rounded-control border pr-6 pl-2 text-ui outline-none transition-[border-color] duration-150 ease-out",
             SURFACE_INSET_BG[surface],
             SURFACE_TEXT[surface],
             SURFACE_BORDER_STRONG[surface],

@@ -28,7 +28,9 @@ export const AuthBanner = ({
 }) => (
   <div
     className={cn(
-      "mb-4 flex flex-col gap-1 rounded-control border border-chassis-raised border-l-2 bg-chassis-deep/60 px-2.75 py-2.25",
+      // It arrives rather than appearing: a banner that is the answer to a submit is the one thing
+      // on an auth screen that has to be noticed, and a mount between two frames is not noticed.
+      "animate-in mb-4 flex flex-col gap-1 rounded-control border border-chassis-raised border-l-2 bg-chassis-deep/60 px-2.75 py-2.25",
       TONE[tone],
     )}
     role="status"

@@ -83,7 +83,7 @@
   /* The liveness dots: the collector's, the auth chrome bar's, the rail's per-service dots. */
   --animate-pulse-live: ikPulse 2.4s ease-in-out infinite;
 
-  /* Things that appear in place — the expanded log row, and only it. Deliberately no longer
+  /* Things that appear in place — the expanded log row and the auth banner. Deliberately no longer
      "modals": none ever used this, and since IKN-53 they have a gesture of their own. A row
      unfolding is the same surface getting taller, which is why it keeps the shorter 0.16s and the
      `translateY` a dialog has no use for. */

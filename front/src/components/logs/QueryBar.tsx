@@ -460,7 +460,7 @@ const LiveToggle = ({ live, onToggle }: { live: boolean; onToggle: () => void })
     aria-pressed={live}
     title={LOGS_TEXT.liveHint}
     /* The four properties written out rather than `transition-colors`: `Button` already sets
-       `transition-[filter,background-color]`, and tailwind-merge keeps only the last transition
+       `transition-[filter,background-color,color]`, and tailwind-merge keeps only the last transition
        utility — a bare `transition-colors` here would silently delete the hover brightness. */
     className={cn(
       "h-6 gap-1.5 px-2 transition-[color,border-color,filter,background-color] duration-150 ease-out",

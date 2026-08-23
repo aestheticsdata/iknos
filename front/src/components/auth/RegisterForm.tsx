@@ -199,7 +199,7 @@ export const RegisterForm = ({ sealed }: { sealed: boolean }) => {
           </Button>
           <span className="text-row text-chassis-text-dim">{AUTH_TEXT.login.or}</span>
           <Link
-            className="text-label tracking-control text-chassis-accent hover:text-chassis-text"
+            className="text-label tracking-control text-chassis-accent transition-colors duration-150 ease-out hover:text-chassis-text"
             href={ROUTES.login}
           >
             {t.signIn}
@@ -214,13 +214,13 @@ export const RegisterForm = ({ sealed }: { sealed: boolean }) => {
       {sealed ? (
         <div className="mt-4 flex items-center gap-3.5 border-t border-chassis-border pt-3.5">
           <Link
-            className="text-label tracking-control text-chassis-accent hover:text-chassis-text"
+            className="text-label tracking-control text-chassis-accent transition-colors duration-150 ease-out hover:text-chassis-text"
             href={ROUTES.recover}
           >
             {AUTH_TEXT.login.recover}
           </Link>
           <Link
-            className="text-label tracking-control text-chassis-text-dim hover:text-chassis-text"
+            className="text-label tracking-control text-chassis-text-dim transition-colors duration-150 ease-out hover:text-chassis-text"
             href={ROUTES.login}
           >
             {t.signIn}

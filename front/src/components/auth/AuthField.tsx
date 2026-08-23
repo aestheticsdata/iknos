@@ -41,7 +41,7 @@ export const AuthInput = ({ className, ...props }: React.ComponentPropsWithRef<"
     className={cn(
       "h-8 rounded-control border border-chassis-border-strong bg-chassis-inset px-2.5",
       "text-ui text-chassis-text placeholder:text-chassis-border-focus",
-      "hover:border-chassis-border-focus focus:border-chassis-border-focus focus:outline-none",
+      "transition-[border-color] duration-150 ease-out hover:border-chassis-border-focus focus:border-chassis-border-focus focus:outline-none",
       "aria-[invalid=true]:border-chassis-error",
       "disabled:cursor-not-allowed disabled:opacity-60",
       className,

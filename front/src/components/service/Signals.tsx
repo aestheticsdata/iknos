@@ -18,6 +18,7 @@ import {
   poolShare,
   poolTone,
 } from "@lib/serviceFormat";
+import { cn } from "@lib/utils";
 import { SERVICE_TEXT } from "@text/service";
 import { SignalTile, TileEmpty } from "./SignalTile";
 
@@ -325,9 +326,10 @@ const MeterRow = ({
     />
     {/* The figure, always — the bar is `aria-hidden` and a colour alone is not a reading. */}
     <span
-      className={
-        tone === "error" ? "flex-none whitespace-nowrap text-work-error" : "flex-none whitespace-nowrap tabular-nums"
-      }
+      className={cn(
+        "flex-none whitespace-nowrap transition-[color] duration-150 ease-out",
+        tone === "error" ? "text-work-error" : "tabular-nums",
+      )}
     >
       {value}
     </span>

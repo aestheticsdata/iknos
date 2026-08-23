@@ -41,7 +41,10 @@ export const Chip = ({
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${label} ${value}`}
-        className={cn("ml-0.5 leading-none hover:brightness-125", SURFACE_TEXT_DIM[surface])}
+        className={cn(
+          "ml-0.5 leading-none transition-[filter] duration-150 ease-out hover:brightness-125",
+          SURFACE_TEXT_DIM[surface],
+        )}
       >
         ×
       </button>
