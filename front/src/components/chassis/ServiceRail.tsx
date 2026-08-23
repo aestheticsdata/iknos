@@ -7,7 +7,7 @@ import { ROUTES } from "@lib/routes";
 import { useLogout } from "@lib/useLogout";
 import { CHASSIS_TEXT } from "@text/chassis";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { IngestCard } from "./IngestCard";
 
@@ -20,8 +20,18 @@ import type { Service, ServiceHealth } from "@lib/services";
  */
 const HEALTH_TONE: Record<ServiceHealth["status"], Tone> = { ok: "ok", error: "error", stale: "warn" };
 
-/** The one view M1 can fill. Metrics, issues and alerts join this list with their own tickets. */
-const VIEWS = [{ key: "logs", label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs, badge: "L" }] as const;
+/**
+ * The views that can be answered today, in the design doc's own order. Metrics, issues and alerts
+ * join this list with their own tickets — IKN-23, IKN-14, IKN-15.
+ *
+ * The badge is a working shortcut or nothing. `⌘L` opens the full-screen log panel and earns its
+ * `L`; there is no key that opens the service view, and a badge advertising one would be the same
+ * mistake the status bar's legend deliberately avoids by omitting `⌘I`.
+ */
+const VIEWS = [
+  { key: "service", label: CHASSIS_TEXT.viewService, href: ROUTES.service, badge: null },
+  { key: "logs", label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs, badge: "L" },
+] as const;
 
 /**
  * Two characters, uppercased — the rail's collapsed form.
@@ -63,6 +73,17 @@ const monogram = (name: string) => {
 export const ServiceRail = ({ services }: { services: Service[] }) => {
   const [selected, setSelected] = useSelectedService();
   const pathname = usePathname();
+  /*
+   * The scope travels with the view.
+   *
+   * Every piece of state the app has — which service, which range, which filters, which trace — is
+   * in the query string, so a bare `href="/logs"` throws all of it away. It never showed while
+   * `logs` was the only view: the link went to the page you were already on. With the service view
+   * beside it (IKN-13) the same link is how you move between them, and dropping the selection means
+   * arriving at the logs of every service, on the default range, having asked for neither.
+   */
+  const search = useSearchParams().toString();
+  const withScope = (href: string) => (search ? `${href}?${search}` : href);
 
   return (
     <nav
@@ -134,7 +155,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
           {VIEWS.map((view) => (
             <li key={view.key}>
               <Link
-                href={view.href}
+                href={withScope(view.href)}
                 aria-current={pathname.startsWith(view.href) ? "page" : undefined}
                 className={`flex items-center justify-between rounded-chip px-2 py-1.5 text-label max-rail:justify-center max-rail:px-0 ${
                   pathname.startsWith(view.href)
@@ -148,9 +169,20 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
                  * row, so it takes the row's own size and colour — `text-chassis-text-dim` is 3.03
                  * against the surface, which is a fine whisper next to a label and not something to
                  * navigate by.
+                 *
+                 * A row with no shortcut falls back to its own initial when collapsed: at 52px the
+                 * badge is the only thing left, and an empty cell would leave the row unreadable.
                  */}
                 <span className="text-kicker tracking-kicker text-chassis-text-dim max-rail:text-label max-rail:tracking-normal max-rail:text-current">
-                  {view.badge}
+                  <span className={view.badge === null ? "max-rail:hidden" : undefined}>{view.badge}</span>
+                  {view.badge === null && (
+                    <span
+                      aria-hidden="true"
+                      className="hidden max-rail:inline"
+                    >
+                      {view.label.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
                 </span>
               </Link>
             </li>

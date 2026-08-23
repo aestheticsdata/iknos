@@ -1,12 +1,15 @@
 "use client";
 
+import { AreaSpark } from "@components/ui/AreaSpark";
 import { Badge } from "@components/ui/Badge";
+import { BarSpark } from "@components/ui/BarSpark";
 import { Button } from "@components/ui/Button";
 import { Card } from "@components/ui/Card";
 import { Chip } from "@components/ui/Chip";
 import { DenseTable } from "@components/ui/DenseTable";
 import { Dot } from "@components/ui/Dot";
 import { Field } from "@components/ui/Field";
+import { MeterBar } from "@components/ui/MeterBar";
 import { Modal } from "@components/ui/Modal";
 import { Select } from "@components/ui/Select";
 import { Sparkline } from "@components/ui/Sparkline";
@@ -33,6 +36,19 @@ type Row = { id: string; service: string; level: Tone; route: string; ms: number
 
 /** A plausible ingest curve — twenty points, the width the rail draws. */
 const SERIES = [4, 6, 5, 9, 12, 8, 7, 11, 18, 24, 19, 13, 9, 7, 8, 6, 5, 9, 14, 11];
+
+/**
+ * The same curve with an interval nobody scraped in the middle of it — the case the whole dataviz
+ * set exists to render honestly. A `null` is a hole, and a hole is not a zero.
+ */
+const GAPPED = [4, 6, 5, 9, 12, null, null, 11, 18, 24, 19, 13, 9, 7, 8, 6, 5, 9, 14, 11];
+
+/**
+ * Three states in one series: values, a **measured zero** (dimmed stub on the baseline), and an
+ * interval that could not be quoted (nothing at all). Collapsing the last two is how "the collector
+ * was down" becomes "no errors".
+ */
+const BARS = [0, 0, 0.4, 0, null, null, 1.8, 2.4, 0.9, 0, 0, 0];
 
 /** Enough lines to overflow the box below and give the bar something to do. */
 const SCROLL_LINES = Array.from(
@@ -201,6 +217,47 @@ const SurfacePanel = ({ surface }: { surface: Surface }) => (
                 surface={surface}
                 label="No series yet"
               />
+              {/* A hole in the middle stays a hole: two polylines, not one line walking across it. */}
+              <Sparkline
+                values={GAPPED}
+                surface={surface}
+                tone="warn"
+                reference={12}
+                label="A series with a gap, against a reference"
+              />
+            </div>
+
+            {/* The three dataviz primitives the signal tiles are built from — IKN-13. */}
+            <div className="grid grid-cols-3 items-end gap-3">
+              <span className="h-[26px]">
+                <AreaSpark
+                  values={GAPPED}
+                  surface={surface}
+                  tone="ok"
+                  label="Throughput, with an interval nobody scraped"
+                />
+              </span>
+              <span className="h-[26px]">
+                <BarSpark
+                  values={BARS}
+                  surface={surface}
+                  tone="error"
+                  max={1}
+                  label="Error rate, with a measured zero and an unscraped interval"
+                />
+              </span>
+              <span className="flex items-center gap-1.5 text-micro">
+                <MeterBar
+                  share={0.3}
+                  surface={surface}
+                  tone="ok"
+                />
+                <MeterBar
+                  share={1}
+                  surface={surface}
+                  tone="error"
+                />
+              </span>
             </div>
           </div>
         </div>

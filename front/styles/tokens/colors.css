@@ -57,6 +57,35 @@
   --color-work-info: #324e60; /* 5.39 / 4.63 */
   --color-work-error-bg: #c4a9a6;
   /*
+   * The health pill's two fills — IKN-13.
+   *
+   * `error-bg` already existed for the hot issue row; this is its counterpart, and the pair exists
+   * because the header's pills are the one place on the work surface where a state is read as an
+   * *area* rather than as ink. Every other state on this ramp is text on a hairline border, which
+   * is right for a badge in a table and wrong for the three chips somebody looks at first.
+   *
+   * A pill in any other state — stale, unprobed — takes `work-inset` and lets its dot carry the
+   * state, so the two filled skins mean exactly two things: answered, and did not.
+   *
+   * Not held to 4.5:1 by `pnpm run contrast`, which checks the four state *inks*. These are
+   * backgrounds; what has to clear the bar is the text on them, and that text is `work-text` and
+   * `work-error`, both of which the gate already covers against the darker `work-inset`.
+   */
+  --color-work-ok-bg: #9cbcaa;
+  /*
+   * The ground the cards sit on.
+   *
+   * `<main>` was painted `work-surface` — the same value as the cards themselves — which nobody
+   * noticed while the only view was one dark log panel filling the area. The service view is the
+   * first screen that is *entirely* cards, and on that ground every tile edge collapses to a single
+   * hairline. §3.1 says a card is "a 1px border and a flat fill" and reserves elevation for what
+   * overhangs; a flat fill only reads as a card when the ground is a different value, which is what
+   * the mockup's own `#8FA5B0` work area was doing.
+   *
+   * No text ever sits on it, so it is outside the contrast gate's remit by construction.
+   */
+  --color-work-ground: #8fa5b0;
+  /*
    * The same idea on the light ground, and the direction reverses with it: the thumb is the work
    * border and it *darkens* under the pointer instead of lightening. This is the reason the
    * scrollbar is two tokens and not one — `chassis-scrollbar` on `work-surface` is a hard slate

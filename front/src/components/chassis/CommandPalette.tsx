@@ -4,7 +4,7 @@ import { Modal } from "@components/ui/Modal";
 import { useSelectedService } from "@lib/chassisState";
 import { usePalette } from "@lib/commandState";
 import { useLogQueryState } from "@lib/logQuery";
-import { ROUTES } from "@lib/routes";
+import { LOG_QUERY_VIEWS, ROUTES } from "@lib/routes";
 import { useOpenTrace } from "@lib/traceState";
 import { usePaletteSearch } from "@lib/usePaletteSearch";
 import { cn } from "@lib/utils";
@@ -27,8 +27,17 @@ import type { SearchHit, SearchHitType } from "@lib/searchTypes";
  * trip. `ISSUE` is absent entirely until M3 gives it rows.
  */
 
-/** The views the palette can reach. One in M1, and the list grows with `ROUTES` (§4). */
-const VIEWS: { label: string; href: string }[] = [{ label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs }];
+/**
+ * The views the palette can reach, in the rail's own order — and it has to stay in step with the
+ * rail's list, or a view exists in one place and not the other.
+ *
+ * Contributed by the front rather than by `/api/search`: the set of views is this app's routing
+ * table, not data, and asking the server for it would spend a round trip on "go to logs" (§4).
+ */
+const VIEWS: { label: string; href: string }[] = [
+  { label: CHASSIS_TEXT.viewService, href: ROUTES.service },
+  { label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs },
+];
 
 /** The word on the right of a row: what pressing enter will do. */
 const ACTION: Record<SearchHitType, string> = {
@@ -111,10 +120,11 @@ export const CommandPalette = () => {
         break;
     }
 
-    // A hit that acts on the log query is only visible on the log view. Reached from anywhere
-    // else, the palette takes you where the answer is rather than silently setting a filter on a
-    // page that does not read it.
-    if (hit.type !== "view" && pathname.replace(/\/+$/, "") !== ROUTES.logs) router.push(ROUTES.logs);
+    // A hit that acts on the log query is only visible on a view that reads it — the log panel at
+    // full width, or the service view that embeds it (IKN-13). Reached from anywhere else, the
+    // palette takes you where the answer is rather than silently setting a filter on a page that
+    // does not read it.
+    if (hit.type !== "view" && !LOG_QUERY_VIEWS.includes(pathname.replace(/\/+$/, ""))) router.push(ROUTES.logs);
   };
 
   /*

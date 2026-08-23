@@ -5,7 +5,9 @@
  * Values are read out of `styles/tokens/colors.css` rather than copied here, so a token edited
  * without re-checking is caught instead of silently drifting away from a number in a comment.
  *
- * The four state colours are enforced. The text ramp is reported but not enforced: `text-dim` is
+ * The four state colours are enforced, and so is the ink on each tinted fill — see `FILLS`, which
+ * exists because the state-colour loop was never asking about those and one of them was failing.
+ * The text ramp is reported but not enforced: `text-dim` is
  * deliberately de-emphasised on both ramps and raising it to 4.5 would flatten a hierarchy the
  * design asked for — that is a design decision, not a lint failure, and it is listed so nobody
  * has to rediscover it.
@@ -59,6 +61,36 @@ for (const [ramp, backgrounds] of Object.entries(RAMPS)) {
   }
 }
 
+/**
+ * The tinted fills, and the ink each one actually carries — IKN-13.
+ *
+ * The loop above checks the four state colours against the *ramp's own* backgrounds, which is the
+ * right question for text on a card and the wrong one for the service header's pills: those are the
+ * one place on the work surface where a state is read as an area, so their ink sits on a tint the
+ * gate had never heard of. `work-error` on `work-error-bg` measures 3.98:1 — below the bar, on a
+ * pairing nothing was checking, which is exactly how a gate stops being a gate.
+ *
+ * Listed as pairs rather than derived, because the pairing is a design decision: the ink on a tint
+ * is `work-text`, and the hue is carried by the fill and by the dot beside it.
+ *
+ * Only `work-text` is enforced, deliberately. The dimmed key of a chip is `work-text-dim`, which is
+ * below AA on every background in the product and is the same design decision the text ramp below
+ * records — a hierarchy the design asked for, not a lint failure. What has to be readable is the
+ * value, and the value is `work-text`.
+ */
+const FILLS = [
+  ["work-text", "work-ok-bg"],
+  ["work-text", "work-error-bg"],
+];
+
+console.log(`\ntinted fills — ink on a state background (need ${AA_TEXT}:1 as text)`);
+for (const [ink, fill] of FILLS) {
+  const measured = ratio(token(ink), token(fill));
+  const ok = measured >= AA_TEXT;
+  if (!ok) failed++;
+  console.log(`  ${`${ink} on ${fill}`.padEnd(34)} ${measured.toFixed(2)}  ${ok ? "ok" : "FAIL"}`);
+}
+
 console.log("\ntext ramp — reported, not enforced (see the note at the top of this file)");
 for (const [ramp, backgrounds] of Object.entries(RAMPS)) {
   for (const name of ["text", "text-muted", "text-dim"]) {
@@ -71,7 +103,7 @@ for (const [ramp, backgrounds] of Object.entries(RAMPS)) {
 }
 
 if (failed > 0) {
-  console.error(`\n${failed} state colour(s) below ${AA_TEXT}:1.`);
+  console.error(`\n${failed} pairing(s) below ${AA_TEXT}:1.`);
   process.exit(1);
 }
-console.log("\nAll state colours clear AA on both surfaces of their ramp.");
+console.log("\nAll state colours clear AA on both surfaces of their ramp, and on the tints they are used over.");
