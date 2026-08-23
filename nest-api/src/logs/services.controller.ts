@@ -1,19 +1,9 @@
 import { PrismaService } from "@db/prisma.service";
 import { Prisma } from "@generated/prisma/client";
 import { Controller, Get } from "@nestjs/common";
-import { latestHealthByService, SPARKLINE_SLOTS, sparklinesByService } from "./service-rail";
+import { HEALTH_WINDOW_MS, latestHealthByService, SPARKLINE_SLOTS, sparklinesByService } from "./service-rail";
 
 import type { ServiceList } from "@contracts/service";
-
-/**
- * How far back a probe still earns a dot at all. A probe inside 90 s is current (ok/error),
- * older than that up to this horizon is `stale` — the collector stopped hearing back — and
- * beyond it the dot goes away entirely: after a day of silence, "unwatched" is the honest
- * state, not an ever-older amber. The cliff is a day and not ten minutes so that a stalled
- * collector shows a rail full of stale dots, never a rail that pretends nothing was ever
- * probed.
- */
-const HEALTH_WINDOW_MS = 24 * 60 * 60_000;
 
 /**
  * The registry, which feeds both the filter list and the service rail.

@@ -6,8 +6,28 @@ import type { ServiceHealth } from "@contracts/service";
  * minute-buckets of a sparkline.
  */
 
-/** Twice the probe cadence plus slack: one missed probe is jitter, two is a statement. */
-const STALE_AFTER_MS = 90_000;
+/**
+ * Twice the probe cadence plus slack: one missed probe is jitter, two is a statement.
+ *
+ * Exported since IKN-13, because the service view's health pills are a second rendering of the
+ * same probe the rail draws a dot for. Two thresholds would mean an amber dot beside a green pill
+ * for the same row, and no way to tell which of them was lying.
+ */
+export const STALE_AFTER_MS = 90_000;
+
+/**
+ * How far back a probe still earns a dot at all.
+ *
+ * A probe inside `STALE_AFTER_MS` is current (ok/error), older than that up to this horizon is
+ * `stale` — the collector stopped hearing back — and beyond it the row goes back to having no
+ * health at all: after a day of silence, "unwatched" is the honest state, not an ever-older amber.
+ * The cliff is a day and not ten minutes so that a stalled collector shows a rail full of stale
+ * dots, never a rail that pretends nothing was ever probed.
+ *
+ * It also bounds the queries that look for the *latest* probe. `health_check` is partitioned by
+ * day, so an `ORDER BY ts DESC LIMIT 1` with no lower bound walks every partition ever retained.
+ */
+export const HEALTH_WINDOW_MS = 24 * 60 * 60_000;
 
 export const SPARKLINE_SLOTS = 60;
 

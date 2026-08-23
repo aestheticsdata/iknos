@@ -40,6 +40,13 @@ const prodConfig = {
   // drop the partition currently being written to.
   IKNOS_RETENTION_DAYS: "14",
 
+  // Days of raw metric, probe and machine samples kept. Its own knob and not the logs': raw
+  // metrics run to well over a million rows a day per scraped service, and shortening their window
+  // must never shorten the log window with it. It is also what decides, per request, whether a
+  // range is answered from `metric_sample` or from `metric_rollup` (IKN-13) — so widening it moves
+  // that boundary as well as the retention it names. Defaults to 3 when unset.
+  IKNOS_METRIC_RETENTION_DAYS: "3",
+
   // What the collector tails. PM2 writes every app's stdout and stderr here, which is the whole
   // reason Iknos needs no agent installed anywhere.
   IKNOS_PM2_LOG_GLOB: "/home/debian/.pm2/logs/*.log",

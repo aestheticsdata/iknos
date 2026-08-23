@@ -25,6 +25,7 @@
       "@ingest/*": ["./src/ingest/*"],
       "@logs/*": ["./src/logs/*"],
       "@maintenance/*": ["./src/maintenance/*"],
+      "@metrics/*": ["./src/metrics/*"],
       "@redis/*": ["./src/redis/*"],
       "@src/*": ["./src/*"],
       "@stream/*": ["./src/stream/*"]

@@ -24,4 +24,13 @@ export type { LogRow } from "./log-row";
 export type { Meta } from "./meta";
 export type { SearchHit, SearchHitType, SearchResults } from "./search";
 export type { Service, ServiceList } from "./service";
+export type {
+  NodeRuntime,
+  PoolGauge,
+  ProbeCheck,
+  ProbeSummary,
+  ProcessFacts,
+  ServiceRuntime,
+} from "./service-runtime";
+export type { MetricSource, ServiceSignals, Signal, SignalPoint } from "./service-signals";
 export type { Trace } from "./trace";

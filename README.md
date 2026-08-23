@@ -91,10 +91,12 @@ default — a route is public only if someone wrote `@Public()` on it.
 | `GET /api/logs/trace/:traceId` | The lines sharing a `trace.id`, in order |
 | `GET /api/logs/stream` | Live tail over SSE, straight off the in-process bus |
 | `GET /api/services` | The registry, for the filters and the service rail |
+| `GET /api/services/:service/runtime` | Header chips, health pills and the runtime gauges — the facts that are true now |
+| `GET /api/services/:service/signals` | Throughput, 5xx rate and p95 over a range, from raw samples or their hourly rollups |
 | `POST /api/ingest` | The one write route — see below |
 
-`from` and `to` are **required** on all of them and a request without both is a 400, never a
-widened default. That single rule is what the partitioning rests on: the range predicate lets
+`from` and `to` are **required** on the log routes and on `signals`, and a request without both
+is a 400, never a widened default. That single rule is what the partitioning rests on: the range predicate lets
 MySQL discard whole partitions before it evaluates a filter, and one forgotten parameter would
 otherwise turn a page load into a scan of the entire retention window.
 

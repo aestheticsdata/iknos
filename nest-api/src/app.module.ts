@@ -8,6 +8,7 @@ import { PrismaModule } from "@db/prisma.module";
 import { IngestModule } from "@ingest/ingest.module";
 import { LogsModule } from "@logs/logs.module";
 import { MaintenanceModule } from "@maintenance/maintenance.module";
+import { MetricsModule } from "@metrics/metrics.module";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
@@ -21,8 +22,8 @@ import { HealthController } from "./health.controller";
  * and a live tail served from an in-process event bus rather than by polling MySQL.
  *
  * Auth (IKN-6, IKN-21), the collector (IKN-7), the log routes (IKN-19), the partition window
- * (IKN-11) and the collector's own status (IKN-24) are in. Metrics, issues and alerts arrive with
- * the milestone that needs them.
+ * (IKN-11), the collector's own status (IKN-24) and the service view's metrics (IKN-13) are in.
+ * Issues and alerts arrive with the milestone that needs them.
  */
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { HealthController } from "./health.controller";
     LogsModule,
     MaintenanceModule,
     ScrapeModule,
+    MetricsModule,
     CollectorModule,
   ],
   controllers: [HealthController],
