@@ -157,8 +157,14 @@ export const WorkArea = ({ services }: { services: Service[] }) => {
       </div>
 
       {/* `min-h-0` is what lets this shrink below its content and hand the overflow to the list
-          inside the panel, instead of pushing the status bar off the bottom of the screen. */}
-      <div className="min-h-0 flex-1">
+          inside the panel, instead of pushing the status bar off the bottom of the screen.
+
+          The card shape is decided here, not by `LogPanel` (IKN-56): the panel is also mounted
+          edge to edge in the all-services explorer above and has no way to know which box it is
+          in, so rounding it there would round the wrong route too. `chassis-border`, not
+          `work-border` — the panel is a dark window on this page's ground, the pairing
+          `IngestCard` uses rather than the one its `Notice`/`ServiceHeader` siblings do. */}
+      <div className="min-h-0 flex-1 overflow-hidden rounded-card border border-chassis-border">
         <LogPanel services={services} />
       </div>
     </div>
