@@ -1,5 +1,6 @@
 /**
- * Four gestures, all short — §3.4. Nothing else in Iknos moves, bar the one exception below.
+ * Four animations, all short — §3.4 — and two transitions that live elsewhere. Nothing else in
+ * Iknos moves.
  *
  * This is a screen people stare at while something is wrong. Motion that is not reporting a change
  * in the data is noise, and noise on a monitoring tool costs attention exactly when it is scarcest.
@@ -10,11 +11,20 @@
  * drives rather than running a gesture of its own. Counting it twice would be counting the
  * property, not the movement.
  *
- * One thing moves that is not here: the block inside the zone toggle, travelling one half-width
- * when the reader changes clock — inside the control under the pointer, reporting that press and
- * nothing else. It is a `transition` on that component rather than a fifth gesture in this file,
- * which is where movement belonging to one control goes, rather than beside the four the interface
- * itself owns.
+ * Two things move that are not keyframes here, and both are transitions for the same reason: one
+ * element passing between two states, rather than something playing.
+ *
+ * The block inside the zone toggle, travelling one half-width when the reader changes clock —
+ * inside the control under the pointer, reporting that press and nothing else. It sits on that
+ * component rather than beside the four here, which is where movement belonging to a single
+ * control goes.
+ *
+ * And the modals arriving and leaving — IKN-53, `ik-modal` in `utilities.css`. That one is the
+ * interface's rather than a control's, so unlike the toggle its number is written here, beside the
+ * ones it has to be read against: at 200ms it is the second thing in Iknos to overrun the house
+ * scale, and like the zone flash it does so under the rule above rather than against it. A dialog
+ * is not a figure changing in place — it is a new surface landing over the one being read, and
+ * arriving instantly reads as a repaint rather than as an event.
  */
 
 /**
@@ -73,11 +83,26 @@
   /* The liveness dots: the collector's, the auth chrome bar's, the rail's per-service dots. */
   --animate-pulse-live: ikPulse 2.4s ease-in-out infinite;
 
-  /* Things that appear in place — modals, the expanded log row. */
+  /* Things that appear in place — the expanded log row, and only it. Deliberately no longer
+     "modals": none ever used this, and since IKN-53 they have a gesture of their own. A row
+     unfolding is the same surface getting taller, which is why it keeps the shorter 0.16s and the
+     `translateY` a dialog has no use for. */
   --animate-in: ikIn 0.16s cubic-bezier(0.2, 0.7, 0.3, 1);
 
   /* Things that cover — overlays, backdrops. */
   --animate-fade: ikFade 0.14s ease-out;
+
+  /*
+   * The modals' one number — IKN-53. Not an `--animate-*` token, because `ik-modal` is a transition
+   * and has no keyframes to name; it is here anyway so that every duration in the app is in one
+   * file and this one can be read against the rest.
+   *
+   * **One declaration, four readers**: the card's opacity and scale, and the backdrop's opacity,
+   * all point at it — so the scrim cannot end up on a different clock from the card in front of it.
+   * It reaches `::backdrop` by way of `:root`, which is the route the backdrop's colour already
+   * takes and therefore one the browsers this app runs on demonstrably support.
+   */
+  --ik-modal-ms: 200ms;
 
   /*
    * Every timestamp on screen, the instant the reader changes which clock they are on — IKN-47.
@@ -260,11 +285,22 @@
  * outrank the utility classes that set the animation in the first place, and Tailwind's are more
  * specific than a bare universal selector. Without them the rule is inert and the preference is
  * silently ignored — which is the one outcome an accessibility override may not have.
+ *
+ * ⚠️ **`::backdrop` is listed by hand, and it has to be.** It is not a descendant of anything, so
+ * neither `*` nor its two pseudo-elements ever match it. Without the fourth selector a modal's card
+ * would stop dead for a reader who asked for stillness while the scrim behind it went on fading for
+ * a fifth of a second — the half of the gesture that covers the entire screen, left running by the
+ * rule written to stop it.
+ *
+ * Shortening rather than removing is safe here in a way it is not in Zeus: nothing in Iknos
+ * sequences a close on `animationend` or `transitionend`, so 0.01ms simply puts `ik-modal`'s
+ * `display` flip on the next frame and every modal still opens and closes.
  */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
-  *::after {
+  *::after,
+  ::backdrop {
     /* biome-ignore lint/complexity/noImportantStyles: see above */
     animation-duration: 0.01ms !important;
     /* biome-ignore lint/complexity/noImportantStyles: see above */

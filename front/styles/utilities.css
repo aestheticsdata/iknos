@@ -346,3 +346,92 @@
   position: relative;
   z-index: 40;
 }
+
+/* ═══ MODAL ════════════════════════════════════════════════════════════════════════════════════
+ *
+ * `ik-modal` — how a modal arrives and how it leaves. IKN-53.
+ *
+ * Opacity and `scale` 0.95 → 1 over 200ms, `ease-out` in and `ease-in` out, with the backdrop
+ * fading on the same numbers. They are not new numbers: Zeus writes them by hand
+ * (`zeus-modal-in` / `zeus-modal-out`), pfa and bkmk get the same pair out of shadcn
+ * (`zoom-in-95 fade-in-0` on `duration-200`). Three apps, one value for each figure, and Iknos was
+ * the only one where a dialog blinked into place.
+ *
+ * **200ms, over the 140-180 the rest of the app holds to.** `animations.css` opens on the rule
+ * that movement which is not reporting a change is noise on a panel people watch while something
+ * is wrong. A modal is the exception that proves it: the modal *is* the change it reports.
+ *
+ * ⚠️ **`scale`, not `transform`.** The individual transform properties compose, so a `translate`
+ * added here later would still centre the card. A `transform: scale()` would look identical today
+ * and silently drop that centring the day someone writes it.
+ *
+ * **A transition, not the pair of keyframes the other three apps use, and that is the whole reason
+ * this costs no JavaScript.** They are all Radix, which keeps the node mounted on close and
+ * exposes a `data-state="closed"` for a keyframe to hang off — Zeus pays for that with an entire
+ * hook (`useDialogDismiss`: an `animationend`, a 400ms fallback timer, and a reduced-motion rule
+ * that has to shorten the animation rather than remove it, or the dialog never closes at all).
+ * `Modal` is a native `<dialog>`, and `dialog:not([open])` is `display: none` — so there is no
+ * exit to animate unless the browser is told to hold the box. `allow-discrete` on `display` and
+ * `overlay` is that instruction, and it is honoured **whoever closed the dialog**: `esc` calls
+ * `close()` on the platform's side without passing through React, which is precisely the path a
+ * JavaScript exit has to intercept and this one does not.
+ *
+ * ⚠️ **`overlay` has to be in both lists.** Without it the dialog leaves the top layer the instant
+ * it closes and finishes its fade *behind* the page. It is the one line here that can be dropped
+ * while everything still appears to work.
+ *
+ * The second dividend of a transition over a pair of animations: it reverses. ⌘K, `esc`, ⌘K inside
+ * three frames picks up the value where it stands instead of snapping back to 0.95 — which is the
+ * palette's normal speed, not an edge case.
+ *
+ * `pointer-events` is the one property here that is deliberately *not* transitioned. For 200ms
+ * after the close the card is still painted and still in the top layer while focus has already
+ * gone back where it came from; a click landing on that costs the reader an action. Same rule as
+ * IKN-49's scrim, and it applies on the frame of the close because nothing is easing it.
+ *
+ * Reduced motion is handled in `animations.css` — including the `::backdrop` line, which the
+ * `*, *::before, *::after` override does not reach on its own.
+ */
+@utility ik-modal {
+  opacity: 0;
+  scale: 0.95;
+  pointer-events: none;
+  transition:
+    opacity var(--ik-modal-ms) ease-in,
+    scale var(--ik-modal-ms) ease-in,
+    display var(--ik-modal-ms) allow-discrete,
+    overlay var(--ik-modal-ms) allow-discrete;
+
+  /* One longhand rather than a second shorthand: the durations and the two discrete properties are
+     written once, above, and the only thing an open dialog changes is which way the curve leans.
+     A transition reads its timing from the state it is going *to*, so this is the entry's curve
+     and the rule above is the exit's. */
+  &[open] {
+    opacity: 1;
+    scale: 1;
+    pointer-events: auto;
+    transition-timing-function: ease-out;
+
+    @starting-style {
+      opacity: 0;
+      scale: 0.95;
+    }
+  }
+
+  &::backdrop {
+    opacity: 0;
+    transition:
+      opacity var(--ik-modal-ms) ease-in,
+      display var(--ik-modal-ms) allow-discrete,
+      overlay var(--ik-modal-ms) allow-discrete;
+  }
+
+  &[open]::backdrop {
+    opacity: 1;
+    transition-timing-function: ease-out;
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}

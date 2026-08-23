@@ -360,16 +360,29 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         />
       </div>
 
-      {openTraceId && (
-        <TraceTimeline
-          trace={trace.trace}
-          loading={trace.loading}
-          error={trace.error}
-          onClose={() => setOpenTraceId(null)}
-          onOpenInLogs={openInLogs}
-          onCopyId={copyId}
-        />
-      )}
+      {/*
+       * Mounted for the whole session, never `{openTraceId && …}` — which is what it was until
+       * IKN-53, and what made two of its own guarantees false.
+       *
+       * `TraceTimeline` derives its `open` from the trace precisely so the element can stay put:
+       * a `<dialog>` returns focus to whatever opened it when it closes, and a node torn down in
+       * the same frame takes that with it — the reader lands at the top of the document instead of
+       * on the row they came from, which its own comment says is the difference between the modal
+       * being usable and being a trap. Since IKN-53 it costs the exit as well: unmounting on close
+       * is exactly the case `allow-discrete` cannot save, because there is no longer an element to
+       * hold. The timeline vanished where every other modal leaves.
+       *
+       * It costs nothing to leave mounted: `useTrace(null)` fetches nothing, and `TraceBody`
+       * returns `null` with no trace, no request and no failure.
+       */}
+      <TraceTimeline
+        trace={trace.trace}
+        loading={trace.loading}
+        error={trace.error}
+        onClose={() => setOpenTraceId(null)}
+        onOpenInLogs={openInLogs}
+        onCopyId={copyId}
+      />
     </section>
   );
 };
