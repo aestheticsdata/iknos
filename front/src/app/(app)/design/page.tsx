@@ -14,6 +14,7 @@ import { Modal } from "@components/ui/Modal";
 import { Pending } from "@components/ui/Pending";
 import { Select } from "@components/ui/Select";
 import { Sparkline } from "@components/ui/Sparkline";
+import { Spinner } from "@components/ui/Spinner";
 import { SURFACE_SCROLL, SURFACE_TEXT_MUTED } from "@components/ui/surface";
 import { useToast } from "@components/ui/Toast";
 import { Tooltip } from "@components/ui/Tooltip";
@@ -170,6 +171,11 @@ const SurfacePanel = ({ surface }: { surface: Surface }) => (
             </span>
             <span className={surface === "chassis" ? "text-row text-chassis-text-dim" : "text-row text-work-text-dim"}>
               <Pending />
+            </span>
+            {/* The tile-scale half of the same state — always beside the mark in the app, so beside
+                it here. */}
+            <span className={surface === "chassis" ? "text-chassis-text-dim" : "text-work-text-dim"}>
+              <Spinner />
             </span>
           </div>
 

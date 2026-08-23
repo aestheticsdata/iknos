@@ -1,5 +1,5 @@
 /**
- * Five animations, all short but one — §3.4 — and two transitions that live elsewhere. Nothing
+ * Six animations, all short but two — §3.4 — and two transitions that live elsewhere. Nothing
  * else in Iknos moves.
  *
  * This is a screen people stare at while something is wrong. Motion that is not reporting a change
@@ -11,13 +11,16 @@
  * drives rather than running a gesture of its own. Counting it twice would be counting the
  * property, not the movement.
  *
- * The fifth is the pending mark — IKN-57 — and it passes the same test from the other side. It
- * reports a change nothing in this app reported at all: a question having been asked and not yet
- * answered. Every in-flight state used to be a dim sentence in the same element, the same ink and
- * the same box as the answer that replaced it, so the one moment the reader most needs to be told
- * "not yet" was the one moment the interface said nothing. It is also the only animation here that
- * does not end on its own: waiting has no duration, so the mark runs until the answer lands, and
- * the answer landing is the only thing that stops it.
+ * The fifth and sixth arrived together — IKN-57 — and they pass the same test from the other
+ * side. They report a change nothing in this app reported at all: a question having been asked and
+ * not yet answered. Every in-flight state used to be a dim sentence in the same element, the same
+ * ink and the same box as the answer that replaced it, so the one moment the reader most needs to
+ * be told "not yet" was the one moment the interface said nothing. The pending mark is that report
+ * at reading distance; the spinner is the same report at arm's length, because the mark alone was
+ * shipped first and the reader it was built for could not see it — a 10px line does not carry
+ * across a desk, and "I could not tell it was loading" is the exact complaint twice. They are the
+ * only animations here that do not end on their own: waiting has no duration, so both run until
+ * the answer lands, and the answer landing is the only thing that stops them.
  *
  * Two things move that are not keyframes here, and both are transitions for the same reason: one
  * element passing between two states, rather than something playing.
@@ -94,11 +97,12 @@
   /*
    * The pending mark — IKN-57. `ik-pending` in `utilities.css`.
    *
-   * Directly under the dot above because the two are the only infinite animations in Iknos, and a
-   * reader has to be able to tell them apart at a glance: the dot means the page is *receiving*,
-   * the mark means one thing on the page has asked and not been answered. Which is why this one
-   * counts and does not throb — nothing here fades, and nothing pulses. Reusing `pulse-live` for a
-   * pending state would have collided with the single meaning motion already carries here.
+   * Directly under the dot above because the infinite animations all live together, and a reader
+   * has to be able to tell them apart at a glance: the dot means the page is *receiving*, while
+   * this mark — and the spinner below, which is the same fact at a different distance — means one
+   * thing on the page has asked and not been answered. Which is why these count and do not throb —
+   * nothing here fades, and nothing pulses. Reusing `pulse-live` for a pending state would have
+   * collided with the single meaning motion already carries here.
    *
    * **1.2s in three steps of 400ms, and both numbers are chosen against something.** 400ms is slow
    * enough that four tiles are not flickering at somebody at 3am, and fast enough that a glance
@@ -116,6 +120,29 @@
    * stops are the three states, each held for exactly one third.
    */
   --animate-pending: ikPending 1.2s steps(3, jump-none) infinite;
+
+  /*
+   * The pending spinner — IKN-57's second pass. `Spinner` in `ui/`, overlaid on a tile by
+   * `SignalTile` while its first answer is in flight.
+   *
+   * The mark above is the pending state at reading distance; this is the same state at arm's
+   * length. It exists because the mark alone was tried and failed the person it was built for: a
+   * 10px line in the corner of a tile does not carry across a desk, and the complaint came back a
+   * second time as "I cannot see that it is loading". Scale, not vocabulary — the spinner says
+   * nothing the mark does not.
+   *
+   * **It steps, it does not glide.** Eight positions in 1.2s — one revolution on the same clock as
+   * the mark's three dots and half of `ikPulse`, so everything pending on a screen counts at a
+   * pace that shares a downbeat with the liveness dot. A smoothly rotating arc would be the only
+   * thing in Iknos that glides, and it would read as an import from someone else's design system —
+   * every motion here is a discrete state change, and a spinner drawn as eight ticks stepping is
+   * that same language at tile scale.
+   *
+   * `steps(8)` with the default jump-end, not `jump-none`: this rotation wraps. 0° and 360° are
+   * the same frame, and `jump-none` would hold that frame twice per cycle — a stutter every 1.2s,
+   * where the mark's `jump-none` exists because its two ends are *different* frames.
+   */
+  --animate-pending-spin: ikSpin 1.2s steps(8) infinite;
 
   /* Things that appear in place — the expanded log row and the auth banner. Deliberately no longer
      "modals": none ever used this, and since IKN-53 they have a gesture of their own. A row
@@ -179,6 +206,22 @@
     }
     to {
       clip-path: inset(0 0 0 0);
+    }
+  }
+
+  /*
+   * A full turn, quantised by the `steps(8)` in the shorthand above. The SVG's eight ticks sit 45°
+   * apart with a baked-in opacity tail, so each step lands the bright tick exactly where the next
+   * tick was — the gradient appears to advance while every drawn element holds still. Rotating the
+   * gradient rather than animating eight opacities is one compositor-friendly transform instead of
+   * eight paint invalidations.
+   */
+  @keyframes ikSpin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
     }
   }
 
@@ -341,6 +384,10 @@
  * `clip-path` is the whole ellipsis, so a waiting line still ends in something no answer in this
  * app ends in. The motion is the whole of the loss here and the reading is not — the same trade the
  * liveness dot takes above, and the reason neither needed an exception written for it.
+ *
+ * The pending spinner freezes into a dial: eight ticks with their opacity tail, still. No answer
+ * in this app draws anything ring-shaped, so even motionless it cannot be read as data — and the
+ * mark beside it still says "reading..." in words, which is the half a stilled screen keeps.
  */
 /**
  * The three `!important`s below are the mechanism, not a shortcut around one: this rule has to

@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@components/ui/Spinner";
 import { cn } from "@lib/utils";
 import Link from "next/link";
 
@@ -68,10 +69,21 @@ export const SignalTile = ({
       {/* Fixed, so the tile is the same height whether it holds a chart, a sentence, or a sentence
           that has not arrived. */}
       <div className="flex h-[26px] items-end">{children}</div>
+      {pending && (
+        /* Centred over the whole tile, on top of the kicker, the figure block and the counting
+           mark — deliberately additive rather than replacing any of them. The mark is the pending
+           state at reading distance; this is the same state at arm's length, and it exists because
+           the mark alone failed the person it was built for. `pointer-events-none` so the error
+           tile's link keeps every pixel of its click target while it waits. */
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-work-text-dim">
+          <Spinner />
+        </span>
+      )}
     </>
   );
 
-  const skin = "flex flex-col gap-1.25 rounded-card border border-work-border bg-work-surface px-3 py-2.25";
+  /* `relative` for the pending overlay's sake — the tile is the box the spinner centres in. */
+  const skin = "relative flex flex-col gap-1.25 rounded-card border border-work-border bg-work-surface px-3 py-2.25";
 
   if (!href) {
     return (
