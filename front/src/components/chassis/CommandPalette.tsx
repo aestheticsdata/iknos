@@ -34,10 +34,7 @@ import type { SearchHit, SearchHitType } from "@lib/searchTypes";
  * Contributed by the front rather than by `/api/search`: the set of views is this app's routing
  * table, not data, and asking the server for it would spend a round trip on "go to logs" (§4).
  */
-const VIEWS: { label: string; href: string }[] = [
-  { label: CHASSIS_TEXT.viewService, href: ROUTES.service },
-  { label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs },
-];
+const VIEWS: { label: string; href: string }[] = [{ label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs }];
 
 /** The word on the right of a row: what pressing enter will do. */
 const ACTION: Record<SearchHitType, string> = {

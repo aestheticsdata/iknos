@@ -95,8 +95,10 @@ const signals = (over: Partial<ServiceSignals> = {}): ServiceSignals => ({
   ...over,
 });
 
-const header = (over?: Partial<ServiceRuntime>) =>
-  renderToStaticMarkup(h(ServiceHeader, { runtime: runtime(over), range: "1h" }));
+const header = (over?: Partial<ServiceRuntime>, signalsOpen = true) =>
+  renderToStaticMarkup(
+    h(ServiceHeader, { runtime: runtime(over), range: "1h", signalsOpen, onToggleSignals: () => {} }),
+  );
 
 describe("service header", () => {
   it("keeps the release chip with an em dash when no deploy has written a marker", () => {
@@ -125,6 +127,16 @@ describe("service header", () => {
   it("turns the restarts chip red above zero and leaves it calm at zero", () => {
     expect(header()).not.toContain("bg-work-error-bg");
     expect(header({ process: { ...PROCESS, restarts: 7 } })).toContain("bg-work-error-bg");
+  });
+
+  it("labels the signals toggle with what pressing it does, and says which state it is in", () => {
+    // The state is on screen already; a button labelled with it is the one everybody presses twice
+    // to find out. `aria-expanded` is what carries the state, for the reader who cannot see it.
+    expect(header()).toContain('aria-expanded="true"');
+    expect(header()).toContain("hide signals");
+
+    expect(header(undefined, false)).toContain('aria-expanded="false"');
+    expect(header(undefined, false)).toContain("show signals");
   });
 
   it("links a failed probe to the error logs around the moment it failed", () => {

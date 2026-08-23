@@ -66,8 +66,6 @@ export const SERVICE_TEXT = {
   latencyChart: (name: string) => `${name} p95 latency over the selected range`,
 
   /* ── Empty and error states ───────────────────────────────────────────────────────────────── */
-  /* No service picked — the rail's `all` row, or a URL with no `?service=`. */
-  noService: "This view answers about one service at a time — pick one in the rail.",
   /* The registry row has no metricsUrl. A permanent fact about the world, not a range to widen. */
   notScraped: "No /metrics endpoint is registered for this service — nothing is scraped from it.",
   /* Scraped, but this range holds nothing that can be quoted. */
@@ -97,4 +95,11 @@ export const SERVICE_TEXT = {
      on the screen the reader is already looking at is a worse promise than no link. */
   toErrorLogs: "Open this service's error logs for the selected range",
   toProbeLogs: "Open this service's error logs around the failed probe",
+
+  /* ── The signals toggle ───────────────────────────────────────────────────────────────────── */
+  /* The button says what pressing it will do, not what is currently true — the state is visible on
+     screen already, and a control labelled with the state it is in is the one everybody misreads. */
+  hideSignals: "hide signals",
+  showSignals: "show signals",
+  signalsHint: "Hide the four tiles and give the height to the log list · ⌘L",
 } as const;

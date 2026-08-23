@@ -21,17 +21,14 @@ import type { Service, ServiceHealth } from "@lib/services";
 const HEALTH_TONE: Record<ServiceHealth["status"], Tone> = { ok: "ok", error: "error", stale: "warn" };
 
 /**
- * The views that can be answered today, in the design doc's own order. Metrics, issues and alerts
- * join this list with their own tickets — IKN-23, IKN-14, IKN-15.
+ * The one view M1 and M2 can fill. Metrics, issues and alerts join this list with their own
+ * tickets — IKN-23, IKN-14, IKN-15.
  *
- * The badge is a working shortcut or nothing. `⌘L` opens the full-screen log panel and earns its
- * `L`; there is no key that opens the service view, and a badge advertising one would be the same
- * mistake the status bar's legend deliberately avoids by omitting `⌘I`.
+ * There is no `service` row beside it any more: it led to a screen that was this one with a header
+ * on top, and the header now arrives with the selection instead. Picking a service in the list
+ * above *is* opening the service view.
  */
-const VIEWS = [
-  { key: "service", label: CHASSIS_TEXT.viewService, href: ROUTES.service, badge: null },
-  { key: "logs", label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs, badge: "L" },
-] as const;
+const VIEWS = [{ key: "logs", label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs, badge: "L" }] as const;
 
 /**
  * Two characters, uppercased — the rail's collapsed form.
@@ -169,20 +166,9 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
                  * row, so it takes the row's own size and colour — `text-chassis-text-dim` is 3.03
                  * against the surface, which is a fine whisper next to a label and not something to
                  * navigate by.
-                 *
-                 * A row with no shortcut falls back to its own initial when collapsed: at 52px the
-                 * badge is the only thing left, and an empty cell would leave the row unreadable.
                  */}
                 <span className="text-kicker tracking-kicker text-chassis-text-dim max-rail:text-label max-rail:tracking-normal max-rail:text-current">
-                  <span className={view.badge === null ? "max-rail:hidden" : undefined}>{view.badge}</span>
-                  {view.badge === null && (
-                    <span
-                      aria-hidden="true"
-                      className="hidden max-rail:inline"
-                    >
-                      {view.label.slice(0, 1).toUpperCase()}
-                    </span>
-                  )}
+                  {view.badge}
                 </span>
               </Link>
             </li>

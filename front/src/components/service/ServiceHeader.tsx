@@ -20,12 +20,26 @@ import type { RangeKey } from "@lib/timeRange";
  *
  * The chips are identity and are inert. Only one of them is a *symptom* — restarts — and it turns
  * red above zero, which is the whole of what §5.2 asks the row to say beyond the facts.
+ *
+ * The one control on the row is the signals toggle, at the far right. It lives here rather than in
+ * the query bar below because this row is the part of the screen that is only ever on when a
+ * service is selected, which is exactly when there are tiles to hide.
  */
 
 /** How far either side of a failed probe its logs are worth reading. */
 const PROBE_WINDOW_MS = 120_000;
 
-export const ServiceHeader = ({ runtime, range }: { runtime: ServiceRuntime; range: RangeKey }) => {
+export const ServiceHeader = ({
+  runtime,
+  range,
+  signalsOpen,
+  onToggleSignals,
+}: {
+  runtime: ServiceRuntime;
+  range: RangeKey;
+  signalsOpen: boolean;
+  onToggleSignals: () => void;
+}) => {
   // Not `process` — that name is a global, and a component that shadows it reads as one that
   // touches the environment.
   const facts = runtime.process;
@@ -33,15 +47,21 @@ export const ServiceHeader = ({ runtime, range }: { runtime: ServiceRuntime; ran
   return (
     <header className="flex h-[52px] flex-none items-center gap-3 rounded-card border border-work-border bg-work-surface px-3.25">
       <h1 className="flex-none font-mono text-signal font-semibold text-work-text">{runtime.service}</h1>
-      <span className="flex-none text-row text-work-text-muted">{SERVICE_TEXT.emitter}</span>
+      {/*
+       * The one thing on the row that gives way.
+       *
+       * Everything to its right is a *fact* — five chips, three pills, one control — and each of
+       * them is either whole or misread: a restarts chip clipped to `rest` is worse than absent.
+       * This line is the only thing here that is context rather than a reading, so it takes the
+       * shrinking and truncates, and the row fits at 1440 with all of it legible.
+       */}
+      <span className="min-w-0 flex-1 truncate text-row text-work-text-muted">{SERVICE_TEXT.emitter}</span>
 
-      {/* `min-w-0` so a long chip list truncates before it pushes the pills off the row — the pills
-          are the state and the chips are identity, and identity is what gives way. */}
       {/* A list, because that is what it is: five facts of the same kind, named once so a reader
           is told what they are five of rather than hearing them as loose values. */}
       <ul
         aria-label={SERVICE_TEXT.chipsLabel}
-        className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden"
+        className="flex flex-none items-center gap-1.5"
       >
         <Chip
           label={SERVICE_TEXT.chipPm2}
@@ -71,9 +91,37 @@ export const ServiceHeader = ({ runtime, range }: { runtime: ServiceRuntime; ran
         probed={runtime.probed}
         range={range}
       />
+
+      <SignalsToggle
+        open={signalsOpen}
+        onToggle={onToggleSignals}
+      />
     </header>
   );
 };
+
+/**
+ * The one control the work area's top row carries — IKN-13, after `/service` and `/logs` became one
+ * screen.
+ *
+ * Exported because the header is only rendered once the runtime payload has arrived, and the
+ * toggle has to exist in the second before that too: the placeholder row renders this same button,
+ * so the control does not appear a beat after the row it sits in.
+ *
+ * Labelled with the *action*, not the state, and `aria-expanded` carries the state — a button that
+ * reads `signals` when signals are showing is the one every reader clicks twice to work out.
+ */
+export const SignalsToggle = ({ open, onToggle }: { open: boolean; onToggle: () => void }) => (
+  <button
+    type="button"
+    onClick={onToggle}
+    aria-expanded={open}
+    title={SERVICE_TEXT.signalsHint}
+    className="flex-none rounded-chip border border-work-border-strong bg-work-inset px-1.75 py-0.5 text-row whitespace-nowrap text-work-text-muted hover:border-work-text-dim hover:text-work-text"
+  >
+    {open ? SERVICE_TEXT.hideSignals : SERVICE_TEXT.showSignals}
+  </button>
+);
 
 /**
  * How long the process has been up — and, when it is not, that it is not.

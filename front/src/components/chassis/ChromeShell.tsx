@@ -1,10 +1,11 @@
 "use client";
 
+import { useSelectedService, useSignalsOpen } from "@lib/chassisState";
 import { CommandProvider } from "@lib/commandState";
-import { ROUTES } from "@lib/routes";
+import { LOG_QUERY_VIEWS, ROUTES } from "@lib/routes";
 import { useLogout } from "@lib/useLogout";
 import { ViewStatusProvider } from "@lib/viewStatus";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { CommandPalette } from "./CommandPalette";
 
@@ -22,15 +23,25 @@ import type { ChromeAction } from "@lib/keymap";
 export const ChromeShell = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const logout = useLogout();
+  const pathname = usePathname();
+  const [selected] = useSelectedService();
+  const [, toggleSignals] = useSignalsOpen();
 
   const onChromeAction = useCallback(
     (action: ChromeAction) => {
       switch (action) {
+        /*
+         * `⌘L` means what it has always been called: give the log list the whole height.
+         *
+         * What changed is how. While there were two routes it navigated to the one without the
+         * tiles on it; now there is one work area and the tiles collapse in place. From anywhere
+         * else — the design gallery — it still has to arrive at the work area first, and with no
+         * service selected there is nothing above the panel to collapse, so it does nothing rather
+         * than writing a state the reader would only discover later.
+         */
         case "fullscreenLogs":
-          // `/logs` **is** the full-screen panel in M1 — the embedded one belongs to the service
-          // view (IKN-13). So the shortcut navigates rather than toggling a size, which is the
-          // same end state by the only route that exists today.
-          router.push(ROUTES.logs);
+          if (!LOG_QUERY_VIEWS.includes(pathname.replace(/\/+$/, ""))) router.push(ROUTES.logs);
+          else if (selected !== null) toggleSignals();
           break;
         case "logout":
           void logout();
@@ -40,7 +51,7 @@ export const ChromeShell = ({ children }: { children: React.ReactNode }) => {
           break;
       }
     },
-    [router, logout],
+    [router, logout, pathname, selected, toggleSignals],
   );
 
   return (

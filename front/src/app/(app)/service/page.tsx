@@ -1,20 +1,30 @@
-import { ServiceView } from "@components/service/ServiceView";
-import { readServices } from "@lib/services";
+import { ROUTES } from "@lib/routes";
+import { redirect } from "next/navigation";
 
 /**
- * The service view — IKN-13, the view M2 exists to fill.
+ * Where `/service` went — IKN-13.
  *
- * A mount point and nothing else, exactly as `logs/page.tsx` is. The registry is read here, on the
- * server, with the caller's cookie, and handed down: the embedded log panel's service filter needs
- * the same list the rail shows, and fetching it a second time from the browser would let the two
- * disagree about what exists.
- *
- * Which service is being looked at is *not* read here. It lives in the URL, where the rail writes
- * it and every view reads it — so this page renders the same for every service and the selection
- * costs no round trip.
+ * It was a second route showing the log panel with a header above it, which is what `/logs` now
+ * does whenever the rail has a service selected. Rather than delete the path and 404 every link
+ * that was shipped with it — the tiles' own hrefs, a bookmark, a URL pasted into a ticket — it
+ * forwards, carrying the whole query string: the service, the range, the filters and the pin all
+ * mean the same thing at the destination, so the reader lands on exactly the screen they asked for.
  */
-export default async function ServicePage() {
-  const services = await readServices();
+export default async function ServiceRedirect({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const query = new URLSearchParams();
 
-  return <ServiceView services={services} />;
+  for (const [key, value] of Object.entries(params)) {
+    // A repeated key is a list — `off` is one — and collapsing it to its last value would silently
+    // switch filters back on at the destination.
+    if (Array.isArray(value)) for (const one of value) query.append(key, one);
+    else if (value !== undefined) query.set(key, value);
+  }
+
+  const search = query.toString();
+  redirect(search ? `${ROUTES.logs}?${search}` : ROUTES.logs);
 }

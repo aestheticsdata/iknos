@@ -48,3 +48,27 @@ export const useSelectedService = (): [string | null, (next: string | null) => v
 };
 
 export const useTimeRange = () => useQueryState("range", parseAsStringLiteral(RANGE_KEYS).withDefault(DEFAULT_RANGE));
+
+/** Written to the URL only when the tiles are hidden, so an ordinary link stays clean. */
+const SIGNALS_STATES = ["on", "off"] as const;
+
+/**
+ * Whether the signal tiles are showing — IKN-13, after the two views were folded into one.
+ *
+ * In the URL like everything else, and for the same three reasons: the back button walks it, a
+ * shared link arrives in the state it was sent in, and the header button and `⌘L` are two writers
+ * of one fact rather than two components each holding their own idea of it.
+ *
+ * It says nothing about whether there are tiles *to* show. That depends on a service being
+ * selected, which is `useSelectedService`, and folding the two together here would mean the reader
+ * silently lost their choice every time they passed through `all`.
+ */
+export const useSignalsOpen = (): [boolean, () => void] => {
+  const [state, setState] = useQueryState("signals", parseAsStringLiteral(SIGNALS_STATES).withDefault("on"));
+
+  const toggle = useCallback(() => {
+    void setState((current) => (current === "off" ? "on" : "off"));
+  }, [setState]);
+
+  return [state !== "off", toggle];
+};

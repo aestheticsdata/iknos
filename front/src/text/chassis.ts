@@ -16,7 +16,6 @@ export const CHASSIS_TEXT = {
   rangeLabel: "Time range",
   railLabel: "Services and views",
   views: "views",
-  viewService: "service",
   viewLogs: "logs",
   paused: "paused",
   pausedHint: "Collection is disabled for this service",
