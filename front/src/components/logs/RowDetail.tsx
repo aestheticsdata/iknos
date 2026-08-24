@@ -84,6 +84,8 @@ export const RowDetail = ({
       // This panel has nothing a stray click could cost — see `Modal`'s own doc for the default
       // this opts out of, and why it is an opt-in rather than the other way round.
       closeOnBackdropClick
+      // Two panes of JSON side by side need more than 560px — see `wide` in `Modal`'s own doc.
+      wide
       tag={row?.service ?? ""}
       title={row !== null ? fullInstant(row.ts, tz) : ""}
       actions={

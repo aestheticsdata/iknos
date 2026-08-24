@@ -40,11 +40,17 @@ export const isBackdropClick = (event: { target: EventTarget | null }, dialog: E
  * action in it. Off by default rather than an opt-out on the common case, because a modal guarding a
  * real action is the ordinary caller here and the unsafe choice should never be the one nobody had
  * to ask for.
+ *
+ * `wide` is the same shape of opt-in, for the same ticket, for a different reason: two panes of JSON
+ * side by side lose to 560px long before either pane's text does, where the palette's one line and
+ * the trace's single lane never notice the width. Off by default so a caller that already fits the
+ * narrow chassis does not silently grow the day this file changes for someone else's reason.
  */
 export const Modal = ({
   open,
   onClose,
   closeOnBackdropClick,
+  wide,
   tag,
   title,
   hint,
@@ -55,6 +61,8 @@ export const Modal = ({
   onClose: () => void;
   /** See `closeOnBackdropClick` in the class doc above. Only IKN-60's log detail sets this. */
   closeOnBackdropClick?: boolean;
+  /** See `wide` in the class doc above. Only IKN-60's log detail sets this. */
+  wide?: boolean;
   tag?: string;
   title: string;
   hint?: string;
@@ -130,7 +138,8 @@ export const Modal = ({
         if (closeOnBackdropClick && isBackdropClick(event, ref.current)) ref.current?.close();
       }}
       className={cn(
-        "ik-modal m-auto w-[min(560px,calc(100vw-2rem))] rounded-overlay border border-chassis-border-strong",
+        "ik-modal m-auto rounded-overlay border border-chassis-border-strong",
+        wide ? "w-[min(1120px,calc(100vw-2rem))]" : "w-[min(560px,calc(100vw-2rem))]",
         "bg-chassis-surface p-0 font-mono text-chassis-text shadow-overlay backdrop:bg-chassis-inset/70",
       )}
     >
