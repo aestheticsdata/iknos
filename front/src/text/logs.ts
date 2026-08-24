@@ -3,6 +3,13 @@
  *
  * English, like the rest of the interface and unlike the tickets.
  */
+/**
+ * The time label, shared by the column heading and the detail pane so the hydration invariant the
+ * spec guards — a bare `time` until the zone is known — cannot be true in one of them and not the
+ * other. Everything else in the two vocabularies differs on purpose; this one may not.
+ */
+const timeLabel = (zone: string | null) => (zone === null ? "time" : `time · ${zone.toLowerCase()}`);
+
 export const LOGS_TEXT = {
   /* Token query bar */
   filtersLabel: "Filters",
@@ -52,7 +59,7 @@ export const LOGS_TEXT = {
      * *does* render on the server, where the answer is unknowable, and a label that guesses `utc`
      * for one frame would be wrong for most readers on every single page load.
      */
-    time: (zone: string | null) => (zone === null ? "time" : `time · ${zone.toLowerCase()}`),
+    time: timeLabel,
     level: "lvl",
     service: "service",
     route: "route",
@@ -60,9 +67,28 @@ export const LOGS_TEXT = {
     message: "message",
     trace: "trace",
     duration: "dur",
-    /* The detail pane's four, which have no column above them to borrow a name from. `client` and
-       not `ip`: it is the address of whoever called, and the pane already says `host` for the
-       machine that answered — two words that would be one letter apart as `ip` and `host`. */
+  },
+
+  /*
+   * The detail pane's labels — the columns above, spelled out.
+   *
+   * One vocabulary until IKN-60, and the split is the point rather than a duplication to tidy away
+   * later. `lvl`, `st` and `dur` are what a heading has to be when eight columns share the width of
+   * a log line; a modal has no such constraint, and carrying the abbreviations into it was
+   * inheriting a compromise instead of making one. The pane can afford the words, so it says them.
+   *
+   * The last four never had a column above them to borrow from. `client` and not `ip`: it is the
+   * address of whoever called, and the pane already says `host` for the machine that answered — two
+   * words that would be one letter apart as `ip` and `host`.
+   */
+  detailFields: {
+    time: timeLabel,
+    level: "level",
+    service: "service",
+    route: "route",
+    status: "status",
+    trace: "trace",
+    duration: "duration",
     client: "client",
     user: "user",
     host: "host",
@@ -87,6 +113,11 @@ export const LOGS_TEXT = {
   openTrace: "trace",
   copyRow: "copy NDJSON",
   copied: "copied",
+  /* The tooltip on the client address's copy control, and the name a screen reader gets for it —
+     the glyph alone says "copy" and not "copy what", which is the half that matters when the pane
+     has four values in it a reader might have meant. */
+  copy: "copy",
+  copyIp: "copy the client address",
 
   /* Trace */
   traceTitle: "trace",

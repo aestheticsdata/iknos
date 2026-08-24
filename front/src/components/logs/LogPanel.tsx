@@ -395,9 +395,18 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
     [setValue],
   );
 
-  const copyId = useCallback(
-    (traceId: string) => {
-      void navigator.clipboard.writeText(traceId);
+  /*
+   * One value to the clipboard, with the same confirmation `copyRow` gives.
+   *
+   * Was `copyId`, for the trace modal alone, until the detail pane wanted the client address on the
+   * same terms — at which point the two would have been the same three lines written twice. The
+   * clipboard write and its toast live here rather than in either caller for the reason the table
+   * already documents: a component that writes to the clipboard cannot be rendered in a test
+   * without a permission prompt, and neither of those two has a toast provider of its own.
+   */
+  const copyText = useCallback(
+    (text: string) => {
+      void navigator.clipboard.writeText(text);
       toast.show(LOGS_TEXT.copied, "ok");
     },
     [toast],
@@ -587,7 +596,7 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         error={trace.error}
         onClose={() => setOpenTraceId(null)}
         onOpenInLogs={openInLogs}
-        onCopyId={copyId}
+        onCopyId={copyText}
       />
 
       {/* Same reasoning as `TraceTimeline` above — mounted for the session, `open` derived from
@@ -599,6 +608,7 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         onClose={() => setExpandedKey(null)}
         onOpenTrace={setOpenTraceId}
         onCopy={copyRow}
+        onCopyText={copyText}
       />
     </section>
   );

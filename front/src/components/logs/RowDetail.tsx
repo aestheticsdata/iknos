@@ -11,6 +11,7 @@ import {
   SURFACE_TEXT_MUTED,
   TONE_TEXT,
 } from "@components/ui/surface";
+import { Tooltip } from "@components/ui/Tooltip";
 import { severityOf, userAgentOf } from "@lib/logTypes";
 import { cn } from "@lib/utils";
 import { fullInstant } from "@lib/zone";
@@ -60,6 +61,7 @@ export const RowDetail = ({
   onClose,
   onOpenTrace,
   onCopy,
+  onCopyText,
 }: {
   row: LogRow | null;
   /** The panel's fetch for this row: `detail` is null while it is in flight, and for a live row. */
@@ -67,12 +69,17 @@ export const RowDetail = ({
   onClose: () => void;
   onOpenTrace: (traceId: string) => void;
   onCopy: (row: LogRow) => void;
+  /** One value to the clipboard, with the panel's toast — the address's copy control below. */
+  onCopyText: (text: string) => void;
 }) => {
   const { tz, abbrev } = useZone();
   const { detail, loading: detailLoading, error: detailError } = state;
 
   const isError = row !== null && severityOf(row.level) === "error";
   const traceId = row?.traceId ?? null;
+  // Lifted for the same reason as `traceId`: TypeScript widens a property back to `string | null`
+  // inside a closure, and the copy handler below is exactly such a closure.
+  const clientIp = detail?.clientIp ?? null;
   // `user_agent.original` is a key and not a path — see `userAgentOf`, which is where that is
   // spelled out and tested, because reaching for it as a path finds `undefined` every time.
   const agent = userAgentOf(detail?.attrs);
@@ -177,29 +184,33 @@ export const RowDetail = ({
               )}
               {/*
                * Every pair the row genuinely carries, and no line for one it does not — a `route` of
-               * `—` on a worker's log line describes nothing that happened. The labels are the column
-               * names rather than a second vocabulary, so the pane reads as the row unfolded.
+               * `—` on a worker's log line describes nothing that happened.
+               *
+               * The labels are `detailFields` and no longer the column headings — IKN-60. The pane
+               * still reads as the row unfolded, but it unfolds the abbreviations too: `lvl` and
+               * `st` are a column's answer to eight of them sharing a log line's width, and a modal
+               * never had that problem to solve.
                */}
               <dl className="flex flex-col gap-1 text-row">
-                <DetailField label={LOGS_TEXT.columns.time(abbrev)}>
+                <DetailField label={LOGS_TEXT.detailFields.time(abbrev)}>
                   <span className="ik-zone-flash ik-zone-lift">{fullInstant(row.ts, tz)}</span>
                 </DetailField>
-                <DetailField label={LOGS_TEXT.columns.service}>{row.service}</DetailField>
-                <DetailField label={LOGS_TEXT.columns.level}>
+                <DetailField label={LOGS_TEXT.detailFields.service}>{row.service}</DetailField>
+                <DetailField label={LOGS_TEXT.detailFields.level}>
                   {row.levelName} ({row.level})
                 </DetailField>
                 {row.route !== null && (
-                  <DetailField label={LOGS_TEXT.columns.route}>
+                  <DetailField label={LOGS_TEXT.detailFields.route}>
                     {row.httpMethod === null ? row.route : `${row.httpMethod} ${row.route}`}
                   </DetailField>
                 )}
                 {row.statusCode !== null && (
-                  <DetailField label={LOGS_TEXT.columns.status}>{row.statusCode}</DetailField>
+                  <DetailField label={LOGS_TEXT.detailFields.status}>{row.statusCode}</DetailField>
                 )}
                 {row.durationMs !== null && (
-                  <DetailField label={LOGS_TEXT.columns.duration}>{row.durationMs} ms</DetailField>
+                  <DetailField label={LOGS_TEXT.detailFields.duration}>{row.durationMs} ms</DetailField>
                 )}
-                {traceId !== null && <DetailField label={LOGS_TEXT.columns.trace}>{traceId}</DetailField>}
+                {traceId !== null && <DetailField label={LOGS_TEXT.detailFields.trace}>{traceId}</DetailField>}
                 {/*
                  * The half of the line that had to be fetched — IKN-58, and the reason this pane
                  * can now answer "who". Same rule as the pairs above: a field the event does not
@@ -209,14 +220,44 @@ export const RowDetail = ({
                  * trust its proxy logs every caller as `127.0.0.1`, and that is a true fact about
                  * that app's logger rather than something for this pane to second-guess.
                  */}
-                {detail?.clientIp != null && (
-                  <DetailField label={LOGS_TEXT.columns.client}>{detail.clientIp}</DetailField>
+                {clientIp !== null && (
+                  <DetailField label={LOGS_TEXT.detailFields.client}>
+                    {/*
+                     * The one value in this pane with a control beside it, because it is the one a
+                     * reader takes *somewhere else* — a whois, a firewall rule, a grep across
+                     * another service's logs. The rest are read here and left here, and `copy
+                     * NDJSON` in the footer already covers wanting the whole line.
+                     *
+                     * Its own button rather than making the address itself clickable: text that
+                     * copies on click cannot also be selected with the mouse, and an address is
+                     * exactly the kind of short string people select by hand out of habit.
+                     */}
+                    <span className="inline-flex items-baseline gap-1.5">
+                      {clientIp}
+                      <Tooltip label={LOGS_TEXT.copy}>
+                        <button
+                          type="button"
+                          onClick={() => onCopyText(clientIp)}
+                          aria-label={LOGS_TEXT.copyIp}
+                          className={cn(
+                            "self-center transition-colors duration-150 ease-out",
+                            SURFACE_TEXT_DIM.chassis,
+                            "hover:text-chassis-text-bright",
+                          )}
+                        >
+                          <CopyGlyph />
+                        </button>
+                      </Tooltip>
+                    </span>
+                  </DetailField>
                 )}
-                {detail?.userId != null && <DetailField label={LOGS_TEXT.columns.user}>{detail.userId}</DetailField>}
+                {detail?.userId != null && (
+                  <DetailField label={LOGS_TEXT.detailFields.user}>{detail.userId}</DetailField>
+                )}
                 {detail?.hostname != null && (
-                  <DetailField label={LOGS_TEXT.columns.host}>{detail.hostname}</DetailField>
+                  <DetailField label={LOGS_TEXT.detailFields.host}>{detail.hostname}</DetailField>
                 )}
-                {agent !== null && <DetailField label={LOGS_TEXT.columns.agent}>{agent}</DetailField>}
+                {agent !== null && <DetailField label={LOGS_TEXT.detailFields.agent}>{agent}</DetailField>}
                 {/*
                  * One line while the fetch is in flight, so the panel grows into its answer from
                  * somewhere rather than appearing out of nothing. The mark is what makes it read as
@@ -242,6 +283,34 @@ export const RowDetail = ({
   );
 };
 
+/**
+ * The copy mark — two sheets, the front one offset.
+ *
+ * Drawn here rather than pulled in: this application has no icon set and one glyph is not a reason
+ * to acquire one. `currentColor` and no size of its own beyond the class, so it inherits the
+ * button's hover transition instead of needing a second rule to keep in step with it.
+ */
+const CopyGlyph = () => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 14 14"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.2"
+    strokeLinejoin="round"
+    className="h-3 w-3"
+  >
+    <rect
+      x="5"
+      y="5"
+      width="7.5"
+      height="7.5"
+      rx="1.2"
+    />
+    <path d="M9.6 2.6H2.7a1.2 1.2 0 0 0-1.2 1.2v6.9" />
+  </svg>
+);
+
 const PaneHeading = ({ children }: { children: React.ReactNode }) => (
   <h3 className={cn("pb-1 text-kicker tracking-kicker uppercase", SURFACE_TEXT_DIM.chassis)}>{children}</h3>
 );
@@ -250,12 +319,16 @@ const PaneHeading = ({ children }: { children: React.ReactNode }) => (
  * One key and its value.
  *
  * Wrapped in a `<div>` rather than left as a bare `dt`/`dd` pair, which HTML5 allows precisely so a
- * list like this can be laid out in rows without a grid template: `w-14` reserves the label column
+ * list like this can be laid out in rows without a grid template: `w-20` reserves the label column
  * at a step off the spacing scale, and the value takes what is left and wraps inside it.
+ *
+ * `w-20` and no longer `w-14` — IKN-60 spelled the labels out, and `duration` does not fit the width
+ * `dur` was given. Sized to the longest of them rather than to the average, because a label that
+ * wraps onto two lines puts its value halfway down the row it names.
  */
 const DetailField = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="flex gap-2">
-    <dt className={cn("w-14 flex-none", SURFACE_TEXT_DIM.chassis)}>{label}</dt>
+    <dt className={cn("w-20 flex-none", SURFACE_TEXT_DIM.chassis)}>{label}</dt>
     <dd className={cn("min-w-0 flex-1 break-all", SURFACE_TEXT.chassis)}>{children}</dd>
   </div>
 );
