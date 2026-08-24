@@ -140,6 +140,12 @@ export const RowDetail = ({
              * is not small, so without a ceiling one line's event could be taller than the modal
              * a `<dialog>` is height-limited to in the first place.
              *
+             * The ceiling is twice what it was in the row — IKN-60's QA. 16rem was sized for a pane
+             * wedged between two log lines, where every pixel it took pushed the stream down; in a
+             * modal that argument is gone and all it bought was a scrollbar on an ordinary request
+             * line. `min()` against the viewport because the modal is centred and a fixed 32rem card
+             * on a laptop in a browser with three toolbars is a card whose footer is off screen.
+             *
              * Its `ts` stays UTC when the column above has been switched to a local zone, and that
              * is the point rather than an oversight: this is what the API said and what `jq` will
              * read, so converting it would make the pane a paraphrase of the event instead of the
@@ -151,7 +157,7 @@ export const RowDetail = ({
                 // none` would eat every wheel event the pointer spends over it, which matters less
                 // inside a modal than it did over the stream but is still the wrong default for a
                 // pane that scrolls sideways.
-                "ik-scroll-x max-h-64 overflow-auto rounded-chip border p-2 text-row leading-hint",
+                "ik-scroll-x max-h-[min(32rem,58vh)] overflow-auto rounded-chip border p-2 text-row leading-hint",
                 SURFACE_BORDER.chassis,
                 SURFACE_INSET_BG.chassis,
                 SURFACE_TEXT_MUTED.chassis,
