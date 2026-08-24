@@ -536,12 +536,18 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         {/*
          * The append scrim — a page is on its way in at one of the scroll edges (IKN-59).
          *
-         * The zone dim's own recipe (`chassis-deep` at 0.6, pointer-events none), at `z-[44]`:
-         * above the lifted time handles at 40, or ten thousand bright timestamps would punch
-         * through the dim, and below the heading band at 45, which stays crisp because it is
-         * chrome over the stream rather than the stream. Always mounted, faded on opacity — an
-         * unmounted overlay cannot animate its exit, and these fetches are short enough that the
-         * exit is most of what is ever seen of it.
+         * `chassis-deep` at 0.9, not the zone dim's own 0.6: that recipe is tuned to leave the
+         * rows underneath legible through a 180ms flash, and the point here is the opposite one —
+         * this stands in *for* the rows while they are mid-reflow, so it has to read as opaque
+         * rather than as a tint. `z-[44]`: above the lifted time handles at 40, or ten thousand
+         * bright timestamps would punch through it, and below the heading band at 45, which stays
+         * crisp because it is chrome over the stream rather than the stream. Always mounted, faded
+         * on opacity — an unmounted overlay cannot animate its exit, and these fetches are short
+         * enough that the exit is most of what is ever seen of it.
+         *
+         * The word is `text-title` — the size this house uses for a screen's own heading — because
+         * at the row grid's own `text-row` it read as another line of log rather than as the
+         * reason the log stopped moving for a moment.
          *
          * `aria-hidden`, deliberately: it is a visual echo of state, not the state's announcement.
          * The newer edge is wheel-only today (the known IKN-59 gap), and the older edge's fetch
@@ -550,12 +556,12 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         <div
           aria-hidden="true"
           className={cn(
-            "pointer-events-none absolute inset-0 z-[44] flex items-center justify-center bg-chassis-deep/60 transition-opacity duration-150 ease-out",
+            "pointer-events-none absolute inset-0 z-[44] flex items-center justify-center bg-chassis-deep/90 transition-opacity duration-150 ease-out",
             appending ? "opacity-100" : "opacity-0",
           )}
         >
           {appendNote !== null && (
-            <span className="rounded-chip border border-chassis-border-strong bg-chassis-surface px-2 py-1 text-row text-chassis-text">
+            <span className="rounded-chip border border-chassis-border-strong bg-chassis-surface px-4 py-3 text-title text-chassis-text">
               <Pending>{appendNote}</Pending>
             </span>
           )}
