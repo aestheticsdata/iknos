@@ -22,8 +22,8 @@ describe("actionFor — the table of §6", () => {
     expect(actionFor(key({ key: "ArrowUp" }), IDLE)).toEqual({ kind: "command", name: "selection.prev" });
   });
 
-  it("expands on enter and opens the trace on ⌥⏎", () => {
-    expect(actionFor(key({ key: "Enter" }), IDLE)).toEqual({ kind: "command", name: "selection.expand" });
+  it("opens the row on enter and opens the trace on ⌥⏎", () => {
+    expect(actionFor(key({ key: "Enter" }), IDLE)).toEqual({ kind: "command", name: "selection.open" });
     expect(actionFor(key({ key: "Enter", altKey: true }), IDLE)).toEqual({ kind: "command", name: "selection.trace" });
   });
 

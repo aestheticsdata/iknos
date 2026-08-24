@@ -25,7 +25,7 @@ export type KeyLike = {
 export type CommandName =
   | "selection.next"
   | "selection.prev"
-  | "selection.expand"
+  | "selection.open"
   | "selection.trace"
   | "selection.copy"
   | "query.focus";
@@ -78,7 +78,7 @@ export function actionFor(e: KeyLike, ctx: KeyContext): KeyAction {
 
   // A bare modifier-less table. `altKey` is the exception, and it is checked before plain Enter
   // for the same reason `shift` is checked before plain `⌘L`.
-  if (e.key === "Enter") return e.altKey ? command("selection.trace") : command("selection.expand");
+  if (e.key === "Enter") return e.altKey ? command("selection.trace") : command("selection.open");
   if (e.altKey) return null;
 
   if (e.key === "j" || e.key === "ArrowDown") return command("selection.next");

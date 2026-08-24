@@ -5,6 +5,18 @@ import { cn } from "@lib/utils";
 import { useEffect, useRef } from "react";
 
 /**
+ * Whether a click landed on `::backdrop` rather than on the card — IKN-60.
+ *
+ * `<dialog>`'s own box is exactly its content (`p-0` below, no wrapping div), so a click inside the
+ * visible card always reports one of its children as `target`; only a click genuinely outside that
+ * box — on the backdrop pseudo-element, which cannot be a target in its own right — reports the
+ * `<dialog>` itself. That is what lets one click handler on the element tell the two apart without
+ * measuring anything.
+ */
+export const isBackdropClick = (event: { target: EventTarget | null }, dialog: EventTarget | null): boolean =>
+  dialog !== null && event.target === dialog;
+
+/**
  * The modal chassis — tag, title, `esc`, body, hint line, actions (§5.6).
  *
  * Built on native `<dialog>`, which brings the focus trap, the inert background, restoring focus
@@ -19,14 +31,20 @@ import { useEffect, useRef } from "react";
  * class is also what makes the *exit* exist at all. The rationale is in `utilities.css`; what it
  * costs here is one class and the latch below.
  *
- * **No click-to-dismiss on the backdrop.** These carry real actions — acknowledge an alert, close
- * an issue — and a stray click beside the card should not be one of them. The ways out are Esc and
- * a button, both of them deliberate. It also keeps the only pointer handler off an element whose
- * keyboard behaviour is the platform's, not ours.
+ * **No click-to-dismiss on the backdrop, by default.** These carry real actions — acknowledge an
+ * alert, close an issue — and a stray click beside the card should not be one of them. The ways out
+ * are Esc and a button, both of them deliberate.
+ *
+ * `closeOnBackdropClick` is the opt-in for a caller with nothing to protect — IKN-60's log detail is
+ * read-only, so a stray click costing nothing is exactly what a reader expects from a panel with no
+ * action in it. Off by default rather than an opt-out on the common case, because a modal guarding a
+ * real action is the ordinary caller here and the unsafe choice should never be the one nobody had
+ * to ask for.
  */
 export const Modal = ({
   open,
   onClose,
+  closeOnBackdropClick,
   tag,
   title,
   hint,
@@ -35,6 +53,8 @@ export const Modal = ({
 }: {
   open: boolean;
   onClose: () => void;
+  /** See `closeOnBackdropClick` in the class doc above. Only IKN-60's log detail sets this. */
+  closeOnBackdropClick?: boolean;
   tag?: string;
   title: string;
   hint?: string;
@@ -97,11 +117,18 @@ export const Modal = ({
   });
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: not a control, only detects a backdrop click — Esc reaches onClose natively
     <dialog
       ref={ref}
       // Esc closes natively and fires `close`; routing it back through `onClose` keeps the caller's
       // state from drifting out of step with what is on screen.
       onClose={onClose}
+      // Calling `.close()` here rather than `onClose()` directly sends a backdrop click down the
+      // same native `close` event Esc already fires, instead of a second path to the caller that
+      // could drift out of step with the first.
+      onClick={(event) => {
+        if (closeOnBackdropClick && isBackdropClick(event, ref.current)) ref.current?.close();
+      }}
       className={cn(
         "ik-modal m-auto w-[min(560px,calc(100vw-2rem))] rounded-overlay border border-chassis-border-strong",
         "bg-chassis-surface p-0 font-mono text-chassis-text shadow-overlay backdrop:bg-chassis-inset/70",

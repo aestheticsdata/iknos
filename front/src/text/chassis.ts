@@ -93,6 +93,6 @@ export const CHASSIS_TEXT = {
   /* The permanent legend. Every entry here is a shortcut that works — `⌘I` is in the design doc's
      table and is deliberately absent, because issues arrive with M3 and a legend advertising a
      dead key is worse than a shorter legend. */
-  keyLegend: "j/k move · ⏎ expand · ⌥⏎ trace · / query · ⌘K palette",
+  keyLegend: "j/k move · ⏎ open · ⌥⏎ trace · / query · ⌘K palette",
   workSurfacePending: "The log panel arrives with IKN-12.",
 } as const;

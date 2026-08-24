@@ -153,10 +153,10 @@
    */
   --animate-pending-spin: ikSpin 0.9s linear infinite;
 
-  /* Things that appear in place — the expanded log row and the auth banner. Deliberately no longer
-     "modals": none ever used this, and since IKN-53 they have a gesture of their own. A row
-     unfolding is the same surface getting taller, which is why it keeps the shorter 0.16s and the
-     `translateY` a dialog has no use for. */
+  /* Things that appear in place — the auth banner. Deliberately not a "modal": since IKN-53 those
+     have a gesture of their own, and the expanded log row that once shared this token left for it
+     too (IKN-60) — a row unfolding was the same surface getting taller, which is why it kept the
+     shorter 0.16s and the `translateY` a dialog has no use for; a banner still is. */
   --animate-in: ikIn 0.16s cubic-bezier(0.2, 0.7, 0.3, 1);
 
   /* Things that cover — overlays, backdrops. */

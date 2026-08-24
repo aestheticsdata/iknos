@@ -2,6 +2,7 @@
 
 import { LogTable } from "@components/logs/LogTable";
 import { QueryBar } from "@components/logs/QueryBar";
+import { RowDetail } from "@components/logs/RowDetail";
 import { TraceTimeline } from "@components/logs/TraceTimeline";
 import { VolumeHistogram } from "@components/logs/VolumeHistogram";
 import { Pending } from "@components/ui/Pending";
@@ -411,8 +412,8 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
    */
   useCommand("selection.next", () => move(1));
   useCommand("selection.prev", () => move(-1));
-  useCommand("selection.expand", () => {
-    if (selectedKey !== null) setExpandedKey(expandedKey === selectedKey ? null : selectedKey);
+  useCommand("selection.open", () => {
+    if (selectedKey !== null) setExpandedKey(selectedKey);
   });
   useCommand("selection.trace", () => {
     // Only for a row that has one. A line logged outside any request carries no `traceId`, and
@@ -519,17 +520,14 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
           <LogTable
             items={items}
             selectedKey={selectedKey}
-            expandedKey={expandedKey}
-            detail={detail}
             onSelect={setSelectedKey}
-            onExpand={setExpandedKey}
+            onOpen={setExpandedKey}
             onOpenTrace={setOpenTraceId}
             loading={older.loading}
             hasMore={older.hasMore}
             loadingMore={older.loadingMore}
             error={older.error}
             onRetry={older.reload}
-            onCopyRow={copyRow}
           />
         </div>
 
@@ -590,6 +588,17 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         onClose={() => setOpenTraceId(null)}
         onOpenInLogs={openInLogs}
         onCopyId={copyId}
+      />
+
+      {/* Same reasoning as `TraceTimeline` above — mounted for the session, `open` derived from
+          `expandedRow` rather than kept as a state of its own, so closing it does not throw away
+          the `<dialog>`'s own focus return (IKN-60). */}
+      <RowDetail
+        row={expandedRow}
+        state={detail}
+        onClose={() => setExpandedKey(null)}
+        onOpenTrace={setOpenTraceId}
+        onCopy={copyRow}
       />
     </section>
   );

@@ -13,7 +13,7 @@ import {
   TONE_FILL,
   TONE_TEXT,
 } from "@components/ui/surface";
-import { severityOf, userAgentOf } from "@lib/logTypes";
+import { severityOf } from "@lib/logTypes";
 import { cn } from "@lib/utils";
 import { fullInstant, timeOfDay } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
@@ -22,7 +22,6 @@ import { memo, useEffect, useMemo, useRef } from "react";
 
 import type { Tone } from "@components/ui/surface";
 import type { LogFeedItem, LogRow } from "@lib/logTypes";
-import type { LogDetailState } from "@lib/useLogDetail";
 
 /**
  * The log stream itself — IKN-12 §3, design doc §5.1 item 3.
@@ -78,15 +77,6 @@ const statusTone = (status: number): Tone => (status >= 500 ? "error" : status >
  */
 
 /**
- * The id the expanded pane is announced by.
- *
- * Derived from the feed key rather than from `useId`, which would be one more hook per row across
- * a list this file is explicitly asked to keep cheap. `:` is legal in an HTML id and needs no
- * escaping to be referenced from `aria-controls`.
- */
-const detailId = (key: string) => `log-detail:${key}`;
-
-/**
  * Every cell's padding, plus the hover wash.
  *
  * The wash is on the **cells** while the severity tint is on the row, which is the one arrangement
@@ -105,37 +95,28 @@ const CELL = "px-2 py-1 transition-colors duration-150 ease-out group-hover:bg-c
  */
 type RowActions = {
   select: (key: string) => void;
-  expand: (key: string | null) => void;
+  open: (key: string) => void;
   openTrace: (traceId: string) => void;
-  copy: (row: LogRow) => void;
 };
 
 export const LogTable = ({
   items,
   selectedKey,
-  expandedKey,
   onSelect,
-  onExpand,
+  onOpen,
   onOpenTrace,
-  detail,
   loading,
   hasMore,
   loadingMore,
   error,
   onRetry,
-  onCopyRow,
 }: {
   items: LogFeedItem[];
   selectedKey: string | null;
-  expandedKey: string | null;
   onSelect: (key: string) => void;
-  onExpand: (key: string | null) => void;
+  /** Opens the row's detail — IKN-60. The panel owns the modal; this only reports which row. */
+  onOpen: (key: string) => void;
   onOpenTrace: (traceId: string) => void;
-  /**
-   * The expanded row's fetch, owned by the panel like every other request on this screen — this
-   * table is still purely presentational and still opens no socket of its own.
-   */
-  detail: LogDetailState;
   /** The first page is in flight. Distinct from `loadingMore`, which appends to a list already up. */
   loading: boolean;
   /** More pages exist below. No control hangs off it — the panel's scroller fetches them as the
@@ -144,7 +125,6 @@ export const LogTable = ({
   loadingMore: boolean;
   error: string | null;
   onRetry: () => void;
-  onCopyRow: (row: LogRow) => void;
 }) => {
   /*
    * The four callbacks, held behind a ref so the object handed to every row never changes identity.
@@ -161,17 +141,16 @@ export const LogTable = ({
    */
   const { tz, abbrev } = useZone();
 
-  const latest = useRef({ onSelect, onExpand, onOpenTrace, onCopyRow });
+  const latest = useRef({ onSelect, onOpen, onOpenTrace });
   useEffect(() => {
-    latest.current = { onSelect, onExpand, onOpenTrace, onCopyRow };
+    latest.current = { onSelect, onOpen, onOpenTrace };
   });
 
   const actions = useMemo<RowActions>(
     () => ({
       select: (key) => latest.current.onSelect(key),
-      expand: (key) => latest.current.onExpand(key),
+      open: (key) => latest.current.onOpen(key),
       openTrace: (traceId) => latest.current.onOpenTrace(traceId),
-      copy: (row) => latest.current.onCopyRow(row),
     }),
     [],
   );
@@ -236,8 +215,6 @@ export const LogTable = ({
                 rowKey={item.key}
                 row={item.row}
                 selected={item.key === selectedKey}
-                expanded={item.key === expandedKey}
-                detail={item.key === expandedKey ? detail : null}
                 actions={actions}
                 tz={tz}
               />
@@ -314,7 +291,10 @@ const HeaderCell = ({
 );
 
 /**
- * One line of the stream, and its detail pane when it is the expanded one.
+ * One line of the stream.
+ *
+ * Its detail used to unfold in place right below it — see `RowDetail` (IKN-60), which now lives in
+ * its own file and opens in a modal instead, fed by the panel rather than by this row.
  *
  * **Memoised on the default comparison, on purpose.** Every prop is either a primitive, the
  * `LogRow` object as it came out of `JSON.parse` (whose identity survives the parent rebuilding
@@ -336,23 +316,12 @@ const LogTableRow = memo(
     row,
     rowKey,
     selected,
-    expanded,
-    detail,
     actions,
     tz,
   }: {
     row: LogRow;
     rowKey: string;
     selected: boolean;
-    expanded: boolean;
-    /**
-     * The panel's fetch, handed **only to the open row** — `null` for every other, on every render.
-     *
-     * That null is what keeps the memo working. The state changes twice per expansion (in flight,
-     * then answered); threaded to all two hundred rows it would be two hundred re-renders to paint
-     * one pane, which is exactly the cost `RowActions` above exists to avoid.
-     */
-    detail: LogDetailState | null;
     actions: RowActions;
     /*
      * Threaded as a prop rather than read from context in each row: two hundred rows would be two
@@ -370,20 +339,19 @@ const LogTableRow = memo(
     // between the check and the call.
     const traceId = row.traceId;
 
-    const toggle = () => {
+    const openRow = () => {
       actions.select(rowKey);
-      actions.expand(expanded ? null : rowKey);
+      actions.open(rowKey);
     };
 
     return (
       <>
         {/* The click handler lives on the row and there is deliberately no key handler beside it:
             the keyboard path is the real <button> in the time cell, whose activation already
-            arrives here as a click. Handling keys on the <tr> as well would fire the toggle twice
-            for every Enter — open, then immediately closed — and the <tr> is not focusable, so
-            nothing would ever reach such a handler on its own. */}
+            arrives here as a click. The <tr> itself is not focusable, so nothing would ever reach
+            a handler placed on it directly. */}
         <tr
-          onClick={toggle}
+          onClick={openRow}
           aria-current={selected ? "true" : undefined}
           /* How the keyboard finds the row it just moved to, so it can be scrolled into view
              (IKN-22). An attribute rather than an effect per row: the list is built to stay usable
@@ -391,7 +359,7 @@ const LogTableRow = memo(
              is here to avoid. */
           data-row-key={rowKey}
           className={cn(
-            // The whole row toggles the detail pane, not just the button in the time cell, so the
+            // The whole row opens the detail modal, not just the button in the time cell, so the
             // whole row admits it under the pointer. The base rule covers buttons and cannot reach
             // a `<tr>` that is clickable without being a control.
             "group cursor-pointer border-b transition-colors duration-150 ease-out",
@@ -423,9 +391,14 @@ const LogTableRow = memo(
               )}
             />
             {/*
-             * The row's keyboard handle, and the whole of its accessible expand semantics. It
-             * carries no handler of its own — the click bubbles to the <tr> above, which is the one
-             * place the toggle is written.
+             * The row's keyboard handle, and the whole of its accessible name for what pressing it
+             * does. It carries no handler of its own — the click bubbles to the <tr> above, which
+             * is the one place `openRow` is written.
+             *
+             * No `aria-expanded`/`aria-controls` here since IKN-60: those are a disclosure widget's
+             * semantics, for content that unfolds in place, and this button now opens a dialog
+             * elsewhere in the tree instead. The accessible name still carries what pressing it
+             * does, same as before.
              *
              * `title` is where the full instant lives, since the column shows a time of day with no
              * date on it. The accessible name is that same full instant plus what pressing this
@@ -443,9 +416,7 @@ const LogTableRow = memo(
             <button
               type="button"
               title={fullInstant(row.ts, tz)}
-              aria-expanded={expanded}
-              aria-controls={expanded ? detailId(rowKey) : undefined}
-              aria-label={`${fullInstant(row.ts, tz)} · ${expanded ? LOGS_TEXT.collapseRow : LOGS_TEXT.expandRow}`}
+              aria-label={`${fullInstant(row.ts, tz)} · ${LOGS_TEXT.openRow}`}
               className="ik-zone-flash ik-zone-lift text-left"
             >
               {timeOfDay(row.ts, tz)}
@@ -493,8 +464,9 @@ const LogTableRow = memo(
             ) : (
               <button
                 type="button"
-                // The trace button sits inside a row whose every click toggles expansion, so it has
-                // to stop there — otherwise opening a trace also opens the pane behind the modal.
+                // The trace button sits inside a row whose every click opens this row's own detail
+                // modal, so it has to stop there — otherwise opening a trace would open both at
+                // once, stacking two dialogs on top of each other.
                 onClick={(event) => {
                   event.stopPropagation();
                   actions.openTrace(traceId);
@@ -524,234 +496,12 @@ const LogTableRow = memo(
             )}
           </td>
         </tr>
-
-        {/* Mounted for the one expanded row and no other — `expandedKey` is a single value, so the
-            detail pane exists at most once in the document however long the list grows. */}
-        {expanded && detail !== null && (
-          <RowDetail
-            row={row}
-            rowKey={rowKey}
-            isError={isError}
-            state={detail}
-            actions={actions}
-          />
-        )}
       </>
     );
   },
 );
 
 LogTableRow.displayName = "LogTableRow";
-
-/**
- * The expanded row — the raw event on the left, the line's context on the right.
- *
- * **`LogRow` still carries no `attrs`, and that is still the point.** IKN-19 leaves it out of the
- * list payload deliberately, because two hundred rows of arbitrary JSON is a payload nobody reads
- * and everybody pays for. What IKN-58 adds is the other half of that decision: the per-row fetch
- * (`GET /api/logs/entry/:id`) this comment used to say did not exist yet. It lands in `detail`,
- * and the two panes have stopped being redundant — the left one is now the event as the API has
- * it, `attrs` included, rather than the list row re-serialised.
- *
- * Until it arrives — and forever, for a live-tail row that has no id to fetch by — the pane still
- * renders what the line genuinely carries and nothing else. No invented keys, no empty
- * `attrs: {}`, and no `—` beside a label for a field this event does not have.
- *
- * For an error the right pane is headed `stack` and leads with the message unclipped and
- * pre-wrapped, because a pino-serialised error folds `err.stack` into exactly that field. That is
- * the row showing what it has, not this file claiming a stack exists.
- */
-const RowDetail = ({
-  row,
-  rowKey,
-  isError,
-  state,
-  actions,
-}: {
-  row: LogRow;
-  rowKey: string;
-  isError: boolean;
-  /** The panel's fetch for this row: `detail` is null while it is in flight, and for a live row. */
-  state: LogDetailState;
-  actions: RowActions;
-}) => {
-  /*
-   * Read from context here rather than threaded down like the row's `tz`, because this pane exists
-   * at most once in the document — `expandedKey` is a single value — so there is no subscription
-   * count to keep down, and it needs the zone's *name* as well as the zone itself.
-   */
-  const { tz, abbrev } = useZone();
-
-  const { detail, loading: detailLoading, error: detailError } = state;
-
-  // Same narrowing problem as in the row above, same answer.
-  const traceId = row.traceId;
-
-  // `user_agent.original` is a key and not a path — see `userAgentOf`, which is where that is
-  // spelled out and tested, because reaching for it as a path finds `undefined` every time.
-  const agent = userAgentOf(detail?.attrs);
-
-  return (
-    <tr className={cn("border-b bg-chassis-deep", SURFACE_BORDER.chassis)}>
-      <td
-        colSpan={COLUMN_COUNT}
-        id={detailId(rowKey)}
-        className="animate-in px-2 py-2.5"
-      >
-        {/* One column below `rail`, where the rail has already folded and two panes of JSON side by
-            side would each be too narrow to hold a line of it. */}
-        <div className="grid grid-cols-1 gap-3 rail:grid-cols-2">
-          <section>
-            <PaneHeading>{LOGS_TEXT.rawEvent(abbrev)}</PaneHeading>
-            {/*
-             * The event serialised — the same object `copy NDJSON` puts on the clipboard, pretty
-             * printed, which is why both read `detail ?? row` rather than one of them keeping a
-             * second copy. Before the fetch answers (and forever, for a live row) that is the list
-             * row itself, which is genuinely all the client has.
-             *
-             * Capped rather than left to grow: `attrs` is arbitrary and a serialised `err.stack`
-             * is not small, so without a ceiling one expanded line can be taller than the window
-             * it opened in.
-             *
-             * Its `ts` stays UTC when the column above has been switched to a local zone, and that
-             * is the point rather than an oversight: this is what the API said and what `jq` will
-             * read, so converting it would make the pane a paraphrase of the event instead of the
-             * event. The heading carries the `· utc` that says so whenever the two differ.
-             */}
-            <pre
-              className={cn(
-                // `ik-scroll-x`, not `ik-scroll`: the vertical variant's `overscroll-behavior:
-                // none` would eat every wheel event the pointer spends over it rather than passing
-                // it up to the stream. `ik-scroll-x` turns chaining back on along y — which is
-                // what makes the ceiling below safe to add.
-                "ik-scroll-x max-h-64 overflow-auto rounded-chip border p-2 text-row leading-hint",
-                SURFACE_BORDER.chassis,
-                SURFACE_INSET_BG.chassis,
-                SURFACE_TEXT_MUTED.chassis,
-              )}
-            >
-              {JSON.stringify(detail ?? row, null, 2)}
-            </pre>
-          </section>
-
-          <section>
-            <PaneHeading>{isError ? LOGS_TEXT.stack : LOGS_TEXT.context}</PaneHeading>
-            <div className={cn("rounded-chip border p-2", SURFACE_BORDER.chassis, SURFACE_INSET_BG.chassis)}>
-              {isError && (
-                <pre className={cn("mb-2 text-row leading-hint whitespace-pre-wrap", TONE_TEXT.chassis.error)}>
-                  {row.message}
-                </pre>
-              )}
-              {/*
-               * Every pair the row genuinely carries, and no line for one it does not — a `route` of
-               * `—` on a worker's log line describes nothing that happened. The labels are the column
-               * names rather than a second vocabulary, so the pane reads as the row unfolded.
-               */}
-              <dl className="flex flex-col gap-1 text-row">
-                <DetailField label={LOGS_TEXT.columns.time(abbrev)}>
-                  <span className="ik-zone-flash ik-zone-lift">{fullInstant(row.ts, tz)}</span>
-                </DetailField>
-                <DetailField label={LOGS_TEXT.columns.service}>{row.service}</DetailField>
-                <DetailField label={LOGS_TEXT.columns.level}>
-                  {row.levelName} ({row.level})
-                </DetailField>
-                {row.route !== null && (
-                  <DetailField label={LOGS_TEXT.columns.route}>
-                    {row.httpMethod === null ? row.route : `${row.httpMethod} ${row.route}`}
-                  </DetailField>
-                )}
-                {row.statusCode !== null && (
-                  <DetailField label={LOGS_TEXT.columns.status}>{row.statusCode}</DetailField>
-                )}
-                {row.durationMs !== null && (
-                  <DetailField label={LOGS_TEXT.columns.duration}>{row.durationMs} ms</DetailField>
-                )}
-                {traceId !== null && <DetailField label={LOGS_TEXT.columns.trace}>{traceId}</DetailField>}
-                {/*
-                 * The half of the line that had to be fetched — IKN-58, and the reason this pane
-                 * can now answer "who". Same rule as the pairs above: a field the event does not
-                 * carry gets no line, because `client —` on a worker's log line describes nothing.
-                 *
-                 * `clientIp` is what the *service* reported. An app behind nginx that does not
-                 * trust its proxy logs every caller as `127.0.0.1`, and that is a true fact about
-                 * that app's logger rather than something for this pane to second-guess.
-                 */}
-                {detail?.clientIp != null && (
-                  <DetailField label={LOGS_TEXT.columns.client}>{detail.clientIp}</DetailField>
-                )}
-                {detail?.userId != null && <DetailField label={LOGS_TEXT.columns.user}>{detail.userId}</DetailField>}
-                {detail?.hostname != null && (
-                  <DetailField label={LOGS_TEXT.columns.host}>{detail.hostname}</DetailField>
-                )}
-                {agent !== null && <DetailField label={LOGS_TEXT.columns.agent}>{agent}</DetailField>}
-                {/*
-                 * One line while the fetch is in flight, so the list grows into its answer from
-                 * somewhere rather than appearing out of nothing. The mark is what makes it read as
-                 * a question and not as a field called `loading` (IKN-57).
-                 */}
-                {detailLoading && (
-                  <div className={SURFACE_TEXT_DIM.chassis}>
-                    <Pending>{LOGS_TEXT.loading}</Pending>
-                  </div>
-                )}
-                {/*
-                 * Said here rather than over the stream: the line itself is on screen and readable,
-                 * and only the fetched half is missing. A banner above the list would suggest the
-                 * search had failed, which it has not.
-                 */}
-                {detailError !== null && <p className={TONE_TEXT.chassis.warn}>{detailError}</p>}
-              </dl>
-            </div>
-          </section>
-        </div>
-
-        {/*
-         * Two actions, and `issue` is **absent rather than disabled**. Raising an issue from a line
-         * is IKN-14's, and the design doc's rule about a control that is visible and dead applies to
-         * it: a greyed `issue` here reads as a permission problem or as a broken build, and would
-         * have to be un-greyed by the ticket that can actually answer it anyway.
-         */}
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          {traceId !== null && (
-            <Button
-              variant="quiet"
-              onClick={() => actions.openTrace(traceId)}
-            >
-              {LOGS_TEXT.openTrace}
-            </Button>
-          )}
-          {/* The clipboard write and the `copied` toast belong to the panel: this table is rendered
-              in contexts that have no toast provider, and a component that writes to the clipboard
-              is a component that cannot be rendered in a test without a permission prompt. */}
-          <Button
-            variant="quiet"
-            onClick={() => actions.copy(detail ?? row)}
-          >
-            {LOGS_TEXT.copyRow}
-          </Button>
-        </div>
-      </td>
-    </tr>
-  );
-};
-
-const PaneHeading = ({ children }: { children: React.ReactNode }) => (
-  <h3 className={cn("pb-1 text-kicker tracking-kicker uppercase", SURFACE_TEXT_DIM.chassis)}>{children}</h3>
-);
-
-/**
- * One key and its value.
- *
- * Wrapped in a `<div>` rather than left as a bare `dt`/`dd` pair, which HTML5 allows precisely so a
- * list like this can be laid out in rows without a grid template: `w-14` reserves the label column
- * at a step off the spacing scale, and the value takes what is left and wraps inside it.
- */
-const DetailField = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div className="flex gap-2">
-    <dt className={cn("w-14 flex-none", SURFACE_TEXT_DIM.chassis)}>{label}</dt>
-    <dd className={cn("min-w-0 flex-1 break-all", SURFACE_TEXT.chassis)}>{children}</dd>
-  </div>
-);
 
 /**
  * A missing value, drawn and not announced.

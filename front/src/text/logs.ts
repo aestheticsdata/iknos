@@ -75,8 +75,7 @@ export const LOGS_TEXT = {
   loadingNewer: "loading newer lines",
   loadingOlder: "loading older lines",
   endOfResults: "That is every line in the range.",
-  expandRow: "Show the raw event",
-  collapseRow: "Hide the raw event",
+  openRow: "Show the raw event",
   /*
    * The raw event is the wire payload and its `ts` is UTC whatever the column beside it reads, so
    * the heading says so — but only when the two actually differ. A panel already in UTC would gain
