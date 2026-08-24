@@ -1,5 +1,44 @@
 import { describe, expect, it } from "vitest";
-import { logDetailUrl } from "./logQuery";
+import { logDetailUrl, logSearchUrl } from "./logQuery";
+
+import type { LogQueryState } from "./logQuery";
+
+const stateAt = (anchor: string | null): LogQueryState => ({
+  values: { service: null, level: null, route: null, status: null, q: null },
+  off: [],
+  bounds: { from: "2026-08-09T00:00:00.000Z", to: "2026-08-10T00:00:00.000Z" },
+  pinned: anchor !== null,
+  anchor,
+});
+
+describe("logSearchUrl", () => {
+  const params = (state: LogQueryState, opts?: Parameters<typeof logSearchUrl>[1]) =>
+    new URL(logSearchUrl(state, opts), "http://x").searchParams;
+
+  it("omits dir for the default before direction — every call before IKN-59 already did", () => {
+    expect(params(stateAt(null)).has("dir")).toBe(false);
+    expect(params(stateAt(null), { dir: "before" }).has("dir")).toBe(false);
+  });
+
+  it("marks the after direction explicitly", () => {
+    expect(params(stateAt(null), { dir: "after" }).get("dir")).toBe("after");
+  });
+
+  it("seeds the first page at the anchor when there is one and no cursor yet", () => {
+    expect(params(stateAt("2026-08-09T10:00:00.000Z")).get("at")).toBe("2026-08-09T10:00:00.000Z");
+  });
+
+  it("sends no at at all once there is no anchor to seed from", () => {
+    expect(params(stateAt(null)).has("at")).toBe(false);
+  });
+
+  it("prefers a real cursor over the anchor — a page already in hand beats the seed that started it", () => {
+    const found = params(stateAt("2026-08-09T10:00:00.000Z"), { cursor: "abc123" });
+
+    expect(found.get("cursor")).toBe("abc123");
+    expect(found.has("at")).toBe(false);
+  });
+});
 
 describe("logDetailUrl", () => {
   const at = (ts: string) => new URL(logDetailUrl({ id: "42", ts }), "http://x").searchParams;

@@ -7,7 +7,6 @@ import { VolumeHistogram } from "@components/logs/VolumeHistogram";
 import { useToast } from "@components/ui/Toast";
 import { useCommand } from "@lib/commandState";
 import { useLogQueryState } from "@lib/logQuery";
-import { boundsAtJump } from "@lib/timeRange";
 import { useTraceParam } from "@lib/traceState";
 import { useHistogram } from "@lib/useHistogram";
 import { useLiveTail } from "@lib/useLiveTail";
@@ -17,7 +16,7 @@ import { useTrace } from "@lib/useTrace";
 import { cn } from "@lib/utils";
 import { usePublishViewStatus } from "@lib/viewStatus";
 import { LOGS_TEXT } from "@text/logs";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { LogFeedItem, LogRow } from "@lib/logTypes";
 import type { Service } from "@lib/services";
@@ -47,7 +46,7 @@ const HEAD_BAND = "[--ik-head-bg:var(--color-chassis-surface)] [--ik-head-line:v
  * is in.
  */
 export const LogPanel = ({ services }: { services: Service[] }) => {
-  const { state, range, setValue, toggle, clear, setWindow, unpinWindow, refresh } = useLogQueryState();
+  const { state, range, setValue, toggle, clear, setWindow, jumpTo, unpinWindow, refresh } = useLogQueryState();
 
   /*
    * Live from the first paint — unless the URL already points at a pinned window.
@@ -80,7 +79,16 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
-  const search = useLogSearch(state);
+  /*
+   * Two independent chains sharing one anchor (IKN-59) — `older` walks toward the start of the
+   * window exactly as before, `newer` walks the opposite way from `state.anchor` and simply never
+   * fetches while there is no anchor to walk from (`useLogSearch`'s own `enabled`). Two hooks
+   * rather than one hook doing both directions: each has its own cursor, its own `hasMore`, its
+   * own in-flight request, and conflating them would mean every piece of that state carrying a
+   * silent "which way" alongside it.
+   */
+  const older = useLogSearch(state, "before");
+  const newer = useLogSearch(state, "after");
   /* The chart follows the tail — see `useHistogram`. It is handed `live` rather than deciding for
    * itself, so that the one toggle in the bar governs both surfaces and they cannot disagree. */
   const histogram = useHistogram(state, range, live);
@@ -128,10 +136,50 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
 
   const held = atTop ? 0 : tail.items.length - shown.length;
 
+  /*
+   * The newer-chain's scroll-to-top auto-load (IKN-59) — and the reason it has to *preserve*
+   * scroll position, not just prepend.
+   *
+   * Prepending rows above whatever the reader is looking at pushes that content down by the
+   * height of what just arrived; a scroll container does not compensate for that on its own, so
+   * without this the reader's eye stays on a screen coordinate while the line under it changes —
+   * exactly the "reflows under the line you are reading" failure the live tail's own pause-on-
+   * scroll logic exists to rule out, arrived at from the opposite direction. The fix is the
+   * standard one for a chat-style backscroll: note the scroll height *before* the fetch that will
+   * prepend, then once the new rows have actually painted, add back however much taller the
+   * container got. `null` is "no correction pending" — most `newer.rows` changes are not this
+   * fetch (the very first anchor fetch, a whole new anchor replacing the last one), and the layout
+   * effect below must leave the scrollport alone for all of them.
+   */
+  const pendingScrollFix = useRef<number | null>(null);
+
+  const loadNewer = useCallback(() => {
+    if (!state.anchor || live || !newer.hasMore || newer.loadingMore) return;
+    const element = listRef.current;
+    if (element) pendingScrollFix.current = element.scrollHeight;
+    newer.loadMore();
+  }, [state.anchor, live, newer.hasMore, newer.loadingMore, newer.loadMore]);
+
+  useLayoutEffect(() => {
+    const element = listRef.current;
+    const before = pendingScrollFix.current;
+    if (!element || before === null) return;
+
+    pendingScrollFix.current = null;
+    element.scrollTop += element.scrollHeight - before;
+  }, [newer.rows]);
+
   const onScroll = useCallback(() => {
     const element = listRef.current;
-    if (element) setAtTop(element.scrollTop <= 0);
-  }, []);
+    if (!element) return;
+
+    const top = element.scrollTop <= 0;
+    setAtTop(top);
+    // `<=` rather than `=== 0`: a trackpad's rubber-band overscroll can report a small negative
+    // value at the boundary, and requiring the exact pixel would miss the very gesture — pulling
+    // up past the top of an already-topped-out list — that this is meant to catch.
+    if (top) loadNewer();
+  }, [loadNewer]);
 
   const backToTop = useCallback(() => {
     listRef.current?.scrollTo({ top: 0 });
@@ -139,18 +187,28 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
   }, []);
 
   /*
-   * Live rows sit above the searched page, and the two are never merged or de-duplicated.
+   * Live rows, the newer-chain, and the older-chain — three sources stacked newest-first and never
+   * merged or de-duplicated with each other.
    *
-   * They cannot be: a row off the tail has `id: ""` — it was committed but never read back, so it
-   * has no autoincrement value to match against. Attempting a merge would mean guessing identity
-   * from `(ts, service, message)`, and two identical lines a millisecond apart are exactly what a
-   * loop in someone's code looks like. The tail is what arrived since the page was fetched;
-   * `refresh` is how the two become one list again.
+   * The live tail cannot be merged into either chain: a row off the tail has `id: ""` — it was
+   * committed but never read back, so it has no autoincrement value to match against, and
+   * `refresh` is how it becomes one list with the search results again. The newer- and
+   * older-chains need no such caveat — both come from the same paginated endpoint and both carry
+   * real ids — but they stay two arrays anyway, because that is the seam `loadNewer` and the
+   * table's own "load more" each push on independently.
+   *
+   * `live` and `state.anchor` are not expected to be true together — jumping turns `live` off, and
+   * turning `live` back on drops the anchor (see `onToggleLive` below) — but the order here is
+   * still the correct fallback if that guard is ever wrong: live is the most recent thing that
+   * could exist, the newer-chain is the second-most, and the older-chain — always present — is the
+   * rest of the list under both.
    */
-  const items = useMemo<LogFeedItem[]>(
-    () => [...(live ? shown : []), ...search.rows.map((row) => ({ kind: "row" as const, key: row.id, row }))],
-    [live, shown, search.rows],
-  );
+  const items = useMemo<LogFeedItem[]>(() => {
+    const liveItems = live ? shown : [];
+    const newerItems = state.anchor ? newer.rows.map((row) => ({ kind: "row" as const, key: row.id, row })) : [];
+    const olderItems = older.rows.map((row) => ({ kind: "row" as const, key: row.id, row }));
+    return [...liveItems, ...newerItems, ...olderItems];
+  }, [live, shown, state.anchor, newer.rows, older.rows]);
 
   /** Gaps are not selectable — a dropped-lines marker is a fact about the list, not a row in it. */
   const selectableKeys = useMemo(() => items.filter((item) => item.kind === "row").map((item) => item.key), [items]);
@@ -303,7 +361,7 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
    * the total for the range would need a `COUNT(*)` over the same predicate, and IKN-19
    * deliberately does not run one (the extra row is how the page learns there is more).
    */
-  usePublishViewStatus({ live, count: items.length, tookMs: search.tookMs });
+  usePublishViewStatus({ live, count: items.length, tookMs: older.tookMs });
 
   return (
     <section className="flex h-full min-h-0 flex-col bg-chassis-deep">
@@ -314,14 +372,32 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         onToggle={toggle}
         onClear={clear}
         live={live}
-        onToggleLive={() => setLive((current) => !current)}
-        tookMs={search.tookMs}
+        onToggleLive={() => {
+          setLive((current) => {
+            const next = !current;
+            // Turning LIVE back on always means fully live — an anchored window left standing
+            // behind it would leave the newer-chain's scroll-to-top and the tail's own top-of-list
+            // prepending both reaching for the same few pixels, each on its own idea of what
+            // belongs there.
+            if (next && state.anchor) unpinWindow();
+            return next;
+          });
+        }}
+        tookMs={older.tookMs}
         pinned={state.pinned}
         onUnpinWindow={unpinWindow}
-        onJumpToTime={(at) => setWindow(boundsAtJump(range, at))}
+        onJumpToTime={(at) => {
+          jumpTo(at);
+          // The jump is the point at which live and anchored stop being compatible — see the note
+          // on `items` above for why the two are not expected to coexist.
+          setLive(false);
+        }}
         onRefresh={() => {
           refresh();
-          search.reload();
+          older.reload();
+          // A no-op request while unanchored: `newer` only fetches with an anchor in force
+          // (`useLogSearch`'s own `enabled`), so this costs nothing on the common path.
+          newer.reload();
           histogram.reload();
         }}
       />
@@ -372,12 +448,12 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
           onSelect={setSelectedKey}
           onExpand={setExpandedKey}
           onOpenTrace={setOpenTraceId}
-          loading={search.loading}
-          hasMore={search.hasMore}
-          loadingMore={search.loadingMore}
-          onLoadMore={search.loadMore}
-          error={search.error}
-          onRetry={search.reload}
+          loading={older.loading}
+          hasMore={older.hasMore}
+          loadingMore={older.loadingMore}
+          onLoadMore={older.loadMore}
+          error={older.error}
+          onRetry={older.reload}
           onCopyRow={copyRow}
         />
       </div>

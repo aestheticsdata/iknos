@@ -72,16 +72,25 @@ const valueParsers = {
  * When both are present they win over `range`. Stored as ISO strings rather than as a synthetic
  * range key because the bucket is an arbitrary interval — `02:14:37 + 30s` is not `15m`, and
  * rounding it to one would move the very bar the user clicked on.
+ *
+ * `at` is a further, optional third value — the instant a "jump to time" targeted, if that is how
+ * this window was pinned (IKN-59). A bucket click never sets it: its window already *is* the
+ * interval the reader asked for, with nothing before or after it inside `[from, to)` worth paging
+ * toward. A jump's window is different on purpose — `from`/`to` still bound the query, but `at`
+ * marks a point *inside* that range for the search endpoint to seed a page at, and for the newer
+ * and older chains either side of it to both know where they started from.
  */
-const windowParsers = { from: parseAsString, to: parseAsString };
+const windowParsers = { from: parseAsString, to: parseAsString, at: parseAsString };
 
 export type LogQueryState = {
   values: LogFilterValues;
   off: readonly LogFilterKey[];
   /** The window actually in force, always both bounds — the API rejects anything else. */
   bounds: Bounds;
-  /** True when the window came from a histogram click rather than from the range buttons. */
+  /** True when the window came from a histogram click or a jump, rather than from the range buttons. */
   pinned: boolean;
+  /** The instant a "jump to time" targeted, or `null` for every other way a window gets pinned. */
+  anchor: string | null;
 };
 
 /** Whether a key is currently applied: it has a value *and* has not been switched off. */
@@ -112,10 +121,24 @@ export const buildLogQuery = (state: LogQueryState): URLSearchParams => {
   return params;
 };
 
-export const logSearchUrl = (state: LogQueryState, cursor?: string | null, limit?: number): string => {
+/**
+ * `dir` and a page's position within it — `cursor` to continue one already in hand, or (only when
+ * there is no cursor yet) `state.anchor` to seed the very first page at the jump target instead of
+ * at `to`. A caller paging toward older rows never needs to say so; `"before"` is the API's own
+ * default and every call before IKN-59 already omitted it.
+ */
+export const logSearchUrl = (
+  state: LogQueryState,
+  opts: { cursor?: string | null; limit?: number; dir?: "before" | "after" } = {},
+): string => {
   const params = buildLogQuery(state);
-  if (cursor) params.set("cursor", cursor);
-  if (limit) params.set("limit", String(limit));
+  if (opts.dir === "after") params.set("dir", "after");
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  // Only when there is no cursor: a cursor is a page already in hand and a more precise
+  // continuation than the anchor that started the chain, and the API prefers it for the same
+  // reason (`resolveCursor`, nest-api/src/logs/log-query.ts).
+  else if (state.anchor) params.set("at", state.anchor);
+  if (opts.limit) params.set("limit", String(opts.limit));
   return `/logs?${params}`;
 };
 
@@ -179,6 +202,8 @@ export const useLogQueryState = (): {
   clear: (key: LogFilterKey) => void;
   /** Pin an explicit window — the histogram's bucket click. */
   setWindow: (bounds: Bounds) => void;
+  /** Pin a window around an instant, anchored — the "jump to time" drawer (IKN-59). */
+  jumpTo: (at: Date) => void;
   /** Back to the range buttons. */
   unpinWindow: () => void;
   /** Re-take `now`, and with it every relative bound. */
@@ -196,13 +221,17 @@ export const useLogQueryState = (): {
   const rangeKey: RangeKey = isRangeKey(range) ? range : DEFAULT_RANGE;
 
   const pinned = Boolean(window.from && window.to);
+  const anchor = window.at ?? null;
 
   const bounds = useMemo<Bounds>(
     () => (window.from && window.to ? { from: window.from, to: window.to } : boundsFor(rangeKey, now)),
     [window.from, window.to, rangeKey, now],
   );
 
-  const state = useMemo<LogQueryState>(() => ({ values, off, bounds, pinned }), [values, off, bounds, pinned]);
+  const state = useMemo<LogQueryState>(
+    () => ({ values, off, bounds, pinned, anchor }),
+    [values, off, bounds, pinned, anchor],
+  );
 
   const setValue = useCallback(
     (key: LogFilterKey, value: string | null) => {
@@ -230,13 +259,38 @@ export const useLogQueryState = (): {
   );
 
   const setWindow = useCallback(
-    (next: Bounds) => void setWindowParams({ from: next.from, to: next.to }),
+    // `at: null` even from the bucket path: a bucket click reuses the same URL slot a stale jump
+    // may have left behind, and a bucket window carrying someone else's anchor would seed the
+    // search endpoint's first page at a point outside — sometimes well outside — the interval
+    // just clicked.
+    (next: Bounds) => void setWindowParams({ from: next.from, to: next.to, at: null }),
     [setWindowParams],
   );
 
-  const unpinWindow = useCallback(() => void setWindowParams({ from: null, to: null }), [setWindowParams]);
+  /**
+   * `to` is real "now", not `at` plus a margin. An earlier version of this capped `to` at the
+   * target instant (plus a little headroom) precisely so the first page landed on it without a
+   * long scroll — and that was the wrong axis to fix on: it made the target reachable at the cost
+   * of making everything newer than it unreachable short of unpinning outright (IKN-59). `at`
+   * fixes the same problem from the query side instead — it seeds the first page at the target
+   * directly, whichever end of `[from, to)` that target sits near — which is what leaves `to`
+   * free to be the real ceiling, and the newer-chain in `useLogSearch` free to page all the way up
+   * to it.
+   */
+  const jumpTo = useCallback(
+    (at: Date) => {
+      // Read fresh here rather than from `now` above: that state is a deliberately *stale*
+      // snapshot the relative range holds until `refresh` re-takes it, and a jump an hour into
+      // that staleness must not hand the newer-chain a ceiling an hour behind the real one.
+      const ceiling = new Date();
+      void setWindowParams({ from: boundsFor(rangeKey, at).from, to: ceiling.toISOString(), at: at.toISOString() });
+    },
+    [setWindowParams, rangeKey],
+  );
+
+  const unpinWindow = useCallback(() => void setWindowParams({ from: null, to: null, at: null }), [setWindowParams]);
 
   const refresh = useCallback(() => setNow(new Date()), []);
 
-  return { state, range: rangeKey, setValue, toggle, clear, setWindow, unpinWindow, refresh };
+  return { state, range: rangeKey, setValue, toggle, clear, setWindow, jumpTo, unpinWindow, refresh };
 };

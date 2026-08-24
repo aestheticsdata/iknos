@@ -193,6 +193,91 @@ describe("GET /api/logs", () => {
     expect(res.body.meta.tookMs).toBeGreaterThanOrEqual(0);
     expect(res.body.meta.tookMs).toBeLessThan(10_000);
   });
+
+  describe("dir=after", () => {
+    it("paginates toward newer rows without gaps or repeats", async () => {
+      const service = await track(app, 120);
+
+      const seen: string[] = [];
+      // Older than every seeded row (`seedLogs` counts back from noon, one second apart) —
+      // paging "after" from here should surface the whole set, oldest page first.
+      let cursor: string | null = null;
+      let url = `/api/logs?${WIDE}&service=${service}&limit=50&dir=after&at=2026-08-09T00:00:00Z`;
+
+      for (let page = 0; page < 10; page++) {
+        const res = await get(url).expect(200);
+
+        for (const row of res.body.rows as LogRow[]) seen.push(row.message);
+        cursor = res.body.nextCursor;
+        if (!cursor) break;
+        url = `/api/logs?${WIDE}&service=${service}&limit=50&dir=after&cursor=${cursor}`;
+      }
+
+      expect(seen).toHaveLength(120);
+      expect(new Set(seen).size).toBe(120);
+      expect(cursor).toBeNull();
+    });
+
+    it("still returns each page newest first, even though it queried the table the other way", async () => {
+      const service = await track(app, 20);
+      const res = await get(`/api/logs?${WIDE}&service=${service}&dir=after&at=2026-08-09T00:00:00Z`).expect(200);
+
+      const times = (res.body.rows as LogRow[]).map((r) => r.ts);
+      expect(times).toEqual([...times].sort().reverse());
+    });
+  });
+
+  describe("at", () => {
+    it("seeds the first page at an arbitrary instant instead of at `to`", async () => {
+      // Row i sits at `base - i` seconds; row 60 is exactly on the minute below `base`.
+      const service = await track(app, 120);
+      const target = new Date(Date.UTC(2026, 7, 9, 11, 59, 0)).toISOString();
+
+      const res = await get(`/api/logs?${WIDE}&service=${service}&at=${target}&limit=5`).expect(200);
+
+      // `"before"` (the default) is inclusive of `at` itself: row 60 is the newest row on or
+      // before the target, so it leads the page.
+      expect(res.body.rows[0].ts).toBe(target);
+    });
+
+    it("partitions the table cleanly at the target with dir=before and dir=after — no row missed, none doubled", async () => {
+      const service = await track(app, 40);
+      const target = new Date(Date.UTC(2026, 7, 9, 11, 59, 30)).toISOString(); // row 30, on the second
+
+      const before = await get(`/api/logs?${WIDE}&service=${service}&at=${target}&limit=200`).expect(200);
+      const after = await get(`/api/logs?${WIDE}&service=${service}&dir=after&at=${target}&limit=200`).expect(200);
+
+      const beforeIds = (before.body.rows as LogRow[]).map((r) => r.id);
+      const afterIds = (after.body.rows as LogRow[]).map((r) => r.id);
+
+      // Row i sits at `base - i` seconds, so row 30 is the target and rows 0..29 are strictly
+      // newer than it. `before` is inclusive of the target row; `after` is not — see the comment
+      // on `resolveCursor` for why that specific split was the point.
+      expect(beforeIds).toHaveLength(10); // rows 30..39: the target itself and everything older
+      expect(afterIds).toHaveLength(30); // rows 0..29: strictly newer than the target
+      expect(new Set([...beforeIds, ...afterIds]).size).toBe(40);
+    });
+
+    it("treats an unreadable at the same as an unreadable cursor: no seed, not a 400", async () => {
+      const service = await track(app, 3);
+      const res = await get(`/api/logs?${WIDE}&service=${service}&at=not-a-date`).expect(200);
+
+      expect(res.body.rows).toHaveLength(3);
+    });
+
+    it("is ignored once a real cursor is present", async () => {
+      const service = await track(app, 5);
+      const first = await get(`/api/logs?${WIDE}&service=${service}&limit=2`).expect(200);
+
+      // An `at` that would otherwise seed the very top of the table, alongside a cursor that has
+      // already walked past it — the cursor is the more precise instruction and must win.
+      const res = await get(
+        `/api/logs?${WIDE}&service=${service}&limit=2&cursor=${first.body.nextCursor}&at=2026-08-09T12:00:00Z`,
+      ).expect(200);
+
+      expect(res.body.rows[0].message).not.toBe(first.body.rows[0].message);
+    });
+  });
 });
 
 describe("GET /api/logs/histogram", () => {

@@ -1,9 +1,10 @@
 import { PrismaService } from "@db/prisma.service";
+import { Prisma } from "@generated/prisma/client";
 import { Injectable } from "@nestjs/common";
 import { whereClause } from "./log-query";
 import { DETAIL_COLUMNS, ROW_COLUMNS } from "./row";
 
-import type { LogFilters } from "./log-query";
+import type { LogFilters, PageDirection } from "./log-query";
 import type { RawLogDetail, RawLogRow } from "./row";
 
 /**
@@ -20,18 +21,35 @@ export class LogsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Newest first — the order the Logs view reads in, and the order the cursor walks.
+   * The rows nearest the cursor, in the direction `dir` walks — **not** always newest first.
    *
-   * `ORDER BY ts DESC, id DESC` matches the `(service, ts)` and `(level, ts)` indexes on their
-   * leading columns, and `id` breaks the tie between rows written in the same millisecond, which
-   * at this volume is most of them.
+   * `"before"` (the default, and the only direction before IKN-59) matches the `(service, ts)` and
+   * `(level, ts)` indexes on their leading columns directly: `ORDER BY ts DESC, id DESC` is the
+   * index order, and this already comes back newest first.
+   *
+   * `"after"` needs the opposite scan (`ASC, ASC`) to find the rows *nearest* the cursor rather
+   * than the *furthest* — `LIMIT` keeps whichever end of the sort it is given, so walking
+   * newest-first toward a lower bound would return the wrong `limit` rows outright, not just in
+   * the wrong order. That leaves this batch oldest-first, and it stays that way on purpose: the
+   * caller asks for one row more than it needs specifically to trim the farthest one off *before*
+   * deciding the page is done, and "farthest" only means "last in this array" while the array is
+   * still in the order the cursor produced it. Reversing here, ahead of that trim, would hand the
+   * controller a batch whose first and last extremes have swapped roles — see the `LogsController`
+   * comment on `boundary` for what that got wrong the first time this was written.
    */
-  async search(filters: LogFilters, limit: number, cursor?: { ts: Date; id: bigint }): Promise<RawLogRow[]> {
+  async search(
+    filters: LogFilters,
+    limit: number,
+    cursor?: { ts: Date; id: bigint },
+    dir: PageDirection = "before",
+  ): Promise<RawLogRow[]> {
+    const order = dir === "before" ? Prisma.sql`ts DESC, id DESC` : Prisma.sql`ts ASC, id ASC`;
+
     return this.prisma.$queryRaw<RawLogRow[]>`
       SELECT ${ROW_COLUMNS}
         FROM log_entry
-       WHERE ${whereClause(filters, cursor)}
-       ORDER BY ts DESC, id DESC
+       WHERE ${whereClause(filters, cursor, dir)}
+       ORDER BY ${order}
        LIMIT ${limit}`;
   }
 

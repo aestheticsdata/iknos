@@ -2,6 +2,7 @@ import { Prisma } from "@generated/prisma/client";
 import { LEVELS } from "@ingest/parser";
 import { BadRequestException } from "@nestjs/common";
 import { IsOptional, IsString } from "class-validator";
+import { decodeCursor } from "./cursor";
 
 /**
  * The filter vocabulary, parsed once and shared by every log route.
@@ -31,6 +32,13 @@ export class LogQueryDto {
   @IsOptional() @IsString() q?: string;
   @IsOptional() @IsString() cursor?: string;
   @IsOptional() @IsString() limit?: string;
+  /** Which way a cursor (or `at`) walks. Anything but `"after"` means `"before"` — the existing,
+      default direction — rather than a 400 for a stray value on an old link. */
+  @IsOptional() @IsString() dir?: string;
+  /** Seeds the first page at an arbitrary instant instead of at `to` — a "jump to time". Ignored
+      once `cursor` is present, since a real cursor is a more precise continuation of a page
+      already in hand. */
+  @IsOptional() @IsString() at?: string;
 }
 
 export type LogFilters = {
@@ -116,6 +124,45 @@ export function parseFilters(p: LogQueryDto): LogFilters {
 /** The largest `UNSIGNED BIGINT` there is. Past it the driver has nothing to bind. */
 const MAX_ROW_ID = 18_446_744_073_709_551_615n;
 
+export type PageDirection = "before" | "after";
+
+/** Anything but the one other value means the default — see `LogQueryDto.dir`. */
+export function parseDir(raw: string | undefined): PageDirection {
+  return raw === "after" ? "after" : "before";
+}
+
+/**
+ * An instant to seed the first page at, or `null` if `at` was absent or would not parse.
+ *
+ * Same leniency as `decodeCursor`: this comes off a URL, and a value that will not parse means
+ * "no seed", not a 400 — the query still has `from`/`to` to fall back on, exactly as if `at` had
+ * never been sent.
+ */
+export function parseAt(raw: string | undefined): Date | null {
+  if (!raw) return null;
+  const at = new Date(raw);
+  return Number.isNaN(+at) ? null : at;
+}
+
+/**
+ * The effective keyset cursor for a request: a real `cursor` if one decoded, else `at` turned into
+ * a synthetic one, else nothing (the original "start at `to`" page).
+ *
+ * `at` always becomes `(at, MAX_ROW_ID)`, in **both** directions — not `MIN_ROW_ID` for `"after"`,
+ * which looks symmetric and is the wrong choice. A real row sharing `at`'s exact millisecond has
+ * some ordinary id, always less than `MAX_ROW_ID`; pairing `at` with the max makes `"before"` (`<`)
+ * include that row and `"after"` (`>`) exclude it, so the two directions partition the table
+ * cleanly at `ts <= at` / `ts > at`. `MIN_ROW_ID` on the `"after"` side would instead make *both*
+ * directions include that row — the front end's anchor page and its newer-chain's first page would
+ * each hand back the same row, a real duplicate in whatever list merges the two.
+ */
+export function resolveCursor(p: { cursor?: string; at?: string }): { ts: Date; id: bigint } | undefined {
+  if (p.cursor) return decodeCursor(p.cursor) ?? undefined;
+
+  const at = parseAt(p.at);
+  return at ? { ts: at, id: MAX_ROW_ID } : undefined;
+}
+
 /**
  * A row id off the URL, as the BIGINT it addresses.
  *
@@ -160,7 +207,11 @@ export function escapeLike(term: string): string {
  *
  * Every value is a bound parameter. Nothing here is ever interpolated into the SQL text.
  */
-export function whereClause(f: LogFilters, cursor?: { ts: Date; id: bigint }): Prisma.Sql {
+export function whereClause(
+  f: LogFilters,
+  cursor?: { ts: Date; id: bigint },
+  dir: PageDirection = "before",
+): Prisma.Sql {
   const parts: Prisma.Sql[] = [Prisma.sql`ts >= ${f.from}`, Prisma.sql`ts < ${f.to}`];
 
   if (f.service !== undefined) parts.push(Prisma.sql`service = ${f.service}`);
@@ -175,8 +226,10 @@ export function whereClause(f: LogFilters, cursor?: { ts: Date; id: bigint }): P
   if (cursor !== undefined) {
     // A row-value comparison rather than `ts < ? OR (ts = ? AND id < ?)`: rows sharing a
     // millisecond are common at this volume, and the two-clause form is where a keyset walk
-    // starts repeating or skipping them.
-    parts.push(Prisma.sql`(ts, id) < (${cursor.ts}, ${cursor.id})`);
+    // starts repeating or skipping them. The operator is the only thing `dir` changes — `"after"`
+    // walks the same comparison the other way, toward more recent rows.
+    const op = dir === "before" ? Prisma.sql`<` : Prisma.sql`>`;
+    parts.push(Prisma.sql`(ts, id) ${op} (${cursor.ts}, ${cursor.id})`);
   }
 
   return Prisma.join(parts, " AND ");

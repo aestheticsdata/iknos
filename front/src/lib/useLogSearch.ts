@@ -56,14 +56,27 @@ export type LogSearch = {
   reload: () => void;
 };
 
-export const useLogSearch = (state: LogQueryState): LogSearch => {
+/**
+ * `"before"` is every consumer this hook had until IKN-59 — the search page under the histogram,
+ * paging toward older rows. `"after"` is the newer-chain a jump anchors: the same hook, walking the
+ * opposite way from the same `state.anchor`, so the two chains cannot drift into two different
+ * ideas of what query they are paging.
+ *
+ * The `"after"` chain is meaningless without an anchor to page away from — the range buttons and
+ * bucket clicks land their first page at `to` already, with nothing newer inside `[from, to)` left
+ * to fetch — so a hook called with `dir: "after"` and no `state.anchor` simply never fetches
+ * (`enabled` below), rather than the caller having to remember not to render it.
+ */
+export const useLogSearch = (state: LogQueryState, dir: "before" | "after" = "before"): LogSearch => {
+  const enabled = dir === "before" || state.anchor !== null;
+
   /*
    * The entire query, as one string, and therefore the identity of the search: the dependency the
    * effect watches and the tag every result carries. Two `LogQueryState` objects that build the
    * same URL *are* the same search, whereas comparing the objects themselves would refetch on
    * every render that happened to rebuild one.
    */
-  const url = logSearchUrl(state, null, PAGE_SIZE);
+  const url = logSearchUrl(state, { limit: PAGE_SIZE, dir });
 
   const [pages, setPages] = useState<LoadedPages | null>(null);
   const [failure, setFailure] = useState<{ url: string; message: string } | null>(null);
@@ -98,10 +111,16 @@ export const useLogSearch = (state: LogQueryState): LogSearch => {
    * Derived, not stored. A `loading` boolean owned by the effect is false for the render between
    * the query changing and the effect running, and in that frame the table would say "No lines
    * match these filters in this range." to someone who has just typed one.
+   *
+   * `enabled &&`: the `"after"` chain with no anchor is not "loading" — it has nothing to load
+   * and never will while it stays disabled, which is a different fact from "the request is in
+   * flight" and must not render the same spinner.
    */
-  const loading = current === null && error === null;
+  const loading = enabled && current === null && error === null;
 
   useEffect(() => {
+    if (!enabled) return;
+
     const generationAtStart = generation.current;
     const controller = new AbortController();
     inFlight.current = controller;
@@ -132,11 +151,11 @@ export const useLogSearch = (state: LogQueryState): LogSearch => {
       generation.current += 1;
       controller.abort();
     };
-  }, [url, attempt]);
+  }, [url, attempt, enabled]);
 
   const loadMore = useCallback(() => {
     const from = pages && pages.url === url ? pages : null;
-    if (!from?.cursor || appending) return;
+    if (!enabled || !from?.cursor || appending) return;
 
     const generationAtStart = generation.current;
     setAppending(true);
@@ -146,7 +165,7 @@ export const useLogSearch = (state: LogQueryState): LogSearch => {
         // The cursor is opaque and the only contract with it is to hand it back — `logSearchUrl`
         // takes it precisely so that a page two is the same query plus a position, and never a
         // second query assembled somewhere else.
-        const response = await api(logSearchUrl(state, from.cursor, PAGE_SIZE), {
+        const response = await api(logSearchUrl(state, { cursor: from.cursor, limit: PAGE_SIZE, dir }), {
           signal: inFlight.current?.signal,
         });
         if (generation.current !== generationAtStart) return;
@@ -159,7 +178,14 @@ export const useLogSearch = (state: LogQueryState): LogSearch => {
           existing && existing.url === url
             ? {
                 url,
-                rows: [...existing.rows, ...page.rows],
+                // Both chains keep `rows` newest-first, and each one arrives from `page.rows`
+                // already in that order — but the *new* page sits on a different side depending on
+                // which way it was fetched. Paging `"before"` walks toward older rows than
+                // anything already held, which belong after them; paging `"after"` walks toward
+                // newer rows than anything already held, which belong before them. Appending on
+                // both, the shape `"before"` already had, would leave an `"after"` chain reading
+                // its own history backwards the moment a second page landed.
+                rows: dir === "before" ? [...existing.rows, ...page.rows] : [...page.rows, ...existing.rows],
                 cursor: page.nextCursor,
                 // The status bar reports the query you last made. Keeping page one's number after
                 // five appends would show a timing that measured nothing on screen.
@@ -179,7 +205,7 @@ export const useLogSearch = (state: LogQueryState): LogSearch => {
     };
 
     void append();
-  }, [pages, url, state, appending]);
+  }, [pages, url, state, appending, enabled, dir]);
 
   const reload = useCallback(() => {
     // The failure is cleared first so the retry is visible: `loading` is derived from having

@@ -52,29 +52,3 @@ export const boundsFor = (key: RangeKey, now: Date = new Date()): Bounds => ({
   from: new Date(now.getTime() - MINUTES[key] * 60_000).toISOString(),
   to: now.toISOString(),
 });
-
-/**
- * Headroom a manual "jump to time" gets above its target — fixed, not scaled by `range`.
- *
- * `boundsAtJump` below pins `to` past the target rather than at it, and this is how far past. Too
- * little and the window is flush against the ceiling again the moment the reader lands on a busy
- * minute; too much and the first page (`PAGE_SIZE` rows, newest first) fills with everything after
- * the target and pushes the target itself off the bottom, which is the scrolling problem "jump to
- * time" exists to remove.
- */
-const JUMP_HEADROOM_MINUTES = 10;
-
-/**
- * The window a manual jump pins, given the target instant and the range in force.
- *
- * `from` is exactly what the range buttons would give ending *at* the target — `boundsFor(key,
- * at).from` — so "load more" reaches as far back as the selected range always has. `to` is not:
- * pinning it flush at the target (`boundsFor`'s own behaviour) leaves nothing newer in the fetched
- * page, so the reader who typed `10:00` can scroll toward older lines and nowhere else — the whole
- * bug this function exists to fix. A little headroom past the target is what keeps them from being
- * pinned against their own row.
- */
-export const boundsAtJump = (key: RangeKey, at: Date): Bounds => ({
-  from: boundsFor(key, at).from,
-  to: new Date(at.getTime() + JUMP_HEADROOM_MINUTES * 60_000).toISOString(),
-});
