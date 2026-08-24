@@ -33,6 +33,12 @@ import type { Service } from "@lib/services";
 const HEAD_BAND = "[--ik-head-bg:var(--color-chassis-surface)] [--ik-head-line:var(--color-chassis-border)]";
 
 /**
+ * How near the list's bottom edge, in pixels, counts as having reached it — a few rows, so the
+ * next older page is already in flight while the reader covers the last lines on screen.
+ */
+const LOAD_OLDER_EDGE = 120;
+
+/**
  * The log panel — the view that justifies M1, IKN-12.
  *
  * Everything below is composed here and nowhere else: the token bar, the histogram, the list and
@@ -154,31 +160,43 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
   const pendingScrollFix = useRef<number | null>(null);
 
   /*
-   * Driven by the `atTop` *state*, not by the scroll event that set it — that was the bug in the
-   * first cut of this. A reader who lands on a jump has never scrolled at all: the container opens
-   * at `scrollTop === 0` because that is where every scroll container starts, so there is no
-   * "arriving at the top" event to react to, only an "already there" fact. A handler that only
-   * checks inside `onScroll` never fires for that reader, and they are the common case — the whole
-   * point of a jump is to land exactly where they were going to have to scroll to anyway.
+   * The trigger is a **wheel-up gesture while already at the top** — not a scroll event, and not
+   * the `atTop` state, and both of those are graves this code has already been buried in once.
    *
-   * An effect keyed on `atTop` covers both: the ordinary "scrolled down, scrolled back up to 0"
-   * case still re-runs it because `atTop` still flips from `false` to `true`, and "was already at
-   * 0 when the anchor's first page painted" now does too, because the effect runs after every
-   * render where `atTop` (or readiness) changed — including the first one.
+   * A scroll handler never fires for the reader who just landed on a jump: the container opens at
+   * `scrollTop === 0`, wheeling up against a top the browser cannot scroll past produces no
+   * scroll event at all, so "the reader is asking for newer lines" is invisible to `onScroll` in
+   * exactly the case the jump exists for. And an effect keyed on the `atTop` state fires with no
+   * gesture whatsoever — the panel opens at the top, so it fetched on arrival, and each page's
+   * completion re-ran it before the scroll-position correction's own scroll event could flip
+   * `atTop` back off, which walked the whole window to `now` in one unasked-for burst. That burst
+   * buried the target the reader had just typed, which is the bug shipped last time.
    *
-   * It does not runaway to the end of the range in one breath, and not by any cap counted here.
-   * Setting `scrollTop` in the layout effect below dispatches a real `scroll` event, `onScroll`
-   * sets `atTop` false the moment that lands, and this effect's own dependency on `atTop` is what
-   * stops it — the same mechanism that lets a genuine scroll-up ask for another page also lets a
-   * satisfied one stop asking.
+   * Wheel events have neither problem: they fire whether or not the box can still move, and only
+   * a hand on the wheel produces one. One page per arrival at the top is self-limiting — the
+   * prepend correction below moves `scrollTop` off zero, so continuing to wheel first scrolls the
+   * reader up through the page that just landed, and the next fetch waits until they reach the
+   * top again.
    */
-  useEffect(() => {
-    if (!atTop || !state.anchor || live || !newer.hasMore || newer.loadingMore) return;
+  const loadNewer = useCallback(() => {
+    if (!state.anchor || live || !newer.hasMore || newer.loadingMore) return;
 
     const element = listRef.current;
     if (element) pendingScrollFix.current = element.scrollHeight;
     newer.loadMore();
-  }, [atTop, state.anchor, live, newer.hasMore, newer.loadingMore, newer.loadMore]);
+  }, [state.anchor, live, newer.hasMore, newer.loadingMore, newer.loadMore]);
+
+  const onWheel = useCallback(
+    (event: React.WheelEvent<HTMLDivElement>) => {
+      if (event.deltaY >= 0) return;
+      const element = listRef.current;
+      // `<=` rather than `=== 0`: a trackpad's rubber-band overscroll can report a small negative
+      // value at the boundary, and demanding the exact pixel would miss the strongest possible
+      // version of the gesture.
+      if (element && element.scrollTop <= 0) loadNewer();
+    },
+    [loadNewer],
+  );
 
   useLayoutEffect(() => {
     const element = listRef.current;
@@ -191,10 +209,28 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
 
   const onScroll = useCallback(() => {
     const element = listRef.current;
-    // `<=` rather than `=== 0`: a trackpad's rubber-band overscroll can report a small negative
-    // value at the boundary, and requiring the exact pixel would miss the gesture that produces it.
-    if (element) setAtTop(element.scrollTop <= 0);
-  }, []);
+    if (!element) return;
+
+    setAtTop(element.scrollTop <= 0);
+
+    /*
+     * The bottom edge asks for the next older page itself — the "load more" button this replaces
+     * made the reader stop scrolling to press a control that said what the scrolling already said.
+     * The margin fires the fetch a few rows early, so the page is usually on its way down before
+     * the reader runs out of list; and appending below the fold moves nothing the reader can see,
+     * so unlike the newer side this needs no scroll correction. No loop hides here either: a full
+     * page is ~100 rows tall, far more than the margin, so landing one pushes the bottom well out
+     * of range again.
+     */
+    if (
+      element.scrollTop + element.clientHeight >= element.scrollHeight - LOAD_OLDER_EDGE &&
+      older.hasMore &&
+      !older.loadingMore &&
+      !older.loading
+    ) {
+      older.loadMore();
+    }
+  }, [older.hasMore, older.loadingMore, older.loading, older.loadMore]);
 
   const backToTop = useCallback(() => {
     listRef.current?.scrollTo({ top: 0 });
@@ -209,8 +245,8 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
    * committed but never read back, so it has no autoincrement value to match against, and
    * `refresh` is how it becomes one list with the search results again. The newer- and
    * older-chains need no such caveat — both come from the same paginated endpoint and both carry
-   * real ids — but they stay two arrays anyway, because that is the seam the auto-load effect
-   * above and the table's own "load more" each push on independently.
+   * real ids — but they stay two arrays anyway, because that is the seam the two scroll edges
+   * push on independently: wheel-up at the top grows `newer`, reaching the bottom grows `older`.
    *
    * `live` and `state.anchor` are not expected to be true together — jumping turns `live` off, and
    * turning `live` back on drops the anchor (see `onToggleLive` below) — but the order here is
@@ -410,9 +446,8 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         onRefresh={() => {
           refresh();
           older.reload();
-          // A no-op request while unanchored: `newer` only fetches with an anchor in force
-          // (`useLogSearch`'s own `enabled`), so this costs nothing on the common path.
-          newer.reload();
+          // Not `newer.reload()`: the newer chain fetches nothing except when the reader scrolls
+          // up for it, and a reload cannot un-ask a question that was never asked.
           histogram.reload();
         }}
       />
@@ -453,6 +488,7 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
       <div
         ref={listRef}
         onScroll={onScroll}
+        onWheel={onWheel}
         className={cn("ik-scroll ik-scroll-head min-h-0 flex-1 overflow-y-auto bg-chassis-inset", HEAD_BAND)}
       >
         <LogTable
@@ -466,7 +502,6 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
           loading={older.loading}
           hasMore={older.hasMore}
           loadingMore={older.loadingMore}
-          onLoadMore={older.loadMore}
           error={older.error}
           onRetry={older.reload}
           onCopyRow={copyRow}

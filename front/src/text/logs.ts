@@ -69,7 +69,6 @@ export const LOGS_TEXT = {
     agent: "agent",
   },
   empty: "No lines match these filters in this range.",
-  loadMore: "load more",
   /* Stem only; `<Pending>` draws the dots — see `SERVICE_TEXT.loading` (IKN-57). */
   loading: "loading",
   endOfResults: "That is every line in the range.",

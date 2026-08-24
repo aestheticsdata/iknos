@@ -121,7 +121,6 @@ export const LogTable = ({
   loading,
   hasMore,
   loadingMore,
-  onLoadMore,
   error,
   onRetry,
   onCopyRow,
@@ -139,9 +138,10 @@ export const LogTable = ({
   detail: LogDetailState;
   /** The first page is in flight. Distinct from `loadingMore`, which appends to a list already up. */
   loading: boolean;
+  /** More pages exist below. No control hangs off it — the panel's scroller fetches them as the
+      reader reaches the bottom (IKN-59) — but the footer needs it to not claim the list ended. */
   hasMore: boolean;
   loadingMore: boolean;
-  onLoadMore: () => void;
   error: string | null;
   onRetry: () => void;
   onCopyRow: (row: LogRow) => void;
@@ -264,7 +264,6 @@ export const LogTable = ({
       <Footer
         hasMore={hasMore}
         loadingMore={loadingMore}
-        onLoadMore={onLoadMore}
         error={error}
         onRetry={onRetry}
         exhausted={items.length > 0}
@@ -803,27 +802,29 @@ const GapRow = ({ dropped }: { dropped: number }) => (
 );
 
 /**
- * The end of the list — the cursor's control, or the failure that stopped it.
+ * The end of the list — what is happening down there, or the failure that stopped it.
  *
- * **No page numbers, ever.** The API pages on an opaque `(ts, id)` cursor and appends; page 4 of a
- * live stream is not a thing that exists, and offering it would mean either lying or re-querying
- * from the top every time the tail delivers a line.
+ * **No "load more" button since IKN-59, and no page numbers, ever.** Reaching the bottom *is* the
+ * request — the panel's scroller fires the next fetch a few rows before the reader arrives — so a
+ * button here would make them stop scrolling to press a control that says what the scrolling
+ * already said. The API pages on an opaque `(ts, id)` cursor and appends; page 4 of a live stream
+ * is not a thing that exists, and offering it would mean either lying or re-querying from the top
+ * every time the tail delivers a line.
  *
  * The failure copy is the caller's string rather than `LOGS_TEXT.searchFailed`, because the same
  * strip reports a first search that failed and a fourth page that failed, and only the panel knows
- * which one happened.
+ * which one happened. The retry stays a real button for the same reason it always was one: a
+ * failure must not be retried by a scroll gesture nobody meant as consent to try again.
  */
 const Footer = ({
   hasMore,
   loadingMore,
-  onLoadMore,
   error,
   onRetry,
   exhausted,
 }: {
   hasMore: boolean;
   loadingMore: boolean;
-  onLoadMore: () => void;
   error: string | null;
   onRetry: () => void;
   exhausted: boolean;
@@ -847,24 +848,6 @@ const Footer = ({
     );
   }
 
-  if (hasMore) {
-    return (
-      <FooterStrip>
-        {/* One control in one place rather than a button swapped for a spinner: the label changes,
-            the button does not move, and the pointer stays over the thing it is about to press
-            again. `aria-busy` is what says "working" to anyone not watching the label. */}
-        <Button
-          variant="quiet"
-          onClick={onLoadMore}
-          disabled={loadingMore}
-          aria-busy={loadingMore}
-        >
-          {loadingMore ? <Pending>{LOGS_TEXT.loading}</Pending> : LOGS_TEXT.loadMore}
-        </Button>
-      </FooterStrip>
-    );
-  }
-
   if (loadingMore) {
     return (
       <FooterStrip>
@@ -876,6 +859,10 @@ const Footer = ({
       </FooterStrip>
     );
   }
+
+  // More rows exist and nothing is in flight: say nothing. The next scroll to the bottom asks for
+  // them, and a strip announcing that would be furniture under every list that was ever long.
+  if (hasMore) return null;
 
   // Silent on an empty result: the body already says why there is nothing, and "that is every line
   // in the range" under "no lines match" is the same sentence twice, the second time smugly.

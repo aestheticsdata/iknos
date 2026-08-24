@@ -66,9 +66,17 @@ export type LogSearch = {
  * bucket clicks land their first page at `to` already, with nothing newer inside `[from, to)` left
  * to fetch — so a hook called with `dir: "after"` and no `state.anchor` simply never fetches
  * (`enabled` below), rather than the caller having to remember not to render it.
+ *
+ * And even anchored, the `"after"` chain fetches **nothing until asked** (`auto` below). The whole
+ * point of a jump is that the target lands as the first visible line; a newer-chain that fetched
+ * its first page on its own would stack that page on top and bury the target under the very rows
+ * the reader jumped to avoid scrolling through. So its first page belongs to its first
+ * `loadMore()` — the reader scrolling up is the request — and `logSearchUrl` seeds that cursor-less
+ * first call at the anchor.
  */
 export const useLogSearch = (state: LogQueryState, dir: "before" | "after" = "before"): LogSearch => {
   const enabled = dir === "before" || state.anchor !== null;
+  const auto = dir === "before";
 
   /*
    * The entire query, as one string, and therefore the identity of the search: the dependency the
@@ -112,11 +120,12 @@ export const useLogSearch = (state: LogQueryState, dir: "before" | "after" = "be
    * the query changing and the effect running, and in that frame the table would say "No lines
    * match these filters in this range." to someone who has just typed one.
    *
-   * `enabled &&`: the `"after"` chain with no anchor is not "loading" — it has nothing to load
-   * and never will while it stays disabled, which is a different fact from "the request is in
-   * flight" and must not render the same spinner.
+   * `enabled && auto &&`: a chain that is disabled, or one that is waiting to be *asked* for its
+   * first page, is not "loading" — nothing is in flight and nothing will be until something
+   * changes, which is a different fact from "the request is on its way" and must not render the
+   * same spinner.
    */
-  const loading = enabled && current === null && error === null;
+  const loading = enabled && auto && current === null && error === null;
 
   useEffect(() => {
     if (!enabled) return;
@@ -145,17 +154,26 @@ export const useLogSearch = (state: LogQueryState, dir: "before" | "after" = "be
       }
     };
 
-    void load();
+    // A lazy chain skips the fetch and keeps the rest: the controller for `loadMore` to ride on,
+    // and the teardown whose generation bump dismisses anything in flight when the query changes.
+    if (auto) void load();
 
     return () => {
       generation.current += 1;
       controller.abort();
     };
-  }, [url, attempt, enabled]);
+  }, [url, attempt, enabled, auto]);
 
   const loadMore = useCallback(() => {
     const from = pages && pages.url === url ? pages : null;
-    if (!enabled || !from?.cursor || appending) return;
+    if (!enabled || appending) return;
+    // A page in hand whose cursor is spent is the end of the chain, whichever kind of chain.
+    if (from && !from.cursor) return;
+    // No page yet: on an auto chain that first page belongs to the effect — it is in flight or
+    // about to be, and fetching it twice is the only thing this branch could do. On a lazy chain
+    // this call *is* the first page, and passing no cursor is what lets `logSearchUrl` seed it at
+    // the anchor.
+    if (!from && auto) return;
 
     const generationAtStart = generation.current;
     setAppending(true);
@@ -165,34 +183,38 @@ export const useLogSearch = (state: LogQueryState, dir: "before" | "after" = "be
         // The cursor is opaque and the only contract with it is to hand it back — `logSearchUrl`
         // takes it precisely so that a page two is the same query plus a position, and never a
         // second query assembled somewhere else.
-        const response = await api(logSearchUrl(state, { cursor: from.cursor, limit: PAGE_SIZE, dir }), {
+        const response = await api(logSearchUrl(state, { cursor: from?.cursor ?? null, limit: PAGE_SIZE, dir }), {
           signal: inFlight.current?.signal,
         });
         if (generation.current !== generationAtStart) return;
 
         const page = response.data as LogPage;
-        setPages((existing) =>
+        setPages((existing) => {
           // The tag is re-checked inside the updater as well. The generation guard above already
           // covers the ordering hazard; this covers the shape of the write itself, so that no path
           // through this file can append one filter set's rows to another's.
-          existing && existing.url === url
-            ? {
-                url,
-                // Both chains keep `rows` newest-first, and each one arrives from `page.rows`
-                // already in that order — but the *new* page sits on a different side depending on
-                // which way it was fetched. Paging `"before"` walks toward older rows than
-                // anything already held, which belong after them; paging `"after"` walks toward
-                // newer rows than anything already held, which belong before them. Appending on
-                // both, the shape `"before"` already had, would leave an `"after"` chain reading
-                // its own history backwards the moment a second page landed.
-                rows: dir === "before" ? [...existing.rows, ...page.rows] : [...page.rows, ...existing.rows],
-                cursor: page.nextCursor,
-                // The status bar reports the query you last made. Keeping page one's number after
-                // five appends would show a timing that measured nothing on screen.
-                tookMs: page.meta.tookMs,
-              }
-            : existing,
-        );
+          const base = existing && existing.url === url ? existing : null;
+
+          // The lazy chain's first page — nothing to merge with, and `existing` (if any) belongs
+          // to a query that is no longer this one.
+          if (base === null) return { url, rows: page.rows, cursor: page.nextCursor, tookMs: page.meta.tookMs };
+
+          return {
+            url,
+            // Both chains keep `rows` newest-first, and each one arrives from `page.rows`
+            // already in that order — but the *new* page sits on a different side depending on
+            // which way it was fetched. Paging `"before"` walks toward older rows than
+            // anything already held, which belong after them; paging `"after"` walks toward
+            // newer rows than anything already held, which belong before them. Appending on
+            // both, the shape `"before"` already had, would leave an `"after"` chain reading
+            // its own history backwards the moment a second page landed.
+            rows: dir === "before" ? [...base.rows, ...page.rows] : [...page.rows, ...base.rows],
+            cursor: page.nextCursor,
+            // The status bar reports the query you last made. Keeping page one's number after
+            // five appends would show a timing that measured nothing on screen.
+            tookMs: page.meta.tookMs,
+          };
+        });
         setFailure(null);
       } catch (cause) {
         if (generation.current !== generationAtStart) return;
@@ -205,7 +227,7 @@ export const useLogSearch = (state: LogQueryState, dir: "before" | "after" = "be
     };
 
     void append();
-  }, [pages, url, state, appending, enabled, dir]);
+  }, [pages, url, state, appending, enabled, auto, dir]);
 
   const reload = useCallback(() => {
     // The failure is cleared first so the retry is visible: `loading` is derived from having
@@ -220,10 +242,16 @@ export const useLogSearch = (state: LogQueryState, dir: "before" | "after" = "be
     tookMs: current?.tookMs ?? null,
     loading,
     // Guarded by the tag as well: the flag is reset by the effect, and until that effect runs a
-    // changed query would otherwise render "loading…" beneath a list that is already empty.
-    loadingMore: appending && current !== null,
+    // changed query would otherwise render "loading…" beneath a list that is already empty. The
+    // lazy exception: its first fetch is an append with no `current` yet, and that one is
+    // genuinely "loading more" — the guard would hide the only in-flight state it has.
+    loadingMore: appending && (current !== null || !auto),
     error,
-    hasMore: Boolean(current?.cursor),
+    // With a page in hand the cursor is the answer for both chains. Without one they differ: the
+    // auto chain's first page is coming regardless (`false` just mutes "load more" while it does),
+    // while the lazy chain has not asked yet — and "not asked" must read as "there may be rows",
+    // or the caller gating its first `loadMore` on `hasMore` could never make that first call.
+    hasMore: current ? Boolean(current.cursor) : enabled && !auto,
     loadMore,
     reload,
   };
