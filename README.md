@@ -380,6 +380,43 @@ and closed forever after, enforced by a `UNIQUE` column rather than an environme
 someone has to remember to set. There is no mail server on the host, so recovery is a
 passphrase chosen at account creation.
 
+## Running it locally
+
+MySQL 8 and Redis on loopback, then `cp nest-api/.env.example nest-api/.env` and fill it in.
+
+```
+cd nest-api
+pnpm install
+pnpm migrate:deploy          # schema, including the hand-written partition clauses
+pnpm seed                    # the service registry — every PM2 process on ks-b
+pnpm seed:user you@example.com
+pnpm dev                     # 4310
+```
+
+```
+cd front
+pnpm install
+pnpm dev                     # 3006, /api/* rewritten to 4310
+```
+
+**The account is a singleton.** `app_user.singleton` is `UNIQUE`, so `pnpm seed:user` succeeds
+exactly once and there is no way to add a second — the same guarantee that seals registration on
+the deployed instance. To start over on a laptop, `DELETE FROM app_user` and run it again; the
+logs, metrics and offsets are untouched by that, none of them being scoped to a user.
+
+The account this repository's checkout is developed against, and which exists nowhere else — it
+is a row in a database bound to `127.0.0.1` and means nothing on ks-b:
+
+| | |
+|---|---|
+| email | `test@iknos.local` |
+| password | `iknoslocal123` — 12 characters is the floor (`MIN_PASSWORD`) |
+| recovery passphrase | `iknos local recovery` — 13 is the floor (`MIN_PASSPHRASE`) |
+
+What a fresh checkout does **not** get is data. The collector reads `~/.pm2/logs/*.log` and
+scrapes `/metrics` endpoints that only exist on ks-b, so the log panel, the histogram and the
+whole service view come up empty on a laptop. A loadable corpus of fixtures is tracked as IKN-61.
+
 ## Milestones
 
 | | Scope |
