@@ -26,9 +26,13 @@ export const LOGS_TEXT = {
   },
 
   /* Window */
-  pinnedWindow: "pinned to a bucket",
+  // Source-neutral: a bucket click and a manual jump both land here, and the badge cannot tell
+  // which one put it there.
+  pinnedWindow: "pinned window",
   unpinWindow: "back to the range",
   refresh: "refresh",
+  jumpToTime: "jump to time",
+  go: "go",
 
   /* Histogram */
   histogramLabel: "Volume over the selected range",

@@ -8,6 +8,8 @@ import { useCommand } from "@lib/commandState";
 import { isFilterActive, LOG_FILTER_KEYS } from "@lib/logQuery";
 import { FILTERABLE_LEVELS } from "@lib/logTypes";
 import { cn } from "@lib/utils";
+import { defaultZonedInput, parseZonedInstant } from "@lib/zone";
+import { useZone } from "@lib/zoneState";
 import { LOGS_TEXT } from "@text/logs";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -52,6 +54,7 @@ export const QueryBar = ({
   pinned,
   onUnpinWindow,
   onRefresh,
+  onJumpToTime,
 }: {
   state: LogQueryState;
   services: string[];
@@ -66,11 +69,17 @@ export const QueryBar = ({
   pinned: boolean;
   onUnpinWindow: () => void;
   onRefresh: () => void;
+  /** Pin the window around an instant — the same mechanism a histogram bucket click drives. */
+  onJumpToTime: (at: Date) => void;
 }) => {
   const labelId = useId();
   const [draft, setDraft] = useState<Draft | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const { tz } = useZone();
+  const [jumpOpen, setJumpOpen] = useState(false);
+  const jumpTriggerRef = useRef<HTMLButtonElement>(null);
 
   /**
    * `service` is dropped from the addable set when the registry is empty rather than offered as a
@@ -170,6 +179,19 @@ export const QueryBar = ({
         )}
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          {/* Not inside `unset.length > 0` like the filter trigger above: the field this opens
+              takes no side, so there is no state where it has nothing left to add. */}
+          {!jumpOpen && (
+            <Button
+              ref={jumpTriggerRef}
+              variant="quiet"
+              onClick={() => setJumpOpen(true)}
+              className="h-6 px-2"
+            >
+              {LOGS_TEXT.jumpToTime}
+            </Button>
+          )}
+
           {pinned && (
             <>
               <Badge
@@ -231,6 +253,18 @@ export const QueryBar = ({
           onCancel={() => setDraft(null)}
           returnFocusTo={triggerRef}
           fallbackFocusTo={listRef}
+        />
+      )}
+
+      {jumpOpen && (
+        <TimeJumpDrawer
+          tz={tz}
+          onSubmit={(at) => {
+            onJumpToTime(at);
+            setJumpOpen(false);
+          }}
+          onCancel={() => setJumpOpen(false)}
+          returnFocusTo={jumpTriggerRef}
         />
       )}
     </div>
@@ -422,6 +456,87 @@ const Drawer = ({
        * without this a pointer user who opens it by accident has no way back and the bar just
        * stays a row taller. `type="button"` so it cannot submit the form it sits in.
        */}
+      <Button
+        type="button"
+        variant="quiet"
+        onClick={onCancel}
+        className="h-7 px-2"
+      >
+        {LOGS_TEXT.close}
+      </Button>
+    </form>
+  );
+};
+
+/**
+ * The jump-to-time drawer — a row, next to the filter drawer's, for the same reason.
+ *
+ * A `datetime-local` field rather than a bare `HH:mm`, because "10:00" is ambiguous the moment the
+ * range spans more than a day (§4's default is a week) and a picker that also carries the date
+ * removes the guess entirely. It opens on now, in the zone already in force, so the common case —
+ * nudge the minutes back a bit — is an edit rather than a retype.
+ *
+ * Submitting pins the window exactly as a histogram bucket does (`onJumpToTime` → `setWindow`), so
+ * the same badge and `unpinWindow` control govern both: the reader is never looking at two
+ * different kinds of "pinned" with two different ways out.
+ */
+const TimeJumpDrawer = ({
+  tz,
+  onSubmit,
+  onCancel,
+  returnFocusTo,
+}: {
+  tz: string;
+  onSubmit: (at: Date) => void;
+  onCancel: () => void;
+  returnFocusTo: React.RefObject<HTMLButtonElement | null>;
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState(() => defaultZonedInput(tz));
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    return () => {
+      returnFocusTo.current?.focus();
+    };
+  }, [returnFocusTo]);
+
+  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const at = parseZonedInstant(value, tz);
+    if (at) onSubmit(at);
+  };
+
+  return (
+    <form
+      onSubmit={submit}
+      onKeyDown={(event) => {
+        if (event.key !== "Escape") return;
+        event.stopPropagation();
+        onCancel();
+      }}
+      className="flex flex-wrap items-end gap-2 rounded-control border border-chassis-border bg-chassis-inset px-2 py-1.5"
+    >
+      <Field
+        ref={inputRef}
+        surface="chassis"
+        type="datetime-local"
+        step={1}
+        label={LOGS_TEXT.jumpToTime}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        required
+        className="w-[210px]"
+      />
+
+      <Button
+        type="submit"
+        variant="quiet"
+        className="h-7 px-2"
+      >
+        {LOGS_TEXT.go}
+      </Button>
+
       <Button
         type="button"
         variant="quiet"

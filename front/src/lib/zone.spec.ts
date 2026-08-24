@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_ZONE, fullInstant, resolveZone, timeLabel, timeOfDay, zoneAbbrev } from "./zone";
+import {
+  DEFAULT_ZONE,
+  defaultZonedInput,
+  fullInstant,
+  parseZonedInstant,
+  resolveZone,
+  timeLabel,
+  timeOfDay,
+  zoneAbbrev,
+} from "./zone";
 
 /**
  * The offset is the whole point, so every case names its zone rather than trusting the machine's.
@@ -107,6 +116,44 @@ describe("fullInstant", () => {
 
   it("returns an unparseable timestamp untouched", () => {
     expect(fullInstant("nonsense", PARIS)).toBe("nonsense");
+  });
+});
+
+describe("parseZonedInstant", () => {
+  it("reads a UTC value as UTC digits, no offset applied", () => {
+    expect(parseZonedInstant("2026-08-21T12:03:22", "UTC")?.toISOString()).toBe("2026-08-21T12:03:22.000Z");
+  });
+
+  it("subtracts two hours for a Paris value in August (CEST)", () => {
+    expect(parseZonedInstant("2026-08-21T14:03:22", PARIS)?.toISOString()).toBe("2026-08-21T12:03:22.000Z");
+  });
+
+  it("subtracts one hour for a Paris value in January (CET) — the same field, a different offset", () => {
+    expect(parseZonedInstant("2026-01-15T13:03:22", PARIS)?.toISOString()).toBe("2026-01-15T12:03:22.000Z");
+  });
+
+  it("defaults to :00 seconds when the field only carries hours and minutes", () => {
+    expect(parseZonedInstant("2026-08-21T14:03", PARIS)?.toISOString()).toBe("2026-08-21T12:03:00.000Z");
+  });
+
+  it("returns null rather than a wrong instant for a value that will not parse", () => {
+    expect(parseZonedInstant("not-a-datetime", PARIS)).toBeNull();
+  });
+
+  it("round-trips defaultZonedInput's own output, in the zone it was built for", () => {
+    // Truncated to the second: a `datetime-local` field has no millisecond digit to carry one in.
+    const at = new Date("2026-08-21T12:03:22.000Z");
+    expect(parseZonedInstant(defaultZonedInput(PARIS, at), PARIS)).toEqual(at);
+  });
+});
+
+describe("defaultZonedInput", () => {
+  it("names the wall clock in UTC as a bare datetime-local value", () => {
+    expect(defaultZonedInput("UTC", new Date(AUG))).toBe("2026-08-21T12:03:22");
+  });
+
+  it("shifts the same instant two hours ahead in Paris in August", () => {
+    expect(defaultZonedInput(PARIS, new Date(AUG))).toBe("2026-08-21T14:03:22");
   });
 });
 

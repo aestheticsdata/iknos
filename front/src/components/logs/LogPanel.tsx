@@ -7,6 +7,7 @@ import { VolumeHistogram } from "@components/logs/VolumeHistogram";
 import { useToast } from "@components/ui/Toast";
 import { useCommand } from "@lib/commandState";
 import { useLogQueryState } from "@lib/logQuery";
+import { boundsFor } from "@lib/timeRange";
 import { useTraceParam } from "@lib/traceState";
 import { useHistogram } from "@lib/useHistogram";
 import { useLiveTail } from "@lib/useLiveTail";
@@ -317,6 +318,7 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         tookMs={search.tookMs}
         pinned={state.pinned}
         onUnpinWindow={unpinWindow}
+        onJumpToTime={(at) => setWindow(boundsFor(range, at))}
         onRefresh={() => {
           refresh();
           search.reload();
