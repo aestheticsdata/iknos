@@ -4,6 +4,7 @@ import { LogTable } from "@components/logs/LogTable";
 import { QueryBar } from "@components/logs/QueryBar";
 import { TraceTimeline } from "@components/logs/TraceTimeline";
 import { VolumeHistogram } from "@components/logs/VolumeHistogram";
+import { Pending } from "@components/ui/Pending";
 import { useToast } from "@components/ui/Toast";
 import { useCommand } from "@lib/commandState";
 import { useLogQueryState } from "@lib/logQuery";
@@ -236,6 +237,23 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
     listRef.current?.scrollTo({ top: 0 });
     setAtTop(true);
   }, []);
+
+  /*
+   * The word on the append overlay, held in state rather than derived, for the fade-out's sake:
+   * the overlay stays mounted and fades on opacity (nothing snaps), so for 150ms after a fetch
+   * lands it is still faintly visible while both `loadingMore` flags are already false. Derived,
+   * the word would flip to the other direction's the instant its own flag dropped — a scrim
+   * saying "loading older lines" on its way out of a scroll-up. So the effect writes which way
+   * the fetch in flight is walking and deliberately never clears it: the last true word is the
+   * right thing to fade away with.
+   */
+  const [appendNote, setAppendNote] = useState<string | null>(null);
+  const appending = newer.loadingMore || older.loadingMore;
+
+  useEffect(() => {
+    if (newer.loadingMore) setAppendNote(LOGS_TEXT.loadingNewer);
+    else if (older.loadingMore) setAppendNote(LOGS_TEXT.loadingOlder);
+  }, [newer.loadingMore, older.loadingMore]);
 
   /*
    * Live rows, the newer-chain, and the older-chain — three sources stacked newest-first and never
@@ -485,27 +503,63 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
        * `bg-chassis-inset` on the scroller, not only on the table inside it, so the strip beside
        * the rows is the stream's own ground and not the `chassis-deep` of the section behind.
        */}
-      <div
-        ref={listRef}
-        onScroll={onScroll}
-        onWheel={onWheel}
-        className={cn("ik-scroll ik-scroll-head min-h-0 flex-1 overflow-y-auto bg-chassis-inset", HEAD_BAND)}
-      >
-        <LogTable
-          items={items}
-          selectedKey={selectedKey}
-          expandedKey={expandedKey}
-          detail={detail}
-          onSelect={setSelectedKey}
-          onExpand={setExpandedKey}
-          onOpenTrace={setOpenTraceId}
-          loading={older.loading}
-          hasMore={older.hasMore}
-          loadingMore={older.loadingMore}
-          error={older.error}
-          onRetry={older.reload}
-          onCopyRow={copyRow}
-        />
+      {/*
+       * The wrapper exists for the overlay: an element absolutely positioned over the *viewport*
+       * of the stream has to be a sibling of the scroller, not a child — inside, it would be laid
+       * out against the ten-thousand-row scroll box and either scroll away or cover only the top
+       * screenful. The scroller keeps every behaviour it had; only `flex-1 min-h-0` moves up here.
+       */}
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={listRef}
+          onScroll={onScroll}
+          onWheel={onWheel}
+          className={cn("ik-scroll ik-scroll-head h-full overflow-y-auto bg-chassis-inset", HEAD_BAND)}
+        >
+          <LogTable
+            items={items}
+            selectedKey={selectedKey}
+            expandedKey={expandedKey}
+            detail={detail}
+            onSelect={setSelectedKey}
+            onExpand={setExpandedKey}
+            onOpenTrace={setOpenTraceId}
+            loading={older.loading}
+            hasMore={older.hasMore}
+            loadingMore={older.loadingMore}
+            error={older.error}
+            onRetry={older.reload}
+            onCopyRow={copyRow}
+          />
+        </div>
+
+        {/*
+         * The append scrim — a page is on its way in at one of the scroll edges (IKN-59).
+         *
+         * The zone dim's own recipe (`chassis-deep` at 0.6, pointer-events none), at `z-[44]`:
+         * above the lifted time handles at 40, or ten thousand bright timestamps would punch
+         * through the dim, and below the heading band at 45, which stays crisp because it is
+         * chrome over the stream rather than the stream. Always mounted, faded on opacity — an
+         * unmounted overlay cannot animate its exit, and these fetches are short enough that the
+         * exit is most of what is ever seen of it.
+         *
+         * `aria-hidden`, deliberately: it is a visual echo of state, not the state's announcement.
+         * The newer edge is wheel-only today (the known IKN-59 gap), and the older edge's fetch
+         * announces itself in the footer strip a screen reader already had.
+         */}
+        <div
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute inset-0 z-[44] flex items-center justify-center bg-chassis-deep/60 transition-opacity duration-150 ease-out",
+            appending ? "opacity-100" : "opacity-0",
+          )}
+        >
+          {appendNote !== null && (
+            <span className="rounded-chip border border-chassis-border-strong bg-chassis-surface px-2 py-1 text-row text-chassis-text">
+              <Pending>{appendNote}</Pending>
+            </span>
+          )}
+        </div>
       </div>
 
       {/*

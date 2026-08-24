@@ -71,6 +71,9 @@ export const LOGS_TEXT = {
   empty: "No lines match these filters in this range.",
   /* Stem only; `<Pending>` draws the dots — see `SERVICE_TEXT.loading` (IKN-57). */
   loading: "loading",
+  /* The scroll edges' overlay (IKN-59) — which way the page being fetched is walking. Stems too. */
+  loadingNewer: "loading newer lines",
+  loadingOlder: "loading older lines",
   endOfResults: "That is every line in the range.",
   expandRow: "Show the raw event",
   collapseRow: "Hide the raw event",
