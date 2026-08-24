@@ -153,12 +153,32 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
    */
   const pendingScrollFix = useRef<number | null>(null);
 
-  const loadNewer = useCallback(() => {
-    if (!state.anchor || live || !newer.hasMore || newer.loadingMore) return;
+  /*
+   * Driven by the `atTop` *state*, not by the scroll event that set it — that was the bug in the
+   * first cut of this. A reader who lands on a jump has never scrolled at all: the container opens
+   * at `scrollTop === 0` because that is where every scroll container starts, so there is no
+   * "arriving at the top" event to react to, only an "already there" fact. A handler that only
+   * checks inside `onScroll` never fires for that reader, and they are the common case — the whole
+   * point of a jump is to land exactly where they were going to have to scroll to anyway.
+   *
+   * An effect keyed on `atTop` covers both: the ordinary "scrolled down, scrolled back up to 0"
+   * case still re-runs it because `atTop` still flips from `false` to `true`, and "was already at
+   * 0 when the anchor's first page painted" now does too, because the effect runs after every
+   * render where `atTop` (or readiness) changed — including the first one.
+   *
+   * It does not runaway to the end of the range in one breath, and not by any cap counted here.
+   * Setting `scrollTop` in the layout effect below dispatches a real `scroll` event, `onScroll`
+   * sets `atTop` false the moment that lands, and this effect's own dependency on `atTop` is what
+   * stops it — the same mechanism that lets a genuine scroll-up ask for another page also lets a
+   * satisfied one stop asking.
+   */
+  useEffect(() => {
+    if (!atTop || !state.anchor || live || !newer.hasMore || newer.loadingMore) return;
+
     const element = listRef.current;
     if (element) pendingScrollFix.current = element.scrollHeight;
     newer.loadMore();
-  }, [state.anchor, live, newer.hasMore, newer.loadingMore, newer.loadMore]);
+  }, [atTop, state.anchor, live, newer.hasMore, newer.loadingMore, newer.loadMore]);
 
   useLayoutEffect(() => {
     const element = listRef.current;
@@ -171,15 +191,10 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
 
   const onScroll = useCallback(() => {
     const element = listRef.current;
-    if (!element) return;
-
-    const top = element.scrollTop <= 0;
-    setAtTop(top);
     // `<=` rather than `=== 0`: a trackpad's rubber-band overscroll can report a small negative
-    // value at the boundary, and requiring the exact pixel would miss the very gesture — pulling
-    // up past the top of an already-topped-out list — that this is meant to catch.
-    if (top) loadNewer();
-  }, [loadNewer]);
+    // value at the boundary, and requiring the exact pixel would miss the gesture that produces it.
+    if (element) setAtTop(element.scrollTop <= 0);
+  }, []);
 
   const backToTop = useCallback(() => {
     listRef.current?.scrollTo({ top: 0 });
@@ -194,8 +209,8 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
    * committed but never read back, so it has no autoincrement value to match against, and
    * `refresh` is how it becomes one list with the search results again. The newer- and
    * older-chains need no such caveat — both come from the same paginated endpoint and both carry
-   * real ids — but they stay two arrays anyway, because that is the seam `loadNewer` and the
-   * table's own "load more" each push on independently.
+   * real ids — but they stay two arrays anyway, because that is the seam the auto-load effect
+   * above and the table's own "load more" each push on independently.
    *
    * `live` and `state.anchor` are not expected to be true together — jumping turns `live` off, and
    * turning `live` back on drops the anchor (see `onToggleLive` below) — but the order here is
