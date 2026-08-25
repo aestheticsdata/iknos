@@ -111,6 +111,8 @@ export const LOGS_TEXT = {
   context: "context",
   stack: "stack",
   openTrace: "trace",
+  /* The footer's `⌘I` slot, filled by IKN-14 — the shortcut itself cannot fire inside a modal. */
+  openIssue: "issue",
   copyRow: "copy NDJSON",
   copied: "copied",
   /* The tooltip on the client address's copy control, and the name a screen reader gets for it —

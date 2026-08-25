@@ -60,6 +60,7 @@ export const RowDetail = ({
   state,
   onClose,
   onOpenTrace,
+  onOpenIssue,
   onCopy,
   onCopyText,
 }: {
@@ -68,6 +69,8 @@ export const RowDetail = ({
   state: LogDetailState;
   onClose: () => void;
   onOpenTrace: (traceId: string) => void;
+  /** `⌘I`'s destination, reached by a button because the shortcut is dead inside a modal. */
+  onOpenIssue: (row: LogRow) => void;
   onCopy: (row: LogRow) => void;
   /** One value to the clipboard, with the panel's toast — the address's copy control below. */
   onCopyText: (text: string) => void;
@@ -108,11 +111,6 @@ export const RowDetail = ({
             >
               {LOGS_TEXT.close}
             </Button>
-            {/* Two actions, and `issue` is **absent rather than disabled**. Raising an issue from a
-                line is IKN-14's, and the design doc's rule about a control that is visible and dead
-                applies to it: a greyed `issue` here reads as a permission problem or as a broken
-                build, and would have to be un-greyed by the ticket that can actually answer it
-                anyway. */}
             {traceId !== null && (
               <Button
                 variant="quiet"
@@ -121,6 +119,20 @@ export const RowDetail = ({
                 {LOGS_TEXT.openTrace}
               </Button>
             )}
+            {/* The slot this footer has held open since it was written, filled by IKN-14.
+                `⌘I` is the shortcut for it and cannot reach here — every non-`esc` key is dead
+                while a modal is open, and since IKN-60 this panel *is* a modal.
+
+                Shown for every line rather than only for errors, and never disabled: whether the
+                line was grouped is a lookup, not something a `LogRow` carries, and a control greyed
+                out on a guess reads as a permission problem or a broken build. It answers in words
+                when there is no issue behind the line. */}
+            <Button
+              variant="quiet"
+              onClick={() => onOpenIssue(row)}
+            >
+              {LOGS_TEXT.openIssue}
+            </Button>
             <Button
               variant="quiet"
               onClick={() => onCopy(detail ?? row)}

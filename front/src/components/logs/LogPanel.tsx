@@ -11,6 +11,7 @@ import { useCommand } from "@lib/commandState";
 import { useLogQueryState } from "@lib/logQuery";
 import { useTraceParam } from "@lib/traceState";
 import { useHistogram } from "@lib/useHistogram";
+import { useOpenIssueForLog } from "@lib/useIssues";
 import { useLiveTail } from "@lib/useLiveTail";
 import { useLogDetail } from "@lib/useLogDetail";
 import { useLogSearch } from "@lib/useLogSearch";
@@ -377,6 +378,11 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
 
   const detail = useLogDetail(expandedRow);
 
+  /* The window travels with the lookup: `log_entry` is keyed on `(id, ts)` across day partitions,
+     so an id alone names no partition (IKN-19). The row came off this page, so it is in this range
+     by construction. */
+  const openIssueForLog = useOpenIssueForLog();
+
   const copyRow = useCallback(
     (row: LogRow) => {
       // NDJSON, not pretty JSON: the point of copying a line is to paste it into something that
@@ -428,6 +434,12 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
     // Only for a row that has one. A line logged outside any request carries no `traceId`, and
     // opening an empty timeline for it would be answering a question it never asked.
     if (selectedRow?.traceId) setOpenTraceId(selectedRow.traceId);
+  });
+  useCommand("selection.issue", () => {
+    // `⌘I` — the issue this line was grouped into (IKN-14). Every line is worth asking about: the
+    // answer is a lookup, not something the row carries, so the check is the API's rather than a
+    // guess made here from a level or a message.
+    if (selectedRow) void openIssueForLog(selectedRow.id, state.bounds);
   });
   useCommand("selection.copy", () => {
     if (selectedRow) copyRow(selectedRow);
@@ -607,6 +619,20 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         state={detail}
         onClose={() => setExpandedKey(null)}
         onOpenTrace={setOpenTraceId}
+        /* `⌘I` cannot fire from inside a modal — every non-`esc` key is dead there — so the panel
+           reaches its issue through a button in its own footer instead (IKN-14).
+
+           **This panel closes as the issue opens, and only if it opens.** Two `<dialog>`s stacked
+           in the top layer is a shape this application has never run, and the reader has moved on
+           to a different question anyway — one closing as the other arrives is the handoff
+           `traceState.ts` already makes through URL state. Closing it up front instead would take
+           the panel away for nothing on a line that was never grouped, which is the ordinary case
+           for most lines. */
+        onOpenIssue={(row) => {
+          void openIssueForLog(row.id, state.bounds).then((opened) => {
+            if (opened) setExpandedKey(null);
+          });
+        }}
         onCopy={copyRow}
         onCopyText={copyText}
       />

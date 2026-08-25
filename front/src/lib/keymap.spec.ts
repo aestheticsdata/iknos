@@ -51,6 +51,12 @@ describe("actionFor — the table of §6", () => {
     expect(actionFor(key({ key: "c", metaKey: true }), { ...IDLE, hasTextSelection: true })).toBeNull();
   });
 
+  it("opens the issue of the selected row on ⌘I", () => {
+    expect(actionFor(key({ key: "i", metaKey: true }), IDLE)).toEqual({ kind: "command", name: "selection.issue" });
+    // `ctrl` everywhere else, like every other entry in the table.
+    expect(actionFor(key({ key: "i", ctrlKey: true }), IDLE)).toEqual({ kind: "command", name: "selection.issue" });
+  });
+
   it("ignores a ⌘ combination it does not claim", () => {
     expect(actionFor(key({ key: "r", metaKey: true }), IDLE)).toBeNull();
     expect(actionFor(key({ key: "j", metaKey: true }), IDLE)).toBeNull();
@@ -78,7 +84,14 @@ describe("actionFor — where nothing may fire", () => {
   });
 
   it("fires nothing else while a modal is open", () => {
-    for (const k of [key({ key: "j" }), key({ key: "k", metaKey: true }), key({ key: "Enter", altKey: true })]) {
+    for (const k of [
+      key({ key: "j" }),
+      key({ key: "k", metaKey: true }),
+      key({ key: "Enter", altKey: true }),
+      // ⌘I especially: the row detail *is* a modal since IKN-60, so this is why that panel reaches
+      // its issue through a button in its own footer rather than through the shortcut.
+      key({ key: "i", metaKey: true }),
+    ]) {
       expect(actionFor(k, MODAL)).toBeNull();
     }
   });
@@ -89,6 +102,8 @@ describe("preventsDefault", () => {
     // Without this ⌘L opens the address bar and the most visible shortcut on screen does nothing.
     expect(preventsDefault(actionFor(key({ key: "l", metaKey: true }), IDLE))).toBe(true);
     expect(preventsDefault(actionFor(key({ key: "k", metaKey: true }), IDLE))).toBe(true);
+    // And ⌘I, which is the developer tools in Chrome and the page info panel in Firefox.
+    expect(preventsDefault(actionFor(key({ key: "i", metaKey: true }), IDLE))).toBe(true);
   });
 
   it("suppresses the scroll that would move the list under the selection", () => {

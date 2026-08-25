@@ -17,6 +17,7 @@ export const CHASSIS_TEXT = {
   railLabel: "Services and views",
   views: "views",
   viewLogs: "logs",
+  viewIssues: "issues",
   paused: "paused",
   pausedHint: "Collection is disabled for this service",
   healthHint: (status: string, latency: string) => `Last health probe: ${status}${latency}`,
@@ -72,9 +73,9 @@ export const CHASSIS_TEXT = {
   /* This ellipsis stays, and it is not an exception to the rule above: it means "and so on", not
      "in flight". A `placeholder` attribute could not carry the mark in any case — there is no
      element there to hang a pseudo-element on. */
-  palettePlaceholder: "service, route, trace id, view…",
+  palettePlaceholder: "service, issue, route, trace id, view…",
   paletteHint: "↑↓ move · ⏎ open · esc close",
-  palettePrompt: "Type to search services, routes and traces in the current window.",
+  palettePrompt: "Type to search services and issues, and routes and traces in the current window.",
   /* Stem only; `<Pending>` draws the dots — see `SERVICE_TEXT.loading` (IKN-57). */
   paletteSearching: "searching",
   paletteEmpty: "Nothing matches in this window.",
@@ -83,6 +84,7 @@ export const CHASSIS_TEXT = {
   paletteFilter: "filter",
   paletteOpen: "open",
   paletteGo: "go",
+  paletteIssue: "issue",
   /* IKN-22 §3 — the status bar's cells. */
   modeNormal: "NORMAL",
   modeModal: "MODAL",
@@ -90,9 +92,9 @@ export const CHASSIS_TEXT = {
   tailOff: "tail off",
   events: (count: string, range: string) => `${count} ev / ${range}`,
   queryTime: (ms: number) => `q ${ms}ms`,
-  /* The permanent legend. Every entry here is a shortcut that works — `⌘I` is in the design doc's
-     table and is deliberately absent, because issues arrive with M3 and a legend advertising a
-     dead key is worse than a shorter legend. */
-  keyLegend: "j/k move · ⏎ open · ⌥⏎ trace · / query · ⌘K palette",
+  /* The permanent legend. Every entry here is a shortcut that works — which is why `⌘I` was absent
+     until IKN-14 gave it something to open. A legend advertising a dead key is worse than a short
+     legend. */
+  keyLegend: "j/k move · ⏎ open · ⌥⏎ trace · ⌘I issue · / query · ⌘K palette",
   workSurfacePending: "The log panel arrives with IKN-12.",
 } as const;

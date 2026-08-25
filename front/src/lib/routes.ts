@@ -1,11 +1,10 @@
 /**
  * Every path in one place — `trailingSlash: true` means these are compared with the slash stripped.
  *
- * `logs` is the only view behind the session, and since IKN-13 it is the whole work area: the log
- * explorer when the rail is on `all`, one service's dashboard with the same panel underneath when
- * it is not. Metrics, issues and alerts are still absent rather than disabled — a view whose data
- * does not exist yet is not in the list until it does (§4) — and they join this object with the
- * tickets that can answer them: IKN-23, IKN-14, IKN-15.
+ * `logs` is the work area: the log explorer when the rail is on `all`, one service's dashboard with
+ * the same panel underneath when it is not. `issues` joined it with IKN-14, which is the ticket
+ * that gave it rows. Metrics and alerts are still absent rather than disabled — a view whose data
+ * does not exist yet is not in the list until it does (§4) — and they join with IKN-23 and IKN-15.
  */
 export const ROUTES = {
   login: "/login",
@@ -13,6 +12,8 @@ export const ROUTES = {
   recover: "/recover",
   about: "/about",
   logs: "/logs",
+  /** Grouped errors (IKN-14). Not a log-query view — see `LOG_QUERY_VIEWS` below. */
+  issues: "/issues",
   /**
    * The view that was folded into `logs`. Still routed, and only so that the links shipped with it
    * keep working: the page at this path forwards to `logs` with the query string intact.

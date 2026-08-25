@@ -5,6 +5,7 @@ import { Sparkline } from "@components/ui/Sparkline";
 import { TONE_FILL } from "@components/ui/surface";
 import { useSelectedService } from "@lib/chassisState";
 import { ROUTES } from "@lib/routes";
+import { useIssueCounts } from "@lib/useIssues";
 import { useLogout } from "@lib/useLogout";
 import { CHASSIS_TEXT } from "@text/chassis";
 import Link from "next/link";
@@ -22,14 +23,21 @@ import type { Service, ServiceHealth } from "@lib/services";
 const HEALTH_TONE: Record<ServiceHealth["status"], Tone> = { ok: "ok", error: "error", stale: "warn" };
 
 /**
- * The one view M1 and M2 can fill. Metrics, issues and alerts join this list with their own
- * tickets — IKN-23, IKN-14, IKN-15.
+ * The views this application can fill. Metrics and alerts join the list with IKN-23 and IKN-15.
  *
- * There is no `service` row beside it any more: it led to a screen that was this one with a header
- * on top, and the header now arrives with the selection instead. Picking a service in the list
- * above *is* opening the service view.
+ * There is no `service` row: it led to a screen that was this one with a header on top, and the
+ * header now arrives with the selection instead. Picking a service in the list above *is* opening
+ * the service view.
+ *
+ * `short` is the collapsed rail's two characters and `badge` is what sits at the right of the
+ * expanded row. For `logs` they are the same letter, because that letter is its shortcut. For
+ * `issues` they are not: its badge is **live data** — the unresolved count — which is a change of
+ * kind rather than of value, and is why the badge is rendered rather than read off this object.
  */
-const VIEWS = [{ key: "logs", label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs, badge: "L" }] as const;
+const VIEWS = [
+  { key: "logs", label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs, short: "L" },
+  { key: "issues", label: CHASSIS_TEXT.viewIssues, href: ROUTES.issues, short: "IS" },
+] as const;
 
 /**
  * Two characters, uppercased — the rail's collapsed form.
@@ -82,6 +90,18 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
    */
   const search = useSearchParams().toString();
   const withScope = (href: string) => (search ? `${href}?${search}` : href);
+
+  /*
+   * The issues badge, **scoped to the rail's own selection** (IKN-14).
+   *
+   * The rail says its selection re-scopes every view, so a badge that stayed fleet-wide while
+   * everything beside it narrowed would be the one number on screen answering a different
+   * question. With `all` selected it is the fleet count, which is the same rule.
+   *
+   * The same route the filter segments read, so the number beside the view name and the number
+   * beside the segment label cannot come to disagree.
+   */
+  const issues = useIssueCounts(selected);
 
   return (
     <nav
@@ -163,13 +183,33 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
               >
                 <span className="max-rail:sr-only">{view.label}</span>
                 {/*
-                 * Expanded, the badge is a dim shortcut hint beside the name. Collapsed it *is* the
-                 * row, so it takes the row's own size and colour — `text-chassis-text-dim` is 3.03
-                 * against the surface, which is a fine whisper next to a label and not something to
-                 * navigate by.
+                 * Expanded, the badge is a dim shortcut hint beside the name — or, for `issues`, a
+                 * count in a chip, which is the mockup's own distinction between a hint and a
+                 * measurement. `text-chassis-text-dim` is 3.03 against the surface: a fine whisper
+                 * next to a label, and not something to navigate by.
+                 *
+                 * Nothing at all while the count is unknown, rather than a `0` that would be a
+                 * claim — see `IngestCard`'s "no reading yet".
                  */}
-                <span className="text-kicker tracking-kicker text-chassis-text-dim max-rail:text-label max-rail:tracking-normal max-rail:text-current">
-                  {view.badge}
+                {view.key === "issues" ? (
+                  issues.data !== null && (
+                    <span className="rounded-chip bg-chassis-raised px-1.25 text-kicker tabular-nums text-chassis-text-muted max-rail:hidden">
+                      {issues.data.unresolved}
+                    </span>
+                  )
+                ) : (
+                  <span className="text-kicker tracking-kicker text-chassis-text-dim max-rail:hidden">
+                    {view.short}
+                  </span>
+                )}
+                {/* Collapsed, the badge *is* the row, so it takes the row's own size and colour.
+                    A count would be unreadable as an identity at 52px — `IS` says which row it is,
+                    which is what the collapsed rail is for. */}
+                <span
+                  aria-hidden="true"
+                  className="hidden text-label max-rail:block"
+                >
+                  {view.short}
                 </span>
               </Link>
             </li>

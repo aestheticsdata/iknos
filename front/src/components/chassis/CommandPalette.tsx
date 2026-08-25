@@ -4,6 +4,7 @@ import { Modal } from "@components/ui/Modal";
 import { Pending } from "@components/ui/Pending";
 import { useSelectedService } from "@lib/chassisState";
 import { usePalette } from "@lib/commandState";
+import { useOpenIssue } from "@lib/issueState";
 import { useLogQueryState } from "@lib/logQuery";
 import { LOG_QUERY_VIEWS, ROUTES } from "@lib/routes";
 import { useOpenTrace } from "@lib/traceState";
@@ -25,7 +26,7 @@ import type { SearchHit, SearchHitType } from "@lib/searchTypes";
  *
  * Views are contributed locally rather than fetched. The set of them is this application's own
  * routing table — the server has no business knowing it, and "go to logs" should not cost a round
- * trip. `ISSUE` is absent entirely until M3 gives it rows.
+ * trip. `ISSUE` joined the other four with IKN-14, which is the ticket that gave it rows.
  */
 
 /**
@@ -35,13 +36,17 @@ import type { SearchHit, SearchHitType } from "@lib/searchTypes";
  * Contributed by the front rather than by `/api/search`: the set of views is this app's routing
  * table, not data, and asking the server for it would spend a round trip on "go to logs" (§4).
  */
-const VIEWS: { label: string; href: string }[] = [{ label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs }];
+const VIEWS: { label: string; href: string }[] = [
+  { label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs },
+  { label: CHASSIS_TEXT.viewIssues, href: ROUTES.issues },
+];
 
 /** The word on the right of a row: what pressing enter will do. */
 const ACTION: Record<SearchHitType, string> = {
   service: CHASSIS_TEXT.paletteScope,
   route: CHASSIS_TEXT.paletteFilter,
   trace: CHASSIS_TEXT.paletteOpen,
+  issue: CHASSIS_TEXT.paletteIssue,
   view: CHASSIS_TEXT.paletteGo,
 };
 
@@ -53,6 +58,7 @@ export const CommandPalette = () => {
   const { state, setValue } = useLogQueryState();
   const [, selectService] = useSelectedService();
   const openTrace = useOpenTrace();
+  const [, openIssue] = useOpenIssue();
   const router = useRouter();
   const pathname = usePathname();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -113,6 +119,11 @@ export const CommandPalette = () => {
       case "trace":
         openTrace(hit.value);
         break;
+      case "issue":
+        // The value is a fingerprint, and the modal that answers it hangs off the chassis — so
+        // this works from every view and needs no navigation at all (IKN-14).
+        openIssue(hit.value);
+        break;
       case "view":
         router.push(hit.value);
         break;
@@ -122,7 +133,12 @@ export const CommandPalette = () => {
     // full width, or the service view that embeds it (IKN-13). Reached from anywhere else, the
     // palette takes you where the answer is rather than silently setting a filter on a page that
     // does not read it.
-    if (hit.type !== "view" && !LOG_QUERY_VIEWS.includes(pathname.replace(/\/+$/, ""))) router.push(ROUTES.logs);
+    //
+    // `issue` is exempt for the reason above: its modal is mounted on the chassis and opens over
+    // whatever is on screen. Without the exemption, picking an issue *from the issues page* would
+    // eject the reader to the log view — which is the one place that hit is least useful.
+    const needsLogView = hit.type !== "view" && hit.type !== "issue";
+    if (needsLogView && !LOG_QUERY_VIEWS.includes(pathname.replace(/\/+$/, ""))) router.push(ROUTES.logs);
   };
 
   /*

@@ -1,5 +1,6 @@
 "use client";
 
+import { IssuesPanel } from "@components/issues/IssuesPanel";
 import { LogPanel } from "@components/logs/LogPanel";
 import { Pending } from "@components/ui/Pending";
 import { useSelectedService, useSignalsOpen, useTimeRange } from "@lib/chassisState";
@@ -23,7 +24,8 @@ import type { Service } from "@lib/services";
  * - **`all`** — the log explorer, edge to edge, byte for byte what `/logs` has always been. There
  *   is no header, because there is no one service to head it with, and no tiles, because a
  *   throughput summed across nineteen services answers nothing.
- * - **one service** — the same panel, on the work ground, under a header and the signal tiles.
+ * - **one service** — the same panel, on the work ground, under a header and the signal tiles, with
+ *   the issues column beside it (IKN-14).
  *
  * The padding arrives with the selection rather than being there always, and deliberately: full
  * bleed is worth a row and a half of log lines to a reader who is only reading logs, and the
@@ -54,8 +56,10 @@ export const WorkArea = ({ services }: { services: Service[] }) => {
    */
   const signals = useServiceSignals(selected, range, signalsOpen);
 
-  // The log explorer, unwrapped and unpadded — no ground, no header, no tiles. Every hook above
-  // has already run, so the early return costs nothing and changes nothing about their order.
+  // The log explorer, unwrapped and unpadded — no ground, no header, no tiles, and no right column
+  // either: a panel of one service's issues beside a fleet-wide log stream would be answering a
+  // question about a service nobody picked. Every hook above has already run, so the early return
+  // costs nothing and changes nothing about their order.
   if (selected === null) return <LogPanel services={services} />;
 
   return (
@@ -160,16 +164,40 @@ export const WorkArea = ({ services }: { services: Service[] }) => {
         </div>
       </div>
 
-      {/* `min-h-0` is what lets this shrink below its content and hand the overflow to the list
-          inside the panel, instead of pushing the status bar off the bottom of the screen.
+      {/* The bottom of the screen: the log panel, and the right column beside it (IKN-14).
 
-          The card shape is decided here, not by `LogPanel` (IKN-56): the panel is also mounted
-          edge to edge in the all-services explorer above and has no way to know which box it is
-          in, so rounding it there would round the wrong route too. `chassis-border`, not
-          `work-border` — the panel is a dark window on this page's ground, the pairing
-          `IngestCard` uses rather than the one its `Notice`/`ServiceHeader` siblings do. */}
-      <div className="min-h-0 flex-1 overflow-hidden rounded-card border border-chassis-border">
-        <LogPanel services={services} />
+          `min-h-0` on the row is what lets it shrink below its content and hand the overflow
+          inward, instead of pushing the status bar off the bottom of the screen.
+
+          **The horizontal `gap` is legal here, and only here.** The comment above forbids one on
+          this column because the signals row folds and a gap cannot be transitioned. Nothing in
+          this row folds: below `--breakpoint-rail` the column is removed outright rather than
+          collapsed. If it ever gains a fold, the 11px moves onto it as a margin in the same edit. */}
+      <div className="flex min-h-0 flex-1 gap-2.75">
+        {/* The card shape is decided here, not by `LogPanel` (IKN-56): the panel is also mounted
+            edge to edge in the all-services explorer above and has no way to know which box it is
+            in, so rounding it there would round the wrong route too. `chassis-border`, not
+            `work-border` — the panel is a dark window on this page's ground, the pairing
+            `IngestCard` uses rather than the one its `Notice`/`ServiceHeader` siblings do. */}
+        <div className="min-w-0 flex-1 overflow-hidden rounded-card border border-chassis-border">
+          <LogPanel services={services} />
+        </div>
+
+        {/*
+         * 296px and the 11px gap are the mockup's own numbers.
+         *
+         * **Wave 1 mounts one card, and there is no empty slot above it for the alerts that are
+         * not built yet** — §4: a panel whose data does not exist is absent, not faked. IKN-15's
+         * alerts card lands here as a `flex-none` sibling, sized by its content, with this one
+         * still taking the rest.
+         *
+         * Removed below `--breakpoint-rail` rather than narrowed: at that width the service rail
+         * has already collapsed to monograms, and 296px of the remaining space is most of what is
+         * left for the log list this column is meant to annotate.
+         */}
+        <aside className="flex min-h-0 w-[296px] flex-none flex-col gap-2.75 max-rail:hidden">
+          <IssuesPanel service={selected} />
+        </aside>
       </div>
     </div>
   );

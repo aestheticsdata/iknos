@@ -26,6 +26,15 @@ export type LogsHref = {
   /** The filters to apply. A `null` or empty value contributes nothing. */
   values?: Partial<Record<LogFilterKey, string | null | undefined>>;
   /**
+   * A trace to open on arrival — `?trace=`, which is not a filter and is not in `LOG_FILTER_KEYS`.
+   *
+   * Its own field for exactly that reason: `trace` is a separate piece of view state owned by
+   * `traceState.ts`, and widening the filter map to hold it would put a value into `off`'s
+   * vocabulary that can never be switched off. Added for IKN-14, whose modal exists to get from an
+   * error to the request that produced it — the one Done item that was blocked by a type signature.
+   */
+  trace?: string | null;
+  /**
    * An explicit window, which overrides `range` at the destination.
    *
    * Only for a caller pointing at a *moment* — the instant a probe failed, the interval a bar
@@ -35,7 +44,7 @@ export type LogsHref = {
   bounds?: Bounds | null;
 };
 
-export const logsHref = ({ range, values = {}, bounds = null }: LogsHref): string => {
+export const logsHref = ({ range, values = {}, trace = null, bounds = null }: LogsHref): string => {
   const params = new URLSearchParams();
 
   for (const [key, value] of Object.entries(values)) {
@@ -65,6 +74,7 @@ export const logsHref = ({ range, values = {}, bounds = null }: LogsHref): strin
    * from a screen showing one hour.
    */
   params.set("range", range);
+  if (trace) params.set("trace", trace);
   if (bounds) {
     params.set("from", bounds.from);
     params.set("to", bounds.to);

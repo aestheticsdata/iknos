@@ -27,6 +27,7 @@ export type CommandName =
   | "selection.prev"
   | "selection.open"
   | "selection.trace"
+  | "selection.issue"
   | "selection.copy"
   | "query.focus";
 
@@ -72,6 +73,10 @@ export function actionFor(e: KeyLike, ctx: KeyContext): KeyAction {
     if (key === "l" && e.shiftKey) return chrome("logout");
     if (key === "l") return chrome("fullscreenLogs");
     if (key === "k") return chrome("palette");
+    // The issue of the selected row (IKN-14). Fires from the *list* and nowhere else, which is not
+    // a choice: every non-`esc` key is dead while a modal is open, and since IKN-60 the row detail
+    // is a modal — so the detail reaches its issue through a button in its own footer instead.
+    if (key === "i") return command("selection.issue");
     if (key === "c") return ctx.hasTextSelection ? null : command("selection.copy");
     return null;
   }
@@ -92,9 +97,10 @@ export function actionFor(e: KeyLike, ctx: KeyContext): KeyAction {
  * Whether the browser's own behaviour has to be suppressed for this keystroke.
  *
  * `⌘L` opens the address bar and `⌘K` is a search shortcut in most browsers, so the two most
- * visible entries in the on-screen legend would silently do nothing without this. The arrows and
- * `j`/`k` scroll the list out from under the selection they are supposed to be moving, and `/`
- * opens quick-find in Firefox.
+ * visible entries in the on-screen legend would silently do nothing without this. `⌘I` opens the
+ * developer tools in Chrome and the page info panel in Firefox. The arrows and `j`/`k` scroll the
+ * list out from under the selection they are supposed to be moving, and `/` opens quick-find in
+ * Firefox.
  *
  * `esc` is deliberately **not** here: it also closes a native `<dialog>`, and `Modal` relies on
  * that — the element fires `close`, which is routed back through `onClose`. Preventing it would
