@@ -18,6 +18,7 @@ export const CHASSIS_TEXT = {
   views: "views",
   viewLogs: "logs",
   viewIssues: "issues",
+  viewAlerts: "alerts",
   paused: "paused",
   pausedHint: "Collection is disabled for this service",
   healthHint: (status: string, latency: string) => `Last health probe: ${status}${latency}`,
@@ -96,5 +97,10 @@ export const CHASSIS_TEXT = {
      until IKN-14 gave it something to open. A legend advertising a dead key is worse than a short
      legend. */
   keyLegend: "j/k move · ⏎ open · ⌥⏎ trace · ⌘I issue · / query · ⌘K palette",
+  /* The status bar's alert cell — the bar's first interactive element (IKN-15 §4). It reads the
+     same number as the rail badge, from the same provider, and it is absent at zero rather than
+     saying so: `0 alerts` in permanent chrome is reassurance nobody checked. */
+  alertsCounter: (n: number) => `${n} alert${n === 1 ? "" : "s"}`,
+  alertsCounterHint: "Open the alerts view",
   workSurfacePending: "The log panel arrives with IKN-12.",
 } as const;

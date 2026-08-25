@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertsPanel } from "@components/alerts/AlertsPanel";
 import { IssuesPanel } from "@components/issues/IssuesPanel";
 import { LogPanel } from "@components/logs/LogPanel";
 import { Pending } from "@components/ui/Pending";
@@ -196,6 +197,10 @@ export const WorkArea = ({ services }: { services: Service[] }) => {
          * left for the log list this column is meant to annotate.
          */}
         <aside className="flex min-h-0 w-[296px] flex-none flex-col gap-2.75 max-rail:hidden">
+          {/* `flex-none` above `flex-1` — the mockup's own split, and the right one: an alerts card
+              is usually empty or two rows tall, and giving it half the column would be reserving
+              space for bad news. The issues panel below takes whatever is left. */}
+          <AlertsPanel service={selected} />
           <IssuesPanel service={selected} />
         </aside>
       </div>

@@ -39,6 +39,7 @@ import type { SearchHit, SearchHitType } from "@lib/searchTypes";
 const VIEWS: { label: string; href: string }[] = [
   { label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs },
   { label: CHASSIS_TEXT.viewIssues, href: ROUTES.issues },
+  { label: CHASSIS_TEXT.viewAlerts, href: ROUTES.alerts },
 ];
 
 /** The word on the right of a row: what pressing enter will do. */

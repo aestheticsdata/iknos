@@ -3,16 +3,24 @@
 import { useSelectedService, useTimeRange } from "@lib/chassisState";
 import { useChromeMode } from "@lib/commandState";
 import { formatCount } from "@lib/format";
+import { ROUTES } from "@lib/routes";
+import { useAlertCounts } from "@lib/useAlertCounts";
 import { cn } from "@lib/utils";
 import { useViewStatus } from "@lib/viewStatus";
 import { CHASSIS_TEXT } from "@text/chassis";
+import Link from "next/link";
 
 /**
  * The status bar — IKN-22 §3.
  *
  * The mockup's row reads `NORMAL │ pfa │ tail on │ 10 464 ev / 1h │ q 38ms │ 1 alert │ keys`, and
- * every cell but one is now fillable. The **active-alert count stays absent** until IKN-15: a
- * permanent `0 alerts` is not reassurance, it is a claim nobody has checked.
+ * every cell is now fillable. The alert count arrived with IKN-15 and is still absent at zero,
+ * for the reason it was absent before it existed: a permanent `0 alerts` is not reassurance, it is
+ * a claim nobody has checked.
+ *
+ * It is also the bar's **only interactive cell**, and the first there has ever been. It reads the
+ * same number as the rail's badge from the same chassis-wide poll, which is what makes IKN-15's
+ * "one source, two displays" structural rather than two hooks that happen to agree.
  *
  * The three that describe the view are published by it rather than hoisted up here (see
  * `viewStatus`), so they simply disappear on a page that has no log list — which is honest, and is
@@ -28,6 +36,7 @@ export const StatusBar = () => {
   const [range] = useTimeRange();
   const mode = useChromeMode();
   const { live, count, tookMs } = useViewStatus();
+  const { total: firing } = useAlertCounts();
 
   return (
     <footer className="flex h-6 flex-none items-center gap-3 border-t border-chassis-border bg-chassis-surface px-3.5 text-kicker tracking-control text-chassis-text-dim">
@@ -60,6 +69,19 @@ export const StatusBar = () => {
         <>
           <Divider />
           <span className="tabular-nums">{CHASSIS_TEXT.queryTime(tookMs)}</span>
+        </>
+      )}
+
+      {firing !== null && firing > 0 && (
+        <>
+          <Divider />
+          <Link
+            href={ROUTES.alerts}
+            title={CHASSIS_TEXT.alertsCounterHint}
+            className="text-chassis-error tabular-nums transition-[filter] duration-150 ease-out hover:brightness-125"
+          >
+            {CHASSIS_TEXT.alertsCounter(firing)}
+          </Link>
         </>
       )}
 

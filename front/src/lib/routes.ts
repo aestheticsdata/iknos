@@ -14,6 +14,8 @@ export const ROUTES = {
   logs: "/logs",
   /** Grouped errors (IKN-14). Not a log-query view — see `LOG_QUERY_VIEWS` below. */
   issues: "/issues",
+  /** What the collector's rule engine is saying about the fleet (IKN-15). */
+  alerts: "/alerts",
   /**
    * The view that was folded into `logs`. Still routed, and only so that the links shipped with it
    * keep working: the page at this path forwards to `logs` with the query string intact.

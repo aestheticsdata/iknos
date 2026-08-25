@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { ALERTS_TEXT } from "./alerts";
 import { AUTH_TEXT } from "./auth";
 import { CHASSIS_TEXT } from "./chassis";
+import { ISSUES_TEXT } from "./issues";
 import { LOGS_TEXT } from "./logs";
 import { SERVICE_TEXT } from "./service";
 
@@ -20,6 +22,8 @@ import { SERVICE_TEXT } from "./service";
  */
 const PENDING_COPY: Array<[string, string]> = [
   ["SERVICE_TEXT.loading", SERVICE_TEXT.loading],
+  ["ISSUES_TEXT.loading", ISSUES_TEXT.loading],
+  ["ALERTS_TEXT.loading", ALERTS_TEXT.loading],
   ["CHASSIS_TEXT.loggingOut", CHASSIS_TEXT.loggingOut],
   ["CHASSIS_TEXT.storageLoading", CHASSIS_TEXT.storageLoading],
   ["CHASSIS_TEXT.paletteSearching", CHASSIS_TEXT.paletteSearching],
@@ -36,9 +40,10 @@ describe("a pending string carries no dots of its own", () => {
   });
 
   it("covers every pending string there is", () => {
-    // Cheap tripwire on the list above rather than on the rule: a tenth pending state added without
-    // a line here would be tested by nothing at all.
-    expect(PENDING_COPY).toHaveLength(9);
+    // Cheap tripwire on the list above rather than on the rule: a pending state added without a
+    // line here would be tested by nothing at all — which is exactly what happened to
+    // `ISSUES_TEXT.loading`, added in IKN-14 and never registered until IKN-15 went looking.
+    expect(PENDING_COPY).toHaveLength(11);
   });
 });
 

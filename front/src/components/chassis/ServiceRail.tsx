@@ -2,9 +2,10 @@
 
 import { Pending } from "@components/ui/Pending";
 import { Sparkline } from "@components/ui/Sparkline";
-import { TONE_FILL } from "@components/ui/surface";
+import { TONE_FILL, TONE_TEXT } from "@components/ui/surface";
 import { useSelectedService } from "@lib/chassisState";
 import { ROUTES } from "@lib/routes";
+import { useAlertCounts } from "@lib/useAlertCounts";
 import { useIssueCounts } from "@lib/useIssues";
 import { useLogout } from "@lib/useLogout";
 import { CHASSIS_TEXT } from "@text/chassis";
@@ -29,14 +30,19 @@ const HEALTH_TONE: Record<ServiceHealth["status"], Tone> = { ok: "ok", error: "e
  * header now arrives with the selection instead. Picking a service in the list above *is* opening
  * the service view.
  *
- * `short` is the collapsed rail's two characters and `badge` is what sits at the right of the
- * expanded row. For `logs` they are the same letter, because that letter is its shortcut. For
- * `issues` they are not: its badge is **live data** — the unresolved count — which is a change of
- * kind rather than of value, and is why the badge is rendered rather than read off this object.
+ * `short` is the collapsed rail's two characters and `badge` names *what kind of thing* sits at
+ * the right of the expanded row. For `logs` it is the shortcut letter. For `issues` and `alerts`
+ * it is **live data** — a count — which is a change of kind rather than of value, and the two
+ * counts are not even the same kind of claim: the issues badge is a quantity and the alerts badge
+ * is a warning, so one is neutral and the other is red.
+ *
+ * Three renderings is where a `view.key === "issues"` ternary stopped being readable, which is why
+ * the kind is a field rather than a condition.
  */
 const VIEWS = [
-  { key: "logs", label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs, short: "L" },
-  { key: "issues", label: CHASSIS_TEXT.viewIssues, href: ROUTES.issues, short: "IS" },
+  { key: "logs", label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs, short: "L", badge: "shortcut" },
+  { key: "issues", label: CHASSIS_TEXT.viewIssues, href: ROUTES.issues, short: "IS", badge: "issues" },
+  { key: "alerts", label: CHASSIS_TEXT.viewAlerts, href: ROUTES.alerts, short: "AL", badge: "alerts" },
 ] as const;
 
 /**
@@ -102,6 +108,14 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
    * beside the segment label cannot come to disagree.
    */
   const issues = useIssueCounts(selected);
+  /*
+   * Fleet-wide, unlike the issues badge beside it — and deliberately.
+   *
+   * It is the same number the status bar prints, served by one poll for the whole chassis
+   * (IKN-15 §4). A counter in permanent chrome that quietly narrowed when someone picked a service
+   * would be the one number on screen answering a different question from the rest of the bar.
+   */
+  const { total: firing } = useAlertCounts();
 
   return (
     <nav
@@ -191,10 +205,22 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
                  * Nothing at all while the count is unknown, rather than a `0` that would be a
                  * claim — see `IngestCard`'s "no reading yet".
                  */}
-                {view.key === "issues" ? (
+                {view.badge === "issues" ? (
                   issues.data !== null && (
                     <span className="rounded-chip bg-chassis-raised px-1.25 text-kicker tabular-nums text-chassis-text-muted max-rail:hidden">
                       {issues.data.unresolved}
+                    </span>
+                  )
+                ) : view.badge === "alerts" ? (
+                  /* Nothing at zero, not a red `0`. This badge exists to say there *is* something;
+                     drawn at zero it would be a permanent warning that never means anything, which
+                     is how a warning stops being read. */
+                  firing !== null &&
+                  firing > 0 && (
+                    <span
+                      className={`rounded-chip bg-chassis-raised px-1.25 text-kicker tabular-nums max-rail:hidden ${TONE_TEXT.chassis.error}`}
+                    >
+                      {firing}
                     </span>
                   )
                 ) : (

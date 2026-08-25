@@ -1,7 +1,10 @@
+import { AlertOverlay } from "@components/alerts/AlertOverlay";
 import { IssueOverlay } from "@components/issues/IssueOverlay";
 import { ToastProvider } from "@components/ui/Toast";
+import { AlertClaimsProvider } from "@lib/alertClaims";
 import { IssueClaimsProvider } from "@lib/issueClaims";
 import { readServices } from "@lib/services";
+import { AlertCountsProvider } from "@lib/useAlertCounts";
 import { CollectorProvider } from "@lib/useCollector";
 import { ZoneProvider } from "@lib/zoneState";
 import { ChassisFrame } from "./ChassisFrame";
@@ -42,26 +45,35 @@ export const AppChassis = async ({ children }: { children: React.ReactNode }) =>
             would drift apart, and a dot saying the collector is dead above a card still drawing its
             throughput is not a disagreement anyone should have to arbitrate. */}
         <CollectorProvider>
-          {/* The keyboard, the palette and the status channel — IKN-22. Inside the providers above
+          {/* One poll of `/api/alerts/counts` for the whole shell — the rail's badge and the status
+              bar's counter are two renderings of one number, and IKN-15 requires them to agree.
+              Two hooks on one URL would satisfy the letter of that and still drift across a tick. */}
+          <AlertCountsProvider>
+            {/* The keyboard, the palette and the status channel — IKN-22. Inside the providers above
               because the palette re-scopes the service and reads the same clock as everything
               else; outside the layout because it owns a native dialog. */}
-          <ChromeShell>
-            {/* The optimistic state of the issue mutations, above every list that shows one — the
+            <ChromeShell>
+              {/* The optimistic state of the issue mutations, above every list that shows one — the
                 modal below is not a child of any of them. See `issueClaims.tsx`. */}
-            <IssueClaimsProvider>
-              <ChassisFrame>
-                <TopBar />
-                <div className="flex min-h-0 flex-1">
-                  <ServiceRail services={services} />
-                  <main className="ik-scroll-work min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
-                </div>
-                <StatusBar />
-                {/* One issue modal for the application, opened by `?issue=` from wherever — the
+              <IssueClaimsProvider>
+                <AlertClaimsProvider>
+                  <ChassisFrame>
+                    <TopBar />
+                    <div className="flex min-h-0 flex-1">
+                      <ServiceRail services={services} />
+                      <main className="ik-scroll-work min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
+                    </div>
+                    <StatusBar />
+                    {/* One issue modal for the application, opened by `?issue=` from wherever — the
                     rail panel, the issues table, or `⌘I` on a log row (IKN-14). */}
-                <IssueOverlay />
-              </ChassisFrame>
-            </IssueClaimsProvider>
-          </ChromeShell>
+                    <IssueOverlay />
+                    {/* And one alert modal, opened by `?alert=` from the rail panel or the table. */}
+                    <AlertOverlay />
+                  </ChassisFrame>
+                </AlertClaimsProvider>
+              </IssueClaimsProvider>
+            </ChromeShell>
+          </AlertCountsProvider>
         </CollectorProvider>
       </ZoneProvider>
     </ToastProvider>
