@@ -19,10 +19,14 @@ export type {
   StorageTable,
 } from "./collector";
 export type { Bucket, Histogram } from "./histogram";
+export type { IssueDetail } from "./issue-detail";
+export type { IssueCounts, IssuePage } from "./issue-page";
+export type { IssueRow, IssueStatus } from "./issue-row";
 export type { LogDetail } from "./log-detail";
 export type { LogPage } from "./log-page";
 export type { LogRow } from "./log-row";
 export type { Meta } from "./meta";
+export type { OccurrenceSeries } from "./occurrence-series";
 export type { SearchHit, SearchHitType, SearchResults } from "./search";
 export type { Service, ServiceList } from "./service";
 export type {

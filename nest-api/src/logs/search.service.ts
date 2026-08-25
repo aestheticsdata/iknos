@@ -7,7 +7,7 @@ import type { SearchHit } from "@contracts/search";
 /**
  * The ⌘K palette's data half (IKN-22).
  *
- * Three sources, queried in parallel and capped independently. Independent caps are the point: a
+ * Four sources, queried in parallel and capped independently. Independent caps are the point: a
  * host with four hundred routes and one service would otherwise fill all five slots with routes,
  * and the service the reader was actually reaching for would not be in the list at all.
  */
@@ -25,12 +25,18 @@ export const PER_TYPE_LIMIT = 5;
 export const MIN_QUERY_LENGTH = 2;
 
 type ServiceRow = { name: string };
+type IssueRow = { fingerprint: string; type: string | null; message: string; event_count: number };
 type RouteRow = { route: string; hits: bigint | number };
 type TraceRow = { trace_id: string; hits: bigint | number };
 
 const lines = (n: bigint | number): string => {
   const count = Number(n);
   return `${count} line${count === 1 ? "" : "s"}`;
+};
+
+const occurrences = (n: bigint | number): string => {
+  const count = Number(n);
+  return `${count} occurrence${count === 1 ? "" : "s"}`;
 };
 
 @Injectable()
@@ -48,15 +54,16 @@ export class SearchService {
     // backslash that has to survive both JavaScript and SQL string parsing — which it does not.
     const like = escapeLike(term);
 
-    // In parallel, because they are three independent queries against three different indexes and
+    // In parallel, because they are four independent queries against four different indexes and
     // the palette's whole budget is one keystroke's worth of latency.
-    const [services, routes, traces] = await Promise.all([
+    const [services, issues, routes, traces] = await Promise.all([
       this.services(like),
+      this.issues(like),
       this.routes(like, from, to),
       this.traces(like, from, to),
     ]);
 
-    return [...services, ...routes, ...traces];
+    return [...services, ...issues, ...routes, ...traces];
   }
 
   /**
@@ -76,6 +83,43 @@ export class SearchService {
        LIMIT ${PER_TYPE_LIMIT}`;
 
     return rows.map((row) => ({ type: "service" as const, label: row.name, value: row.name, hint: null }));
+  }
+
+  /**
+   * Grouped errors, by fingerprint, type or message (IKN-9, IKN-14).
+   *
+   * **Unbounded by time, beside `services()` rather than with the windowed pair.** `issue` is
+   * unpartitioned and holds one row per distinct error, so there are no partitions to prune — and
+   * an issue whose whole value is that it is three weeks old and still unresolved is precisely
+   * the one a windowed search would fail to find.
+   *
+   * Three columns matched, because there are three ways a reader arrives at an issue: pasting the
+   * fingerprint off a row, typing the error's type, or half-remembering its message. The
+   * fingerprint is matched by **prefix**, like a trace id and for the same reason — it is a hash,
+   * so a substring of one is a coincidence rather than an intent.
+   *
+   * Most recent first: two issues matching `TypeError` are told apart by which one is still
+   * happening.
+   */
+  private async issues(like: string): Promise<SearchHit[]> {
+    const rows = await this.prisma.$queryRaw<IssueRow[]>`
+      SELECT fingerprint, type, message, event_count
+        FROM issue
+       WHERE fingerprint LIKE ${`${like}%`}
+          OR type LIKE ${`%${like}%`}
+          OR message LIKE ${`%${like}%`}
+       ORDER BY last_seen DESC
+       LIMIT ${PER_TYPE_LIMIT}`;
+
+    return rows.map((row) => ({
+      type: "issue" as const,
+      // The type is what a reader recognises an issue by; the message is the fallback for an
+      // exception that carried no type, cut to a line so one runaway string cannot own the list.
+      label: row.type ?? row.message.split("\n")[0].slice(0, 80),
+      // The action operates on the fingerprint — it is what the routes and the URL are keyed on.
+      value: row.fingerprint,
+      hint: occurrences(row.event_count),
+    }));
   }
 
   /**

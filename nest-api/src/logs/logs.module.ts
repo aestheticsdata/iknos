@@ -27,5 +27,8 @@ import { TraceService } from "./trace.service";
   imports: [IngestModule],
   controllers: [LogsController, ServicesController, SearchController, StreamController],
   providers: [LogsService, HistogramService, TraceService, SearchService],
+  // `LogsService` alone, for `IssuesModule` — `GET /api/issues/for-log/:id` reads the line it was
+  // given through the same bounded point read the log detail uses, rather than a second copy of it.
+  exports: [LogsService],
 })
 export class LogsModule {}

@@ -24,7 +24,7 @@ import { HealthController } from "./health.controller";
  *
  * Auth (IKN-6, IKN-21), the collector (IKN-7), the log routes (IKN-19), the partition window
  * (IKN-11), the collector's own status (IKN-24), the service view's metrics (IKN-13) and grouped
- * errors (IKN-9) are in. Alerts arrive with IKN-10.
+ * errors with the routes that serve them (IKN-9, IKN-14) are in. Alerts arrive with IKN-10.
  */
 @Module({
   imports: [

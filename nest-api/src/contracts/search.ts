@@ -10,16 +10,16 @@ import type { Meta } from "./meta";
  */
 
 /**
- * The types M1 can actually answer.
+ * What the palette can answer.
  *
- * `issue` is in the mockup's palette and is deliberately **absent rather than empty**: issues
- * arrive with M3 (IKN-9, IKN-14), and a type that always returns nothing teaches the reader the
- * palette does not work. It joins this union with the ticket that gives it rows.
+ * `issue` was held out of this union until it had rows behind it — a type that always returns
+ * nothing teaches the reader the palette does not work — and it joined with IKN-9's grouping and
+ * IKN-14's routes, which is what the note that used to stand here promised.
  *
  * `view` is missing for a different reason — it is not data. The set of views is the front's own
  * routing table, so the palette contributes those itself and spends no round trip on "go to logs".
  */
-export type SearchHitType = "service" | "route" | "trace";
+export type SearchHitType = "service" | "route" | "trace" | "issue";
 
 export type SearchHit = {
   type: SearchHitType;
@@ -32,7 +32,7 @@ export type SearchHit = {
 };
 
 /**
- * Hits from every source, already ordered: services, then routes, then traces.
+ * Hits from every source, already ordered: services, then issues, then routes, then traces.
  *
  * Ordered by how likely the intent is rather than by score — this is a literal prefix-and-substring
  * search, deliberately (fuzzy ranking is out of scope), so a relevance number would be invented.
