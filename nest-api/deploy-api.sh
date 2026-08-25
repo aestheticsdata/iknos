@@ -5,18 +5,27 @@ set -Eeuo pipefail
 # directory, atomic switch keeping the previous version as a backup, install and build on the
 # server, pm2 reload, verify /health, with automatic rollback if anything fails after the switch.
 #
-# **This script never migrates**, same rule as pfa — whose deploy script does not mention Prisma
-# at all. `prisma migrate deploy` is run by hand over SSH, deliberately, by someone who has
-# decided what happens if it goes wrong.
+# **This script migrates**, between the build and the pm2 reload — see apply_migrations. That is
+# what Zeus, spira and trekker all do, and the position is the point: the schema is in place
+# before the new code is ever served. A migration that fails stops the deploy there and the ERR
+# trap restores the previous release, so the code that ends up serving is never the code whose
+# schema did not land.
 #
-# The reason is the rollback. Restoring a release is a directory swap and takes a second; Prisma
-# has no down-migration. A script that migrates and then rolls back leaves the previous code in
-# front of the new schema — extra columns it ignores, which is survivable, or a table under a
-# name it no longer knows, which is not. Migrating by hand keeps the two decisions separate,
-# which is the only way either of them can be reasoned about.
+# It did not always. This was copied from pfa, the one API in the fleet whose deploy script does
+# not mention Prisma, and the header used to argue the case for that: restoring a release is a
+# directory swap, Prisma has no down-migration, so migrating and then rolling back leaves the old
+# code in front of the new schema. The hazard is real and has not gone away — trekker's script
+# names the same one and migrates anyway — but the alternative was worse. `DATABASE_URL` answers
+# on ks-b's loopback and nowhere else, and a new migration file only reaches the server *by this
+# script*, so "migrate first, then deploy" was never available: the order is necessarily deploy
+# then migrate. Leaving the second half to a human meant every deploy shipped code against
+# whatever schema happened to be there, silently, and the header promised a
+# `check_pending_migrations` that was never written (IKN-50).
 #
-# What the script does do is refuse to ship code whose schema is not there yet: see
-# check_pending_migrations, which runs before a single byte is uploaded.
+# What is left of the hazard is handled where it actually bites: MySQL DDL is not transactional,
+# so apply_migrations aborts loudly with `prisma migrate status` and `migrate resolve` rather than
+# pretending a part-applied schema can be swept up by a directory swap. Rolling *back* across a
+# migration is still a decision about data, and still a person's.
 #
 # Usage: ./deploy-api.sh [deploy|rollback]
 
@@ -350,6 +359,57 @@ echo "✅ API rollback done (restored from backup)"
 EOF
 }
 
+# Applies pending migrations on the server, between the build and the pm2 reload — the shape
+# Zeus, spira and trekker all use, and the position is the point: the schema is in place before
+# the new code is ever served.
+#
+# `migrate deploy` is the production verb: it applies what is already in the repo and never
+# generates, never resets, never prompts.
+#
+# A failure here happens after the release switch, so it trips the ERR trap: the previous release
+# is restored and pm2 is reloaded onto *it*. The new code never serves. What the trap cannot undo
+# is the schema — **MySQL DDL is not transactional**, so a migration that failed midway leaves
+# the database part-applied and Prisma has no down-migration to walk it back. The restored code
+# then faces a schema slightly ahead of it, which is survivable for an added column and is not
+# for a renamed table.
+#
+# That is why this aborts with `migrate status` and `migrate resolve` rather than continuing:
+# what happens next is a decision about data, and it belongs to a person.
+apply_migrations() {
+  ssh "$REMOTE_USER_HOST" \
+    NEST_DIR="$NEST_DIR" \
+    ECOSYSTEM_REMOTE="$ECOSYSTEM_REMOTE" \
+    PM2_APP_NAME="$PM2_APP_NAME" \
+    REMOTE_PATH="$REMOTE_PATH" \
+    'bash -s' << 'EOF'
+set -Eeuo pipefail
+export PATH="$REMOTE_PATH:$PATH"
+cd "$NEST_DIR"
+
+# The production URL, off the server's own ecosystem file — the same read the build step makes.
+# Passed through the environment and never on a command line: it carries the database password
+# and `ps` shows arguments.
+DATABASE_URL=$(node -p \
+  'const c = require(process.env.ECOSYSTEM_REMOTE); const a = (c.apps || []).find(x => x.name === process.env.PM2_APP_NAME); (a && a.env_production && a.env_production.DATABASE_URL) || ""' \
+  2>/dev/null || true)
+[ -n "$DATABASE_URL" ] || {
+  echo "❌ ERROR: no env_production.DATABASE_URL for '$PM2_APP_NAME' in $ECOSYSTEM_REMOTE" >&2
+  echo "   Refusing to migrate rather than falling back to a URL that may point elsewhere." >&2
+  exit 1
+}
+export DATABASE_URL
+
+if ! pnpm migrate:deploy; then
+  echo "❌ ERROR: prisma migrate deploy failed — pm2 will not be reloaded" >&2
+  echo "   MySQL DDL is not transactional, so the schema may be part-applied. Check first:" >&2
+  echo "     cd $NEST_DIR && pnpm exec prisma migrate status" >&2
+  echo "   A migration recorded as failed blocks every later deploy until it is resolved:" >&2
+  echo "     cd $NEST_DIR && pnpm exec prisma migrate resolve --rolled-back <migration_name>" >&2
+  exit 1
+fi
+EOF
+}
+
 restart_pm2() {
   ssh "$REMOTE_USER_HOST" \
     API_ROOT="$API_ROOT" \
@@ -602,6 +662,9 @@ DATABASE_URL=$(node -p \
 export DATABASE_URL
 pnpm build
 EOF
+
+  log "➡️  Applying database migrations"
+  apply_migrations
 
   log "➡️  Reloading pm2"
   restart_pm2
