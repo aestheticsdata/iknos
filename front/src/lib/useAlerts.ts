@@ -18,17 +18,18 @@ import type { AlertHistory, AlertPage, AlertRow, AlertView, Severity } from "@li
  */
 
 /**
- * **Half the engine's own cadence, not a number picked for feel.**
+ * **The engine's own cadence, matched rather than doubled.**
  *
- * `AlertEngine.EVAL_INTERVAL_MS` is 60 s, so nothing in `alert` can change faster than that;
- * polling at half of it means the view is never more than half a cycle behind, and polling faster
- * would be the same rows, more often. This is the `ISSUES_POLL_MS` precedent — if the engine's
- * interval changes, this is the number that has to follow it.
+ * `AlertEngine.EVAL_INTERVAL_MS` is 60 s, so nothing in `alert` can change faster than that and a
+ * faster poll is strictly the same rows more often. Matching it means a change is on screen within
+ * one cycle of being written, which is the most the data can offer — asking twice per cycle bought
+ * half a minute of latency on a number that only moves once a minute, and cost double the traffic
+ * in a tab that stays open all day.
  *
  * The *displayed* cadence is a different matter and is never this constant: it rides the payload
  * as `evalIntervalMs`, so the modal cannot be wrong about it.
  */
-export const ALERTS_POLL_MS = 30_000;
+export const ALERTS_POLL_MS = 60_000;
 
 /** The rail panel's ceiling, like the issues panel's. A rail that scrolls everything is not a rail. */
 export const RAIL_LIMIT = 3;

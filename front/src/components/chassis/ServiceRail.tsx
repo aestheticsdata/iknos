@@ -6,7 +6,7 @@ import { TONE_FILL, TONE_TEXT } from "@components/ui/surface";
 import { useSelectedService } from "@lib/chassisState";
 import { ROUTES } from "@lib/routes";
 import { useAlertCounts } from "@lib/useAlertCounts";
-import { useIssueCounts } from "@lib/useIssues";
+import { useIssueCounts } from "@lib/useIssueCounts";
 import { useLogout } from "@lib/useLogout";
 import { CHASSIS_TEXT } from "@text/chassis";
 import Link from "next/link";
@@ -107,7 +107,8 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
    * The same route the filter segments read, so the number beside the view name and the number
    * beside the segment label cannot come to disagree.
    */
-  const issues = useIssueCounts(selected);
+  // One poll for the whole chassis, scoped to this very selection — see `useIssueCounts.ts`.
+  const { counts: issues } = useIssueCounts();
   /*
    * Fleet-wide, unlike the issues badge beside it — and deliberately.
    *
@@ -206,9 +207,9 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
                  * claim — see `IngestCard`'s "no reading yet".
                  */}
                 {view.badge === "issues" ? (
-                  issues.data !== null && (
+                  issues !== null && (
                     <span className="rounded-chip bg-chassis-raised px-1.25 text-kicker tabular-nums text-chassis-text-muted max-rail:hidden">
-                      {issues.data.unresolved}
+                      {issues.unresolved}
                     </span>
                   )
                 ) : view.badge === "alerts" ? (

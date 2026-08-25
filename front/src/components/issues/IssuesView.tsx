@@ -5,7 +5,8 @@ import { SURFACE_SCROLL } from "@components/ui/surface";
 import { useSelectedService } from "@lib/chassisState";
 import { SEGMENTS, useIssueSegment, useIssueSort, useOpenIssue } from "@lib/issueState";
 import { ISSUE_SORTS } from "@lib/issueTypes";
-import { useIssueCounts, useIssues } from "@lib/useIssues";
+import { useIssueCounts } from "@lib/useIssueCounts";
+import { useIssues } from "@lib/useIssues";
 import { cn } from "@lib/utils";
 import { ISSUES_TEXT } from "@text/issues";
 import { useState } from "react";
@@ -38,7 +39,7 @@ export const IssuesView = () => {
   const [limit, setLimit] = useState(PAGE);
 
   const issues = useIssues(service, segment, { sort, limit });
-  const counts = useIssueCounts(service);
+  const { counts } = useIssueCounts();
 
   const page = issues.data;
   // `issues.rows` rather than `page.rows`: the claim overlay has already taken out anything the
@@ -73,7 +74,7 @@ export const IssuesView = () => {
               }}
             >
               {ISSUES_TEXT.segments[one]}
-              {counts.data !== null && <span className="ml-1 tabular-nums text-work-text-dim">{counts.data[one]}</span>}
+              {counts !== null && <span className="ml-1 tabular-nums text-work-text-dim">{counts[one]}</span>}
             </Segment>
           ))}
         </fieldset>

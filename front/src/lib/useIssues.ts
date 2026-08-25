@@ -9,7 +9,7 @@ import { usePolledResource } from "@lib/usePolledResource";
 import { ISSUES_TEXT } from "@text/issues";
 import { useCallback, useEffect, useMemo } from "react";
 
-import type { IssueCounts, IssueDetail, IssuePage, IssueSort, IssueStatus, OccurrenceSeries } from "@lib/issueTypes";
+import type { IssueDetail, IssuePage, IssueSort, IssueStatus, OccurrenceSeries } from "@lib/issueTypes";
 
 /**
  * The reads and the writes behind the issues surfaces (IKN-14).
@@ -22,13 +22,18 @@ import type { IssueCounts, IssueDetail, IssuePage, IssueSort, IssueStatus, Occur
  */
 
 /**
- * **Derived from the collector's own interval, not chosen.**
+ * **Bounded below by the collector, chosen above it.**
  *
- * `GrouperService.GROUP_INTERVAL_MS` is 15 s, so `issue` cannot change faster than that. Polling
- * more often is the same rows, more often — the argument `RUNTIME_POLL_MS` already makes about the
- * scrape cadence. If the grouper's interval changes, this is the number that has to follow it.
+ * `GrouperService.GROUP_INTERVAL_MS` is 15 s, so `issue` cannot change faster than that and
+ * polling faster would be the same rows more often. But the writer's rate is a *ceiling*, not a
+ * requirement: nobody triaging errors needs to learn about a new one inside fifteen seconds, and
+ * this is a tab people leave open all day. Thirty is half the traffic for a staleness nobody can
+ * perceive.
+ *
+ * Below 15 s this would be waste; above about a minute it would start to feel stale on a screen
+ * somebody is actually watching during an incident. This sits between the two on purpose.
  */
-export const ISSUES_POLL_MS = 15_000;
+export const ISSUES_POLL_MS = 30_000;
 
 /** The rail panel's ceiling. A rail that scrolls everything is not a rail (IKN-14 §2). */
 export const RAIL_LIMIT = 4;
@@ -89,20 +94,11 @@ export const useIssues = (
   return { ...polled, rows: visible };
 };
 
-/**
- * The three segment counts.
- *
- * Its own route rather than a field on the page, because a count taken from the page would be the
- * length of the page — and the rail's badge reads the same number the filter segments do, so there
- * is exactly one place it can be wrong.
+/*
+ * The three segment counts used to live here, as a hook three components called independently.
+ * They are now one poll for the whole chassis — see `useIssueCounts.ts` for why that matters and
+ * why it is scoped to the rail's selection where the alerts counter is not.
  */
-export const useIssueCounts = (service: string | null, active = true) =>
-  usePolledResource<IssueCounts>(
-    active ? `/issues/counts${scoped(service) ? `?${scoped(service)}` : ""}` : null,
-    ISSUES_POLL_MS,
-    ISSUES_TEXT.failed,
-    active ? `counts ${service ?? "all"}` : null,
-  );
 
 /**
  * One issue in full — the modal's head and its stack.

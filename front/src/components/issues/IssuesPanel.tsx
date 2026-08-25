@@ -5,7 +5,8 @@ import { Pending } from "@components/ui/Pending";
 import { SURFACE_SCROLL, SURFACE_TEXT_DIM, SURFACE_TEXT_MUTED } from "@components/ui/surface";
 import { useOpenIssue } from "@lib/issueState";
 import { ROUTES } from "@lib/routes";
-import { RAIL_LIMIT, useIssueCounts, useIssues } from "@lib/useIssues";
+import { useIssueCounts } from "@lib/useIssueCounts";
+import { RAIL_LIMIT, useIssues } from "@lib/useIssues";
 import { cn } from "@lib/utils";
 import { ISSUES_TEXT } from "@text/issues";
 import Link from "next/link";
@@ -18,7 +19,8 @@ import { IssueRowCompact } from "./IssueRowCompact";
  * **Four rows at most.** The ticket says a rail that scrolls everything is not a rail, and the
  * footer is what makes the ceiling honest: `N more unresolved · open Issues →` is read from the
  * segment counts rather than from the page, so it is the true remainder and not "there might be
- * more". The count route is already being read for the rail's badge, so it costs nothing here.
+ * more". It costs nothing: the count is one chassis-wide poll shared with the rail's badge and
+ * the view's segment labels — see `useIssueCounts.ts`.
  *
  * **Three empty states, never collapsed into one.** `Signals.tsx` names collapsing them as the one
  * thing a monitoring tool must not do, and this is the panel where it would be most tempting: a
@@ -28,7 +30,7 @@ import { IssueRowCompact } from "./IssueRowCompact";
  */
 export const IssuesPanel = ({ service }: { service: string }) => {
   const issues = useIssues(service, "unresolved", { limit: RAIL_LIMIT });
-  const counts = useIssueCounts(service);
+  const { counts } = useIssueCounts();
   const [, openIssue] = useOpenIssue();
 
   // The scope travels with the link, exactly as the rail's own view links do: arriving at the
@@ -37,7 +39,7 @@ export const IssuesPanel = ({ service }: { service: string }) => {
   // `issues.rows`, not the payload's: the claim overlay has already taken out anything just
   // resolved, so a row the reader has acted on leaves the panel at once.
   const rows = issues.rows;
-  const remaining = Math.max(0, (counts.data?.unresolved ?? rows.length) - rows.length);
+  const remaining = Math.max(0, (counts?.unresolved ?? rows.length) - rows.length);
 
   /*
    * One instant for the whole panel.
@@ -82,9 +84,7 @@ export const IssuesPanel = ({ service }: { service: string }) => {
         <Empty
           loading={issues.loading}
           error={issues.error}
-          nothingAtAll={
-            counts.data !== null && counts.data.unresolved + counts.data.resolved + counts.data.ignored === 0
-          }
+          nothingAtAll={counts !== null && counts.unresolved + counts.resolved + counts.ignored === 0}
           onRetry={issues.reload}
         />
       )}
