@@ -321,3 +321,55 @@ is well inside it; the note is here so the next person widening a window checks.
 2. `front/src/text/pending.spec.ts` asserts `PENDING_COPY.length === 9` and never registered
    `ISSUES_TEXT.loading` — the list is already one short. An `ALERTS_TEXT` pending string needs the
    entry *and* the bump; wave 1's miss is fixed in the same commit.
+
+---
+
+## 11. As built
+
+Where the implementation left this document, and why. Written after the fact, like wave 1's.
+
+**`no_logs` is not the rule §2 describes.** The ticket's "no line in 15 minutes" was measured
+against ks-b before it was written: of nineteen enabled services, **eight logged nothing at all in
+twenty-four hours**, and of the eleven that did, the worst gap was 19 h (`iknos-front`) and 10 h for
+the three busiest — `worldweathr-api` averages a line every 17 s and still goes silent for ten hours
+overnight. At 15 minutes the rule fires for most of the fleet every night; at a threshold above
+those gaps it is a day wide and catches nothing. The predicate shipped is a **pair** of windows —
+at least 60 lines in the hour that ended fifteen minutes ago, and nothing since — so a service that
+is merely idle never qualifies and one that dies mid-traffic qualifies within a pass. `expr` says
+so: `log_lines[1h] >= 60 and absent(log_lines[15m])`.
+
+**`AlertDetail` was never written.** §5 planned `alert-detail.ts`; there is nothing to widen an
+`AlertRow` with. The history is its own route because the modal fetches it separately, so the detail
+route returns `AlertRow` and the file would have been an alias.
+
+**The keyset cursor moved to `common/`.** `issues/issue-cursor.ts` became
+`common/keyset-cursor.ts` with `encodeKeysetCursor`/`decodeKeysetCursor`, because the alerts list
+pages the same way. Two callers is when a thing stops belonging to one feature.
+
+**`disk_space` opens under the host's name, not per service.** It is one filesystem; nineteen
+identical alerts saying so would be nineteen ways to read the same number. `service` on an alert row
+is a scope, not a claim about a culprit — the doc comment says so.
+
+**`Observation.severity` exists for exactly one rule.** `disk_space` is a warning at 85 % and
+critical at 95 %, so the severity is chosen per reading rather than per rule. Nothing else uses it,
+and the type says so.
+
+**The rail badge became a field, not a third branch.** `VIEWS` entries now carry
+`badge: "shortcut" | "issues" | "alerts"`. Three renderings is where the `view.key === "issues"`
+ternary stopped being readable — and the two counts are not the same kind of claim anyway: the
+issues badge is a quantity and neutral, the alerts badge is a warning and red.
+
+**Both alert counters are absent at zero**, where the issues badge prints its `0`. A quantity of
+nothing is a fact; a warning of nothing is a warning that never means anything, which is how a
+warning stops being read.
+
+**The alerts card caps its own height** at 280px rather than being purely `flex-none`. A quiet day
+has it two rows tall and the issues panel takes the column; a bad one would otherwise let it grow
+until the issues panel had nothing left.
+
+**Open item 2 is closed.** `PENDING_COPY` was one short before this wave — `ISSUES_TEXT.loading`
+was added in IKN-14 and never registered — so the tripwire went from 9 to 11 and the wave-1 miss is
+fixed in the same commit.
+
+**`ingest_lag` did not become a ticket.** It is described in §9.4 and nowhere else; if the
+write-stall predicate is ever wanted server-side, that section is the brief.
