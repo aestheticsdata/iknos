@@ -1,7 +1,7 @@
+import { decodeKeysetCursor } from "@common/keyset-cursor";
 import { Prisma } from "@generated/prisma/client";
 import { BadRequestException } from "@nestjs/common";
 import { IsOptional, IsString } from "class-validator";
-import { decodeIssueCursor } from "./issue-cursor";
 
 import type { IssueStatus } from "@contracts/issue-row";
 
@@ -141,9 +141,9 @@ export function whereClause(
   return parts.length === 0 ? Prisma.sql`TRUE` : Prisma.join(parts, " AND ");
 }
 
-/** A cursor off the URL, or nothing. Undecodable means "first page" — see `decodeIssueCursor`. */
+/** A cursor off the URL, or nothing. Undecodable means "first page" — see `decodeKeysetCursor`. */
 export function resolveCursor(p: IssueQueryDto): { key: number; id: number } | undefined {
-  return p.cursor ? (decodeIssueCursor(p.cursor) ?? undefined) : undefined;
+  return p.cursor ? (decodeKeysetCursor(p.cursor) ?? undefined) : undefined;
 }
 
 /** The occurrence chart's range. Both optional — see `parseOccurrenceWindow`. */

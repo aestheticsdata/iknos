@@ -1,8 +1,8 @@
+import { encodeKeysetCursor } from "@common/keyset-cursor";
 import { chooseBucketMs } from "@logs/histogram.service";
 import { LogQueryDto, parseRowId, parseWindow } from "@logs/log-query";
 import { LogsService } from "@logs/logs.service";
 import { Controller, Get, NotFoundException, Param, Post, Query } from "@nestjs/common";
-import { encodeIssueCursor } from "./issue-cursor";
 import {
   IssueQueryDto,
   OccurrenceQueryDto,
@@ -114,7 +114,7 @@ export class IssuesController {
       // Cut from the last row of the page and from the column this sort ordered by — which is why
       // the token is opaque: handing it back with a different `sort` would compare a count against
       // a timestamp.
-      nextCursor: hasMore && last ? encodeIssueCursor(SORTS[sort].keyOf(last), last.id) : null,
+      nextCursor: hasMore && last ? encodeKeysetCursor(SORTS[sort].keyOf(last), last.id) : null,
       spark: { from: from.toISOString(), to: to.toISOString(), bucketMs },
       meta: { tookMs },
     };

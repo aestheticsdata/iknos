@@ -15,6 +15,7 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
+      "@alerts/*": ["./src/alerts/*"],
       "@auth/*": ["./src/auth/*"],
       "@collector/*": ["./src/collector/*"],
       "@common/*": ["./src/common/*"],

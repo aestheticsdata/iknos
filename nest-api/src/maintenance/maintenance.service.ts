@@ -23,6 +23,7 @@ export const MANAGED_TABLES = [
   "host_sample",
   "process_sample",
   "issue_event",
+  "alert_state_change",
 ] as const;
 
 type ManagedTable = (typeof MANAGED_TABLES)[number];
@@ -44,6 +45,11 @@ const RETENTION_WINDOW: Record<ManagedTable, "logs" | "metrics"> = {
   host_sample: "metrics",
   process_sample: "metrics",
   issue_event: "logs",
+  // The transitions behind a kept `alert` row, exactly as `issue_event` is the occurrences behind
+  // a kept `issue` — so it follows the log window, not the three-day metric one. The modal's band
+  // is six hours and would survive either; what would not is someone widening it later against a
+  // table that had quietly been pruned at three days all along.
+  alert_state_change: "logs",
 };
 
 /** What one pass did, for the summary line and for the tests. */

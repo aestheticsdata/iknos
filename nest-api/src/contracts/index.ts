@@ -10,6 +10,9 @@
  * lives; that one is a transcription.
  */
 
+export type { AlertHistory, AlertTransition } from "./alert-history";
+export type { AlertCounts, AlertPage } from "./alert-page";
+export type { AlertRow, AlertState, Severity } from "./alert-row";
 export type {
   CollectorFile,
   CollectorStatus,

@@ -33,5 +33,8 @@ import { SignalsService } from "./signals.service";
       inject: [PrismaService],
     },
   ],
+  // Exported for the alert engine (IKN-10): two of its rules read the error rate and the p95, and
+  // they must be the same numbers the service view shows rather than a second computation of them.
+  exports: [SignalsService],
 })
 export class MetricsModule {}

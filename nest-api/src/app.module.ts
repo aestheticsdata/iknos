@@ -1,3 +1,4 @@
+import { AlertsModule } from "@alerts/alerts.module";
 import { AuthModule } from "@auth/auth.module";
 import { SessionGuard } from "@auth/session.guard";
 import { CollectorModule } from "@collector/collector.module";
@@ -24,7 +25,8 @@ import { HealthController } from "./health.controller";
  *
  * Auth (IKN-6, IKN-21), the collector (IKN-7), the log routes (IKN-19), the partition window
  * (IKN-11), the collector's own status (IKN-24), the service view's metrics (IKN-13) and grouped
- * errors with the routes that serve them (IKN-9, IKN-14) are in. Alerts arrive with IKN-10.
+ * errors with the routes that serve them (IKN-9, IKN-14) and the alert engine with its own
+ * (IKN-10, IKN-15) are in. M3 is complete.
  */
 @Module({
   imports: [
@@ -59,6 +61,7 @@ import { HealthController } from "./health.controller";
     MetricsModule,
     CollectorModule,
     IssuesModule,
+    AlertsModule,
   ],
   controllers: [HealthController],
   providers: [

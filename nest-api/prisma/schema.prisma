@@ -297,7 +297,7 @@ model Issue {
 
   /// Every occurrence, including those the per-minute cap kept out of `issue_event`. The count is
   /// exact; the samples are capped.
-  eventCount Int @map("event_count") @default(0)
+  eventCount Int @default(0) @map("event_count")
 
   /// Captured from the deploy's release marker when the service has one, at the first and last
   /// occurrence. Null rather than fabricated from anything else, and the column shows `—`.
@@ -357,4 +357,108 @@ model IssueEvent {
   @@index([issueId, ts])
   @@index([service, ts])
   @@map("issue_event")
+}
+
+/// One alerting episode — a rule that became true for a service, and everything that happened to
+/// it since (IKN-10).
+///
+/// **An episode, not a fingerprint.** An issue is keyed on a hash that is the same error for as
+/// long as the code is wrong, so its identity is public and lives in URLs. An alert has a
+/// beginning and an end: the same rule firing on the same service in March and again in August is
+/// genuinely two rows, and there is nothing to key it on but the id.
+///
+/// Unpartitioned and kept indefinitely, like `issue` — the ledger. `alert_state_change` beside it
+/// is the stream, and it is pruned.
+model Alert {
+  id Int @id @default(autoincrement())
+
+  ruleKey String @map("rule_key") @db.VarChar(32)
+  service String @db.VarChar(64)
+
+  /// `critical` | `warning` | `info`. On the row rather than looked up from the rule, because
+  /// `disk_space` chooses per observation — 85 % is a warning and 95 % is not.
+  severity String @db.VarChar(16)
+  title    String @db.VarChar(128)
+
+  /// The rule's expression, stored verbatim and shipped to the UI unreformulated. Copied onto the
+  /// row rather than joined from the rule so an alert from six months ago still reads as the rule
+  /// that was in force when it fired, not as whatever that rule says today.
+  expr String @db.VarChar(255)
+
+  /// What the rule was tested against, and in what unit — `5` percent, `1000` ms, `85` percent.
+  /// **On the row on purpose (spec D3).** The front is a separate pnpm root and cannot import a
+  /// constant from here, so a threshold that travels with the alert is the only shape in which the
+  /// engine and the modal cannot come to disagree about what was being asked.
+  threshold Float?
+  unit      String? @db.VarChar(16)
+
+  /// The latest reading. Null is **no opinion** — a scrape that did not happen — never "below
+  /// threshold", and never zero.
+  value Float?
+
+  /// `pending` | `firing` | `resolved`.
+  ///
+  /// Acknowledged and silenced are deliberately **not** states here but stamps below: an
+  /// acknowledged alert is still firing, which is the entire point of acknowledging it, and
+  /// modelling them as states would make "acked, then resolved" unrepresentable.
+  state String @db.VarChar(16)
+
+  openedAt     DateTime  @map("opened_at") @db.DateTime(3)
+  /// When the condition first held. A deploy mid-`for`-window resumes from this rather than
+  /// restarting the clock, which is why the engine keeps its state here and not in memory.
+  pendingSince DateTime? @map("pending_since") @db.DateTime(3)
+  firedAt      DateTime? @map("fired_at") @db.DateTime(3)
+  resolvedAt   DateTime? @map("resolved_at") @db.DateTime(3)
+
+  ackedAt       DateTime? @map("acked_at") @db.DateTime(3)
+  /// Silence is a timestamp the read filters on, so it expires by itself — no job, and the engine
+  /// re-fires naturally if the condition still holds when it lapses.
+  silencedUntil DateTime? @map("silenced_until") @db.DateTime(3)
+
+  /// How many passes have seen the condition still true. The page shows one row for a condition
+  /// that has held all afternoon, and this is what says it has.
+  occurrences Int      @default(1)
+  lastSeenAt  DateTime @map("last_seen_at") @db.DateTime(3)
+
+  /// `rule_key|service` while open, NULL once resolved — **a generated column, written by MySQL**.
+  ///
+  /// This is how "one open alert per rule per service" becomes the database's guarantee rather
+  /// than the engine's. MySQL 8 has no partial unique index and Prisma cannot express one, but
+  /// NULLs are distinct in a unique index: closed rows never collide, and two open rows for the
+  /// same rule and service collide exactly when they should. Same argument as `issue.fingerprint`
+  /// and `app_user.singleton` — an invariant a second writer cannot win.
+  ///
+  /// The migration writes the `AS (...) STORED` clause by hand; nothing in the application ever
+  /// assigns it.
+  openKey String? @unique @map("open_key") @db.VarChar(96)
+
+  @@index([state, severity, lastSeenAt])
+  @@index([service, lastSeenAt])
+  @@index([ruleKey, service, openedAt])
+  @@map("alert")
+}
+
+/// Every transition an alert made, in order (IKN-10).
+///
+/// Without it the modal can say "firing, since 14:02" and nothing else — which says nothing at all
+/// about an alert that has been flapping every ten minutes since lunch. The 6 h band in the modal
+/// is drawn from these rows.
+///
+/// Day-partitioned and in `MANAGED_TABLES`: it is a stream, like `issue_event` and `metric_sample`.
+model AlertStateChange {
+  id BigInt   @default(autoincrement()) @db.UnsignedBigInt
+  ts DateTime @db.DateTime(3)
+
+  alertId Int @map("alert_id")
+
+  /// Null for the row that opened the alert — there was no state before it.
+  fromState String? @map("from_state") @db.VarChar(16)
+  toState   String  @map("to_state") @db.VarChar(16)
+
+  /// The reading that caused the transition, so the band can be read without joining back.
+  value Float?
+
+  @@id([id, ts])
+  @@index([alertId, ts])
+  @@map("alert_state_change")
 }
