@@ -4,6 +4,7 @@ import { PrismaService } from "@db/prisma.service";
 import { Prisma } from "@generated/prisma/client";
 import { Injectable } from "@nestjs/common";
 import { coalesce } from "./coalesce";
+import { clamp, clampText, MAX_CULPRIT, MAX_LEVEL_NAME, MAX_SERVICE, MAX_TRACE_ID, MAX_TYPE } from "./column-bounds";
 import { ERROR_LEVEL, errorFieldsOf, isGroupable } from "./error-fields";
 import { EventCap } from "./event-cap";
 import { culpritOf, fingerprintOf, normaliseFrames } from "./fingerprint";
@@ -235,18 +236,27 @@ export class GrouperService implements OnApplicationBootstrap, OnApplicationShut
         message: fields.message,
       });
 
-      const sample = { ts: head.ts, traceId: head.traceId, stack: fields.stack, message: fields.message };
+      const sample = {
+        ts: head.ts,
+        traceId: clamp(head.traceId, MAX_TRACE_ID),
+        stack: clampText(fields.stack),
+        message: clampText(fields.message),
+      };
       const existing = pending.get(fingerprint);
 
       if (existing === undefined) {
+        // Clamped here, at the one place a `Pending` is built, rather than at each of the two
+        // statements that write one. `error.*` reaches us out of the unclamped `attrs` bag and
+        // these columns are VARCHAR(255) and TEXT — see `column-bounds.ts` for what overflowing
+        // them costs.
         pending.set(fingerprint, {
           fingerprint,
-          service: head.service,
-          type: fields.type,
-          message: fields.message,
-          culprit: culpritOf(normaliseFrames(fields.stack)),
+          service: clamp(head.service, MAX_SERVICE),
+          type: clamp(fields.type, MAX_TYPE),
+          message: clampText(fields.message),
+          culprit: clamp(culpritOf(normaliseFrames(fields.stack)), MAX_CULPRIT),
           level: head.level,
-          levelName: head.levelName,
+          levelName: clamp(head.levelName, MAX_LEVEL_NAME),
           firstTs: head.ts,
           lastTs: head.ts,
           count: 1,
@@ -266,12 +276,34 @@ export class GrouperService implements OnApplicationBootstrap, OnApplicationShut
   }
 
   private async write(pending: Map<string, Pending>, now: number): Promise<void> {
-    for (const one of pending.values()) await this.upsert(one);
+    const written: Pending[] = [];
 
-    const ids = await this.idsFor([...pending.keys()]);
+    /*
+     * One fingerprint's failure costs that fingerprint and nothing else.
+     *
+     * Defence in depth behind the clamping, not instead of it. The loop is sequential and the
+     * watermark has already advanced by the time it runs, so a throw here used to discard every
+     * fingerprint ordered after it *and* every event row for the ones that had already
+     * succeeded — up to a whole `BATCH_LIMIT` of grouping, lost to one row, with only a swallowed
+     * log line to show for it.
+     *
+     * Clamping removes the failure this was actually seen with. This removes the class.
+     */
+    for (const one of pending.values()) {
+      try {
+        await this.upsert(one);
+        written.push(one);
+      } catch (err) {
+        logger.error({ err, fingerprint: one.fingerprint, service: one.service }, "issue upsert failed");
+      }
+    }
+
+    if (written.length === 0) return;
+
+    const ids = await this.idsFor(written.map((one) => one.fingerprint));
     const events: Prisma.IssueEventCreateManyInput[] = [];
 
-    for (const one of pending.values()) {
+    for (const one of written) {
       const issueId = ids.get(one.fingerprint);
       if (issueId === undefined) continue;
 
@@ -292,7 +324,15 @@ export class GrouperService implements OnApplicationBootstrap, OnApplicationShut
       });
     }
 
-    if (events.length > 0) await this.prisma.issueEvent.createMany({ data: events });
+    if (events.length === 0) return;
+
+    try {
+      await this.prisma.issueEvent.createMany({ data: events });
+    } catch (err) {
+      // The counts are already in `issue` and are the numbers on screen. Losing a pass's sample
+      // rows costs a notch of one sparkline; taking the cycle down would cost the counts too.
+      logger.error({ err, events: events.length }, "issue event batch failed");
+    }
   }
 
   /**

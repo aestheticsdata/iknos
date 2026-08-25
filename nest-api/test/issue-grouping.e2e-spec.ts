@@ -207,6 +207,37 @@ describe("issue grouping", () => {
     expect(row.eventCount).toBe(1);
   });
 
+  it("survives a log line whose error fields overflow their columns", async () => {
+    // `attrs` is the one column the ingest writer does not clamp (writer.ts:75), and `error.*`
+    // lives inside it — never promoted, so it reaches log_entry at up to the parser's 1 MB line
+    // cap. Written straight into VARCHAR(255)/TEXT that is MySQL error 1406, which in strict mode
+    // fails the whole statement. An app doing `throw new Error(\`upstream ${res.status}:
+    // ${await res.text()}\`)` against a service answering with an HTML page produces exactly it.
+    const huge = "x".repeat(100_000);
+    await seed(
+      "upstream failed",
+      AGO_MS,
+      ecs("A".repeat(400), huge, `Error: ${huge}\n    at f (/var/www/pfa/nest-api/dist/a.js:1:2)`),
+    );
+    // A second, ordinary error ordered after it: before the clamp this one vanished with the pass.
+    await seed(
+      "boom",
+      AGO_MS - 1,
+      ecs("RangeError", "boom", "RangeError: boom\n    at render (/var/www/pfa/nest-api/dist/pdf/render.js:204:9)"),
+    );
+
+    await expect(grouper().pass(Date.now())).resolves.toBeGreaterThan(0);
+
+    const rows = await issues();
+    expect(rows).toHaveLength(2);
+    // Truncated rather than refused: a clipped stack still identifies the bug.
+    const overflowed = rows.find((r) => r.type?.startsWith("A"));
+    expect(overflowed?.type).toHaveLength(255);
+    expect(Buffer.byteLength(overflowed?.message ?? "")).toBeLessThanOrEqual(60_000);
+    // And the one behind it in the batch survived, which is the whole point.
+    expect(rows.some((r) => r.type === "RangeError")).toBe(true);
+  });
+
   it("records the occurrence's trace id so the logs of that request are reachable", async () => {
     await prisma.logEntry.create({
       data: {
