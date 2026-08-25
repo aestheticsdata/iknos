@@ -23,6 +23,7 @@
       "@db/*": ["./src/prisma/*"],
       "@generated/*": ["./generated/*"],
       "@ingest/*": ["./src/ingest/*"],
+      "@issues/*": ["./src/issues/*"],
       "@logs/*": ["./src/logs/*"],
       "@maintenance/*": ["./src/maintenance/*"],
       "@metrics/*": ["./src/metrics/*"],
