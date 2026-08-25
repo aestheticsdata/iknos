@@ -492,3 +492,57 @@ notifications of any kind, cross-service grouping, and approximate similarity ma
    which has never run here. The safe existing pattern is sibling modals driven from URL state
    with `history: "replace"`, one closing as the other opens — `traceState.ts` does exactly
    this for `?trace=`. Decided at implementation time against a real interaction.
+
+## 10. As built — where the implementation left the spec
+
+Seven deliberate departures, each with the reason it was taken. Everything else shipped as
+written above.
+
+1. **`issue_event.count`, a new column** (migration `20260825150955_issue_event_count`). The
+   grouper writes at most one sample row per fingerprint per pass, so counting rows draws how
+   many *passes* saw an error — four a minute whether it threw four times or four thousand.
+   IKN-14's Done item asks the sparkline to reflect the real distribution, which is not
+   answerable without the number travelling with the sample. `SUM(count)` is what both the
+   sparkline and the modal's chart read.
+
+2. **`issues/issue-cursor.ts` rather than reusing `logs/cursor.ts`** (§5.1 said reuse it). That
+   pair encodes a `Date` and an `UNSIGNED BIGINT`, because a log page is always ordered by time.
+   This list also sorts by volume, where the key is `event_count` — an integer that is not an
+   instant and would have to be dressed as one to fit. Two small functions that say what they
+   carry beat one that lies about it.
+
+3. **`seg=`, not `status=`, for the segment filter.** `status` is already the log list's HTTP
+   status filter, and `ServiceRail`'s `withScope` carries the whole query string across views —
+   so arriving at `/issues` from `/logs?status=500` would have landed on a segment filter of
+   `500`, which the API refuses, correctly and confusingly.
+
+4. **`GET /api/issues/for-log/:id` — a new route the spec did not name.** §6.6 requires `⌘I` to
+   open "the issue of the selected row" and nothing in the schema links a `log_entry` row to an
+   `issue`: `persistBatch` writes through `createMany` in a transaction, which returns no ids on
+   MySQL, so the link cannot be stored. The route recomputes it through the grouper's own
+   `coalesce` → `errorFieldsOf` → `fingerprintOf`, which is the only version that cannot drift
+   from what the grouping actually did. `issues/log-link.ts`, tested without a database.
+
+5. **The modal is mounted on the chassis, not by a list**, and the optimistic state lives one
+   level higher still in `lib/issueClaims.tsx`. §6.5 put the mutations beside the list they
+   change; `⌘I` fires from the log view, which has no issues list, so one modal above all three
+   openers is the only arrangement where the shortcut works. The claim overlay is what keeps the
+   update optimistic across that distance, and claims are settled by the next payload rather than
+   by a timer — a timer either flashes the old row back or outranks the server indefinitely, and
+   the second would hide a regression the collector had just reopened.
+
+6. **The full table pages by raising `limit`, not by accumulating cursors.** The keyset is
+   implemented and tested on the API; the view uses one page and raises it to the server's
+   ceiling of 200. Mixing a polled head page with an accumulated tail lets the boundary shift
+   under the reader between polls. At the ceiling the view *says* it is capped rather than
+   silently dropping the button — a silent cap is a list claiming to be complete.
+
+7. **The rail row's collapsed form is `IS`, not the count.** §6.6 said the badge becomes live
+   data, and it does — beside the name, at full width. At 52px the badge *is* the row, and a
+   number there identifies nothing.
+
+Open item 3 is settled the way it proposed: **one closes as the other opens, through URL state.**
+`⌘I` is dead while the row detail is open (`keymap.ts`), so the detail reaches its issue through
+a button in its own footer — and `LogPanel` closes the detail once the lookup has succeeded, so
+the two `<dialog>`s are never in the top layer together. Only on success: closing it up front
+would take the panel away for nothing on a line that was never grouped, which is most lines.
