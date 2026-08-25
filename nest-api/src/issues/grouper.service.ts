@@ -321,6 +321,10 @@ export class GrouperService implements OnApplicationBootstrap, OnApplicationShut
         message: one.sample.message,
         stack: one.sample.stack,
         attrs: undefined,
+        // What this one row stands for. Rows are samples — one per fingerprint per pass — so
+        // counting them would draw a sparkline of how many passes saw the error rather than of
+        // how often it threw. See the column's own comment in the schema.
+        count: one.count,
       });
     }
 

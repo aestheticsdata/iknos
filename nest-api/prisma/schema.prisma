@@ -340,6 +340,19 @@ model IssueEvent {
   stack   String? @db.Text
   attrs   Json?
 
+  /// How many occurrences this sample stands for — the pass's count for its fingerprint, not 1.
+  ///
+  /// The grouper writes at most one row per fingerprint per pass, so a row is a *sample* and the
+  /// number of rows says how many passes saw the error, never how often it threw. The sparkline
+  /// and the 48 h chart are supposed to show the second thing, so the number travels with the
+  /// sample: `SUM(count)` over a bucket is the real volume, `COUNT(*)` would be a flat line four
+  /// bars high whether the error threw four times a minute or four thousand.
+  ///
+  /// It is the same trade `issue.event_count` makes and it stays consistent with it: summed over
+  /// the whole retention window these add up to `event_count`, minus whatever the per-minute cap
+  /// refused — which at a 15 s interval and a ceiling of twenty is nothing.
+  count Int @default(1)
+
   @@id([id, ts])
   @@index([issueId, ts])
   @@index([service, ts])
