@@ -2,7 +2,7 @@
 //
 // Four models only — everything M1 needs to put a log line on screen. The rest arrives with
 // the feature that needs it, as additive migrations: the recovery passphrase column with
-// Task 11, the metric and host tables with M2, issues with M3, alerts after that.
+// Task 11, the metric and host tables with M2, issues with IKN-9. Alerts arrive with IKN-10.
 //
 // Layout, generator settings and output path are trekker's and Zeus's, unchanged.
 
@@ -251,4 +251,97 @@ model ProcessSample {
   @@id([id, ts])
   @@index([pm2Name, ts])
   @@map("process_sample")
+}
+
+/// One grouped error — IKN-9. The "Sentry-like" half of the project: an exception that falls four
+/// hundred times is one problem, not four hundred lines to read.
+///
+/// **Unpartitioned, and kept indefinitely.** Its occurrences are a stream under retention
+/// (`issue_event`); the identity is not. An issue whose last occurrence has aged out still answers
+/// "when did this first appear", which is the column the view exists for.
+model Issue {
+  id Int @id @default(autoincrement())
+
+  /// Sixteen hex characters over service + error type + the top normalised frames. UNIQUE, and
+  /// that is what makes "one issue per fingerprint" a guarantee the database enforces rather than
+  /// a read-then-write two concurrent collector batches can both win — the `app_user.singleton`
+  /// argument, applied to a second invariant. Built by `src/issues/fingerprint.ts`; changing that
+  /// function is a data migration.
+  fingerprint String @unique @db.Char(16)
+
+  service String  @db.VarChar(64)
+  type    String? @db.VarChar(255)
+  message String  @db.Text
+
+  /// The first frame that is ours, already normalised — `acquire (dist/queue/export.js:142)`.
+  /// Null when every frame belongs to a dependency: naming the library says nothing the type did
+  /// not already say.
+  culprit String? @db.VarChar(255)
+
+  level     Int    @db.SmallInt
+  levelName String @map("level_name") @db.VarChar(16)
+
+  /// `unresolved` | `resolved` | `ignored` — the mockup's own words, carried down to the column.
+  /// A column named `open` and a filter labelled "unresolved" eventually produce a filter that
+  /// does not filter. VarChar and not an enum: the schema has none.
+  status String @default("unresolved") @db.VarChar(16)
+
+  /// Set when a resolved issue recurs. Its own flag rather than a fourth status, so a regression
+  /// stays inside the `unresolved` filter — which is the filter it most belongs in.
+  regression Boolean @default(false)
+
+  /// Written at creation and never touched again. The view shows it as "since when", and a value
+  /// that slides makes that column useless.
+  firstSeen DateTime @map("first_seen") @db.DateTime(3)
+  lastSeen  DateTime @map("last_seen") @db.DateTime(3)
+
+  /// Every occurrence, including those the per-minute cap kept out of `issue_event`. The count is
+  /// exact; the samples are capped.
+  eventCount Int @map("event_count") @default(0)
+
+  /// Captured from the deploy's release marker when the service has one, at the first and last
+  /// occurrence. Null rather than fabricated from anything else, and the column shows `—`.
+  firstRelease String? @map("first_release") @db.VarChar(64)
+  lastRelease  String? @map("last_release") @db.VarChar(64)
+
+  /// The latest occurrence's stack and context, for the modal — kept on the issue so a stack
+  /// survives its events being pruned.
+  sample Json?
+
+  @@index([service, lastSeen])
+  @@index([status, lastSeen])
+  @@map("issue")
+}
+
+/// One occurrence of an issue — IKN-9. What the 48h chart and the panel's sparkline count.
+///
+/// Partitioned by day and pruned like `log_entry`: this is a stream, and an error in a render loop
+/// would otherwise fill the disk. `issueId` is a plain indexed column, not a relation — the schema
+/// has no foreign keys, and InnoDB would refuse one on a partitioned table anyway.
+///
+/// **There is no `log_id`.** `persistBatch` writes through `createMany` inside `$transaction`,
+/// which returns no generated ids on MySQL, so the column would be NULL on every row the collector
+/// wrote. The pointer back to the log line is `(ts, service, traceId)`, which is what the
+/// correlated-logs link needs anyway — `GET /api/logs` refuses a request without bounds.
+model IssueEvent {
+  id BigInt   @default(autoincrement()) @db.UnsignedBigInt
+  ts DateTime @db.DateTime(3)
+
+  issueId Int    @map("issue_id")
+  service String @db.VarChar(64)
+
+  traceId String? @map("trace_id") @db.Char(32)
+
+  /// `release_tag`, never `release` — RELEASE is reserved in MySQL 8.0, and every hand-written
+  /// statement in this codebase writes bare, unquoted column names. Same rule as `byte_offset`.
+  releaseTag String? @map("release_tag") @db.VarChar(64)
+
+  message String  @db.Text
+  stack   String? @db.Text
+  attrs   Json?
+
+  @@id([id, ts])
+  @@index([issueId, ts])
+  @@index([service, ts])
+  @@map("issue_event")
 }

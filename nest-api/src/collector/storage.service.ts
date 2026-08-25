@@ -27,8 +27,10 @@ import type { CollectorStorage, DiskUsage, StorageTable } from "@contracts/colle
  */
 export const CACHE_TTL_MS = 5 * 60_000;
 
-/** The only table anything prunes. Everything else is the panel's `∞`. */
-const PRUNED_TABLE = "log_entry";
+// Which tables are pruned, and on what window, is the maintenance pass's own answer — asked per
+// table rather than held as a copy here (IKN-9). This was `const PRUNED_TABLE = "log_entry"`,
+// which was true until `issue_event` joined the pass: the panel would have printed `∞` beside a
+// table being dropped nightly, which is precisely the lie the panel exists to prevent.
 
 type SizeRow = { name: string; bytes: bigint | number | null };
 
@@ -93,7 +95,7 @@ export class StorageService {
         // MySQL hands these back as BIGINT, which Prisma turns into a bigint; and both columns are
         // NULL for an engine that does not report them. Neither survives `JSON.stringify`.
         bytes: Number(row.bytes ?? 0),
-        retentionDays: row.name === PRUNED_TABLE ? window.retentionDays : null,
+        retentionDays: this.maintenance.retentionForTable(row.name),
       }))
       // Largest first: the panel is read top-down and the row that matters is the one growing.
       .sort((a, b) => b.bytes - a.bytes);

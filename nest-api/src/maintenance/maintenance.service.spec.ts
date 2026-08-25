@@ -84,6 +84,31 @@ describe("MaintenanceService over the managed tables", () => {
     expect(report.dropped).toEqual([weekOld]);
   });
 
+  it("keeps issue occurrences on the log window, not the shorter sample one", async () => {
+    // IKN-9: `issue_event` is a stream and follows IKN-11's retention. Before this was a
+    // per-table lookup it was `table === "log_entry" ? logs : metrics`, so every table added to
+    // MANAGED_TABLES silently inherited three days — and a 48h occurrence chart drawn over a
+    // three-day table is right for two days and wrong forever after.
+    const weekOld = partitionName(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+    const prisma = makePrisma([
+      { TABLE_NAME: "issue_event", PARTITION_NAME: "p_future" },
+      { TABLE_NAME: "issue_event", PARTITION_NAME: weekOld },
+      { TABLE_NAME: "metric_sample", PARTITION_NAME: "p_future" },
+      { TABLE_NAME: "metric_sample", PARTITION_NAME: weekOld },
+    ]);
+    const service = new MaintenanceService(14, prisma, 0, 3);
+
+    await service.run();
+
+    const statements = prisma.$executeRawUnsafe.mock.calls.map((c) => c[0] as string);
+    expect(statements).toContain(`ALTER TABLE metric_sample DROP PARTITION ${weekOld}`);
+    expect(statements).not.toContain(`ALTER TABLE issue_event DROP PARTITION ${weekOld}`);
+    expect(service.retentionForTable("issue_event")).toBe(14);
+    expect(service.retentionForTable("metric_sample")).toBe(3);
+    // `issue` itself is not in the pass at all — an identity table, honestly never pruned.
+    expect(service.retentionForTable("issue")).toBeNull();
+  });
+
   it("skips a table absent from information_schema instead of failing the pass", async () => {
     // A database restored from before the IKN-8 migration: log_entry exists, the rest do not.
     const prisma = makePrisma([{ TABLE_NAME: "log_entry", PARTITION_NAME: "p_future" }]);

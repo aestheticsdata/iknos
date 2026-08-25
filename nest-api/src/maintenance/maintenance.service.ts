@@ -9,14 +9,42 @@ import type { OnApplicationBootstrap } from "@nestjs/common";
 
 /**
  * Every raw time-series table the pass manages (IKN-11 for `log_entry`, extended by IKN-8 for
- * the metric and probe tables). Membership here is the whole authorization: table names reach
- * `$executeRawUnsafe` from this list and nowhere else.
+ * the metric and probe tables and by IKN-9 for `issue_event`). Membership here is the whole
+ * authorization: table names reach `$executeRawUnsafe` from this list and nowhere else.
  *
- * `metric_rollup` is deliberately absent — empty until IKN-20, which owns its retention.
+ * `metric_rollup` is deliberately absent — empty until IKN-20, which owns its retention. So is
+ * `issue`, which is an identity table rather than a stream: an issue whose occurrences have all
+ * aged out still answers "when did this first appear".
  */
-export const MANAGED_TABLES = ["log_entry", "metric_sample", "health_check", "host_sample", "process_sample"] as const;
+export const MANAGED_TABLES = [
+  "log_entry",
+  "metric_sample",
+  "health_check",
+  "host_sample",
+  "process_sample",
+  "issue_event",
+] as const;
 
 type ManagedTable = (typeof MANAGED_TABLES)[number];
+
+/**
+ * Which of the two windows each managed table is pruned on.
+ *
+ * **Exhaustive on purpose.** This used to be `table === "log_entry" ? logs : metrics`, which
+ * meant every table added to the list afterwards silently inherited the metric window — three
+ * days in production. `issue_event` is the table that would have been wrong: IKN-9 says an
+ * issue's occurrences follow the *log* retention, and a 48-hour chart drawn over a three-day
+ * table would have been quietly right for a week and quietly wrong forever after. A `Record`
+ * over `ManagedTable` cannot be added to without answering the question.
+ */
+const RETENTION_WINDOW: Record<ManagedTable, "logs" | "metrics"> = {
+  log_entry: "logs",
+  metric_sample: "metrics",
+  health_check: "metrics",
+  host_sample: "metrics",
+  process_sample: "metrics",
+  issue_event: "logs",
+};
 
 /** What one pass did, for the summary line and for the tests. */
 export type MaintenanceReport = {
@@ -185,9 +213,21 @@ export class MaintenanceService implements OnApplicationBootstrap {
    * accumulated there into the partition they belong in, at no cost once the window is being
    * kept, because in steady state `p_future` is empty.
    */
-  /** `log_entry` keeps the log window; every raw sample table gets the shorter metric one. */
-  private retentionFor(table: ManagedTable): number {
-    return table === "log_entry" ? this.retentionDays : this.metricRetentionDays;
+  /** Logs and issue occurrences keep the log window; the raw sample tables get the shorter one. */
+  retentionFor(table: ManagedTable): number {
+    return RETENTION_WINDOW[table] === "logs" ? this.retentionDays : this.metricRetentionDays;
+  }
+
+  /**
+   * How many days of a given table survive the pass, or `null` if the pass does not touch it.
+   *
+   * Public since IKN-9 so the storage panel can print a window per table instead of one window
+   * for `log_entry` and `∞` for everything else. Two answers to "how long is this kept" that can
+   * disagree is the one thing that panel exists to prevent — the argument `service-rail.ts` makes
+   * when it exports `STALE_AFTER_MS` rather than letting two renderings hold their own copy.
+   */
+  retentionForTable(table: string): number | null {
+    return isManagedTable(table) ? this.retentionFor(table) : null;
   }
 
   private async create(table: ManagedTable, name: string): Promise<void> {
@@ -207,9 +247,14 @@ export class MaintenanceService implements OnApplicationBootstrap {
   }
 }
 
+/** Narrows an arbitrary table name to one the pass manages. */
+function isManagedTable(table: string): table is ManagedTable {
+  return (MANAGED_TABLES as readonly string[]).includes(table);
+}
+
 /** The companion of `assertDayPartition`: both halves of every DDL string are checked, always. */
 function assertManagedTable(table: string): void {
-  if (!(MANAGED_TABLES as readonly string[]).includes(table)) {
+  if (!isManagedTable(table)) {
     throw new Error(`refusing to build DDL: ${JSON.stringify(table)} is not a managed table`);
   }
 }

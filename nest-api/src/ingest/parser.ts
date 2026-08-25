@@ -57,8 +57,12 @@ const PROMOTED = [
 /**
  * Looks a key up in both ECS shapes: dotted (`"log.level"`) and nested (`{log: {level}}`). The
  * spec allows either and loggers differ — pino emits dotted with its ECS formatter, others nest.
+ *
+ * Exported since IKN-9: `error.*` is not promoted to a column, so the grouper reads it back out
+ * of `attrs` and has to accept both shapes for the same reason the parser does. One lookup, so a
+ * logger the parser can read cannot be one the fingerprint silently fails on.
  */
-function lookup(obj: Record<string, unknown>, dotted: string): unknown {
+export function lookup(obj: Record<string, unknown>, dotted: string): unknown {
   if (dotted in obj) return obj[dotted];
 
   let cur: unknown = obj;
