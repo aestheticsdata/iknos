@@ -1,11 +1,14 @@
 "use client";
 
+import { sparkTip } from "@components/issues/sparkTip";
 import { BarSpark } from "@components/ui/BarSpark";
 import { Dot } from "@components/ui/Dot";
 import { SURFACE_TEXT, SURFACE_TEXT_DIM, SURFACE_TEXT_MUTED, TONE_TEXT } from "@components/ui/surface";
+import { Tooltip } from "@components/ui/Tooltip";
 import { formatCount } from "@lib/format";
 import { formatAgo, isHot, issueLine, issueTitle, recencyTone, shortFingerprint } from "@lib/issueFormat";
 import { cn } from "@lib/utils";
+import { useZone } from "@lib/zoneState";
 import { ISSUES_TEXT } from "@text/issues";
 
 import type { IssueRow } from "@lib/issueTypes";
@@ -23,13 +26,17 @@ import type { IssueRow } from "@lib/issueTypes";
 export const IssueRowCompact = ({
   row,
   now,
+  spark,
   onOpen,
 }: {
   row: IssueRow;
   /** Passed in rather than taken here, so a panel of four rows agrees with itself about "now". */
   now: number;
+  /** The page's own axis, for the bars — see `sparkTip`, and the table, which shares both. */
+  spark: { from: string; bucketMs: number } | null;
   onOpen: () => void;
 }) => {
+  const { tz } = useZone();
   const tone = recencyTone(row.lastSeen, now);
   const hot = isHot(row, now);
 
@@ -37,7 +44,6 @@ export const IssueRowCompact = ({
     <button
       type="button"
       onClick={onOpen}
-      title={row.fingerprint}
       className={cn(
         "flex w-full flex-col gap-1 border-b px-2.75 py-2 text-left transition-colors duration-150 ease-out last:border-0",
         "border-work-border hover:bg-work-inset",
@@ -52,10 +58,21 @@ export const IssueRowCompact = ({
           label={ISSUES_TEXT.recency[tone] ?? tone}
         />
         {/* Half the hash: enough to recognise across a session, not enough to verify. The full
-            value is on the row's title and in the URL, which is where an exact value belongs. */}
-        <span className="flex-none rounded-chip border border-work-border-strong bg-work-inset px-1.25 text-row text-work-text-muted">
-          {shortFingerprint(row.fingerprint)}
-        </span>
+            value hangs off the chip itself and is in the URL, which is where an exact value
+            belongs.
+
+            It hung off the whole row until the bars below took a bubble of their own: two tooltips
+            over one button, one of them following the pointer across the very chart the other was
+            covering. A hint belongs to the thing it explains, which for a truncated hash is the
+            four characters doing the truncating. */}
+        <Tooltip
+          mode="hover"
+          content={row.fingerprint}
+        >
+          <span className="flex-none rounded-chip border border-work-border-strong bg-work-inset px-1.25 text-row text-work-text-muted">
+            {shortFingerprint(row.fingerprint)}
+          </span>
+        </Tooltip>
         <span className="flex-1" />
         <span className={cn("text-row font-medium tabular-nums", hot ? TONE_TEXT.work.error : SURFACE_TEXT.work)}>
           {formatCount(row.eventCount)}
@@ -74,6 +91,7 @@ export const IssueRowCompact = ({
             tone={hot ? "error" : "neutral"}
             height={14}
             label={ISSUES_TEXT.sparkLabel(issueTitle(row))}
+            tip={sparkTip(spark, row.spark, tz)}
           />
         </span>
       </span>

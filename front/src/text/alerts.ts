@@ -44,6 +44,10 @@ export const ALERTS_TEXT = {
   tileThreshold: "threshold",
   historyTitle: "state, last 6h",
   historyEmpty: "No transitions in this window.",
+  /* The band's rows. `held` rather than `duration`: what the segment measures is how long the alert
+     stayed in that state, and on a flapping rule that is the number being compared segment to
+     segment. */
+  bandRows: { held: "held", reading: "reading" },
   ruleLabel: "rule",
   /* The truth of the product, and IKN-15 asks for it in as many words. */
   hint: "Nothing is pushed anywhere — you come and look.",

@@ -17,7 +17,7 @@ import { Sparkline } from "@components/ui/Sparkline";
 import { Spinner } from "@components/ui/Spinner";
 import { SURFACE_SCROLL, SURFACE_TEXT_MUTED } from "@components/ui/surface";
 import { useToast } from "@components/ui/Toast";
-import { Tooltip } from "@components/ui/Tooltip";
+import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
 import { cn } from "@lib/utils";
 import { useState } from "react";
 
@@ -51,6 +51,19 @@ const GAPPED = [4, 6, 5, 9, 12, null, null, 11, 18, 24, 19, 13, 9, 7, 8, 6, 5, 9
  * was down" becomes "no errors".
  */
 const BARS = [0, 0, 0.4, 0, null, null, 1.8, 2.4, 0.9, 0, 0, 0];
+
+/**
+ * The demo axis for the charts below — the bubbles need something honest to name, and a gallery has
+ * no server to be told one by. Minute `n` of a made-up hour, which is exactly what the real call
+ * sites do with a real one: the chart is handed the numbers and the *caller* supplies the words.
+ */
+const demoTip = (values: (number | null)[], unit: string) => (index: number) =>
+  values[index] === undefined ? null : (
+    <TooltipBlock
+      subject={`minute ${index + 1}`}
+      rows={[{ label: unit, value: values[index] === null ? "—" : String(values[index]) }]}
+    />
+  );
 
 /** Enough lines to overflow the box below and give the bar something to do. */
 const SCROLL_LINES = Array.from(
@@ -223,7 +236,12 @@ const SurfacePanel = ({ surface }: { surface: Surface }) => (
               ]}
             />
             <div className="flex items-end gap-3">
-              <Tooltip label="Events per minute, last 20 minutes">
+              {/* The two modes side by side: this one wraps a trigger and explains the whole chart,
+                  and the three below let each mark speak for itself. */}
+              <Tooltip
+                mode="hover"
+                content="Events per minute, last 20 minutes"
+              >
                 <Sparkline
                   values={SERIES}
                   surface={surface}
@@ -244,6 +262,7 @@ const SurfacePanel = ({ surface }: { surface: Surface }) => (
                 tone="warn"
                 reference={12}
                 label="A series with a gap, against a reference"
+                tip={demoTip(GAPPED, "lines/min")}
               />
             </div>
 
@@ -255,6 +274,7 @@ const SurfacePanel = ({ surface }: { surface: Surface }) => (
                   surface={surface}
                   tone="ok"
                   label="Throughput, with an interval nobody scraped"
+                  tip={demoTip(GAPPED, "req/s")}
                 />
               </span>
               <span className="h-[26px]">
@@ -264,6 +284,7 @@ const SurfacePanel = ({ surface }: { surface: Surface }) => (
                   tone="error"
                   max={1}
                   label="Error rate, with a measured zero and an unscraped interval"
+                  tip={demoTip(BARS, "%")}
                 />
               </span>
               <span className="flex items-center gap-1.5 text-micro">

@@ -46,6 +46,21 @@ export const LOGS_TEXT = {
   anomaly: (count: number) => `+${count} err`,
   anomalyHint: "The interval whose error count is furthest above the rest of the window",
   bucketHint: "Narrow the range to this interval",
+  /*
+   * The bubble's rows — the bar taken apart, then what its height is worth.
+   *
+   * Lowercase and unpunctuated like every other `TooltipBlock` label: they are read down a column
+   * rather than one at a time. `lines` and not `total`, because the number it names is the same
+   * thing the panel underneath is counting, and the two should agree in words as well as in value.
+   */
+  bucketRows: {
+    error: "error",
+    warn: "warn",
+    info: "info",
+    lines: "lines",
+    /* The marker's extra row, and the only one that is a comparison rather than a count. */
+    excess: "above usual",
+  },
   noVolume: "No lines in this range.",
 
   /* Table */
@@ -125,6 +140,13 @@ export const LOGS_TEXT = {
   traceTitle: "trace",
   traceTotal: (ms: number) => `${ms} ms total`,
   traceTruncated: "This trace logged more lines than are shown — the total covers only these.",
+  /*
+   * The lane's rows. `offset` is where the line sits in the trace, `took` is what it measured —
+   * and `not measured` is a value rather than a dash, because half the lines in a trace are a
+   * `console.log` in the middle of a handler: they have a timestamp and no duration, and the lane
+   * draws them as a tick. A dash there would read as a duration that came back empty.
+   */
+  traceRows: { offset: "offset", took: "took", unmeasured: "not measured" },
   traceEmpty: "No lines carry this trace id in the current range.",
   copyTraceId: "copy id",
   openInLogs: "open in logs",

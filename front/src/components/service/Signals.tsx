@@ -5,6 +5,7 @@ import { BarSpark } from "@components/ui/BarSpark";
 import { MeterBar } from "@components/ui/MeterBar";
 import { Pending } from "@components/ui/Pending";
 import { Sparkline } from "@components/ui/Sparkline";
+import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
 import { formatBytes } from "@lib/format";
 import { logsHref } from "@lib/logsHref";
 import {
@@ -14,18 +15,60 @@ import {
   formatPool,
   formatRate,
   hasSeries,
+  LOOP_LAG_FULL_MS,
   loopShare,
   loopTone,
   poolShare,
   poolTone,
 } from "@lib/serviceFormat";
 import { cn } from "@lib/utils";
+import { intervalLabel } from "@lib/zone";
+import { useZone } from "@lib/zoneState";
 import { SERVICE_TEXT } from "@text/service";
 import { SignalTile, TileEmpty } from "./SignalTile";
 
 import type { Tone } from "@components/ui/surface";
-import type { NodeRuntime, ServiceSignals } from "@lib/serviceTypes";
+import type { NodeRuntime, ServiceSignals, SignalPoint } from "@lib/serviceTypes";
 import type { RangeKey } from "@lib/timeRange";
+import type { ReactNode } from "react";
+
+/**
+ * What one interval of a tile's chart says under the pointer.
+ *
+ * **A 26px tile has no axis and cannot have one**, which until now made the three charts shapes
+ * rather than readings: a peak halfway up the box is 40 req/s on this tile and 0.4% on the one
+ * beside it, and the only number on screen was the range's own figure above — which is the whole
+ * range, not the bar being pointed at. This is where the missing axis went.
+ *
+ * `null` for an interval that cannot be quoted at all, which is not the same as one whose value is
+ * absent: a point the series does not have has no interval to name, while a scraped minute with no
+ * answer says so with `ABSENT` beside its own timestamp. The first gets no bubble; the second gets
+ * one that reads `— req/s`, which is the honest sentence.
+ */
+const seriesTip =
+  (
+    points: SignalPoint[],
+    bucketMs: number,
+    tz: string,
+    unit: string,
+    format: (value: number | null) => string,
+    context?: string,
+  ) =>
+  (index: number): ReactNode => {
+    const point = points[index];
+    if (point === undefined) return null;
+
+    const at = Date.parse(point.t);
+    if (!Number.isFinite(at)) return null;
+
+    return (
+      <TooltipBlock
+        subject={intervalLabel(at, bucketMs, tz)}
+        context={context}
+        rows={[{ label: unit, value: format(point.v) }]}
+      />
+    );
+  };
 
 /**
  * The four signal tiles — design doc §5.2, and the half of the view that answers "is it well".
@@ -113,6 +156,7 @@ const ThroughputTile = ({
   loading: boolean;
   error: string | null;
 }) => {
+  const { tz } = useZone();
   const points = signals?.throughput.points ?? [];
 
   return (
@@ -121,12 +165,14 @@ const ThroughputTile = ({
       value={formatRate(signals?.throughput.value ?? null)}
       unit={SERVICE_TEXT.throughputUnit}
       pending={loading}
+      hint={SERVICE_TEXT.throughputHint}
     >
       {hasSeries(points) ? (
         <AreaSpark
           values={points.map((point) => point.v)}
           tone="ok"
           label={SERVICE_TEXT.throughputChart(service)}
+          tip={seriesTip(points, signals?.bucketMs ?? 0, tz, SERVICE_TEXT.throughputUnit, formatRate)}
         />
       ) : (
         <NoChart
@@ -159,6 +205,7 @@ const ErrorRateTile = ({
   loading: boolean;
   error: string | null;
 }) => {
+  const { tz } = useZone();
   const points = signals?.errorRate.points ?? [];
   const value = signals?.errorRate.value ?? null;
   const known = points.some((point) => point.v !== null);
@@ -171,7 +218,7 @@ const ErrorRateTile = ({
       pending={loading}
       tone={value !== null && value > 0 ? "error" : "neutral"}
       href={known ? logsHref({ range, values: { service, level: "error" } }) : null}
-      title={known ? `${SERVICE_TEXT.errorRateHint} · ${SERVICE_TEXT.toErrorLogs}` : SERVICE_TEXT.errorRateHint}
+      hint={known ? `${SERVICE_TEXT.errorRateHint} · ${SERVICE_TEXT.toErrorLogs}` : SERVICE_TEXT.errorRateHint}
     >
       {known ? (
         <BarSpark
@@ -181,6 +228,9 @@ const ErrorRateTile = ({
              scale starts at one percent and only grows past it when something real does. */
           max={1}
           label={SERVICE_TEXT.errorChart(service)}
+          /* The one chart whose bars are drawn against a fixed floor rather than their own peak,
+             which is exactly the kind of scale a reader cannot see and has to be told. */
+          tip={seriesTip(points, signals?.bucketMs ?? 0, tz, SERVICE_TEXT.errorRateUnit, formatPercent)}
         />
       ) : (
         <NoChart
@@ -204,6 +254,7 @@ const LatencyTile = ({
   loading: boolean;
   error: string | null;
 }) => {
+  const { tz } = useZone();
   const points = signals?.p95.points ?? [];
   const value = signals?.p95.value ?? null;
 
@@ -213,7 +264,7 @@ const LatencyTile = ({
       value={formatMs(value)}
       unit={SERVICE_TEXT.latencyUnit}
       pending={loading}
-      title={value === null ? undefined : SERVICE_TEXT.latencyReference(formatMs(value))}
+      hint={value === null ? undefined : SERVICE_TEXT.latencyReference(formatMs(value))}
     >
       {hasSeries(points) ? (
         <Sparkline
@@ -226,6 +277,10 @@ const LatencyTile = ({
              dash sits at a fixed height and refers to nothing at all. */
           reference={value}
           label={SERVICE_TEXT.latencyChart(service)}
+          /* This one is drawn against its own minimum — a curve between 405 and 412ms fills the
+             box — so without a number the shape is unreadable in the one direction that matters:
+             how far up is "up". The dashed rule is named in the header's hint, the bars in this. */
+          tip={seriesTip(points, signals?.bucketMs ?? 0, tz, SERVICE_TEXT.latencyUnit, formatMs)}
           className="h-full w-full"
         />
       ) : (
@@ -258,9 +313,9 @@ const RuntimeTile = ({ runtime, loading }: { runtime: NodeRuntime | null; loadin
       value={heap.value}
       unit={heap.unit}
       pending={loading}
-      /* The ceiling V8 has allocated, in the title rather than beside the number: the tile has room
-         for one figure and two meters, and "318 of 512 MB" is the context for the one it shows. */
-      title={heapTitle(runtime)}
+      /* The ceiling V8 has allocated, on the figure rather than beside it: the tile has room for
+         one number and two meters, and "318 of 512 MB" is the context for the one it shows. */
+      hint={heapTitle(runtime)}
     >
       {lag === null && pool === null ? (
         /* "No reading" is a claim, and it cannot be made while the reading is still in flight —
@@ -277,19 +332,44 @@ const RuntimeTile = ({ runtime, loading }: { runtime: NodeRuntime | null; loadin
           {lag !== null && (
             <MeterRow
               label={SERVICE_TEXT.loopLag}
-              title={SERVICE_TEXT.loopHint}
               share={loopShare(lag)}
               tone={loopTone(lag)}
               value={`${formatMs(lag)}ms`}
+              /* `full at` is the meter's whole scale, and it exists nowhere on the screen: the bar
+                 is a share of `LOOP_LAG_FULL_MS`, a constant this tile has never printed. A reader
+                 seeing a bar two-thirds across had no way to know whether that was 6ms or 600. */
+              tip={
+                <TooltipBlock
+                  subject={SERVICE_TEXT.loopLag}
+                  context={SERVICE_TEXT.loopHint}
+                  rows={[
+                    { label: SERVICE_TEXT.meterRows.lag, value: `${formatMs(lag)}ms` },
+                    { label: SERVICE_TEXT.meterRows.full, value: `${LOOP_LAG_FULL_MS}ms` },
+                  ]}
+                />
+              }
             />
           )}
           {pool !== null && (
             <MeterRow
               label={SERVICE_TEXT.dbPool}
-              title={SERVICE_TEXT.poolHint(pool.waiting)}
               share={poolShare(pool)}
               tone={poolTone(pool)}
               value={formatPool(pool)}
+              /* Three numbers where the row has room for two, and the third is the one that turns
+                 the bar red: `10/10` is a pool at capacity, `2 waiting` is the requests queued
+                 behind it, and the exporter publishes no maximum for either to be a share of. */
+              tip={
+                <TooltipBlock
+                  subject={SERVICE_TEXT.dbPool}
+                  context={SERVICE_TEXT.poolHint(pool.waiting)}
+                  rows={[
+                    { label: SERVICE_TEXT.meterRows.active, value: pool.active },
+                    { label: SERVICE_TEXT.meterRows.idle, value: pool.idle },
+                    { label: SERVICE_TEXT.meterRows.waiting, value: pool.waiting },
+                  ]}
+                />
+              }
             />
           )}
         </div>
@@ -300,19 +380,23 @@ const RuntimeTile = ({ runtime, loading }: { runtime: NodeRuntime | null; loadin
 
 const MeterRow = ({
   label,
-  title,
+  tip,
   share,
   tone,
   value,
 }: {
   label: string;
-  title: string;
+  /** The block the row shows under the pointer — what the bar is a share of, in numbers. */
+  tip: ReactNode;
   share: number;
   tone: Tone;
   value: string;
 }) => (
-  <div
-    title={title}
+  /* The tooltip's wrapper *is* the row: it takes the classes the `<div>` carried, so the two meters
+     keep the geometry they were tuned to — 26px of tile, two rows, line height 1. */
+  <Tooltip
+    mode="hover"
+    content={tip}
     className="flex items-center gap-1.5 text-micro leading-none text-work-text-muted"
   >
     {/* 60px, not 52: `event loop` is ten characters, and at 10px of JetBrains Mono that is exactly
@@ -332,7 +416,7 @@ const MeterRow = ({
     >
       {value}
     </span>
-  </div>
+  </Tooltip>
 );
 
 /** `318 of 512 MB heap`, or nothing to say. */

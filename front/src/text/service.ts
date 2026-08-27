@@ -43,6 +43,9 @@ export const SERVICE_TEXT = {
   /* ── Signal tiles ─────────────────────────────────────────────────────────────────────────── */
   throughput: "THROUGHPUT",
   throughputUnit: "req/s",
+  /* What the tile counts, since the figure alone does not say: every response the service returned,
+     not the ones that succeeded and not the ones on any one route. */
+  throughputHint: "Requests per second, every route and every status",
   errorRate: "ERROR RATE",
   errorRateUnit: "%",
   /* The tile counts 5xx only, and says so — otherwise a reader comparing it against the log panel's
@@ -59,6 +62,19 @@ export const SERVICE_TEXT = {
       ? `${waiting} request${waiting === 1 ? "" : "s"} queued for a connection`
       : "Connections in use, out of the pool's size",
   loopHint: "The 99th percentile of event-loop lag",
+  /*
+   * The meters' rows, and the reason they are worth a bubble at all: **both bars are shares of
+   * something the tile never prints.** The loop bar fills at `LOOP_LAG_FULL_MS`, a constant that
+   * appears nowhere on screen, and the pool bar is `active` over the pool's own size, which the
+   * exporter publishes no maximum for. A bar two-thirds across said nothing until these did.
+   */
+  meterRows: {
+    lag: "lag",
+    full: "full at",
+    active: "active",
+    idle: "idle",
+    waiting: "waiting",
+  },
 
   /* Chart descriptions, for the accessibility tree. A chart is `role="img"` and needs a sentence. */
   throughputChart: (name: string) => `${name} requests per second over the selected range`,

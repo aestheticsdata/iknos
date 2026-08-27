@@ -65,6 +65,9 @@ export const IssuesPanel = ({ service }: { service: string }) => {
               key={row.fingerprint}
               row={row}
               now={now}
+              /* The payload's axis, not the claim-filtered rows': the window is one fact about the
+                 page, and a row hidden by an optimistic claim does not move it. */
+              spark={issues.data?.spark ?? null}
               onOpen={() => openIssue(row.fingerprint)}
             />
           ))}

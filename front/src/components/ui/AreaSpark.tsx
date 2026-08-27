@@ -1,7 +1,12 @@
-import { cn } from "@lib/utils";
-import { areaOf, layoutOf, pointsOf } from "./series";
-import { TONE_TEXT } from "./surface";
+"use client";
 
+import { cn } from "@lib/utils";
+import { areaOf, layoutOf, pointIndexAt, pointsOf } from "./series";
+import { TONE_TEXT } from "./surface";
+import { Tooltip } from "./Tooltip";
+import { useCursorHover } from "./useCursorHover";
+
+import type { MouseEvent, ReactNode } from "react";
 import type { SeriesValue } from "./series";
 import type { Surface, Tone } from "./surface";
 
@@ -28,6 +33,7 @@ export const AreaSpark = ({
   width = 120,
   height = 26,
   label,
+  tip,
   className,
 }: {
   values: SeriesValue[];
@@ -36,56 +42,81 @@ export const AreaSpark = ({
   width?: number;
   height?: number;
   label: string;
+  /** What the reading at `index` says under the pointer — see `Sparkline`, which shares the shape. */
+  tip?: (index: number) => ReactNode;
   className?: string;
 }) => {
+  /* Before the early return below, because hooks cannot run conditionally. */
+  const { hover, show, clear } = useCursorHover<number>();
+
   const layout = layoutOf(values, width, height, "zero");
   // Nothing known at all: the caller says why in words. Returning `null` is what makes "absent, not
   // faked" true at the component level rather than only in the caller's intentions.
   if (layout.runs.length === 0) return null;
 
+  /* Nearest point, and one listener for the whole box — the same arrangement `Sparkline` explains. */
+  const track = (event: MouseEvent<SVGSVGElement>) =>
+    show(
+      event.clientX,
+      event.clientY,
+      pointIndexAt(event.clientX, event.currentTarget.getBoundingClientRect(), values.length),
+    );
+
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      width={width}
-      height={height}
-      role="img"
-      aria-label={label}
-      preserveAspectRatio="none"
-      className={cn("block h-full w-full overflow-visible", TONE_TEXT[surface][tone], className)}
-    >
-      {layout.runs.map((run) =>
-        run.values.length > 1 ? (
-          <g key={run.start}>
-            {/* No `vectorEffect` on the fill: it is a stroke-only property, and the area is meant
+    <>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        width={width}
+        height={height}
+        role="img"
+        aria-label={label}
+        preserveAspectRatio="none"
+        onMouseLeave={tip ? clear : undefined}
+        onMouseMove={tip ? track : undefined}
+        className={cn("block h-full w-full overflow-visible", TONE_TEXT[surface][tone], className)}
+      >
+        {layout.runs.map((run) =>
+          run.values.length > 1 ? (
+            <g key={run.start}>
+              {/* No `vectorEffect` on the fill: it is a stroke-only property, and the area is meant
                 to stretch with the box. */}
-            <path
-              d={areaOf(run, layout)}
-              fill="currentColor"
-              fillOpacity={0.22}
-            />
-            <polyline
-              points={pointsOf(run, layout)}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1}
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              vectorEffect="non-scaling-stroke"
-            />
-          </g>
-        ) : (
-          /* A lone reading has no segment to draw, and a `<polyline>` of one point renders nothing
+              <path
+                d={areaOf(run, layout)}
+                fill="currentColor"
+                fillOpacity={0.22}
+              />
+              <polyline
+                points={pointsOf(run, layout)}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </g>
+          ) : (
+            /* A lone reading has no segment to draw, and a `<polyline>` of one point renders nothing
              at all. On a sparsely scraped service that is most of the series, so it gets a dot: the
              reading exists and the chart should not silently swallow it. */
-          <circle
-            key={run.start}
-            cx={layout.x(run.start)}
-            cy={layout.y(run.values[0])}
-            r={1}
-            fill="currentColor"
-          />
-        ),
-      )}
-    </svg>
+            <circle
+              key={run.start}
+              cx={layout.x(run.start)}
+              cy={layout.y(run.values[0])}
+              r={1}
+              fill="currentColor"
+            />
+          ),
+        )}
+      </svg>
+      {tip ? (
+        <Tooltip
+          mode="cursor"
+          point={hover}
+        >
+          {hover ? tip(hover.data) : null}
+        </Tooltip>
+      ) : null}
+    </>
   );
 };

@@ -2,8 +2,11 @@
 
 import { Button } from "@components/ui/Button";
 import { Pending } from "@components/ui/Pending";
+import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
+import { useCursorHover } from "@components/ui/useCursorHover";
+import { formatCount } from "@lib/format";
 import { cn } from "@lib/utils";
-import { timeLabel } from "@lib/zone";
+import { intervalLabel, timeLabel } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
 import { LOGS_TEXT } from "@text/logs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -142,9 +145,48 @@ type Column = {
    */
   bounds: { from: string; to: string } | null;
   label: string;
+  /** Both ends of the interval — `18:08 → 18:13`. The tooltip's subject, and the head of `name`. */
+  span: string;
   name: string;
+  /** The bucket's own three counts, so the bubble can tabulate what the bar's height is worth. */
+  counts: Bucket;
   segments: { fill: string; y: number; height: number }[];
 };
+
+/**
+ * What one bucket says under the pointer.
+ *
+ * **The bar's height is a share of the tallest bucket in the window and of nothing else** — the
+ * scale is re-derived every time the range changes, so the same 30px stack is 40 lines on one range
+ * and 40 000 on the next. Until this bubble existed the only way to read a number off this chart
+ * was to click it and count the rows underneath.
+ *
+ * The total is a row rather than a heading because it is what the *height* is, and the three
+ * levels above it are what the three bands are: read down, the block is the bar taken apart.
+ * Errors first, because that is what anyone is here for.
+ *
+ * `context` is the caller's, and it is the one line that differs between the bars and the anomaly
+ * marker on the axis — the same interval, reached two ways, saying why you would click it.
+ */
+const BucketTip = ({ column, context, excess }: { column: Column; context: string; excess?: number }) => (
+  <TooltipBlock
+    subject={column.span}
+    context={context}
+    rows={[
+      { label: LOGS_TEXT.bucketRows.error, value: formatCount(column.counts.error) },
+      { label: LOGS_TEXT.bucketRows.warn, value: formatCount(column.counts.warn) },
+      { label: LOGS_TEXT.bucketRows.info, value: formatCount(column.counts.info) },
+      {
+        label: LOGS_TEXT.bucketRows.lines,
+        value: formatCount(column.counts.error + column.counts.warn + column.counts.info),
+      },
+      /* Only on the marker, and it is the one number here that is not a count but a comparison —
+         `+18` is eighteen more errors than the rest of the window averages, which is the whole
+         claim the ▲ on the axis is making. */
+      ...(excess === undefined ? [] : [{ label: LOGS_TEXT.bucketRows.excess, value: `+${formatCount(excess)}` }]),
+    ]}
+  />
+);
 
 export const VolumeHistogram = ({
   histogram,
@@ -169,6 +211,16 @@ export const VolumeHistogram = ({
    */
   const [active, setActive] = useState(0);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
+
+  /*
+   * The pointer's bucket, which is **not** `active`.
+   *
+   * They answer different questions and are allowed to disagree: `active` is where the keyboard is
+   * and survives the pointer leaving, and this is what is under the cursor right now. Driving one
+   * off the other would either move the tab stop by waving the mouse across the chart, or leave a
+   * bubble open over a bucket nobody is pointing at.
+   */
+  const { hover, move, clear } = useCursorHover<number>();
 
   /* One zone for the axis and the rows beneath it — see the note above `Column`. */
   const { tz } = useZone();
@@ -197,18 +249,21 @@ export const VolumeHistogram = ({
       });
 
       const label = timeLabel(start, histogram.bucketMs, tz);
+      const span = intervalLabel(start, histogram.bucketMs, tz);
 
       return {
         key: bucket.t,
         bounds: usable ? { from: new Date(start).toISOString(), to: new Date(end).toISOString() } : null,
         label,
+        span,
+        counts: bucket,
         /*
          * The counts are on the button rather than in the SVG's title: `role="img"` collapses
          * everything under it to one string, so the only way per-bucket detail reaches a screen
          * reader is through the controls layered over the chart. Errors are named first because
          * that is the number the marker is about and the number anyone is here for.
          */
-        name: `${label}–${timeLabel(end, histogram.bucketMs, tz)} · ${bucket.error} error · ${bucket.warn} warn · ${bucket.info} info · ${LOGS_TEXT.bucketHint}`,
+        name: `${span} · ${bucket.error} error · ${bucket.warn} warn · ${bucket.info} info · ${LOGS_TEXT.bucketHint}`,
         segments,
       };
     });
@@ -316,7 +371,16 @@ export const VolumeHistogram = ({
              * name. Each one spans the full height of the chart, which is what makes an empty
              * interval clickable dead space instead of a zero-pixel target nobody can hit.
              */}
-            <div className="absolute inset-0 flex">
+            {/* `onMouseLeave` on the strip rather than on each button: leaving one bucket for the
+                next fires a leave before the enter, and a bubble that closes and reopens between
+                every pair of bars flickers its way across the chart. */}
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: the strip is a container of real
+                buttons and gains nothing but the pointer's exit — every bucket's numbers are on its
+                own button's accessible name, which is how the keyboard already reads them */}
+            <div
+              className="absolute inset-0 flex"
+              onMouseLeave={clear}
+            >
               {columns.map((column, index) => (
                 <button
                   key={column.key}
@@ -327,8 +391,11 @@ export const VolumeHistogram = ({
                   tabIndex={index === roving ? 0 : -1}
                   disabled={column.bounds === null}
                   aria-label={column.name}
-                  title={LOGS_TEXT.bucketHint}
                   onFocus={() => setActive(index)}
+                  /* Enter as well as move — a pointer that lands on a bucket and stops moving is
+                     still pointing at it. */
+                  onMouseEnter={move(index)}
+                  onMouseMove={move(index)}
                   onClick={() => column.bounds && onSelectBucket(column.bounds)}
                   onKeyDown={(event) => {
                     if (event.key === "ArrowLeft") focusBucket(index - 1, columns.length);
@@ -342,6 +409,23 @@ export const VolumeHistogram = ({
                 />
               ))}
             </div>
+
+            {/*
+             * Guarded on the column still existing: the window can shrink under a resting cursor —
+             * a narrower range, or a refetch that returns fewer buckets — and the index the pointer
+             * last reported would then be past the end of the array.
+             */}
+            <Tooltip
+              mode="cursor"
+              point={hover}
+            >
+              {hover && columns[hover.data] ? (
+                <BucketTip
+                  column={columns[hover.data]}
+                  context={LOGS_TEXT.bucketHint}
+                />
+              ) : null}
+            </Tooltip>
           </>
         )}
       </div>
@@ -373,25 +457,41 @@ export const VolumeHistogram = ({
               /*
                * The marker is a button, because the interval it names is the one anybody wants to
                * open next and reaching it otherwise means arrowing across sixty buckets counting
-               * bars. `anomalyHint` is carried in the accessible name rather than in a `Tooltip`:
-               * this row is fourteen pixels tall at the top of a panel that clips its overflow, so
-               * a tip positioned above it would be drawn where it cannot be seen.
+               * bars.
+               *
+               * It carried `anomalyHint` in its accessible name alone, for a reason that has since
+               * stopped being true: this row is fourteen pixels tall at the top of a panel that
+               * clips its overflow, so the old CSS-positioned tip would have been drawn where it
+               * could not be seen. The bubble portals to `<body>` — no ancestor can clip it — so
+               * the sentence explaining why *this* bar is marked is now readable by the people who
+               * were looking straight at it, and not only by a screen reader.
                */
-              <button
-                type="button"
-                onClick={() => marker.bounds && onSelectBucket(marker.bounds)}
-                disabled={marker.bounds === null}
-                title={LOGS_TEXT.bucketHint}
-                aria-label={`${marker.label} · ${LOGS_TEXT.anomaly(anomaly.excess)} · ${LOGS_TEXT.anomalyHint}`}
-                className="text-chassis-info transition-[filter] duration-150 ease-out hover:brightness-125"
+              <Tooltip
+                mode="hover"
+                content={
+                  <BucketTip
+                    column={marker}
+                    context={LOGS_TEXT.anomalyHint}
+                    excess={anomaly.excess}
+                  />
+                }
               >
-                <span aria-hidden="true">▲ </span>
-                {/* Only the timestamp, not the count beside it: the excess did not move when the
-                    zone did, and a flash on it would say it had. Its resting ink is the button's
-                    `chassis-info`, which is a third one and needs no more configuration than the
-                    other two. */}
-                <span className="ik-zone-flash ik-zone-lift">{marker.label}</span> · {LOGS_TEXT.anomaly(anomaly.excess)}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => marker.bounds && onSelectBucket(marker.bounds)}
+                  disabled={marker.bounds === null}
+                  aria-label={`${marker.label} · ${LOGS_TEXT.anomaly(anomaly.excess)} · ${LOGS_TEXT.anomalyHint}`}
+                  className="text-chassis-info transition-[filter] duration-150 ease-out hover:brightness-125"
+                >
+                  <span aria-hidden="true">▲ </span>
+                  {/* Only the timestamp, not the count beside it: the excess did not move when the
+                      zone did, and a flash on it would say it had. Its resting ink is the button's
+                      `chassis-info`, which is a third one and needs no more configuration than the
+                      other two. */}
+                  <span className="ik-zone-flash ik-zone-lift">{marker.label}</span> ·{" "}
+                  {LOGS_TEXT.anomaly(anomaly.excess)}
+                </button>
+              </Tooltip>
             ) : (
               <span>{columns[columns.length - 1].label}</span>
             )}

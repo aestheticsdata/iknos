@@ -1,5 +1,6 @@
 "use client";
 
+import { sparkTip } from "@components/issues/sparkTip";
 import { BarSpark } from "@components/ui/BarSpark";
 import { DenseTable } from "@components/ui/DenseTable";
 import { Dot } from "@components/ui/Dot";
@@ -44,7 +45,9 @@ export const IssuesTable = ({
 }: {
   rows: IssueRow[];
   /** The axis every row's series is drawn on — served with the page so the rows are comparable. */
-  spark: { bucketMs: number } | null;
+  /** The one axis every row's bars are drawn on — `from` as well as the width, so a bar can name
+   *  the two hours it counts rather than only how wide they were. */
+  spark: { from: string; bucketMs: number } | null;
   onOpen: (fingerprint: string) => void;
 }) => {
   const { tz } = useZone();
@@ -103,6 +106,7 @@ export const IssuesTable = ({
               tone={isHot(row, now) ? "error" : "neutral"}
               height={14}
               label={ISSUES_TEXT.sparkLabel(issueTitle(row))}
+              tip={sparkTip(spark, row.spark, tz)}
             />
           </span>
         ),

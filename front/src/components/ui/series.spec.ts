@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { areaOf, layoutOf, pointsOf, runsOf } from "./series";
+import { areaOf, barIndexAt, layoutOf, pointIndexAt, pointsOf, runsOf } from "./series";
 
 /**
  * The geometry the chart primitives share (IKN-13).
@@ -106,5 +106,57 @@ describe("pointsOf and areaOf", () => {
 
     expect(area.startsWith("M50.00,25.00 L")).toBe(true);
     expect(area.endsWith("L100.00,25.00 Z")).toBe(true);
+  });
+});
+
+/**
+ * Which mark the pointer is over (IKN-15's tooltips).
+ *
+ * The same class of silent failure as the rest of this file: an index one past the end is
+ * `undefined` to the caller, which reaches the reader as a bubble with nothing in it, and a
+ * zero-width box divides by zero and answers `NaN`, which as an index is the same thing. Both are
+ * reachable by pointing at the right-hand edge of a chart, which is where the newest bar is.
+ */
+const BOX = { left: 100, width: 200 };
+
+describe("barIndexAt", () => {
+  it("gives a bar the whole of its own slot", () => {
+    // Ten bars across 200px: each owns twenty, and the boundary belongs to the bar on its right.
+    expect(barIndexAt(100, BOX, 10)).toBe(0);
+    expect(barIndexAt(119, BOX, 10)).toBe(0);
+    expect(barIndexAt(120, BOX, 10)).toBe(1);
+  });
+
+  it("keeps the last bar at the right-hand edge instead of one past the end", () => {
+    expect(barIndexAt(300, BOX, 10)).toBe(9);
+  });
+
+  it("clamps a pointer outside the box rather than reporting a negative index", () => {
+    expect(barIndexAt(0, BOX, 10)).toBe(0);
+    expect(barIndexAt(9999, BOX, 10)).toBe(9);
+  });
+
+  it("answers 0 for a box with no width, which is a chart measured before layout", () => {
+    expect(barIndexAt(50, { left: 0, width: 0 }, 10)).toBe(0);
+  });
+
+  it("answers 0 for an empty series rather than -1", () => {
+    expect(barIndexAt(150, BOX, 0)).toBe(0);
+  });
+});
+
+describe("pointIndexAt", () => {
+  it("snaps to the nearest vertex, not to the one on its left", () => {
+    // Five points across 200px sit every 50px. Just past the midpoint between two of them, the
+    // nearest is the one on the right — which flooring would get wrong for half of every gap.
+    expect(pointIndexAt(100, BOX, 5)).toBe(0);
+    expect(pointIndexAt(124, BOX, 5)).toBe(0);
+    expect(pointIndexAt(126, BOX, 5)).toBe(1);
+    expect(pointIndexAt(300, BOX, 5)).toBe(4);
+  });
+
+  it("puts a single point under the whole box", () => {
+    expect(pointIndexAt(100, BOX, 1)).toBe(0);
+    expect(pointIndexAt(300, BOX, 1)).toBe(0);
   });
 });

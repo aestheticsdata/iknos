@@ -246,7 +246,10 @@ export const RowDetail = ({
                      */}
                     <span className="inline-flex items-baseline gap-1.5">
                       {clientIp}
-                      <Tooltip label={LOGS_TEXT.copy}>
+                      <Tooltip
+                        mode="hover"
+                        content={LOGS_TEXT.copy}
+                      >
                         <button
                           type="button"
                           onClick={() => onCopyText(clientIp)}

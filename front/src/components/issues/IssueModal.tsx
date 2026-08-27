@@ -1,5 +1,6 @@
 "use client";
 
+import { sparkTip } from "@components/issues/sparkTip";
 import { Badge } from "@components/ui/Badge";
 import { BarSpark } from "@components/ui/BarSpark";
 import { Button } from "@components/ui/Button";
@@ -17,7 +18,7 @@ import { useZone } from "@lib/zoneState";
 import { ISSUES_TEXT } from "@text/issues";
 import Link from "next/link";
 
-import type { IssueDetail } from "@lib/issueTypes";
+import type { IssueDetail, OccurrenceSeries } from "@lib/issueTypes";
 
 /**
  * One issue in full (IKN-14 §3) — five tiles, the 48-hour chart, the latest stack.
@@ -131,7 +132,7 @@ export const IssueModal = ({ fingerprint, onClose }: { fingerprint: string | nul
         <Body
           issue={issue}
           status={status ?? issue.status}
-          counts={occurrences.data?.counts ?? null}
+          series={occurrences.data ?? null}
           chartError={occurrences.error}
           range={range}
           tz={tz}
@@ -144,14 +145,19 @@ export const IssueModal = ({ fingerprint, onClose }: { fingerprint: string | nul
 const Body = ({
   issue,
   status,
-  counts,
+  series,
   chartError,
   range,
   tz,
 }: {
   issue: IssueDetail;
   status: string;
-  counts: number[] | null;
+  /**
+   * The whole series and not just its counts, since IKN-15's tooltips: the bars are drawn against
+   * `from` and `bucketMs`, and a chart that is handed only the numbers can draw them but cannot say
+   * which two hours any one of them counts.
+   */
+  series: OccurrenceSeries | null;
   chartError: string | null;
   range: Parameters<typeof logsHref>[0]["range"];
   tz: string;
@@ -205,13 +211,17 @@ const Body = ({
       <section className="flex flex-col gap-1.5">
         <h3 className="text-kicker tracking-kicker text-chassis-text-dim uppercase">{ISSUES_TEXT.occurrences}</h3>
         <div className="h-16 w-full">
-          {counts !== null && counts.length > 0 ? (
+          {series !== null && series.counts.length > 0 ? (
             <BarSpark
-              values={counts}
+              values={series.counts}
               tone={tone === "error" ? "error" : "info"}
               surface="chassis"
               height={64}
               label={ISSUES_TEXT.sparkLabel(issueTitle(issue))}
+              /* The one chart in this product with room for a real axis and still without one —
+                 sixty-four pixels tall, full width, and until now the only number anywhere near it
+                 was the window's total. */
+              tip={sparkTip(series, series.counts, tz)}
             />
           ) : (
             <p className="text-row text-chassis-text-dim">

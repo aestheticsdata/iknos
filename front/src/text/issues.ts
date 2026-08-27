@@ -77,6 +77,9 @@ export const ISSUES_TEXT = {
 
   /* Accessibility. */
   sparkLabel: (type: string) => `${type} occurrences, last 48 hours`,
+  /* The bar's own row. Singular in the label because the value beside it carries the number, and
+     `occurrences` is what the modal's heading already calls them — one word for one thing. */
+  sparkRow: "occurrences",
   recency: {
     error: "seen in the last 15 minutes",
     warn: "seen in the last hour",

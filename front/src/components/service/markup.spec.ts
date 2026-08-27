@@ -1,10 +1,12 @@
 import { ServiceHeader } from "@components/service/ServiceHeader";
 import { Signals } from "@components/service/Signals";
+import { ZoneProvider } from "@lib/zoneState";
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import type { ProcessFacts, ServiceRuntime, ServiceSignals } from "@lib/serviceTypes";
+import type { ComponentProps } from "react";
 
 /**
  * The service view's markup, rendered to a string — IKN-13.
@@ -95,6 +97,16 @@ const signals = (over: Partial<ServiceSignals> = {}): ServiceSignals => ({
   ...over,
 });
 
+/**
+ * The tiles, rendered inside the provider they now read from.
+ *
+ * The charts' tooltips name the interval under the pointer on the reader's clock, so `Signals`
+ * calls `useZone`, which throws rather than guessing one. Which clock it resolves to is of no
+ * consequence here: no effect runs under `renderToStaticMarkup`, so the provider hands out the
+ * `UTC` it resolves to on the server — and nothing below asserts a time of day anyway.
+ */
+const tiles = (props: ComponentProps<typeof Signals>) => renderToStaticMarkup(h(ZoneProvider, null, h(Signals, props)));
+
 const header = (over?: Partial<ServiceRuntime>, signalsOpen = true) =>
   renderToStaticMarkup(
     h(ServiceHeader, { runtime: runtime(over), range: "1h", signalsOpen, onToggleSignals: () => {} }),
@@ -160,40 +172,36 @@ describe("service header", () => {
 
 describe("signal tiles", () => {
   it("answers an unscraped service with one sentence rather than four empty tiles", () => {
-    const html = renderToStaticMarkup(
-      h(Signals, {
-        service: "bkmk-server",
-        signals: signals({ scraped: false, source: "none" }),
-        runtime: null,
-        range: "1h",
-        loading: false,
-        runtimeLoading: false,
-        error: null,
-      }),
-    );
+    const html = tiles({
+      service: "bkmk-server",
+      signals: signals({ scraped: false, source: "none" }),
+      runtime: null,
+      range: "1h",
+      loading: false,
+      runtimeLoading: false,
+      error: null,
+    });
 
     expect(html).toContain("No /metrics endpoint is registered");
     expect(html).not.toContain("THROUGHPUT");
   });
 
   it("draws the pool bar red and full at saturation, and names the waiters", () => {
-    const html = renderToStaticMarkup(
-      h(Signals, {
-        service: "pfa-nest-api",
-        signals: signals(),
-        runtime: {
-          heapUsedBytes: 3e8,
-          heapTotalBytes: 4e8,
-          eventLoopLagMs: 140,
-          pool: { active: 10, idle: 0, waiting: 2 },
-          observedAt: "2026-08-23T11:59:55Z",
-        },
-        range: "1h",
-        loading: false,
-        runtimeLoading: false,
-        error: null,
-      }),
-    );
+    const html = tiles({
+      service: "pfa-nest-api",
+      signals: signals(),
+      runtime: {
+        heapUsedBytes: 3e8,
+        heapTotalBytes: 4e8,
+        eventLoopLagMs: 140,
+        pool: { active: 10, idle: 0, waiting: 2 },
+        observedAt: "2026-08-23T11:59:55Z",
+      },
+      range: "1h",
+      loading: false,
+      runtimeLoading: false,
+      error: null,
+    });
 
     expect(html).toContain("bg-work-error");
     expect(html).toContain("width:100%");
@@ -202,17 +210,15 @@ describe("signal tiles", () => {
   });
 
   it("links the error tile to the period", () => {
-    const html = renderToStaticMarkup(
-      h(Signals, {
-        service: "pfa-nest-api",
-        signals: signals(),
-        runtime: null,
-        range: "7d",
-        loading: false,
-        runtimeLoading: false,
-        error: null,
-      }),
-    );
+    const html = tiles({
+      service: "pfa-nest-api",
+      signals: signals(),
+      runtime: null,
+      range: "7d",
+      loading: false,
+      runtimeLoading: false,
+      error: null,
+    });
 
     expect(html).toContain("/logs?service=pfa-nest-api&amp;level=error&amp;range=7d");
   });
@@ -220,45 +226,41 @@ describe("signal tiles", () => {
   it("says the request failed rather than reporting the range as quiet", () => {
     // The one thing a monitoring tool must never do: render a network failure as "nothing
     // happened". The tile carries the API's own message instead.
-    const html = renderToStaticMarkup(
-      h(Signals, {
-        service: "pfa-nest-api",
-        signals: null,
-        runtime: null,
-        range: "1h",
-        loading: false,
-        runtimeLoading: false,
-        error: "Could not read this service.",
-      }),
-    );
+    const html = tiles({
+      service: "pfa-nest-api",
+      signals: null,
+      runtime: null,
+      range: "1h",
+      loading: false,
+      runtimeLoading: false,
+      error: "Could not read this service.",
+    });
 
     expect(html).toContain("Could not read this service.");
     expect(html).not.toContain("No samples in this range.");
   });
 
   it("breaks the line at a hole instead of walking across it", () => {
-    const html = renderToStaticMarkup(
-      h(Signals, {
-        service: "pfa-nest-api",
-        signals: signals({
-          p95: {
-            value: 9.5,
-            points: [
-              { t: "a", v: 9 },
-              { t: "b", v: 10 },
-              { t: "c", v: null },
-              { t: "d", v: 8 },
-              { t: "e", v: 9 },
-            ],
-          },
-        }),
-        runtime: null,
-        range: "1h",
-        loading: false,
-        runtimeLoading: false,
-        error: null,
+    const html = tiles({
+      service: "pfa-nest-api",
+      signals: signals({
+        p95: {
+          value: 9.5,
+          points: [
+            { t: "a", v: 9 },
+            { t: "b", v: 10 },
+            { t: "c", v: null },
+            { t: "d", v: 8 },
+            { t: "e", v: 9 },
+          ],
+        },
       }),
-    );
+      runtime: null,
+      range: "1h",
+      loading: false,
+      runtimeLoading: false,
+      error: null,
+    });
 
     // Two polylines for one series: the run before the hole and the run after it.
     expect(html.match(/<polyline/g)?.length).toBe(2);

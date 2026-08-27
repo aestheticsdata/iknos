@@ -1,7 +1,12 @@
-import { cn } from "@lib/utils";
-import { layoutOf, pointsOf } from "./series";
-import { TONE_TEXT } from "./surface";
+"use client";
 
+import { cn } from "@lib/utils";
+import { layoutOf, pointIndexAt, pointsOf } from "./series";
+import { TONE_TEXT } from "./surface";
+import { Tooltip } from "./Tooltip";
+import { useCursorHover } from "./useCursorHover";
+
+import type { MouseEvent, ReactNode } from "react";
 import type { SeriesValue } from "./series";
 import type { Surface, Tone } from "./surface";
 
@@ -35,6 +40,7 @@ export const Sparkline = ({
   height = 16,
   reference,
   label,
+  tip,
   className,
 }: {
   values: SeriesValue[];
@@ -53,8 +59,17 @@ export const Sparkline = ({
    */
   reference?: number | null;
   label: string;
+  /**
+   * What the reading at `index` says under the pointer, or nothing for an interval that cannot be
+   * quoted. The caller writes it, because the caller is the only one that knows what the series is
+   * an axis of — see `BarSpark`, which takes the same prop for the same reason.
+   */
+  tip?: (index: number) => ReactNode;
   className?: string;
 }) => {
+  /* Before the early return below, because hooks cannot run conditionally. */
+  const { hover, show, clear } = useCursorHover<number>();
+
   const layout = layoutOf(values, width, height, "min");
   if (layout.runs.length === 0) return null;
 
@@ -79,55 +94,79 @@ export const Sparkline = ({
       ? layout.y(reference)
       : null;
 
+  /*
+   * Nearest *point*, not nearest slot — a line's marks are positions, and the reader following a
+   * curve is pointing at a vertex. One listener on the box, so the 1px stroke is not the only
+   * thing that answers.
+   */
+  const track = (event: MouseEvent<SVGSVGElement>) =>
+    show(
+      event.clientX,
+      event.clientY,
+      pointIndexAt(event.clientX, event.currentTarget.getBoundingClientRect(), values.length),
+    );
+
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      width={width}
-      height={height}
-      role="img"
-      aria-label={label}
-      preserveAspectRatio="none"
-      className={cn("overflow-visible", TONE_TEXT[surface][tone], className)}
-    >
-      {rule !== null && (
-        /* The same ink as the line, faded — a second colour here would be a second thing to read,
+    <>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        width={width}
+        height={height}
+        role="img"
+        aria-label={label}
+        preserveAspectRatio="none"
+        onMouseLeave={tip ? clear : undefined}
+        onMouseMove={tip ? track : undefined}
+        className={cn("overflow-visible", TONE_TEXT[surface][tone], className)}
+      >
+        {rule !== null && (
+          /* The same ink as the line, faded — a second colour here would be a second thing to read,
            and the rule is a datum rather than a series. */
-        <line
-          x1={0}
-          y1={rule}
-          x2={width}
-          y2={rule}
-          stroke="currentColor"
-          strokeOpacity={0.4}
-          strokeWidth={1}
-          strokeDasharray="2 3"
-          vectorEffect="non-scaling-stroke"
-        />
-      )}
-      {layout.runs.map((run) =>
-        run.values.length > 1 ? (
-          <polyline
-            key={run.start}
-            points={pointsOf(run, layout)}
-            fill="none"
+          <line
+            x1={0}
+            y1={rule}
+            x2={width}
+            y2={rule}
             stroke="currentColor"
+            strokeOpacity={0.4}
             strokeWidth={1}
-            strokeLinejoin="round"
-            strokeLinecap="round"
+            strokeDasharray="2 3"
             vectorEffect="non-scaling-stroke"
           />
-        ) : (
-          /* A `<polyline>` of one point renders nothing at all. On a sparsely scraped service that
+        )}
+        {layout.runs.map((run) =>
+          run.values.length > 1 ? (
+            <polyline
+              key={run.start}
+              points={pointsOf(run, layout)}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          ) : (
+            /* A `<polyline>` of one point renders nothing at all. On a sparsely scraped service that
              is most of the series, so a lone reading gets a dot rather than being swallowed. */
-          <circle
-            key={run.start}
-            cx={layout.x(run.start)}
-            cy={layout.y(run.values[0])}
-            r={1}
-            fill="currentColor"
-          />
-        ),
-      )}
-    </svg>
+            <circle
+              key={run.start}
+              cx={layout.x(run.start)}
+              cy={layout.y(run.values[0])}
+              r={1}
+              fill="currentColor"
+            />
+          ),
+        )}
+      </svg>
+      {tip ? (
+        <Tooltip
+          mode="cursor"
+          point={hover}
+        >
+          {hover ? tip(hover.data) : null}
+        </Tooltip>
+      ) : null}
+    </>
   );
 };

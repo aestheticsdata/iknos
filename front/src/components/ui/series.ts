@@ -144,3 +144,40 @@ export const areaOf = (run: Run, layout: Layout): string => {
 
   return `M${first.toFixed(2)},${layout.base.toFixed(2)} L${pointsOf(run, layout).split(" ").join(" L")} L${last.toFixed(2)},${layout.base.toFixed(2)} Z`;
 };
+
+/**
+ * Which mark the pointer is over — the other half of `preserveAspectRatio="none"`.
+ *
+ * Every chart here is drawn in user units and stretched to whatever its container is, so a pointer
+ * position in pixels cannot be compared against anything in the `viewBox`. What survives the
+ * stretch is the *fraction* of the box, which is what both functions below work in: they take the
+ * pointer's client x and the box `getBoundingClientRect` reports, and answer in indices into the
+ * series. No scale, no ratio, nothing to keep in step with the drawing.
+ *
+ * A zero-width box is the one degenerate case — a chart in a collapsed panel, or measured in the
+ * frame before layout — and it answers 0 rather than `NaN`, which as an array index is `undefined`
+ * and reaches the caller as a bubble with no content.
+ */
+const fractionAt = (clientX: number, box: { left: number; width: number }): number =>
+  box.width > 0 ? Math.min(1, Math.max(0, (clientX - box.left) / box.width)) : 0;
+
+/**
+ * The bar under the pointer, for a series drawn as `count` slots of equal width — `BarSpark` and
+ * the log histogram.
+ *
+ * A bar owns its slot, so this floors. The clamp at `count - 1` is for the exact right edge, where
+ * the fraction is 1 and the floor would be one past the end.
+ */
+export const barIndexAt = (clientX: number, box: { left: number; width: number }, count: number): number =>
+  count > 0 ? Math.min(count - 1, Math.floor(fractionAt(clientX, box) * count)) : 0;
+
+/**
+ * The point under the pointer, for a series drawn as `count` positions with the first on the left
+ * edge and the last on the right — `Sparkline` and `AreaSpark`.
+ *
+ * This rounds rather than flooring, because a line's points are *positions* and not slots: the
+ * reader is pointing at the nearest vertex, not into an interval. Flooring here would report the
+ * point to the left of the one under the cursor for the whole right half of every gap.
+ */
+export const pointIndexAt = (clientX: number, box: { left: number; width: number }, count: number): number =>
+  count > 0 ? Math.min(count - 1, Math.round(fractionAt(clientX, box) * (count - 1))) : 0;

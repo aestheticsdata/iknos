@@ -1,6 +1,12 @@
-import { cn } from "@lib/utils";
-import { TONE_TEXT } from "./surface";
+"use client";
 
+import { cn } from "@lib/utils";
+import { barIndexAt } from "./series";
+import { TONE_TEXT } from "./surface";
+import { Tooltip } from "./Tooltip";
+import { useCursorHover } from "./useCursorHover";
+
+import type { MouseEvent, ReactNode } from "react";
 import type { SeriesValue } from "./series";
 import type { Surface, Tone } from "./surface";
 
@@ -39,6 +45,7 @@ export const BarSpark = ({
   height = 26,
   max,
   label,
+  tip,
   className,
 }: {
   values: SeriesValue[];
@@ -54,40 +61,77 @@ export const BarSpark = ({
    */
   max?: number;
   label: string;
+  /**
+   * What the bar at `index` says under the pointer, or nothing — an interval nobody scraped has no
+   * answer, and `null` there is a bar with no bubble rather than an empty one.
+   *
+   * The caller writes it because the caller owns the axis: this component is handed values and has
+   * never been told what interval they cover. Omitted, the chart binds no handlers and holds no
+   * state, which is what keeps it free everywhere a bar is decoration.
+   */
+  tip?: (index: number) => ReactNode;
   className?: string;
 }) => {
+  /* Before the early return below, because hooks cannot run conditionally. */
+  const { hover, show, clear } = useCursorHover<number>();
+
   const known = values.filter((value): value is number => value !== null && Number.isFinite(value));
   if (known.length === 0) return null;
 
   const top = Math.max(max ?? 0, ...known) || 1;
   const usable = height - ZERO_STUB;
 
+  /*
+   * One listener on the `<svg>`, not one per `<rect>`. The bars are drawn with a gap between them
+   * and half of them are a one-unit stub on the baseline, so per-rect handlers would leave most of
+   * the chart's area unresponsive — the pointer would have to find a 2px sliver to get an answer.
+   * The whole box is live, and which bar it is is arithmetic on the box's own width.
+   */
+  const track = (event: MouseEvent<SVGSVGElement>) =>
+    show(
+      event.clientX,
+      event.clientY,
+      barIndexAt(event.clientX, event.currentTarget.getBoundingClientRect(), values.length),
+    );
+
   return (
-    <svg
-      viewBox={`0 0 ${values.length} ${height}`}
-      width={values.length}
-      height={height}
-      role="img"
-      aria-label={label}
-      preserveAspectRatio="none"
-      className={cn("block h-full w-full", TONE_TEXT[surface][tone], className)}
-    >
-      {values.map((value, index) =>
-        value === null || !Number.isFinite(value) ? null : (
-          <rect
-            // The index *is* the identity here: a bar is its interval, and the series is a fixed
-            // grid the server laid out rather than a list that reorders.
-            // biome-ignore lint/suspicious/noArrayIndexKey: the index is the interval's identity
-            key={index}
-            x={index + BAR_GAP / 2}
-            width={1 - BAR_GAP}
-            y={height - Math.max(ZERO_STUB, (value / top) * usable + ZERO_STUB)}
-            height={Math.max(ZERO_STUB, (value / top) * usable + ZERO_STUB)}
-            fill="currentColor"
-            fillOpacity={value > 0 ? 1 : 0.3}
-          />
-        ),
-      )}
-    </svg>
+    <>
+      <svg
+        viewBox={`0 0 ${values.length} ${height}`}
+        width={values.length}
+        height={height}
+        role="img"
+        aria-label={label}
+        preserveAspectRatio="none"
+        onMouseLeave={tip ? clear : undefined}
+        onMouseMove={tip ? track : undefined}
+        className={cn("block h-full w-full", TONE_TEXT[surface][tone], className)}
+      >
+        {values.map((value, index) =>
+          value === null || !Number.isFinite(value) ? null : (
+            <rect
+              // The index *is* the identity here: a bar is its interval, and the series is a fixed
+              // grid the server laid out rather than a list that reorders.
+              // biome-ignore lint/suspicious/noArrayIndexKey: the index is the interval's identity
+              key={index}
+              x={index + BAR_GAP / 2}
+              width={1 - BAR_GAP}
+              y={height - Math.max(ZERO_STUB, (value / top) * usable + ZERO_STUB)}
+              height={Math.max(ZERO_STUB, (value / top) * usable + ZERO_STUB)}
+              fill="currentColor"
+              fillOpacity={value > 0 ? 1 : 0.3}
+            />
+          ),
+        )}
+      </svg>
+      {tip ? (
+        <Tooltip
+          mode="cursor"
+          point={hover}
+        >
+          {hover ? tip(hover.data) : null}
+        </Tooltip>
+      ) : null}
+    </>
   );
 };

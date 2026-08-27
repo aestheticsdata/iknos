@@ -5,8 +5,11 @@ import { Dot } from "@components/ui/Dot";
 import { Modal } from "@components/ui/Modal";
 import { Pending } from "@components/ui/Pending";
 import { SURFACE_TEXT, SURFACE_TEXT_DIM, SURFACE_TEXT_MUTED, TONE_FILL, TONE_TEXT } from "@components/ui/surface";
+import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
 import { severityOf } from "@lib/logTypes";
 import { cn } from "@lib/utils";
+import { timeOfDay } from "@lib/zone";
+import { useZone } from "@lib/zoneState";
 import { LOGS_TEXT } from "@text/logs";
 
 import type { Tone } from "@components/ui/surface";
@@ -119,6 +122,10 @@ export const TraceTimeline = ({
  * endpoint instead of widening their window.
  */
 const TraceBody = ({ trace, loading, error }: { trace: Trace | null; loading: boolean; error: string | null }) => {
+  /* Before the early returns, because hooks cannot run conditionally — and the same `tz` the table
+     the reader came from is on. Two clocks for one dataset is the rule `@lib/zone` exists for. */
+  const { tz } = useZone();
+
   if (error !== null) return <p className={cn("text-ui leading-hint", TONE_TEXT.chassis.error)}>{error}</p>;
 
   // Before the `trace === null` check, not after it: a hook that keeps the previous trace while
@@ -167,68 +174,92 @@ const TraceBody = ({ trace, loading, error }: { trace: Trace | null; loading: bo
         className="ik-scroll flex max-h-[46vh] flex-col gap-1.5 overflow-y-auto"
       >
         {lanes.map((lane) => (
-          <li
-            key={lane.key}
-            className="flex flex-col gap-1"
-          >
-            <div className="flex items-baseline gap-2 text-row">
-              <Dot
-                tone={lane.tone}
-                surface="chassis"
-                label={lane.row.levelName}
-                className="shrink-0 self-center"
-              />
-              <span className={cn("shrink-0", SURFACE_TEXT_DIM.chassis)}>{lane.row.service}</span>
-              <span
-                title={lane.row.message}
-                className={cn("min-w-0 flex-1 truncate", SURFACE_TEXT.chassis)}
-              >
-                {lane.row.message}
-              </span>
-              <span className={cn("shrink-0 tabular-nums", SURFACE_TEXT_DIM.chassis)}>+{roundMs(lane.offsetMs)}</span>
-              {lane.durationMs !== null && (
-                <span className={cn("shrink-0 tabular-nums", SURFACE_TEXT_MUTED.chassis)}>
-                  {roundMs(lane.durationMs)} ms
-                </span>
-              )}
-            </div>
-
+          <li key={lane.key}>
             {/*
-             * The lane is `aria-hidden` in its entirety: it is a second rendering of the offset and
-             * the duration already sitting in the text line above it, and a screen reader gains
-             * nothing from two `<span>`s whose only content is a percentage.
+             * One bubble for the whole row, and it carries the three things the row cannot: the
+             * absolute instant (the line only shows `+12` since the trace started), the message in
+             * full where the column truncates it, and the difference between a line that measured
+             * nothing and one that measured zero — which the lane draws as a tick and says nowhere
+             * in words.
+             *
+             * The wrapper takes the `<li>`'s own classes rather than nesting inside them, so the
+             * list keeps exactly the geometry it had.
              */}
-            <div
-              aria-hidden="true"
-              className="relative h-1.5 rounded-chip bg-chassis-inset"
+            <Tooltip
+              mode="hover"
+              className="flex w-full flex-col gap-1"
+              content={
+                <div className="flex flex-col gap-1">
+                  <TooltipBlock
+                    subject={timeOfDay(lane.row.ts, tz)}
+                    context={`${lane.row.service} · ${lane.row.levelName}`}
+                    rows={[
+                      { label: LOGS_TEXT.traceRows.offset, value: `+${roundMs(lane.offsetMs)} ms` },
+                      {
+                        label: LOGS_TEXT.traceRows.took,
+                        value:
+                          lane.durationMs === null ? LOGS_TEXT.traceRows.unmeasured : `${roundMs(lane.durationMs)} ms`,
+                      },
+                    ]}
+                  />
+                  <p className={SURFACE_TEXT.chassis}>{lane.row.message}</p>
+                </div>
+              }
             >
-              {lane.durationMs === null ? (
-                /*
-                 * A tick, not a zero-length bar. Most lines measure nothing — a `console.log` in the
-                 * middle of a handler has a timestamp and no duration — and drawing those as bars of
-                 * width zero would render them as nothing at all, so half the trace would silently
-                 * vanish. Standing proud of the lane rather than filling it also keeps the two
-                 * readable apart: a mark is a moment, a bar is an interval.
-                 */
-                <span
-                  className={cn(
-                    "absolute top-1/2 h-2.5 w-0.5 -translate-x-1/2 -translate-y-1/2",
-                    TONE_FILL.chassis[lane.tone],
-                  )}
-                  style={{ left: `${lane.leftPct}%` }}
+              <div className="flex items-baseline gap-2 text-row">
+                <Dot
+                  tone={lane.tone}
+                  surface="chassis"
+                  label={lane.row.levelName}
+                  className="shrink-0 self-center"
                 />
-              ) : (
-                <span
-                  className={cn("absolute inset-y-0 rounded-chip", TONE_FILL.chassis[lane.tone])}
+                <span className={cn("shrink-0", SURFACE_TEXT_DIM.chassis)}>{lane.row.service}</span>
+                <span className={cn("min-w-0 flex-1 truncate", SURFACE_TEXT.chassis)}>{lane.row.message}</span>
+                <span className={cn("shrink-0 tabular-nums", SURFACE_TEXT_DIM.chassis)}>+{roundMs(lane.offsetMs)}</span>
+                {lane.durationMs !== null && (
+                  <span className={cn("shrink-0 tabular-nums", SURFACE_TEXT_MUTED.chassis)}>
+                    {roundMs(lane.durationMs)} ms
+                  </span>
+                )}
+              </div>
+
+              {/*
+               * The lane is `aria-hidden` in its entirety: it is a second rendering of the offset and
+               * the duration already sitting in the text line above it, and a screen reader gains
+               * nothing from two `<span>`s whose only content is a percentage.
+               */}
+              <div
+                aria-hidden="true"
+                className="relative h-1.5 rounded-chip bg-chassis-inset"
+              >
+                {lane.durationMs === null ? (
                   /*
-                   * `minWidth` rather than a floor on the percentage: a 0.4ms call inside a
-                   * six-second trace is 0.007% of the lane, which rounds to no pixels and reads as
-                   * a row that measured nothing — the exact thing the tick above is there to mean.
+                   * A tick, not a zero-length bar. Most lines measure nothing — a `console.log` in the
+                   * middle of a handler has a timestamp and no duration — and drawing those as bars of
+                   * width zero would render them as nothing at all, so half the trace would silently
+                   * vanish. Standing proud of the lane rather than filling it also keeps the two
+                   * readable apart: a mark is a moment, a bar is an interval.
                    */
-                  style={{ left: `${lane.leftPct}%`, width: `${lane.widthPct}%`, minWidth: "2px" }}
-                />
-              )}
-            </div>
+                  <span
+                    className={cn(
+                      "absolute top-1/2 h-2.5 w-0.5 -translate-x-1/2 -translate-y-1/2",
+                      TONE_FILL.chassis[lane.tone],
+                    )}
+                    style={{ left: `${lane.leftPct}%` }}
+                  />
+                ) : (
+                  <span
+                    className={cn("absolute inset-y-0 rounded-chip", TONE_FILL.chassis[lane.tone])}
+                    /*
+                     * `minWidth` rather than a floor on the percentage: a 0.4ms call inside a
+                     * six-second trace is 0.007% of the lane, which rounds to no pixels and reads as
+                     * a row that measured nothing — the exact thing the tick above is there to mean.
+                     */
+                    style={{ left: `${lane.leftPct}%`, width: `${lane.widthPct}%`, minWidth: "2px" }}
+                  />
+                )}
+              </div>
+            </Tooltip>
           </li>
         ))}
       </ol>

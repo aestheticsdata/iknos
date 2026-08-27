@@ -129,6 +129,7 @@ const Body = ({
           </p>
         ) : (
           <StateBand
+            unit={alert.unit}
             transitions={band.transitions}
             from={band.from}
             to={band.to}

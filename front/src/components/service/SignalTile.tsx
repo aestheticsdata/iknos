@@ -1,10 +1,12 @@
 "use client";
 
 import { Spinner } from "@components/ui/Spinner";
+import { Tooltip } from "@components/ui/Tooltip";
 import { cn } from "@lib/utils";
 import Link from "next/link";
 
 import type { Tone } from "@components/ui/surface";
+import type { ReactNode } from "react";
 
 /**
  * The shell all four signal tiles share — design doc §5.2.
@@ -27,7 +29,7 @@ export const SignalTile = ({
   tone = "neutral",
   pending = false,
   href,
-  title,
+  hint,
   children,
 }: {
   kicker: string;
@@ -44,28 +46,47 @@ export const SignalTile = ({
    */
   pending?: boolean;
   href?: string | null;
-  title?: string;
+  /**
+   * What the figure means — the scale it is measured on, or where the tile leads.
+   *
+   * **On the header alone, and that is the design.** The chart underneath answers a different
+   * question (which interval, and what was it worth) and answers it per bar, so the two hover
+   * targets in one tile say two different things: the number explains itself, the chart explains
+   * its marks. One bubble over the whole tile would have to pick one of them, and would cover the
+   * chart while the reader is trying to point at it.
+   *
+   * `null` is a tile with nothing to add — see `Tooltip`, which hands the trigger back untouched.
+   */
+  hint?: ReactNode;
   /** The chart, or the sentence that says why there is not one. */
   children: React.ReactNode;
 }) => {
   const body = (
     <>
-      <span className="text-kicker tracking-kicker font-medium text-work-text-dim uppercase">{kicker}</span>
-      <div className="flex items-baseline gap-1.5">
-        {pending ? (
-          <PendingFigure />
-        ) : (
-          <span
-            className={cn(
-              "text-signal font-medium tabular-nums transition-[color] duration-150 ease-out",
-              tone === "error" ? "text-work-error" : "text-work-text",
-            )}
-          >
-            {value}
-          </span>
-        )}
-        <span className="text-label text-work-text-muted">{unit}</span>
-      </div>
+      {/* The same two boxes whether or not there is a hint: with none, the wrapper is not rendered
+          at all and these are the flex children they have always been. */}
+      <Tooltip
+        mode="hover"
+        content={hint}
+        className="flex flex-col gap-1.25"
+      >
+        <span className="text-kicker tracking-kicker font-medium text-work-text-dim uppercase">{kicker}</span>
+        <div className="flex items-baseline gap-1.5">
+          {pending ? (
+            <PendingFigure />
+          ) : (
+            <span
+              className={cn(
+                "text-signal font-medium tabular-nums transition-[color] duration-150 ease-out",
+                tone === "error" ? "text-work-error" : "text-work-text",
+              )}
+            >
+              {value}
+            </span>
+          )}
+          <span className="text-label text-work-text-muted">{unit}</span>
+        </div>
+      </Tooltip>
       {/* Fixed, so the tile is the same height whether it holds a chart, a sentence, or a sentence
           that has not arrived. */}
       <div className="flex h-[26px] items-end">{children}</div>
@@ -88,7 +109,6 @@ export const SignalTile = ({
   if (!href) {
     return (
       <section
-        title={title}
         aria-busy={pending || undefined}
         className={skin}
       >
@@ -100,7 +120,6 @@ export const SignalTile = ({
   return (
     <Link
       href={href}
-      title={title}
       aria-busy={pending || undefined}
       className={cn(skin, "transition-[border-color] duration-150 ease-out hover:border-work-text-dim")}
     >
