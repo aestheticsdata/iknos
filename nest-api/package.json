@@ -1,5 +1,6 @@
 {
   "name": "iknos-api",
+  "packageManager": "pnpm@12.2.1",
   "version": "0.0.1",
   "private": true,
   "license": "UNLICENSED",
