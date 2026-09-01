@@ -1,0 +1,1017 @@
+[
+  {
+    "fingerprint": "f889625b6d7f5680",
+    "service": "pfa-nest-api",
+    "type": "TypeError",
+    "message": "Cannot read properties of undefined (reading 'siret')",
+    "culprit": "ExpenseMapper.toRow (dist/expenses/expense-mapper.js:87)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-21T12:00:00.000Z",
+    "lastSeen": "2026-09-01T11:03:17.342Z",
+    "eventCount": 15,
+    "sample": {
+      "message": "Cannot read properties of undefined (reading 'siret')",
+      "stack": "TypeError: Cannot read properties of undefined (reading 'siret')\n    at ExpenseMapper.toRow (/var/www/pfa/nest-api/dist/expenses/expense-mapper.js:87:31)\n    at Array.map (<anonymous>)\n    at ExpensesService.list (/var/www/pfa/nest-api/dist/expenses/expenses.service.js:54:28)\n    at ExpensesController.list (/var/www/pfa/nest-api/dist/expenses/expenses.controller.js:40:39)\n    at /var/www/pfa/nest-api/node_modules/@nestjs/core/router/router-execution-context.js:38:29",
+      "logger": "pfa"
+    },
+    "events": [
+      {
+        "ts": "2026-08-25T21:36:00.000Z",
+        "traceId": "60ed982bf7efdd5e771a5aade2ea4df3",
+        "message": "Cannot read properties of undefined (reading 'siret')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'siret')\n    at ExpenseMapper.toRow (/var/www/pfa/nest-api/dist/expenses/expense-mapper.js:87:31)\n    at Array.map (<anonymous>)\n    at ExpensesService.list (/var/www/pfa/nest-api/dist/expenses/expenses.service.js:54:28)\n    at ExpensesController.list (/var/www/pfa/nest-api/dist/expenses/expenses.controller.js:40:39)\n    at /var/www/pfa/nest-api/node_modules/@nestjs/core/router/router-execution-context.js:38:29",
+        "count": 3
+      },
+      {
+        "ts": "2026-08-27T07:12:00.000Z",
+        "traceId": "ce57aa13700d98a12c445b877f07327a",
+        "message": "Cannot read properties of undefined (reading 'siret')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'siret')\n    at ExpenseMapper.toRow (/var/www/pfa/nest-api/dist/expenses/expense-mapper.js:87:31)\n    at Array.map (<anonymous>)\n    at ExpensesService.list (/var/www/pfa/nest-api/dist/expenses/expenses.service.js:54:28)\n    at ExpensesController.list (/var/www/pfa/nest-api/dist/expenses/expenses.controller.js:40:39)\n    at /var/www/pfa/nest-api/node_modules/@nestjs/core/router/router-execution-context.js:38:29",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-29T02:24:00.000Z",
+        "traceId": "9783de84b88bd05a704f68daec9c37e7",
+        "message": "Cannot read properties of undefined (reading 'siret')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'siret')\n    at ExpenseMapper.toRow (/var/www/pfa/nest-api/dist/expenses/expense-mapper.js:87:31)\n    at Array.map (<anonymous>)\n    at ExpensesService.list (/var/www/pfa/nest-api/dist/expenses/expenses.service.js:54:28)\n    at ExpensesController.list (/var/www/pfa/nest-api/dist/expenses/expenses.controller.js:40:39)\n    at /var/www/pfa/nest-api/node_modules/@nestjs/core/router/router-execution-context.js:38:29",
+        "count": 4
+      },
+      {
+        "ts": "2026-08-30T16:48:00.000Z",
+        "traceId": null,
+        "message": "Cannot read properties of undefined (reading 'siret')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'siret')\n    at ExpenseMapper.toRow (/var/www/pfa/nest-api/dist/expenses/expense-mapper.js:87:31)\n    at Array.map (<anonymous>)\n    at ExpensesService.list (/var/www/pfa/nest-api/dist/expenses/expenses.service.js:54:28)\n    at ExpensesController.list (/var/www/pfa/nest-api/dist/expenses/expenses.controller.js:40:39)\n    at /var/www/pfa/nest-api/node_modules/@nestjs/core/router/router-execution-context.js:38:29",
+        "count": 3
+      },
+      {
+        "ts": "2026-08-31T21:36:00.000Z",
+        "traceId": null,
+        "message": "Cannot read properties of undefined (reading 'siret')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'siret')\n    at ExpenseMapper.toRow (/var/www/pfa/nest-api/dist/expenses/expense-mapper.js:87:31)\n    at Array.map (<anonymous>)\n    at ExpensesService.list (/var/www/pfa/nest-api/dist/expenses/expenses.service.js:54:28)\n    at ExpensesController.list (/var/www/pfa/nest-api/dist/expenses/expenses.controller.js:40:39)\n    at /var/www/pfa/nest-api/node_modules/@nestjs/core/router/router-execution-context.js:38:29",
+        "count": 2
+      },
+      {
+        "ts": "2026-09-01T10:48:00.000Z",
+        "traceId": "e88d7e8124b46dcfdabf428fbe292914",
+        "message": "Cannot read properties of undefined (reading 'siret')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'siret')\n    at ExpenseMapper.toRow (/var/www/pfa/nest-api/dist/expenses/expense-mapper.js:87:31)\n    at Array.map (<anonymous>)\n    at ExpensesService.list (/var/www/pfa/nest-api/dist/expenses/expenses.service.js:54:28)\n    at ExpensesController.list (/var/www/pfa/nest-api/dist/expenses/expenses.controller.js:40:39)\n    at /var/www/pfa/nest-api/node_modules/@nestjs/core/router/router-execution-context.js:38:29",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "fingerprint": "0bb11e3ad4112334",
+    "service": "worldweathr-api",
+    "type": "FetchError",
+    "message": "open-meteo request timed out after 8000 ms",
+    "culprit": "ForecastClient.fetchCity (dist/forecast/forecast-client.js:61)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-23T12:00:00.000Z",
+    "lastSeen": "2026-09-01T08:53:11.302Z",
+    "eventCount": 49,
+    "sample": {
+      "message": "open-meteo request timed out after 8000 ms",
+      "stack": "FetchError: open-meteo request timed out after 8000 ms\n    at ForecastClient.fetchCity (/var/www/worldweathr/nest-api/dist/forecast/forecast-client.js:61:19)\n    at ForecastService.refresh (/var/www/worldweathr/nest-api/dist/forecast/forecast.service.js:112:24)\n    at ForecastController.byCity (/var/www/worldweathr/nest-api/dist/forecast/forecast.controller.js:33:27)\n    at /var/www/worldweathr/nest-api/node_modules/@nestjs/core/router/router-proxy.js:9:17",
+      "logger": "weathr"
+    },
+    "events": [
+      {
+        "ts": "2026-08-28T10:48:00.000Z",
+        "traceId": "d3109ab6994a658e8649a9524afede32",
+        "message": "open-meteo request timed out after 8000 ms",
+        "stack": "FetchError: open-meteo request timed out after 8000 ms\n    at ForecastClient.fetchCity (/var/www/worldweathr/nest-api/dist/forecast/forecast-client.js:61:19)\n    at ForecastService.refresh (/var/www/worldweathr/nest-api/dist/forecast/forecast.service.js:112:24)\n    at ForecastController.byCity (/var/www/worldweathr/nest-api/dist/forecast/forecast.controller.js:33:27)\n    at /var/www/worldweathr/nest-api/node_modules/@nestjs/core/router/router-proxy.js:9:17",
+        "count": 26
+      },
+      {
+        "ts": "2026-08-28T11:31:12.000Z",
+        "traceId": "b1615b4385f4adba735b938eebc8bb9d",
+        "message": "open-meteo request timed out after 8000 ms",
+        "stack": "FetchError: open-meteo request timed out after 8000 ms\n    at ForecastClient.fetchCity (/var/www/worldweathr/nest-api/dist/forecast/forecast-client.js:61:19)\n    at ForecastService.refresh (/var/www/worldweathr/nest-api/dist/forecast/forecast.service.js:112:24)\n    at ForecastController.byCity (/var/www/worldweathr/nest-api/dist/forecast/forecast.controller.js:33:27)\n    at /var/www/worldweathr/nest-api/node_modules/@nestjs/core/router/router-proxy.js:9:17",
+        "count": 18
+      },
+      {
+        "ts": "2026-08-30T00:00:00.000Z",
+        "traceId": null,
+        "message": "open-meteo request timed out after 8000 ms",
+        "stack": "FetchError: open-meteo request timed out after 8000 ms\n    at ForecastClient.fetchCity (/var/www/worldweathr/nest-api/dist/forecast/forecast-client.js:61:19)\n    at ForecastService.refresh (/var/www/worldweathr/nest-api/dist/forecast/forecast.service.js:112:24)\n    at ForecastController.byCity (/var/www/worldweathr/nest-api/dist/forecast/forecast.controller.js:33:27)\n    at /var/www/worldweathr/nest-api/node_modules/@nestjs/core/router/router-proxy.js:9:17",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-31T14:24:00.000Z",
+        "traceId": null,
+        "message": "open-meteo request timed out after 8000 ms",
+        "stack": "FetchError: open-meteo request timed out after 8000 ms\n    at ForecastClient.fetchCity (/var/www/worldweathr/nest-api/dist/forecast/forecast-client.js:61:19)\n    at ForecastService.refresh (/var/www/worldweathr/nest-api/dist/forecast/forecast.service.js:112:24)\n    at ForecastController.byCity (/var/www/worldweathr/nest-api/dist/forecast/forecast.controller.js:33:27)\n    at /var/www/worldweathr/nest-api/node_modules/@nestjs/core/router/router-proxy.js:9:17",
+        "count": 2
+      },
+      {
+        "ts": "2026-09-01T08:52:48.000Z",
+        "traceId": null,
+        "message": "open-meteo request timed out after 8000 ms",
+        "stack": "FetchError: open-meteo request timed out after 8000 ms\n    at ForecastClient.fetchCity (/var/www/worldweathr/nest-api/dist/forecast/forecast-client.js:61:19)\n    at ForecastService.refresh (/var/www/worldweathr/nest-api/dist/forecast/forecast.service.js:112:24)\n    at ForecastController.byCity (/var/www/worldweathr/nest-api/dist/forecast/forecast.controller.js:33:27)\n    at /var/www/worldweathr/nest-api/node_modules/@nestjs/core/router/router-proxy.js:9:17",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "fingerprint": "3f4ec1a644b6908f",
+    "service": "worldweathr-api",
+    "type": "Error",
+    "message": "connect ECONNREFUSED 127.0.0.1:6379",
+    "culprit": null,
+    "level": 60,
+    "levelName": "fatal",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-09-01T08:38:24.000Z",
+    "lastSeen": "2026-09-01T09:19:42.697Z",
+    "eventCount": 6,
+    "sample": {
+      "message": "connect ECONNREFUSED 127.0.0.1:6379",
+      "stack": null,
+      "logger": "weathr"
+    },
+    "events": [
+      {
+        "ts": "2026-09-01T09:00:00.000Z",
+        "traceId": null,
+        "message": "connect ECONNREFUSED 127.0.0.1:6379",
+        "stack": null,
+        "count": 6
+      }
+    ]
+  },
+  {
+    "fingerprint": "fa70081635480c62",
+    "service": "spira-nest-api",
+    "type": "PrismaClientKnownRequestError",
+    "message": "Unique constraint failed on the constraint: `issue_owner_identifier_key`",
+    "culprit": "IssuesService.create (dist/issues/issues.service.js:141)",
+    "level": 50,
+    "levelName": "error",
+    "status": "resolved",
+    "regression": false,
+    "firstSeen": "2026-08-19T12:00:00.000Z",
+    "lastSeen": "2026-08-27T16:57:01.712Z",
+    "eventCount": 3,
+    "sample": {
+      "message": "Unique constraint failed on the constraint: `issue_owner_identifier_key`",
+      "stack": "PrismaClientKnownRequestError: Unique constraint failed on the constraint: `issue_owner_identifier_key`\n    at Proxy.create (/var/www/spira/nest-api/node_modules/@prisma/client/runtime/library.js:112:1363)\n    at IssuesService.create (/var/www/spira/nest-api/dist/issues/issues.service.js:141:26)\n    at IssuesController.create (/var/www/spira/nest-api/dist/issues/issues.controller.js:52:33)",
+      "logger": "spira"
+    },
+    "events": [
+      {
+        "ts": "2026-08-26T09:36:00.000Z",
+        "traceId": null,
+        "message": "Unique constraint failed on the constraint: `issue_owner_identifier_key`",
+        "stack": "PrismaClientKnownRequestError: Unique constraint failed on the constraint: `issue_owner_identifier_key`\n    at Proxy.create (/var/www/spira/nest-api/node_modules/@prisma/client/runtime/library.js:112:1363)\n    at IssuesService.create (/var/www/spira/nest-api/dist/issues/issues.service.js:141:26)\n    at IssuesController.create (/var/www/spira/nest-api/dist/issues/issues.controller.js:52:33)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-27T16:48:00.000Z",
+        "traceId": null,
+        "message": "Unique constraint failed on the constraint: `issue_owner_identifier_key`",
+        "stack": "PrismaClientKnownRequestError: Unique constraint failed on the constraint: `issue_owner_identifier_key`\n    at Proxy.create (/var/www/spira/nest-api/node_modules/@prisma/client/runtime/library.js:112:1363)\n    at IssuesService.create (/var/www/spira/nest-api/dist/issues/issues.service.js:141:26)\n    at IssuesController.create (/var/www/spira/nest-api/dist/issues/issues.controller.js:52:33)",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "fingerprint": "4fe5c45e79a3adfe",
+    "service": "iknos-api",
+    "type": "RangeError",
+    "message": "byte offset ran past the rotated file",
+    "culprit": "Tailer.readSlice (dist/src/ingest/tailer.js:171)",
+    "level": 50,
+    "levelName": "error",
+    "status": "ignored",
+    "regression": false,
+    "firstSeen": "2026-08-20T12:00:00.000Z",
+    "lastSeen": "2026-08-31T07:17:07.579Z",
+    "eventCount": 3,
+    "sample": {
+      "message": "byte offset ran past the rotated file",
+      "stack": "RangeError: byte offset ran past the rotated file\n    at Tailer.readSlice (/var/www/iknos/nest-api/dist/src/ingest/tailer.js:171:15)\n    at Tailer.poll (/var/www/iknos/nest-api/dist/src/ingest/tailer.js:129:22)\n    at IngestService.tick (/var/www/iknos/nest-api/dist/src/ingest/ingest.service.js:63:20)",
+      "logger": "iknos"
+    },
+    "events": [
+      {
+        "ts": "2026-08-27T00:00:00.000Z",
+        "traceId": "6e7d7b7966bcfa4cad128b4213237cee",
+        "message": "byte offset ran past the rotated file",
+        "stack": "RangeError: byte offset ran past the rotated file\n    at Tailer.readSlice (/var/www/iknos/nest-api/dist/src/ingest/tailer.js:171:15)\n    at Tailer.poll (/var/www/iknos/nest-api/dist/src/ingest/tailer.js:129:22)\n    at IngestService.tick (/var/www/iknos/nest-api/dist/src/ingest/ingest.service.js:63:20)",
+        "count": 1
+      },
+      {
+        "ts": "2026-08-29T14:24:00.000Z",
+        "traceId": null,
+        "message": "byte offset ran past the rotated file",
+        "stack": "RangeError: byte offset ran past the rotated file\n    at Tailer.readSlice (/var/www/iknos/nest-api/dist/src/ingest/tailer.js:171:15)\n    at Tailer.poll (/var/www/iknos/nest-api/dist/src/ingest/tailer.js:129:22)\n    at IngestService.tick (/var/www/iknos/nest-api/dist/src/ingest/ingest.service.js:63:20)",
+        "count": 1
+      },
+      {
+        "ts": "2026-08-31T07:12:00.000Z",
+        "traceId": "3bbdfe7f0b1a2bcbb5c55a8e77d659ba",
+        "message": "byte offset ran past the rotated file",
+        "stack": "RangeError: byte offset ran past the rotated file\n    at Tailer.readSlice (/var/www/iknos/nest-api/dist/src/ingest/tailer.js:171:15)\n    at Tailer.poll (/var/www/iknos/nest-api/dist/src/ingest/tailer.js:129:22)\n    at IngestService.tick (/var/www/iknos/nest-api/dist/src/ingest/ingest.service.js:63:20)",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "fingerprint": "392b7908dcee0f28",
+    "service": "1991chat-backend",
+    "type": "WebSocketError",
+    "message": "peer closed mid-frame",
+    "culprit": "Session.onFrame (dist/session.js:203)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": true,
+    "firstSeen": "2026-08-13T12:00:00.000Z",
+    "lastSeen": "2026-09-01T03:55:34.630Z",
+    "eventCount": 7,
+    "sample": {
+      "message": "peer closed mid-frame",
+      "stack": "WebSocketError: peer closed mid-frame\n    at Session.onFrame (/var/www/1991chat/backend/dist/session.js:203:11)\n    at WebSocket.emit (node:events:519:28)\n    at Receiver.receiverOnMessage (/var/www/1991chat/backend/node_modules/ws/lib/websocket.js:1220:20)",
+      "logger": "chat"
+    },
+    "events": [
+      {
+        "ts": "2026-08-30T07:12:00.000Z",
+        "traceId": null,
+        "message": "peer closed mid-frame",
+        "stack": "WebSocketError: peer closed mid-frame\n    at Session.onFrame (/var/www/1991chat/backend/dist/session.js:203:11)\n    at WebSocket.emit (node:events:519:28)\n    at Receiver.receiverOnMessage (/var/www/1991chat/backend/node_modules/ws/lib/websocket.js:1220:20)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-31T09:36:00.000Z",
+        "traceId": null,
+        "message": "peer closed mid-frame",
+        "stack": "WebSocketError: peer closed mid-frame\n    at Session.onFrame (/var/www/1991chat/backend/dist/session.js:203:11)\n    at WebSocket.emit (node:events:519:28)\n    at Receiver.receiverOnMessage (/var/www/1991chat/backend/node_modules/ws/lib/websocket.js:1220:20)",
+        "count": 3
+      },
+      {
+        "ts": "2026-09-01T03:36:00.000Z",
+        "traceId": "999731a93a5e7a5dd4f4e20a1c7eaeb8",
+        "message": "peer closed mid-frame",
+        "stack": "WebSocketError: peer closed mid-frame\n    at Session.onFrame (/var/www/1991chat/backend/dist/session.js:203:11)\n    at WebSocket.emit (node:events:519:28)\n    at Receiver.receiverOnMessage (/var/www/1991chat/backend/node_modules/ws/lib/websocket.js:1220:20)",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "fingerprint": "33ffd41ef564cc5e",
+    "service": "zeus-nest-api",
+    "type": "HttpException",
+    "message": "deploy report rejected: unknown service 'nginx'",
+    "culprit": "DeployReportsService.accept (dist/deploys/deploy-reports.service.js:77)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-25T16:48:00.000Z",
+    "lastSeen": "2026-08-31T16:55:17.435Z",
+    "eventCount": 3,
+    "sample": {
+      "message": "deploy report rejected: unknown service 'nginx'",
+      "stack": "HttpException: deploy report rejected: unknown service 'nginx'\n    at DeployReportsService.accept (/var/www/zeus/nest-api/dist/deploys/deploy-reports.service.js:77:15)\n    at DeployReportsController.report (/var/www/zeus/nest-api/dist/deploys/deploy-reports.controller.js:29:41)",
+      "logger": "zeus"
+    },
+    "events": [
+      {
+        "ts": "2026-08-25T16:48:00.000Z",
+        "traceId": "fa2d91983b591964c3874ea87ae02fb0",
+        "message": "deploy report rejected: unknown service 'nginx'",
+        "stack": "HttpException: deploy report rejected: unknown service 'nginx'\n    at DeployReportsService.accept (/var/www/zeus/nest-api/dist/deploys/deploy-reports.service.js:77:15)\n    at DeployReportsController.report (/var/www/zeus/nest-api/dist/deploys/deploy-reports.controller.js:29:41)",
+        "count": 1
+      },
+      {
+        "ts": "2026-08-28T14:24:00.000Z",
+        "traceId": "b772d13a17553c4d061c45f24415d8fe",
+        "message": "deploy report rejected: unknown service 'nginx'",
+        "stack": "HttpException: deploy report rejected: unknown service 'nginx'\n    at DeployReportsService.accept (/var/www/zeus/nest-api/dist/deploys/deploy-reports.service.js:77:15)\n    at DeployReportsController.report (/var/www/zeus/nest-api/dist/deploys/deploy-reports.controller.js:29:41)",
+        "count": 1
+      },
+      {
+        "ts": "2026-08-31T16:48:00.000Z",
+        "traceId": null,
+        "message": "deploy report rejected: unknown service 'nginx'",
+        "stack": "HttpException: deploy report rejected: unknown service 'nginx'\n    at DeployReportsService.accept (/var/www/zeus/nest-api/dist/deploys/deploy-reports.service.js:77:15)\n    at DeployReportsController.report (/var/www/zeus/nest-api/dist/deploys/deploy-reports.controller.js:29:41)",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "fingerprint": "019dcb14a466b2b8",
+    "service": "iknos-api",
+    "type": "PrismaClientKnownRequestError",
+    "message": "Can't reach database server at `127.0.0.1:3306`",
+    "culprit": "HistogramService.buckets (dist/src/logs/histogram.service.js:71)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": true,
+    "firstSeen": "2026-08-18T12:00:00.000Z",
+    "lastSeen": "2026-09-01T05:04:22.980Z",
+    "eventCount": 9,
+    "sample": {
+      "message": "Can't reach database server at `127.0.0.1:3306`",
+      "stack": "PrismaClientKnownRequestError: Can't reach database server at `127.0.0.1:3306`\n    at Proxy.$queryRaw (/var/www/iknos/nest-api/node_modules/@prisma/client/runtime/library.js:112:2010)\n    at HistogramService.buckets (/var/www/iknos/nest-api/dist/src/logs/histogram.service.js:71:33)\n    at LogsController.histogram (/var/www/iknos/nest-api/dist/src/logs/logs.controller.js:88:40)",
+      "logger": "iknos"
+    },
+    "events": [
+      {
+        "ts": "2026-08-26T14:24:00.000Z",
+        "traceId": null,
+        "message": "Can't reach database server at `127.0.0.1:3306`",
+        "stack": "PrismaClientKnownRequestError: Can't reach database server at `127.0.0.1:3306`\n    at Proxy.$queryRaw (/var/www/iknos/nest-api/node_modules/@prisma/client/runtime/library.js:112:2010)\n    at HistogramService.buckets (/var/www/iknos/nest-api/dist/src/logs/histogram.service.js:71:33)\n    at LogsController.histogram (/var/www/iknos/nest-api/dist/src/logs/logs.controller.js:88:40)",
+        "count": 4
+      },
+      {
+        "ts": "2026-08-30T02:24:00.000Z",
+        "traceId": null,
+        "message": "Can't reach database server at `127.0.0.1:3306`",
+        "stack": "PrismaClientKnownRequestError: Can't reach database server at `127.0.0.1:3306`\n    at Proxy.$queryRaw (/var/www/iknos/nest-api/node_modules/@prisma/client/runtime/library.js:112:2010)\n    at HistogramService.buckets (/var/www/iknos/nest-api/dist/src/logs/histogram.service.js:71:33)\n    at LogsController.histogram (/var/www/iknos/nest-api/dist/src/logs/logs.controller.js:88:40)",
+        "count": 2
+      },
+      {
+        "ts": "2026-09-01T04:48:00.000Z",
+        "traceId": null,
+        "message": "Can't reach database server at `127.0.0.1:3306`",
+        "stack": "PrismaClientKnownRequestError: Can't reach database server at `127.0.0.1:3306`\n    at Proxy.$queryRaw (/var/www/iknos/nest-api/node_modules/@prisma/client/runtime/library.js:112:2010)\n    at HistogramService.buckets (/var/www/iknos/nest-api/dist/src/logs/histogram.service.js:71:33)\n    at LogsController.histogram (/var/www/iknos/nest-api/dist/src/logs/logs.controller.js:88:40)",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "fingerprint": "dfff19a8cd34c33f",
+    "service": "iknos-front",
+    "type": "TypeError",
+    "message": "Cannot read properties of null (reading 'bucketMs')",
+    "culprit": "Histogram (.next/server/app/(app)/logs/page.js:1)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-28T07:12:00.000Z",
+    "lastSeen": "2026-09-01T00:09:22.644Z",
+    "eventCount": 6,
+    "sample": {
+      "message": "Cannot read properties of null (reading 'bucketMs')",
+      "stack": "TypeError: Cannot read properties of null (reading 'bucketMs')\n    at Histogram (/var/www/iknos/front/.next/server/app/(app)/logs/page.js:1:41833)\n    at renderWithHooks (/var/www/iknos/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+      "logger": "next"
+    },
+    "events": [
+      {
+        "ts": "2026-08-28T07:12:00.000Z",
+        "traceId": null,
+        "message": "Cannot read properties of null (reading 'bucketMs')",
+        "stack": "TypeError: Cannot read properties of null (reading 'bucketMs')\n    at Histogram (/var/www/iknos/front/.next/server/app/(app)/logs/page.js:1:41833)\n    at renderWithHooks (/var/www/iknos/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-30T21:36:00.000Z",
+        "traceId": null,
+        "message": "Cannot read properties of null (reading 'bucketMs')",
+        "stack": "TypeError: Cannot read properties of null (reading 'bucketMs')\n    at Histogram (/var/www/iknos/front/.next/server/app/(app)/logs/page.js:1:41833)\n    at renderWithHooks (/var/www/iknos/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 3
+      },
+      {
+        "ts": "2026-09-01T00:00:00.000Z",
+        "traceId": null,
+        "message": "Cannot read properties of null (reading 'bucketMs')",
+        "stack": "TypeError: Cannot read properties of null (reading 'bucketMs')\n    at Histogram (/var/www/iknos/front/.next/server/app/(app)/logs/page.js:1:41833)\n    at renderWithHooks (/var/www/iknos/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "fingerprint": "f5bf12d417b506e5",
+    "service": "pfa-front",
+    "type": "TypeError",
+    "message": "Hydration failed: cannot read 'amount' of undefined",
+    "culprit": "ExpenseRow (.next/server/app/expenses/page.js:1)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-24T12:00:00.000Z",
+    "lastSeen": "2026-08-31T14:31:14.438Z",
+    "eventCount": 8,
+    "sample": {
+      "message": "Hydration failed: cannot read 'amount' of undefined",
+      "stack": "TypeError: Hydration failed: cannot read 'amount' of undefined\n    at ExpenseRow (/var/www/pfa/front/.next/server/app/expenses/page.js:1:22981)\n    at renderWithHooks (/var/www/pfa/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+      "logger": "next"
+    },
+    "events": [
+      {
+        "ts": "2026-08-26T04:48:00.000Z",
+        "traceId": null,
+        "message": "Hydration failed: cannot read 'amount' of undefined",
+        "stack": "TypeError: Hydration failed: cannot read 'amount' of undefined\n    at ExpenseRow (/var/www/pfa/front/.next/server/app/expenses/page.js:1:22981)\n    at renderWithHooks (/var/www/pfa/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-29T09:36:00.000Z",
+        "traceId": "0078ff182e98216f946b2855109656d6",
+        "message": "Hydration failed: cannot read 'amount' of undefined",
+        "stack": "TypeError: Hydration failed: cannot read 'amount' of undefined\n    at ExpenseRow (/var/www/pfa/front/.next/server/app/expenses/page.js:1:22981)\n    at renderWithHooks (/var/www/pfa/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 4
+      },
+      {
+        "ts": "2026-08-31T14:24:00.000Z",
+        "traceId": "8d9974fa07d9202bd0d4236f56a800ab",
+        "message": "Hydration failed: cannot read 'amount' of undefined",
+        "stack": "TypeError: Hydration failed: cannot read 'amount' of undefined\n    at ExpenseRow (/var/www/pfa/front/.next/server/app/expenses/page.js:1:22981)\n    at renderWithHooks (/var/www/pfa/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "fingerprint": "afc4b33e1bc45a3e",
+    "service": "spira-front",
+    "type": "ChunkLoadError",
+    "message": "Loading chunk 483 failed (timeout: /_next/static/chunks/483-9c1f2.js)",
+    "culprit": "__webpack_require__.f.j (.next/static/chunks/webpack-8a1e.js:1)",
+    "level": 50,
+    "levelName": "error",
+    "status": "resolved",
+    "regression": false,
+    "firstSeen": "2026-08-27T00:00:00.000Z",
+    "lastSeen": "2026-08-27T14:43:35.141Z",
+    "eventCount": 4,
+    "sample": {
+      "message": "Loading chunk 483 failed (timeout: /_next/static/chunks/483-9c1f2.js)",
+      "stack": "ChunkLoadError: Loading chunk 483 failed (timeout: /_next/static/chunks/483-9c1f2.js)\n    at __webpack_require__.f.j (/var/www/spira/front/.next/static/chunks/webpack-8a1e.js:1:4211)\n    at BoardPage (/var/www/spira/front/.next/server/app/board/page.js:1:18102)",
+      "logger": "next"
+    },
+    "events": [
+      {
+        "ts": "2026-08-27T00:00:00.000Z",
+        "traceId": null,
+        "message": "Loading chunk 483 failed (timeout: /_next/static/chunks/483-9c1f2.js)",
+        "stack": "ChunkLoadError: Loading chunk 483 failed (timeout: /_next/static/chunks/483-9c1f2.js)\n    at __webpack_require__.f.j (/var/www/spira/front/.next/static/chunks/webpack-8a1e.js:1:4211)\n    at BoardPage (/var/www/spira/front/.next/server/app/board/page.js:1:18102)",
+        "count": 3
+      },
+      {
+        "ts": "2026-08-27T14:24:00.000Z",
+        "traceId": null,
+        "message": "Loading chunk 483 failed (timeout: /_next/static/chunks/483-9c1f2.js)",
+        "stack": "ChunkLoadError: Loading chunk 483 failed (timeout: /_next/static/chunks/483-9c1f2.js)\n    at __webpack_require__.f.j (/var/www/spira/front/.next/static/chunks/webpack-8a1e.js:1:4211)\n    at BoardPage (/var/www/spira/front/.next/server/app/board/page.js:1:18102)",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "fingerprint": "ef8e531e60163920",
+    "service": "zeus-front",
+    "type": "TypeError",
+    "message": "Cannot read properties of undefined (reading 'lastRunAt')",
+    "culprit": "CronRow (.next/server/app/cron/page.js:1)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-29T19:12:00.000Z",
+    "lastSeen": "2026-08-31T05:00:43.948Z",
+    "eventCount": 4,
+    "sample": {
+      "message": "Cannot read properties of undefined (reading 'lastRunAt')",
+      "stack": "TypeError: Cannot read properties of undefined (reading 'lastRunAt')\n    at CronRow (/var/www/zeus/front/.next/server/app/cron/page.js:1:15644)\n    at renderWithHooks (/var/www/zeus/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+      "logger": "next"
+    },
+    "events": [
+      {
+        "ts": "2026-08-29T19:12:00.000Z",
+        "traceId": null,
+        "message": "Cannot read properties of undefined (reading 'lastRunAt')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'lastRunAt')\n    at CronRow (/var/www/zeus/front/.next/server/app/cron/page.js:1:15644)\n    at renderWithHooks (/var/www/zeus/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-31T04:48:00.000Z",
+        "traceId": null,
+        "message": "Cannot read properties of undefined (reading 'lastRunAt')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'lastRunAt')\n    at CronRow (/var/www/zeus/front/.next/server/app/cron/page.js:1:15644)\n    at renderWithHooks (/var/www/zeus/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "fingerprint": "1ebbf4ed09d0379d",
+    "service": "worldweathr-front",
+    "type": "RangeError",
+    "message": "Invalid time value",
+    "culprit": "DeclareForm (.next/server/app/declare/page.js:1)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-26T09:36:00.000Z",
+    "lastSeen": "2026-08-31T19:29:49.901Z",
+    "eventCount": 5,
+    "sample": {
+      "message": "Invalid time value",
+      "stack": "RangeError: Invalid time value\n    at Date.toISOString (<anonymous>)\n    at DeclareForm (/var/www/worldweathr/front/.next/server/app/declare/page.js:1:9020)",
+      "logger": "next"
+    },
+    "events": [
+      {
+        "ts": "2026-08-26T09:36:00.000Z",
+        "traceId": null,
+        "message": "Invalid time value",
+        "stack": "RangeError: Invalid time value\n    at Date.toISOString (<anonymous>)\n    at DeclareForm (/var/www/worldweathr/front/.next/server/app/declare/page.js:1:9020)",
+        "count": 1
+      },
+      {
+        "ts": "2026-08-28T16:48:00.000Z",
+        "traceId": null,
+        "message": "Invalid time value",
+        "stack": "RangeError: Invalid time value\n    at Date.toISOString (<anonymous>)\n    at DeclareForm (/var/www/worldweathr/front/.next/server/app/declare/page.js:1:9020)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-31T19:12:00.000Z",
+        "traceId": null,
+        "message": "Invalid time value",
+        "stack": "RangeError: Invalid time value\n    at Date.toISOString (<anonymous>)\n    at DeclareForm (/var/www/worldweathr/front/.next/server/app/declare/page.js:1:9020)",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "fingerprint": "a8cc49aaeb4ebd1b",
+    "service": "trekker-front",
+    "type": "AbortError",
+    "message": "The operation was aborted: listing /var/log cancelled by navigation",
+    "culprit": "abortSignal (node:internal/abort_controller:389)",
+    "level": 50,
+    "levelName": "error",
+    "status": "ignored",
+    "regression": false,
+    "firstSeen": "2026-08-23T12:00:00.000Z",
+    "lastSeen": "2026-09-01T02:34:49.371Z",
+    "eventCount": 9,
+    "sample": {
+      "message": "The operation was aborted: listing /var/log cancelled by navigation",
+      "stack": "AbortError: The operation was aborted: listing /var/log cancelled by navigation\n    at abortSignal (node:internal/abort_controller:389:5)\n    at usePane (/var/www/trekker/front/.next/server/app/browse/page.js:1:27310)",
+      "logger": "next"
+    },
+    "events": [
+      {
+        "ts": "2026-08-25T19:12:00.000Z",
+        "traceId": null,
+        "message": "The operation was aborted: listing /var/log cancelled by navigation",
+        "stack": "AbortError: The operation was aborted: listing /var/log cancelled by navigation\n    at abortSignal (node:internal/abort_controller:389:5)\n    at usePane (/var/www/trekker/front/.next/server/app/browse/page.js:1:27310)",
+        "count": 3
+      },
+      {
+        "ts": "2026-08-30T07:12:00.000Z",
+        "traceId": null,
+        "message": "The operation was aborted: listing /var/log cancelled by navigation",
+        "stack": "AbortError: The operation was aborted: listing /var/log cancelled by navigation\n    at abortSignal (node:internal/abort_controller:389:5)\n    at usePane (/var/www/trekker/front/.next/server/app/browse/page.js:1:27310)",
+        "count": 4
+      },
+      {
+        "ts": "2026-09-01T02:24:00.000Z",
+        "traceId": null,
+        "message": "The operation was aborted: listing /var/log cancelled by navigation",
+        "stack": "AbortError: The operation was aborted: listing /var/log cancelled by navigation\n    at abortSignal (node:internal/abort_controller:389:5)\n    at usePane (/var/www/trekker/front/.next/server/app/browse/page.js:1:27310)",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "fingerprint": "34f05c7e5739bb7d",
+    "service": "bkmk-front",
+    "type": "TypeError",
+    "message": "Failed to fetch favicon: NetworkError when attempting to fetch resource",
+    "culprit": "Favicon (.next/server/app/page.js:1)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-29T02:24:00.000Z",
+    "lastSeen": "2026-09-01T07:28:25.460Z",
+    "eventCount": 4,
+    "sample": {
+      "message": "Failed to fetch favicon: NetworkError when attempting to fetch resource",
+      "stack": "TypeError: Failed to fetch favicon: NetworkError when attempting to fetch resource\n    at Favicon (/var/www/bkmk/front/.next/server/app/page.js:1:11207)\n    at renderWithHooks (/var/www/bkmk/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+      "logger": "next"
+    },
+    "events": [
+      {
+        "ts": "2026-08-29T02:24:00.000Z",
+        "traceId": null,
+        "message": "Failed to fetch favicon: NetworkError when attempting to fetch resource",
+        "stack": "TypeError: Failed to fetch favicon: NetworkError when attempting to fetch resource\n    at Favicon (/var/www/bkmk/front/.next/server/app/page.js:1:11207)\n    at renderWithHooks (/var/www/bkmk/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-30T14:24:00.000Z",
+        "traceId": null,
+        "message": "Failed to fetch favicon: NetworkError when attempting to fetch resource",
+        "stack": "TypeError: Failed to fetch favicon: NetworkError when attempting to fetch resource\n    at Favicon (/var/www/bkmk/front/.next/server/app/page.js:1:11207)\n    at renderWithHooks (/var/www/bkmk/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 1
+      },
+      {
+        "ts": "2026-09-01T07:12:00.000Z",
+        "traceId": null,
+        "message": "Failed to fetch favicon: NetworkError when attempting to fetch resource",
+        "stack": "TypeError: Failed to fetch favicon: NetworkError when attempting to fetch resource\n    at Favicon (/var/www/bkmk/front/.next/server/app/page.js:1:11207)\n    at renderWithHooks (/var/www/bkmk/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "fingerprint": "253598e95b56a888",
+    "service": "1991chat-front",
+    "type": "WebSocketError",
+    "message": "socket closed before handshake completed",
+    "culprit": "Room.connect (.next/static/chunks/room-4c2e.js:1)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-21T12:00:00.000Z",
+    "lastSeen": "2026-08-29T21:54:14.322Z",
+    "eventCount": 5,
+    "sample": {
+      "message": "socket closed before handshake completed",
+      "stack": "WebSocketError: socket closed before handshake completed\n    at Room.connect (/var/www/1991chat/front/.next/static/chunks/room-4c2e.js:1:8801)",
+      "logger": "next"
+    },
+    "events": [
+      {
+        "ts": "2026-08-27T07:12:00.000Z",
+        "traceId": "753cd72281137b9b27a908fb103b08ef",
+        "message": "socket closed before handshake completed",
+        "stack": "WebSocketError: socket closed before handshake completed\n    at Room.connect (/var/www/1991chat/front/.next/static/chunks/room-4c2e.js:1:8801)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-29T21:36:00.000Z",
+        "traceId": null,
+        "message": "socket closed before handshake completed",
+        "stack": "WebSocketError: socket closed before handshake completed\n    at Room.connect (/var/www/1991chat/front/.next/static/chunks/room-4c2e.js:1:8801)",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "fingerprint": "6ab7c9f30de6e45f",
+    "service": "bkmk-server",
+    "type": "Error",
+    "message": "connect ETIMEDOUT 104.16.0.12:443",
+    "culprit": "TCPConnectWrap.afterConnect [as oncomplete] (node:net:1615)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-25T00:00:00.000Z",
+    "lastSeen": "2026-08-31T21:54:09.998Z",
+    "eventCount": 7,
+    "sample": {
+      "message": "connect ETIMEDOUT 104.16.0.12:443",
+      "stack": "Error: connect ETIMEDOUT 104.16.0.12:443\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1615:16)\n    at FaviconFetcher.fetch (/var/www/bkmk/server/dist/favicon/favicon-fetcher.js:44:19)",
+      "logger": "bkmk"
+    },
+    "events": [
+      {
+        "ts": "2026-08-28T02:24:00.000Z",
+        "traceId": null,
+        "message": "connect ETIMEDOUT 104.16.0.12:443",
+        "stack": "Error: connect ETIMEDOUT 104.16.0.12:443\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1615:16)\n    at FaviconFetcher.fetch (/var/www/bkmk/server/dist/favicon/favicon-fetcher.js:44:19)",
+        "count": 3
+      },
+      {
+        "ts": "2026-08-29T16:48:00.000Z",
+        "traceId": "3d330d9ca40cf3e85fbc195d60c2e3ea",
+        "message": "connect ETIMEDOUT 104.16.0.12:443",
+        "stack": "Error: connect ETIMEDOUT 104.16.0.12:443\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1615:16)\n    at FaviconFetcher.fetch (/var/www/bkmk/server/dist/favicon/favicon-fetcher.js:44:19)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-31T21:36:00.000Z",
+        "traceId": "c044bfc53e678b4a35337778096886ec",
+        "message": "connect ETIMEDOUT 104.16.0.12:443",
+        "stack": "Error: connect ETIMEDOUT 104.16.0.12:443\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1615:16)\n    at FaviconFetcher.fetch (/var/www/bkmk/server/dist/favicon/favicon-fetcher.js:44:19)",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "fingerprint": "a03f65c377ead3ee",
+    "service": "trekker-api",
+    "type": "Error",
+    "message": "EACCES: permission denied, scandir '/var/www/pfa/nest-api/.env'",
+    "culprit": "LocalDriver.list (dist/hosts/local-driver.js:58)",
+    "level": 50,
+    "levelName": "error",
+    "status": "resolved",
+    "regression": false,
+    "firstSeen": "2026-08-26T02:24:00.000Z",
+    "lastSeen": "2026-08-27T09:37:55.434Z",
+    "eventCount": 3,
+    "sample": {
+      "message": "EACCES: permission denied, scandir '/var/www/pfa/nest-api/.env'",
+      "stack": "Error: EACCES: permission denied, scandir '/var/www/pfa/nest-api/.env'\n    at LocalDriver.list (/var/www/trekker/nest-api/dist/hosts/local-driver.js:58:22)\n    at ListingService.list (/var/www/trekker/nest-api/dist/listing/listing.service.js:33:28)",
+      "logger": "trekker"
+    },
+    "events": [
+      {
+        "ts": "2026-08-26T02:24:00.000Z",
+        "traceId": "195e809819278cd3e94ee3e8336219e2",
+        "message": "EACCES: permission denied, scandir '/var/www/pfa/nest-api/.env'",
+        "stack": "Error: EACCES: permission denied, scandir '/var/www/pfa/nest-api/.env'\n    at LocalDriver.list (/var/www/trekker/nest-api/dist/hosts/local-driver.js:58:22)\n    at ListingService.list (/var/www/trekker/nest-api/dist/listing/listing.service.js:33:28)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-27T09:36:00.000Z",
+        "traceId": null,
+        "message": "EACCES: permission denied, scandir '/var/www/pfa/nest-api/.env'",
+        "stack": "Error: EACCES: permission denied, scandir '/var/www/pfa/nest-api/.env'\n    at LocalDriver.list (/var/www/trekker/nest-api/dist/hosts/local-driver.js:58:22)\n    at ListingService.list (/var/www/trekker/nest-api/dist/listing/listing.service.js:33:28)",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "fingerprint": "af9f6f1285b8b0e9",
+    "service": "shatter-api",
+    "type": "ValidationError",
+    "message": "score must be an integer between 0 and 999999",
+    "culprit": "ScoresController.submit (dist/scores/scores.controller.js:21)",
+    "level": 50,
+    "levelName": "error",
+    "status": "ignored",
+    "regression": false,
+    "firstSeen": "2026-08-12T12:00:00.000Z",
+    "lastSeen": "2026-08-31T00:18:42.428Z",
+    "eventCount": 5,
+    "sample": {
+      "message": "score must be an integer between 0 and 999999",
+      "stack": "ValidationError: score must be an integer between 0 and 999999\n    at ScoresController.submit (/var/www/shatter/api/dist/scores/scores.controller.js:21:15)",
+      "logger": "shatter"
+    },
+    "events": [
+      {
+        "ts": "2026-08-27T19:12:00.000Z",
+        "traceId": "d7d19c6f9f838878f05bdce3eb9e28d2",
+        "message": "score must be an integer between 0 and 999999",
+        "stack": "ValidationError: score must be an integer between 0 and 999999\n    at ScoresController.submit (/var/www/shatter/api/dist/scores/scores.controller.js:21:15)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-31T00:00:00.000Z",
+        "traceId": "1b5bd1e9461b9e076c6661484d28f913",
+        "message": "score must be an integer between 0 and 999999",
+        "stack": "ValidationError: score must be an integer between 0 and 999999\n    at ScoresController.submit (/var/www/shatter/api/dist/scores/scores.controller.js:21:15)",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "fingerprint": "bf829907b0509e5b",
+    "service": "conway-gol-api",
+    "type": "RangeError",
+    "message": "Maximum call stack size exceeded",
+    "culprit": "step (dist/life/step.js:14)",
+    "level": 60,
+    "levelName": "fatal",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-31T09:36:00.000Z",
+    "lastSeen": "2026-08-31T09:39:53.112Z",
+    "eventCount": 2,
+    "sample": {
+      "message": "Maximum call stack size exceeded",
+      "stack": "RangeError: Maximum call stack size exceeded\n    at step (/var/www/conway-gol/api/dist/life/step.js:14:20)\n    at step (/var/www/conway-gol/api/dist/life/step.js:22:12)",
+      "logger": "conway"
+    },
+    "events": [
+      {
+        "ts": "2026-08-31T09:36:00.000Z",
+        "traceId": null,
+        "message": "Maximum call stack size exceeded",
+        "stack": "RangeError: Maximum call stack size exceeded\n    at step (/var/www/conway-gol/api/dist/life/step.js:14:20)\n    at step (/var/www/conway-gol/api/dist/life/step.js:22:12)",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "fingerprint": "95eea96bd35ba77e",
+    "service": "hiwaysim",
+    "type": "Error",
+    "message": "listen EADDRINUSE: address already in use :::7110",
+    "culprit": "Server.setupListenHandle [as _listen2] (node:net:1908)",
+    "level": 60,
+    "levelName": "fatal",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-25T14:24:00.000Z",
+    "lastSeen": "2026-08-25T14:26:19.841Z",
+    "eventCount": 1,
+    "sample": {
+      "message": "listen EADDRINUSE: address already in use :::7110",
+      "stack": "Error: listen EADDRINUSE: address already in use :::7110\n    at Server.setupListenHandle [as _listen2] (node:net:1908:16)\n    at listenInCluster (node:net:1965:12)",
+      "logger": "hiwaysim"
+    },
+    "events": [
+      {
+        "ts": "2026-08-25T14:24:00.000Z",
+        "traceId": null,
+        "message": "listen EADDRINUSE: address already in use :::7110",
+        "stack": "Error: listen EADDRINUSE: address already in use :::7110\n    at Server.setupListenHandle [as _listen2] (node:net:1908:16)\n    at listenInCluster (node:net:1965:12)",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "fingerprint": "9bca2689881d3432",
+    "service": "spira-nest-api",
+    "type": "TypeError",
+    "message": "Cannot read properties of undefined (reading 'issueCounter')",
+    "culprit": "ProjectsService.nextIdentifier (dist/projects/projects.service.js:88)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-29T14:24:00.000Z",
+    "lastSeen": "2026-08-31T16:52:53.432Z",
+    "eventCount": 4,
+    "sample": {
+      "message": "Cannot read properties of undefined (reading 'issueCounter')",
+      "stack": "TypeError: Cannot read properties of undefined (reading 'issueCounter')\n    at ProjectsService.nextIdentifier (/var/www/spira/nest-api/dist/projects/projects.service.js:88:31)\n    at IssuesService.create (/var/www/spira/nest-api/dist/issues/issues.service.js:136:44)",
+      "logger": "spira"
+    },
+    "events": [
+      {
+        "ts": "2026-08-29T14:24:00.000Z",
+        "traceId": null,
+        "message": "Cannot read properties of undefined (reading 'issueCounter')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'issueCounter')\n    at ProjectsService.nextIdentifier (/var/www/spira/nest-api/dist/projects/projects.service.js:88:31)\n    at IssuesService.create (/var/www/spira/nest-api/dist/issues/issues.service.js:136:44)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-31T16:48:00.000Z",
+        "traceId": null,
+        "message": "Cannot read properties of undefined (reading 'issueCounter')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'issueCounter')\n    at ProjectsService.nextIdentifier (/var/www/spira/nest-api/dist/projects/projects.service.js:88:31)\n    at IssuesService.create (/var/www/spira/nest-api/dist/issues/issues.service.js:136:44)",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "fingerprint": "a68bee656c0c1b40",
+    "service": "spira-front",
+    "type": "TypeError",
+    "message": "Cannot read properties of null (reading 'workflowState')",
+    "culprit": "IssueCard (.next/server/app/board/page.js:1)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-28T21:36:00.000Z",
+    "lastSeen": "2026-08-31T02:43:40.729Z",
+    "eventCount": 4,
+    "sample": {
+      "message": "Cannot read properties of null (reading 'workflowState')",
+      "stack": "TypeError: Cannot read properties of null (reading 'workflowState')\n    at IssueCard (/var/www/spira/front/.next/server/app/board/page.js:1:23310)\n    at renderWithHooks (/var/www/spira/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+      "logger": "next"
+    },
+    "events": [
+      {
+        "ts": "2026-08-28T21:36:00.000Z",
+        "traceId": "1ba6436033b293a38f2ffe0f6de021ae",
+        "message": "Cannot read properties of null (reading 'workflowState')",
+        "stack": "TypeError: Cannot read properties of null (reading 'workflowState')\n    at IssueCard (/var/www/spira/front/.next/server/app/board/page.js:1:23310)\n    at renderWithHooks (/var/www/spira/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 1
+      },
+      {
+        "ts": "2026-08-31T02:24:00.000Z",
+        "traceId": null,
+        "message": "Cannot read properties of null (reading 'workflowState')",
+        "stack": "TypeError: Cannot read properties of null (reading 'workflowState')\n    at IssueCard (/var/www/spira/front/.next/server/app/board/page.js:1:23310)\n    at renderWithHooks (/var/www/spira/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "fingerprint": "e5d5d758f203b13c",
+    "service": "trekker-api",
+    "type": "Error",
+    "message": "ENOSPC: no space left on device, write '/tmp/trekker-scan-8f2c.json'",
+    "culprit": "DiskScanService.persist (dist/scans/disk-scan.service.js:142)",
+    "level": 60,
+    "levelName": "fatal",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-30T19:12:00.000Z",
+    "lastSeen": "2026-09-01T03:49:29.993Z",
+    "eventCount": 3,
+    "sample": {
+      "message": "ENOSPC: no space left on device, write '/tmp/trekker-scan-8f2c.json'",
+      "stack": "Error: ENOSPC: no space left on device, write '/tmp/trekker-scan-8f2c.json'\n    at DiskScanService.persist (/var/www/trekker/nest-api/dist/scans/disk-scan.service.js:142:17)\n    at DiskScanService.run (/var/www/trekker/nest-api/dist/scans/disk-scan.service.js:97:22)",
+      "logger": "trekker"
+    },
+    "events": [
+      {
+        "ts": "2026-08-30T19:12:00.000Z",
+        "traceId": "1b4563fd02acbf3976060860cf3cd215",
+        "message": "ENOSPC: no space left on device, write '/tmp/trekker-scan-8f2c.json'",
+        "stack": "Error: ENOSPC: no space left on device, write '/tmp/trekker-scan-8f2c.json'\n    at DiskScanService.persist (/var/www/trekker/nest-api/dist/scans/disk-scan.service.js:142:17)\n    at DiskScanService.run (/var/www/trekker/nest-api/dist/scans/disk-scan.service.js:97:22)",
+        "count": 2
+      },
+      {
+        "ts": "2026-09-01T03:36:00.000Z",
+        "traceId": null,
+        "message": "ENOSPC: no space left on device, write '/tmp/trekker-scan-8f2c.json'",
+        "stack": "Error: ENOSPC: no space left on device, write '/tmp/trekker-scan-8f2c.json'\n    at DiskScanService.persist (/var/www/trekker/nest-api/dist/scans/disk-scan.service.js:142:17)\n    at DiskScanService.run (/var/www/trekker/nest-api/dist/scans/disk-scan.service.js:97:22)",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "fingerprint": "b4d975d996698f20",
+    "service": "trekker-front",
+    "type": "TypeError",
+    "message": "Cannot read properties of undefined (reading 'mtimeMs')",
+    "culprit": "Row (.next/server/app/browse/page.js:1)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": false,
+    "firstSeen": "2026-08-28T09:36:00.000Z",
+    "lastSeen": "2026-08-31T21:47:16.828Z",
+    "eventCount": 5,
+    "sample": {
+      "message": "Cannot read properties of undefined (reading 'mtimeMs')",
+      "stack": "TypeError: Cannot read properties of undefined (reading 'mtimeMs')\n    at Row (/var/www/trekker/front/.next/server/app/browse/page.js:1:31166)\n    at renderWithHooks (/var/www/trekker/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+      "logger": "next"
+    },
+    "events": [
+      {
+        "ts": "2026-08-28T09:36:00.000Z",
+        "traceId": "cee0614c1f632a322410a5199ca12bb7",
+        "message": "Cannot read properties of undefined (reading 'mtimeMs')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'mtimeMs')\n    at Row (/var/www/trekker/front/.next/server/app/browse/page.js:1:31166)\n    at renderWithHooks (/var/www/trekker/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 2
+      },
+      {
+        "ts": "2026-08-30T12:00:00.000Z",
+        "traceId": null,
+        "message": "Cannot read properties of undefined (reading 'mtimeMs')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'mtimeMs')\n    at Row (/var/www/trekker/front/.next/server/app/browse/page.js:1:31166)\n    at renderWithHooks (/var/www/trekker/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 1
+      },
+      {
+        "ts": "2026-08-31T21:36:00.000Z",
+        "traceId": "f6be5f17648389275dd915769dc4ab4a",
+        "message": "Cannot read properties of undefined (reading 'mtimeMs')",
+        "stack": "TypeError: Cannot read properties of undefined (reading 'mtimeMs')\n    at Row (/var/www/trekker/front/.next/server/app/browse/page.js:1:31166)\n    at renderWithHooks (/var/www/trekker/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "fingerprint": "3f1ac56e7e9bb1ca",
+    "service": "shatter-api",
+    "type": "PrismaClientKnownRequestError",
+    "message": "Timed out fetching a new connection from the connection pool",
+    "culprit": "ScoresService.top (dist/scores/scores.service.js:27)",
+    "level": 50,
+    "levelName": "error",
+    "status": "unresolved",
+    "regression": true,
+    "firstSeen": "2026-08-16T12:00:00.000Z",
+    "lastSeen": "2026-08-31T12:11:08.946Z",
+    "eventCount": 5,
+    "sample": {
+      "message": "Timed out fetching a new connection from the connection pool",
+      "stack": "PrismaClientKnownRequestError: Timed out fetching a new connection from the connection pool\n    at Proxy.findMany (/var/www/shatter/api/node_modules/@prisma/client/runtime/library.js:112:1363)\n    at ScoresService.top (/var/www/shatter/api/dist/scores/scores.service.js:27:30)",
+      "logger": "shatter"
+    },
+    "events": [
+      {
+        "ts": "2026-08-27T04:48:00.000Z",
+        "traceId": "7a3f646ed22bbde38ba7860f823da38e",
+        "message": "Timed out fetching a new connection from the connection pool",
+        "stack": "PrismaClientKnownRequestError: Timed out fetching a new connection from the connection pool\n    at Proxy.findMany (/var/www/shatter/api/node_modules/@prisma/client/runtime/library.js:112:1363)\n    at ScoresService.top (/var/www/shatter/api/dist/scores/scores.service.js:27:30)",
+        "count": 3
+      },
+      {
+        "ts": "2026-08-31T12:00:00.000Z",
+        "traceId": null,
+        "message": "Timed out fetching a new connection from the connection pool",
+        "stack": "PrismaClientKnownRequestError: Timed out fetching a new connection from the connection pool\n    at Proxy.findMany (/var/www/shatter/api/node_modules/@prisma/client/runtime/library.js:112:1363)\n    at ScoresService.top (/var/www/shatter/api/dist/scores/scores.service.js:27:30)",
+        "count": 2
+      }
+    ]
+  }
+]

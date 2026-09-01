@@ -1,0 +1,1414 @@
+[
+  {
+    "ruleKey": "error_rate",
+    "service": "worldweathr-api",
+    "severity": "warning",
+    "title": "5xx rate above threshold",
+    "expr": "rate(http_5xx[10m]) > 5%",
+    "threshold": 5,
+    "unit": "percent",
+    "value": 2.1,
+    "state": "resolved",
+    "openedAt": "2026-08-28T10:50:00.000Z",
+    "pendingSince": "2026-08-28T10:50:00.000Z",
+    "firedAt": "2026-08-28T10:55:00.000Z",
+    "resolvedAt": "2026-08-28T11:22:00.000Z",
+    "ackedAt": "2026-08-28T11:03:00.000Z",
+    "occurrences": 31,
+    "lastSeenAt": "2026-08-28T11:22:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-28T10:50:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 9.4
+      },
+      {
+        "ts": "2026-08-28T10:55:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 41.8
+      },
+      {
+        "ts": "2026-08-28T11:22:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 2.1
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "pfa-nest-api",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 240,
+    "state": "resolved",
+    "openedAt": "2026-08-31T10:04:00.000Z",
+    "pendingSince": "2026-08-31T10:04:00.000Z",
+    "firedAt": "2026-08-31T10:09:00.000Z",
+    "resolvedAt": "2026-08-31T10:51:00.000Z",
+    "ackedAt": null,
+    "occurrences": 44,
+    "lastSeenAt": "2026-08-31T10:51:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-31T10:04:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 1420
+      },
+      {
+        "ts": "2026-08-31T10:09:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 2380
+      },
+      {
+        "ts": "2026-08-31T10:51:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 240
+      }
+    ]
+  },
+  {
+    "ruleKey": "health_down",
+    "service": "worldweathr-api",
+    "severity": "critical",
+    "title": "Health endpoint failing",
+    "expr": "probe_failures[90s] >= 2",
+    "threshold": 2,
+    "unit": "count",
+    "value": 0,
+    "state": "resolved",
+    "openedAt": "2026-09-01T09:01:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-09-01T09:01:00.000Z",
+    "resolvedAt": "2026-09-01T09:22:00.000Z",
+    "ackedAt": "2026-09-01T09:06:00.000Z",
+    "occurrences": 20,
+    "lastSeenAt": "2026-09-01T09:22:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-09-01T09:01:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 2
+      },
+      {
+        "ts": "2026-09-01T09:22:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "ruleKey": "error_rate",
+    "service": "pfa-nest-api",
+    "severity": "warning",
+    "title": "5xx rate above threshold",
+    "expr": "rate(http_5xx[10m]) > 5%",
+    "threshold": 5,
+    "unit": "percent",
+    "value": 1.4,
+    "state": "resolved",
+    "openedAt": "2026-08-29T09:05:00.000Z",
+    "pendingSince": "2026-08-29T09:05:00.000Z",
+    "firedAt": "2026-08-29T09:11:00.000Z",
+    "resolvedAt": "2026-08-29T09:37:00.000Z",
+    "ackedAt": "2026-08-29T09:17:00.000Z",
+    "occurrences": 26,
+    "lastSeenAt": "2026-08-29T09:37:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-29T09:05:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 25
+      },
+      {
+        "ts": "2026-08-29T09:11:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 25
+      },
+      {
+        "ts": "2026-08-29T09:37:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 1.4
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "pfa-nest-api",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 576,
+    "state": "resolved",
+    "openedAt": "2026-08-31T14:35:00.000Z",
+    "pendingSince": "2026-08-31T14:35:00.000Z",
+    "firedAt": "2026-08-31T14:38:00.000Z",
+    "resolvedAt": "2026-08-31T15:08:00.000Z",
+    "ackedAt": "2026-08-31T14:46:00.000Z",
+    "occurrences": 30,
+    "lastSeenAt": "2026-08-31T15:08:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-31T14:35:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 1483
+      },
+      {
+        "ts": "2026-08-31T14:38:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 1483
+      },
+      {
+        "ts": "2026-08-31T15:08:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 576
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "worldweathr-api",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 236,
+    "state": "resolved",
+    "openedAt": "2026-08-27T21:42:00.000Z",
+    "pendingSince": "2026-08-27T21:42:00.000Z",
+    "firedAt": "2026-08-27T21:47:00.000Z",
+    "resolvedAt": "2026-08-27T21:59:00.000Z",
+    "ackedAt": null,
+    "occurrences": 12,
+    "lastSeenAt": "2026-08-27T21:59:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-27T21:42:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 1439
+      },
+      {
+        "ts": "2026-08-27T21:47:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 1439
+      },
+      {
+        "ts": "2026-08-27T21:59:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 236
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "spira-nest-api",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 245,
+    "state": "resolved",
+    "openedAt": "2026-08-25T19:46:00.000Z",
+    "pendingSince": "2026-08-25T19:46:00.000Z",
+    "firedAt": "2026-08-25T19:50:00.000Z",
+    "resolvedAt": "2026-08-25T20:22:00.000Z",
+    "ackedAt": "2026-08-25T19:54:00.000Z",
+    "occurrences": 32,
+    "lastSeenAt": "2026-08-25T20:22:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-25T19:46:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 3212
+      },
+      {
+        "ts": "2026-08-25T19:50:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 3212
+      },
+      {
+        "ts": "2026-08-25T20:22:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 245
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "spira-nest-api",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 217,
+    "state": "resolved",
+    "openedAt": "2026-08-28T21:41:00.000Z",
+    "pendingSince": "2026-08-28T21:41:00.000Z",
+    "firedAt": "2026-08-28T21:44:00.000Z",
+    "resolvedAt": "2026-08-28T22:10:00.000Z",
+    "ackedAt": "2026-08-28T21:51:00.000Z",
+    "occurrences": 26,
+    "lastSeenAt": "2026-08-28T22:10:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-28T21:41:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 3030
+      },
+      {
+        "ts": "2026-08-28T21:44:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 3030
+      },
+      {
+        "ts": "2026-08-28T22:10:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 217
+      }
+    ]
+  },
+  {
+    "ruleKey": "error_rate",
+    "service": "iknos-api",
+    "severity": "warning",
+    "title": "5xx rate above threshold",
+    "expr": "rate(http_5xx[10m]) > 5%",
+    "threshold": 5,
+    "unit": "percent",
+    "value": 1.8,
+    "state": "resolved",
+    "openedAt": "2026-08-27T06:57:00.000Z",
+    "pendingSince": "2026-08-27T06:57:00.000Z",
+    "firedAt": "2026-08-27T07:02:00.000Z",
+    "resolvedAt": "2026-08-27T07:18:00.000Z",
+    "ackedAt": null,
+    "occurrences": 16,
+    "lastSeenAt": "2026-08-27T07:18:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-27T06:57:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 6.5
+      },
+      {
+        "ts": "2026-08-27T07:02:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 6.5
+      },
+      {
+        "ts": "2026-08-27T07:18:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 1.8
+      }
+    ]
+  },
+  {
+    "ruleKey": "process_restart",
+    "service": "iknos-api",
+    "severity": "critical",
+    "title": "Process restarted",
+    "expr": "increase(pm2_restarts[10m]) > 0",
+    "threshold": 0,
+    "unit": "count",
+    "value": 0,
+    "state": "resolved",
+    "openedAt": "2026-08-28T13:25:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-28T13:25:00.000Z",
+    "resolvedAt": "2026-08-28T13:42:00.000Z",
+    "ackedAt": "2026-08-28T13:33:00.000Z",
+    "occurrences": 17,
+    "lastSeenAt": "2026-08-28T13:42:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-28T13:25:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 2
+      },
+      {
+        "ts": "2026-08-28T13:42:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "ruleKey": "error_rate",
+    "service": "zeus-nest-api",
+    "severity": "warning",
+    "title": "5xx rate above threshold",
+    "expr": "rate(http_5xx[10m]) > 5%",
+    "threshold": 5,
+    "unit": "percent",
+    "value": 1.1,
+    "state": "resolved",
+    "openedAt": "2026-08-26T07:53:00.000Z",
+    "pendingSince": "2026-08-26T07:53:00.000Z",
+    "firedAt": "2026-08-26T07:56:00.000Z",
+    "resolvedAt": "2026-08-26T08:23:00.000Z",
+    "ackedAt": null,
+    "occurrences": 27,
+    "lastSeenAt": "2026-08-26T08:23:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-26T07:53:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 28.2
+      },
+      {
+        "ts": "2026-08-26T07:56:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 28.2
+      },
+      {
+        "ts": "2026-08-26T08:23:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 1.1
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "bkmk-server",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 225,
+    "state": "resolved",
+    "openedAt": "2026-08-29T02:41:00.000Z",
+    "pendingSince": "2026-08-29T02:41:00.000Z",
+    "firedAt": "2026-08-29T02:47:00.000Z",
+    "resolvedAt": "2026-08-29T03:24:00.000Z",
+    "ackedAt": null,
+    "occurrences": 37,
+    "lastSeenAt": "2026-08-29T03:24:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-29T02:41:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 2014
+      },
+      {
+        "ts": "2026-08-29T02:47:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 2014
+      },
+      {
+        "ts": "2026-08-29T03:24:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 225
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "bkmk-server",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 249,
+    "state": "resolved",
+    "openedAt": "2026-08-30T16:16:00.000Z",
+    "pendingSince": "2026-08-30T16:16:00.000Z",
+    "firedAt": "2026-08-30T16:21:00.000Z",
+    "resolvedAt": "2026-08-30T16:39:00.000Z",
+    "ackedAt": null,
+    "occurrences": 18,
+    "lastSeenAt": "2026-08-30T16:39:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-30T16:16:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 2026
+      },
+      {
+        "ts": "2026-08-30T16:21:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 2026
+      },
+      {
+        "ts": "2026-08-30T16:39:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 249
+      }
+    ]
+  },
+  {
+    "ruleKey": "no_logs",
+    "service": "trekker-api",
+    "severity": "warning",
+    "title": "Service has gone silent",
+    "expr": "log_lines[1h] >= 60 and absent(log_lines[15m])",
+    "threshold": 60,
+    "unit": "count",
+    "value": 74,
+    "state": "resolved",
+    "openedAt": "2026-08-26T18:43:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-26T18:43:00.000Z",
+    "resolvedAt": "2026-08-26T19:14:00.000Z",
+    "ackedAt": "2026-08-26T18:51:00.000Z",
+    "occurrences": 31,
+    "lastSeenAt": "2026-08-26T19:14:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-26T18:43:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 368
+      },
+      {
+        "ts": "2026-08-26T19:14:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 74
+      }
+    ]
+  },
+  {
+    "ruleKey": "no_logs",
+    "service": "trekker-api",
+    "severity": "warning",
+    "title": "Service has gone silent",
+    "expr": "log_lines[1h] >= 60 and absent(log_lines[15m])",
+    "threshold": 60,
+    "unit": "count",
+    "value": 241,
+    "state": "resolved",
+    "openedAt": "2026-08-31T01:59:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-31T01:59:00.000Z",
+    "resolvedAt": "2026-08-31T02:23:00.000Z",
+    "ackedAt": null,
+    "occurrences": 24,
+    "lastSeenAt": "2026-08-31T02:23:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-31T01:59:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 100
+      },
+      {
+        "ts": "2026-08-31T02:23:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 241
+      }
+    ]
+  },
+  {
+    "ruleKey": "no_logs",
+    "service": "shatter-api",
+    "severity": "warning",
+    "title": "Service has gone silent",
+    "expr": "log_lines[1h] >= 60 and absent(log_lines[15m])",
+    "threshold": 60,
+    "unit": "count",
+    "value": 372,
+    "state": "resolved",
+    "openedAt": "2026-08-26T10:52:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-26T10:52:00.000Z",
+    "resolvedAt": "2026-08-26T11:04:00.000Z",
+    "ackedAt": null,
+    "occurrences": 12,
+    "lastSeenAt": "2026-08-26T11:04:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-26T10:52:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 289
+      },
+      {
+        "ts": "2026-08-26T11:04:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 372
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "shatter-api",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 236,
+    "state": "resolved",
+    "openedAt": "2026-08-30T23:14:00.000Z",
+    "pendingSince": "2026-08-30T23:14:00.000Z",
+    "firedAt": "2026-08-30T23:18:00.000Z",
+    "resolvedAt": "2026-08-30T23:46:00.000Z",
+    "ackedAt": null,
+    "occurrences": 28,
+    "lastSeenAt": "2026-08-30T23:46:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-30T23:14:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 3263
+      },
+      {
+        "ts": "2026-08-30T23:18:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 3263
+      },
+      {
+        "ts": "2026-08-30T23:46:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 236
+      }
+    ]
+  },
+  {
+    "ruleKey": "no_logs",
+    "service": "shatter-api",
+    "severity": "warning",
+    "title": "Service has gone silent",
+    "expr": "log_lines[1h] >= 60 and absent(log_lines[15m])",
+    "threshold": 60,
+    "unit": "count",
+    "value": 129,
+    "state": "resolved",
+    "openedAt": "2026-08-27T19:59:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-27T19:59:00.000Z",
+    "resolvedAt": "2026-08-27T20:20:00.000Z",
+    "ackedAt": "2026-08-27T20:04:00.000Z",
+    "occurrences": 21,
+    "lastSeenAt": "2026-08-27T20:20:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-27T19:59:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 361
+      },
+      {
+        "ts": "2026-08-27T20:20:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 129
+      }
+    ]
+  },
+  {
+    "ruleKey": "error_rate",
+    "service": "1991chat-backend",
+    "severity": "warning",
+    "title": "5xx rate above threshold",
+    "expr": "rate(http_5xx[10m]) > 5%",
+    "threshold": 5,
+    "unit": "percent",
+    "value": 0.7,
+    "state": "resolved",
+    "openedAt": "2026-08-31T03:21:00.000Z",
+    "pendingSince": "2026-08-31T03:21:00.000Z",
+    "firedAt": "2026-08-31T03:24:00.000Z",
+    "resolvedAt": "2026-08-31T03:43:00.000Z",
+    "ackedAt": null,
+    "occurrences": 19,
+    "lastSeenAt": "2026-08-31T03:43:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-31T03:21:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 34.8
+      },
+      {
+        "ts": "2026-08-31T03:24:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 34.8
+      },
+      {
+        "ts": "2026-08-31T03:43:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0.7
+      }
+    ]
+  },
+  {
+    "ruleKey": "no_logs",
+    "service": "conway-gol-api",
+    "severity": "warning",
+    "title": "Service has gone silent",
+    "expr": "log_lines[1h] >= 60 and absent(log_lines[15m])",
+    "threshold": 60,
+    "unit": "count",
+    "value": 328,
+    "state": "resolved",
+    "openedAt": "2026-08-31T16:55:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-31T16:55:00.000Z",
+    "resolvedAt": "2026-08-31T16:59:00.000Z",
+    "ackedAt": null,
+    "occurrences": 4,
+    "lastSeenAt": "2026-08-31T16:59:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-31T16:55:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 328
+      },
+      {
+        "ts": "2026-08-31T16:59:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 328
+      }
+    ]
+  },
+  {
+    "ruleKey": "process_restart",
+    "service": "conway-gol-api",
+    "severity": "critical",
+    "title": "Process restarted",
+    "expr": "increase(pm2_restarts[10m]) > 0",
+    "threshold": 0,
+    "unit": "count",
+    "value": 0,
+    "state": "resolved",
+    "openedAt": "2026-08-29T23:03:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-29T23:03:00.000Z",
+    "resolvedAt": "2026-08-29T23:32:00.000Z",
+    "ackedAt": "2026-08-29T23:05:00.000Z",
+    "occurrences": 29,
+    "lastSeenAt": "2026-08-29T23:32:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-29T23:03:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 3
+      },
+      {
+        "ts": "2026-08-29T23:32:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "ruleKey": "process_restart",
+    "service": "conway-gol-api",
+    "severity": "critical",
+    "title": "Process restarted",
+    "expr": "increase(pm2_restarts[10m]) > 0",
+    "threshold": 0,
+    "unit": "count",
+    "value": 0,
+    "state": "resolved",
+    "openedAt": "2026-08-28T22:48:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-28T22:48:00.000Z",
+    "resolvedAt": "2026-08-28T23:18:00.000Z",
+    "ackedAt": null,
+    "occurrences": 30,
+    "lastSeenAt": "2026-08-28T23:18:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-28T22:48:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 3
+      },
+      {
+        "ts": "2026-08-28T23:18:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "ruleKey": "error_rate",
+    "service": "hiwaysim",
+    "severity": "warning",
+    "title": "5xx rate above threshold",
+    "expr": "rate(http_5xx[10m]) > 5%",
+    "threshold": 5,
+    "unit": "percent",
+    "value": 0.3,
+    "state": "resolved",
+    "openedAt": "2026-08-28T10:54:00.000Z",
+    "pendingSince": "2026-08-28T10:54:00.000Z",
+    "firedAt": "2026-08-28T10:58:00.000Z",
+    "resolvedAt": "2026-08-28T11:11:00.000Z",
+    "ackedAt": "2026-08-28T11:01:00.000Z",
+    "occurrences": 13,
+    "lastSeenAt": "2026-08-28T11:11:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-28T10:54:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 31.9
+      },
+      {
+        "ts": "2026-08-28T10:58:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 31.9
+      },
+      {
+        "ts": "2026-08-28T11:11:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0.3
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "iknos-front",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 194,
+    "state": "resolved",
+    "openedAt": "2026-08-28T11:04:00.000Z",
+    "pendingSince": "2026-08-28T11:04:00.000Z",
+    "firedAt": "2026-08-28T11:09:00.000Z",
+    "resolvedAt": "2026-08-28T11:38:00.000Z",
+    "ackedAt": "2026-08-28T11:11:00.000Z",
+    "occurrences": 29,
+    "lastSeenAt": "2026-08-28T11:38:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-28T11:04:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 1485
+      },
+      {
+        "ts": "2026-08-28T11:09:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 1485
+      },
+      {
+        "ts": "2026-08-28T11:38:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 194
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "iknos-front",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 560,
+    "state": "resolved",
+    "openedAt": "2026-08-31T20:08:00.000Z",
+    "pendingSince": "2026-08-31T20:08:00.000Z",
+    "firedAt": "2026-08-31T20:13:00.000Z",
+    "resolvedAt": "2026-08-31T20:20:00.000Z",
+    "ackedAt": "2026-08-31T20:19:00.000Z",
+    "occurrences": 7,
+    "lastSeenAt": "2026-08-31T20:20:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-31T20:08:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 2346
+      },
+      {
+        "ts": "2026-08-31T20:13:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 2346
+      },
+      {
+        "ts": "2026-08-31T20:20:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 560
+      }
+    ]
+  },
+  {
+    "ruleKey": "process_restart",
+    "service": "pfa-front",
+    "severity": "critical",
+    "title": "Process restarted",
+    "expr": "increase(pm2_restarts[10m]) > 0",
+    "threshold": 0,
+    "unit": "count",
+    "value": 0,
+    "state": "resolved",
+    "openedAt": "2026-08-31T14:56:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-31T14:56:00.000Z",
+    "resolvedAt": "2026-08-31T15:30:00.000Z",
+    "ackedAt": null,
+    "occurrences": 34,
+    "lastSeenAt": "2026-08-31T15:30:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-31T14:56:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 1
+      },
+      {
+        "ts": "2026-08-31T15:30:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "ruleKey": "health_down",
+    "service": "pfa-front",
+    "severity": "critical",
+    "title": "Health endpoint failing",
+    "expr": "probe_failures[90s] >= 2",
+    "threshold": 2,
+    "unit": "count",
+    "value": 0,
+    "state": "resolved",
+    "openedAt": "2026-08-29T19:07:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-29T19:07:00.000Z",
+    "resolvedAt": "2026-08-29T19:45:00.000Z",
+    "ackedAt": null,
+    "occurrences": 38,
+    "lastSeenAt": "2026-08-29T19:45:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-29T19:07:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 3
+      },
+      {
+        "ts": "2026-08-29T19:45:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "pfa-front",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 194,
+    "state": "resolved",
+    "openedAt": "2026-09-01T02:29:00.000Z",
+    "pendingSince": "2026-09-01T02:29:00.000Z",
+    "firedAt": "2026-09-01T02:35:00.000Z",
+    "resolvedAt": "2026-09-01T03:10:00.000Z",
+    "ackedAt": null,
+    "occurrences": 35,
+    "lastSeenAt": "2026-09-01T03:10:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-09-01T02:29:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 2501
+      },
+      {
+        "ts": "2026-09-01T02:35:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 2501
+      },
+      {
+        "ts": "2026-09-01T03:10:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 194
+      }
+    ]
+  },
+  {
+    "ruleKey": "process_restart",
+    "service": "spira-front",
+    "severity": "critical",
+    "title": "Process restarted",
+    "expr": "increase(pm2_restarts[10m]) > 0",
+    "threshold": 0,
+    "unit": "count",
+    "value": 0,
+    "state": "resolved",
+    "openedAt": "2026-08-30T13:33:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-30T13:33:00.000Z",
+    "resolvedAt": "2026-08-30T14:03:00.000Z",
+    "ackedAt": "2026-08-30T13:38:00.000Z",
+    "occurrences": 30,
+    "lastSeenAt": "2026-08-30T14:03:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-30T13:33:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 1
+      },
+      {
+        "ts": "2026-08-30T14:03:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "ruleKey": "process_restart",
+    "service": "zeus-front",
+    "severity": "critical",
+    "title": "Process restarted",
+    "expr": "increase(pm2_restarts[10m]) > 0",
+    "threshold": 0,
+    "unit": "count",
+    "value": 0,
+    "state": "resolved",
+    "openedAt": "2026-08-27T12:37:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-27T12:37:00.000Z",
+    "resolvedAt": "2026-08-27T13:09:00.000Z",
+    "ackedAt": null,
+    "occurrences": 32,
+    "lastSeenAt": "2026-08-27T13:09:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-27T12:37:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 1
+      },
+      {
+        "ts": "2026-08-27T13:09:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "zeus-front",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 381,
+    "state": "resolved",
+    "openedAt": "2026-08-26T13:40:00.000Z",
+    "pendingSince": "2026-08-26T13:40:00.000Z",
+    "firedAt": "2026-08-26T13:45:00.000Z",
+    "resolvedAt": "2026-08-26T13:56:00.000Z",
+    "ackedAt": null,
+    "occurrences": 11,
+    "lastSeenAt": "2026-08-26T13:56:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-26T13:40:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 2928
+      },
+      {
+        "ts": "2026-08-26T13:45:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 2928
+      },
+      {
+        "ts": "2026-08-26T13:56:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 381
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "zeus-front",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 267,
+    "state": "resolved",
+    "openedAt": "2026-08-28T13:21:00.000Z",
+    "pendingSince": "2026-08-28T13:21:00.000Z",
+    "firedAt": "2026-08-28T13:26:00.000Z",
+    "resolvedAt": "2026-08-28T13:41:00.000Z",
+    "ackedAt": "2026-08-28T13:27:00.000Z",
+    "occurrences": 15,
+    "lastSeenAt": "2026-08-28T13:41:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-28T13:21:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 2765
+      },
+      {
+        "ts": "2026-08-28T13:26:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 2765
+      },
+      {
+        "ts": "2026-08-28T13:41:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 267
+      }
+    ]
+  },
+  {
+    "ruleKey": "process_restart",
+    "service": "worldweathr-front",
+    "severity": "critical",
+    "title": "Process restarted",
+    "expr": "increase(pm2_restarts[10m]) > 0",
+    "threshold": 0,
+    "unit": "count",
+    "value": 0,
+    "state": "resolved",
+    "openedAt": "2026-08-26T18:24:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-26T18:24:00.000Z",
+    "resolvedAt": "2026-08-26T18:28:00.000Z",
+    "ackedAt": null,
+    "occurrences": 4,
+    "lastSeenAt": "2026-08-26T18:28:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-26T18:24:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 3
+      },
+      {
+        "ts": "2026-08-26T18:28:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "ruleKey": "no_logs",
+    "service": "worldweathr-front",
+    "severity": "warning",
+    "title": "Service has gone silent",
+    "expr": "log_lines[1h] >= 60 and absent(log_lines[15m])",
+    "threshold": 60,
+    "unit": "count",
+    "value": 176,
+    "state": "resolved",
+    "openedAt": "2026-08-30T00:10:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-30T00:10:00.000Z",
+    "resolvedAt": "2026-08-30T00:18:00.000Z",
+    "ackedAt": null,
+    "occurrences": 8,
+    "lastSeenAt": "2026-08-30T00:18:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-30T00:10:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 231
+      },
+      {
+        "ts": "2026-08-30T00:18:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 176
+      }
+    ]
+  },
+  {
+    "ruleKey": "health_down",
+    "service": "trekker-front",
+    "severity": "critical",
+    "title": "Health endpoint failing",
+    "expr": "probe_failures[90s] >= 2",
+    "threshold": 2,
+    "unit": "count",
+    "value": 0,
+    "state": "resolved",
+    "openedAt": "2026-08-26T14:36:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-26T14:36:00.000Z",
+    "resolvedAt": "2026-08-26T15:10:00.000Z",
+    "ackedAt": null,
+    "occurrences": 34,
+    "lastSeenAt": "2026-08-26T15:10:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-26T14:36:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 2
+      },
+      {
+        "ts": "2026-08-26T15:10:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "ruleKey": "error_rate",
+    "service": "trekker-front",
+    "severity": "warning",
+    "title": "5xx rate above threshold",
+    "expr": "rate(http_5xx[10m]) > 5%",
+    "threshold": 5,
+    "unit": "percent",
+    "value": 1.4,
+    "state": "resolved",
+    "openedAt": "2026-08-26T23:31:00.000Z",
+    "pendingSince": "2026-08-26T23:31:00.000Z",
+    "firedAt": "2026-08-26T23:36:00.000Z",
+    "resolvedAt": "2026-08-26T23:56:00.000Z",
+    "ackedAt": null,
+    "occurrences": 20,
+    "lastSeenAt": "2026-08-26T23:56:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-26T23:31:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 10.5
+      },
+      {
+        "ts": "2026-08-26T23:36:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 10.5
+      },
+      {
+        "ts": "2026-08-26T23:56:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 1.4
+      }
+    ]
+  },
+  {
+    "ruleKey": "latency_p95",
+    "service": "trekker-front",
+    "severity": "warning",
+    "title": "p95 latency above threshold",
+    "expr": "p95(http_duration[10m]) > 1000ms",
+    "threshold": 1000,
+    "unit": "ms",
+    "value": 199,
+    "state": "resolved",
+    "openedAt": "2026-08-29T20:35:00.000Z",
+    "pendingSince": "2026-08-29T20:35:00.000Z",
+    "firedAt": "2026-08-29T20:41:00.000Z",
+    "resolvedAt": "2026-08-29T20:58:00.000Z",
+    "ackedAt": "2026-08-29T20:47:00.000Z",
+    "occurrences": 17,
+    "lastSeenAt": "2026-08-29T20:58:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-29T20:35:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 2142
+      },
+      {
+        "ts": "2026-08-29T20:41:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 2142
+      },
+      {
+        "ts": "2026-08-29T20:58:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 199
+      }
+    ]
+  },
+  {
+    "ruleKey": "error_rate",
+    "service": "bkmk-front",
+    "severity": "warning",
+    "title": "5xx rate above threshold",
+    "expr": "rate(http_5xx[10m]) > 5%",
+    "threshold": 5,
+    "unit": "percent",
+    "value": 1.6,
+    "state": "resolved",
+    "openedAt": "2026-09-01T00:33:00.000Z",
+    "pendingSince": "2026-09-01T00:33:00.000Z",
+    "firedAt": "2026-09-01T00:38:00.000Z",
+    "resolvedAt": "2026-09-01T00:57:00.000Z",
+    "ackedAt": "2026-09-01T00:42:00.000Z",
+    "occurrences": 19,
+    "lastSeenAt": "2026-09-01T00:57:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-09-01T00:33:00.000Z",
+        "fromState": null,
+        "toState": "pending",
+        "value": 23
+      },
+      {
+        "ts": "2026-09-01T00:38:00.000Z",
+        "fromState": "pending",
+        "toState": "firing",
+        "value": 23
+      },
+      {
+        "ts": "2026-09-01T00:57:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 1.6
+      }
+    ]
+  },
+  {
+    "ruleKey": "health_down",
+    "service": "bkmk-front",
+    "severity": "critical",
+    "title": "Health endpoint failing",
+    "expr": "probe_failures[90s] >= 2",
+    "threshold": 2,
+    "unit": "count",
+    "value": 0,
+    "state": "resolved",
+    "openedAt": "2026-08-26T18:29:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-26T18:29:00.000Z",
+    "resolvedAt": "2026-08-26T18:55:00.000Z",
+    "ackedAt": null,
+    "occurrences": 26,
+    "lastSeenAt": "2026-08-26T18:55:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-26T18:29:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 2
+      },
+      {
+        "ts": "2026-08-26T18:55:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0
+      }
+    ]
+  },
+  {
+    "ruleKey": "health_down",
+    "service": "1991chat-front",
+    "severity": "critical",
+    "title": "Health endpoint failing",
+    "expr": "probe_failures[90s] >= 2",
+    "threshold": 2,
+    "unit": "count",
+    "value": 0,
+    "state": "resolved",
+    "openedAt": "2026-08-31T02:49:00.000Z",
+    "pendingSince": null,
+    "firedAt": "2026-08-31T02:49:00.000Z",
+    "resolvedAt": "2026-08-31T03:21:00.000Z",
+    "ackedAt": "2026-08-31T02:55:00.000Z",
+    "occurrences": 32,
+    "lastSeenAt": "2026-08-31T03:21:00.000Z",
+    "changes": [
+      {
+        "ts": "2026-08-31T02:49:00.000Z",
+        "fromState": null,
+        "toState": "firing",
+        "value": 3
+      },
+      {
+        "ts": "2026-08-31T03:21:00.000Z",
+        "fromState": "firing",
+        "toState": "resolved",
+        "value": 0
+      }
+    ]
+  }
+]

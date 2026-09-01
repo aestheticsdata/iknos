@@ -414,8 +414,9 @@ is a row in a database bound to `127.0.0.1` and means nothing on ks-b:
 | recovery passphrase | `iknos local recovery` — 13 is the floor (`MIN_PASSPHRASE`) |
 
 What a fresh checkout does **not** get is data. The collector reads `~/.pm2/logs/*.log` and
-scrapes `/metrics` endpoints that only exist on ks-b, so the log panel, the histogram and the
-whole service view come up empty on a laptop. A loadable corpus of fixtures is tracked as IKN-61.
+scrapes `/metrics` endpoints that only exist on ks-b, so on a bare laptop the views come up
+empty. The answer is the committed mock corpus (IKN-61): run `pnpm mock` in `nest-api/` and the
+last seven days fill in — see `nest-api/mock/README.md` for what it loads and how prod uses it.
 
 ## Milestones
 
