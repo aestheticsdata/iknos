@@ -99,49 +99,41 @@ export const Signals = ({
   error: string | null;
 }) => (
   <div className="flex flex-none flex-col gap-1.5">
-    {signals !== null && !signals.scraped ? (
-      /*
-       * One sentence spanning the row, rather than four identical empty boxes.
-       *
-       * Four of them read as a rendering failure; one reads as an answer — and it is a permanent
-       * one, about a service that exposes no `/metrics` at all rather than a range that happens to
-       * be quiet.
-       */
-      /* 100px, matching the tile row: a service nobody scrapes gets one sentence instead of four
-         tiles, and the log panel underneath must stay put whichever service the rail is on. */
-      <section className="flex h-[100px] flex-none items-center rounded-card border border-work-border bg-work-surface px-3">
-        <p className="text-row text-work-text-muted">{SERVICE_TEXT.notScraped}</p>
-      </section>
-    ) : (
-      /* The row's height is pinned rather than left to the content. A tile is 99.5px of fixed rows
-         — kicker, value, a 26px chart box — so it would barely move; but "barely" is the whole
-         failure mode, and the log panel below must not jump a line every time a range changes. */
-      <div className="grid h-[100px] grid-cols-4 gap-2.75">
-        <ThroughputTile
-          service={service}
-          signals={signals}
-          loading={loading}
-          error={error}
-        />
-        <ErrorRateTile
-          service={service}
-          signals={signals}
-          range={range}
-          loading={loading}
-          error={error}
-        />
-        <LatencyTile
-          service={service}
-          signals={signals}
-          loading={loading}
-          error={error}
-        />
-        <RuntimeTile
-          runtime={runtime}
-          loading={runtimeLoading}
-        />
-      </div>
-    )}
+    {/* Four tiles, always — an unscraped service included. The full-width sentence this replaces
+       made a service switch flash four loaders and then collapse them into one band, which read
+       as the row failing to render rather than as an answer. The tiles hold their geometry in
+       every state; when nothing is scraped, each one names its own absence (`notScraped`), the
+       same way a quiet range or a failed request already speak per tile.
+
+       The row's height is pinned rather than left to the content. A tile is 99.5px of fixed rows
+       — kicker, value, a 26px chart box — so it would barely move; but "barely" is the whole
+       failure mode, and the log panel below must not jump a line every time a range changes. */}
+    <div className="grid h-[100px] grid-cols-4 gap-2.75">
+      <ThroughputTile
+        service={service}
+        signals={signals}
+        loading={loading}
+        error={error}
+      />
+      <ErrorRateTile
+        service={service}
+        signals={signals}
+        range={range}
+        loading={loading}
+        error={error}
+      />
+      <LatencyTile
+        service={service}
+        signals={signals}
+        loading={loading}
+        error={error}
+      />
+      <RuntimeTile
+        runtime={runtime}
+        loading={runtimeLoading}
+        notScraped={signals !== null && !signals.scraped}
+      />
+    </div>
   </div>
 );
 
@@ -179,6 +171,7 @@ const ThroughputTile = ({
           loading={loading}
           error={error}
           points={points}
+          notScraped={signals !== null && !signals.scraped}
         />
       )}
     </SignalTile>
@@ -237,6 +230,7 @@ const ErrorRateTile = ({
           loading={loading}
           error={error}
           points={points}
+          notScraped={signals !== null && !signals.scraped}
         />
       )}
     </SignalTile>
@@ -288,6 +282,7 @@ const LatencyTile = ({
           loading={loading}
           error={error}
           points={points}
+          notScraped={signals !== null && !signals.scraped}
         />
       )}
     </SignalTile>
@@ -302,7 +297,16 @@ const LatencyTile = ({
  * — the exporter publishes no maximum. It is that nothing is idle, and it goes red only once
  * somebody is queued behind that, which is the request that becomes the 500.
  */
-const RuntimeTile = ({ runtime, loading }: { runtime: NodeRuntime | null; loading: boolean }) => {
+const RuntimeTile = ({
+  runtime,
+  loading,
+  notScraped,
+}: {
+  runtime: NodeRuntime | null;
+  loading: boolean;
+  /** Same fact as the chart tiles': no metricsUrl, so there will never be a reading to wait for. */
+  notScraped: boolean;
+}) => {
   const heap = formatHeap(runtime?.heapUsedBytes ?? null);
   const lag = runtime?.eventLoopLagMs ?? null;
   const pool = runtime?.pool ?? null;
@@ -321,7 +325,15 @@ const RuntimeTile = ({ runtime, loading }: { runtime: NodeRuntime | null; loadin
         /* "No reading" is a claim, and it cannot be made while the reading is still in flight —
            which this line said in a comment and then printed in the same ink, in the same box, not
            moving, as the claim itself (IKN-57). */
-        <TileEmpty>{loading ? <Pending>{SERVICE_TEXT.loading}</Pending> : SERVICE_TEXT.runtimeSilent}</TileEmpty>
+        <TileEmpty>
+          {loading ? (
+            <Pending>{SERVICE_TEXT.loading}</Pending>
+          ) : notScraped ? (
+            SERVICE_TEXT.notScraped
+          ) : (
+            SERVICE_TEXT.runtimeSilent
+          )}
+        </TileEmpty>
       ) : (
         /* The two rows have to fit the tile's 26px chart box, which they only do at a line height
            of 1: `text-micro` inherits the document's 1.5 and two rows of it are 33px, which
@@ -441,11 +453,16 @@ const NoChart = ({
   loading,
   error,
   points,
+  notScraped = false,
 }: {
   loading: boolean;
   error: string | null;
   points: { v: number | null }[];
-}) => <TileEmpty>{loading ? <Pending>{SERVICE_TEXT.loading}</Pending> : emptyWords(error, points)}</TileEmpty>;
+  /** The registry row has no metricsUrl — a permanent fact, not a quiet range. */
+  notScraped?: boolean;
+}) => (
+  <TileEmpty>{loading ? <Pending>{SERVICE_TEXT.loading}</Pending> : emptyWords(error, points, notScraped)}</TileEmpty>
+);
 
 /**
  * Why a tile has no chart, in the fewest honest words.
@@ -458,10 +475,14 @@ const NoChart = ({
  * any kind — but all three used to come back as a `string` and land in the same paragraph, so the
  * distinction this function's own comment drew was erased by its return type.
  */
-const emptyWords = (error: string | null, points: { v: number | null }[]): string => {
+const emptyWords = (error: string | null, points: { v: number | null }[], notScraped: boolean): string => {
   // A request that failed is not a range that was quiet. Reporting the second for the first is the
   // one thing a monitoring tool must never do.
   if (error !== null) return error;
+
+  // Nor is an unscraped service a quiet range: "no samples" implies a scrape that found nothing,
+  // and this service has no scrape at all.
+  if (notScraped) return SERVICE_TEXT.notScraped;
 
   const known = points.filter((point) => point.v !== null).length;
   return known === 0 ? SERVICE_TEXT.noSamples : SERVICE_TEXT.noSeries;

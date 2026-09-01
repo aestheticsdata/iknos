@@ -82,8 +82,11 @@ export const SERVICE_TEXT = {
   latencyChart: (name: string) => `${name} p95 latency over the selected range`,
 
   /* ── Empty and error states ───────────────────────────────────────────────────────────────── */
-  /* The registry row has no metricsUrl. A permanent fact about the world, not a range to widen. */
-  notScraped: "No /metrics endpoint is registered for this service — nothing is scraped from it.",
+  /* The registry row has no metricsUrl. A permanent fact about the world, not a range to widen —
+     said once per tile, in tile budget. The full-width sentence this replaces made a service
+     switch read as four tiles collapsing into a rendering failure; four steady tiles each naming
+     their own absence keep the row's geometry and still answer. */
+  notScraped: "No /metrics to read.",
   /* Scraped, but this range holds nothing that can be quoted. */
   noSamples: "No samples in this range.",
   /* One reading, and a line needs two. Kept short: the chart box is a fixed 26px and every one of

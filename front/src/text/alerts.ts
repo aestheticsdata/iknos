@@ -17,6 +17,9 @@ export const ALERTS_TEXT = {
    * product.
    */
   none: "Nothing firing for this service.",
+  /* When nothing is firing, the panel shows what fired last — a quiet service with a history is
+     a different thing from a service nobody has ever looked at, and the cards say `RESOLVED`. */
+  recentResolved: "nothing firing · last resolved",
   failed: "Could not read alerts.",
   nothingYet: "The engine has not evaluated anything yet.",
   retry: "retry",
@@ -28,7 +31,16 @@ export const ALERTS_TEXT = {
   segmentLabel: "State",
   severityLabel: "Severity",
   allSeverities: "all",
-  emptyTable: "Nothing here.",
+  /*
+   * Named, or it reads as a shrug. A "5 alerts" badge beside a bare "Nothing here." was measured
+   * to produce three screenshots of legitimate fury in one evening: the alerts live on OTHER
+   * services, and an empty scoped list must say which question it answered and where the rest
+   * are. The fleet-wide empty keeps the short form — there is nothing further to point at.
+   */
+  emptyTable: (state: string, service: string | null): string =>
+    service === null
+      ? `No ${state === "all" ? "" : `${state} `}alerts anywhere.`
+      : `No ${state === "all" ? "" : `${state} `}alerts for ${service} — "all" in the rail shows the whole fleet's.`,
   loadMore: "load more",
 
   /* Per-card. `state` is the badge; the mockup sets it in caps. */

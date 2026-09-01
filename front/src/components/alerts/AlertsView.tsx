@@ -99,7 +99,7 @@ export const AlertsView = () => {
             ) : alerts.error !== null ? (
               alerts.error
             ) : (
-              ALERTS_TEXT.emptyTable
+              ALERTS_TEXT.emptyTable(ALERTS_TEXT.segments[view], service)
             )}
           </p>
         ) : (

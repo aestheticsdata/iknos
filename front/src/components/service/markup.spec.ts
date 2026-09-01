@@ -15,8 +15,8 @@ import type { ComponentProps } from "react";
  * covered, "pretending otherwise with a jsdom environment would only invite it". These are not
  * that: `renderToStaticMarkup` needs no DOM, no environment and no act(), and what it checks is
  * half of this ticket's Done list — the release chip that must keep its place, the restarts chip
- * that turns red, the pool bar that reaches red at saturation, the unscraped service that gets a
- * sentence instead of four empty boxes.
+ * that turns red, the pool bar that reaches red at saturation, the unscraped service whose four
+ * tiles each name their own absence instead of collapsing into a band.
  *
  * Every one of those is a rule about *what is rendered*, and every one of them would otherwise be
  * verified by a person opening a browser and remembering to look. Nothing here asserts a layout,
@@ -171,10 +171,19 @@ describe("service header", () => {
 });
 
 describe("signal tiles", () => {
-  it("answers an unscraped service with one sentence rather than four empty tiles", () => {
+  it("keeps all four tiles for an unscraped service, each naming its own absence", () => {
     const html = tiles({
       service: "bkmk-server",
-      signals: signals({ scraped: false, source: "none" }),
+      // The real payload for an unscraped service: the flag down AND the series empty — the
+      // server never queries the tables, so the spec must not smuggle points past the flag.
+      signals: signals({
+        scraped: false,
+        source: "none",
+        bucketMs: 0,
+        throughput: { value: null, points: [] },
+        errorRate: { value: null, points: [] },
+        p95: { value: null, points: [] },
+      }),
       runtime: null,
       range: "1h",
       loading: false,
@@ -182,8 +191,12 @@ describe("signal tiles", () => {
       error: null,
     });
 
-    expect(html).toContain("No /metrics endpoint is registered");
-    expect(html).not.toContain("THROUGHPUT");
+    // The band this replaces collapsed the row on every rail switch, which read as a rendering
+    // failure. The tiles stay put; the absence is said per tile, and never as "no samples" — an
+    // unscraped service is not a quiet range.
+    expect(html).toContain("THROUGHPUT");
+    expect((html.match(/No \/metrics to read\./g) ?? []).length).toBe(4);
+    expect(html).not.toContain("No samples in this range");
   });
 
   it("draws the pool bar red and full at saturation, and names the waiters", () => {

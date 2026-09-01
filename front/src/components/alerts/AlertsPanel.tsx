@@ -26,6 +26,15 @@ import { AlertCard } from "./AlertCard";
  */
 export const AlertsPanel = ({ service }: { service: string }) => {
   const alerts = useAlerts(service, "open", { limit: RAIL_LIMIT });
+  /*
+   * What fired last, asked only once nothing is firing. A panel that says "nothing" all day on a
+   * service that had two incidents this week is hiding the one thing a rail panel is for — and the
+   * `RESOLVED` badge on each card keeps the two lists impossible to confuse.
+   */
+  const recent = useAlerts(service, "resolved", {
+    limit: RAIL_LIMIT,
+    active: !alerts.loading && alerts.error === null && alerts.rows.length === 0,
+  });
   const [, openAlert] = useOpenAlert();
   const search = useSearchParams().toString();
 
@@ -72,6 +81,20 @@ export const AlertsPanel = ({ service }: { service: string }) => {
               {ALERTS_TEXT.more(remaining)}
             </Link>
           )}
+        </>
+      ) : recent.rows.length > 0 ? (
+        <>
+          <p className={cn("px-2.75 pt-2 pb-1 text-kicker tracking-kicker uppercase", SURFACE_TEXT_DIM.work)}>
+            {ALERTS_TEXT.recentResolved}
+          </p>
+          {recent.rows.slice(0, RAIL_LIMIT).map((row) => (
+            <AlertCard
+              key={row.id}
+              alert={row}
+              now={now}
+              onOpen={() => openAlert(row.id)}
+            />
+          ))}
         </>
       ) : (
         <Empty
