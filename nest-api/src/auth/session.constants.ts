@@ -9,8 +9,10 @@ export const SESSION_COOKIE_NAME = "iknos.sid";
  * Rolling: every request pushes the expiry back, so the clock measures inactivity rather than
  * age.
  *
- * Two hours, against PFA's ten minutes. Deliberate: a dashboard lives in a tab and gets looked
- * at when something breaks. A ten-minute window would mean logging in before every glance, and
- * the account it protects is a single operator's, not a bank's.
+ * Twelve hours, against PFA's ten minutes. Deliberate, twice: a dashboard lives in a tab and
+ * gets looked at when something breaks, so a short window means logging in before every glance —
+ * and the two-hour value this replaced still expired mid-workday and mid-demo, which is the one
+ * moment a monitoring tool must not ask who you are. The account it protects is a single
+ * operator's, not a bank's; a working day is the honest unit of inactivity.
  */
-export const SESSION_TTL_SECONDS = 2 * 60 * 60;
+export const SESSION_TTL_SECONDS = 12 * 60 * 60;
