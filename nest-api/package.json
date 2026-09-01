@@ -7,7 +7,7 @@
   "scripts": {
     "prebuild": "prisma generate",
     "build": "nest build",
-    "dev": "NODE_ENV=development nest start --watch",
+    "dev": "tsx mock/dev-up.ts; NODE_ENV=development nest start --watch",
     "start": "nest start",
     "start:prod": "node dist/src/main.js",
     "migrate": "prisma migrate dev",
@@ -17,6 +17,9 @@
     "seed:user": "tsx scripts/create-account.ts",
     "mock": "tsx mock/load.ts",
     "mock:author": "tsx mock/author.ts",
+    "mock:fleet": "tsx mock/fleet.ts start",
+    "mock:fleet:stop": "tsx mock/fleet.ts stop",
+    "mock:fleet:status": "tsx mock/fleet.ts status",
     "check": "biome check",
     "check:fix": "biome check --write",
     "typecheck": "tsc --noEmit",
