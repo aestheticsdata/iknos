@@ -70,7 +70,12 @@ close on their own.
 its `pm2 jlist` against **only** that daemon — two lines in `nest-api/.env`, which the fleet
 refuses to start without (`.env.example` shows them). This machine's real `~/.pm2` is never read,
 never listed, never touched: nothing but mock data reaches the database. Restart `pnpm dev`
-once after adding the lines; the API reads `.env` at boot.
+once after adding the lines; the API reads `.env` at boot. Ports are its own as well: every
+dummy listens in the 47100 block — outside every range Zeus's registry allocates (`7N00–7N99`
+APIs, `30xx` fronts), so no future app can be handed one — and the registry's
+`healthUrl`/`metricsUrl` are pointed at it (the seed's paths kept), never at a real app's port. A
+fleet left running does not block `pfa` or `worldweathr` when their own dev servers start on
+6100 or 6500 an hour later.
 
 **Bounded on purpose.** A few lines a minute per service (~35 000 a day fleet-wide), metrics at
 the scraper's 15 s cadence (~1M rows a day for nineteen services). Retention keeps the database

@@ -13,7 +13,9 @@ import { PROFILES } from "./profiles";
  * process list, its own `logs/` directory. The dev API is pointed at that directory and nothing
  * else (`IKNOS_PM2_LOG_GLOB`), and runs its `pm2 jlist` against that daemon (`PM2_HOME`) — so the
  * real `~/.pm2` on this machine is never read, never listed, never touched. Only mock data reaches
- * the database, which is the whole point of a mock.
+ * the database, which is the whole point of a mock. Its own ports too — the 47100 block, outside
+ * anything Zeus allocates — so a forgotten fleet never sits on a port another project's dev
+ * server needs an hour later.
  *
  * Process names are the registry's, exactly: the tailer derives `log_entry.service` from the pm2
  * log filename, and `process_sample.pm2_name` must equal `service.pm2_name` for the header chips.
@@ -26,12 +28,19 @@ export const MOCK_PM2_HOME = join(homedir(), ".iknos-mock", "pm2");
 export const MOCK_LOG_GLOB = join(MOCK_PM2_HOME, "logs", "*.log");
 const NAMESPACE = "iknos-mock";
 
-/** What `load.ts` writes into an uninstrumented service's `metricsUrl`; the only value replaced. */
+/** What `load.ts` writes into an uninstrumented service's `metricsUrl`; carries no path worth keeping. */
 const LOADER_PLACEHOLDER = "http://127.0.0.1:3006/";
 
-/** The real dev processes. A dummy never binds these, whatever the registry says. */
-const RESERVED_PORTS = new Set([4310, 3006]);
-const PORT_BASE = 7100;
+/**
+ * Every dummy binds `PORT_BASE + its index`, never the port the registry names. Those ports are
+ * the real apps' own — pfa's 6100, worldweathr's 6500 and 3002, iknos-front's 3006 — and a dummy
+ * squatting one would block the real app the next time it is started in dev, hours after iknos
+ * was closed and its fleet forgotten. The base sits outside every range Zeus's port registry
+ * hands out (`7N00–7N99` for APIs, `30xx` for fronts) and below macOS's ephemeral range (49152+),
+ * so no future app is ever allocated a port a forgotten fleet is sitting on — nobody has to
+ * remember this number.
+ */
+const PORT_BASE = 47100;
 
 const command = process.argv[2];
 const flush = process.argv.includes("--flush");
@@ -118,14 +127,13 @@ if (miswired.length > 0) {
   process.exit(1);
 }
 
-const portOf = (url: string | null): number | null => {
-  if (url === null) return null;
+/** The path seed.ts knows for a service (`/api/health`, `/`…), kept when the URL moves to the dummy. */
+const pathOf = (url: string | null, fallback: string): string => {
+  if (url === null || url === LOADER_PLACEHOLDER) return fallback;
   try {
-    const parsed = new URL(url);
-    if (parsed.hostname !== "127.0.0.1" && parsed.hostname !== "localhost") return null;
-    return Number(parsed.port || 80);
+    return new URL(url).pathname;
   } catch {
-    return null;
+    return fallback;
   }
 };
 
@@ -146,33 +154,28 @@ async function start(): Promise<void> {
     const row = registry.get(profile.name);
     if (row === undefined) continue; // the seed decides who exists, not the fleet
 
-    /* A dummy takes the port the registry already names for it — the real pfa/worldweathr ports,
-       iknos-api's 6900, worldweathr-front's 3002 — so seed.ts's real URLs need no rewriting. A
-       reserved port (the real dev front, the real dev API) is never bound; the dummy moves to the
-       7100 block and the registry keeps pointing at the real thing. */
-    const realMetricsPort =
-      row.metricsUrl !== null && row.metricsUrl !== LOADER_PLACEHOLDER ? portOf(row.metricsUrl) : null;
-    const realHealthPort = portOf(row.healthUrl);
-    let port =
-      realMetricsPort ??
-      (realHealthPort !== null && !RESERVED_PORTS.has(realHealthPort) ? realHealthPort : null) ??
-      PORT_BASE + i;
-    if (RESERVED_PORTS.has(port)) port = PORT_BASE + i;
-
-    const healthPath = realHealthPort === port && row.healthUrl !== null ? new URL(row.healthUrl).pathname : "/health";
-    const metricsPath =
-      realMetricsPort === port && row.metricsUrl !== null ? new URL(row.metricsUrl).pathname : "/metrics";
+    const port = PORT_BASE + i;
     const kind = profile.name === "hiwaysim" ? "stopped" : profile.name.endsWith("-front") ? "front" : "api";
+    const healthPath = pathOf(row.healthUrl, "/health");
+    const metricsPath = pathOf(row.metricsUrl, "/metrics");
 
-    // Only the loader's placeholder is replaced, only a null healthUrl is filled: a real URL from
-    // seed.ts is never touched. A stopped process serves nothing, so it keeps the silent
-    // placeholder — pointing the scraper at a dead port would be a warn line every fifteen seconds.
-    const data: { metricsUrl?: string; healthUrl?: string } = {};
-    if (row.metricsUrl === LOADER_PLACEHOLDER && kind !== "stopped") {
-      data.metricsUrl = `http://127.0.0.1:${port}${metricsPath}`;
+    /*
+     * The registry follows the dummy: both URLs are rewritten to its port, the seed's path kept,
+     * so seed.ts's real URLs never send the prober at a port nothing listens on. This is the one
+     * place a real URL is overwritten — a dev database only, the guards above refuse everything
+     * else, and `pnpm seed` leaves existing rows alone. A stopped process serves nothing, so it
+     * keeps the loader's silent placeholder and its null healthUrl: the scraper at a dead port
+     * would be a warn line every fifteen seconds, and a probe there a failing row.
+     */
+    if (kind !== "stopped") {
+      await prisma.service.update({
+        where: { name: profile.name },
+        data: {
+          healthUrl: `http://127.0.0.1:${port}${healthPath}`,
+          metricsUrl: `http://127.0.0.1:${port}${metricsPath}`,
+        },
+      });
     }
-    if (row.healthUrl === null && kind !== "stopped") data.healthUrl = `http://127.0.0.1:${port}/health`;
-    if (Object.keys(data).length > 0) await prisma.service.update({ where: { name: profile.name }, data });
 
     pm2Tolerant(["delete", profile.name]);
     pm2(
@@ -200,9 +203,7 @@ async function start(): Promise<void> {
       ],
       true,
     );
-    plan.push(
-      `  ${profile.name.padEnd(20)} :${port}  ${kind}${data.metricsUrl ? "  metricsUrl→dummy" : ""}${data.healthUrl ? "  healthUrl→dummy" : ""}`,
-    );
+    plan.push(`  ${profile.name.padEnd(20)} :${port}  ${kind.padEnd(7)} ${healthPath}  ${metricsPath}`);
   }
 
   console.log(`fleet started under ${MOCK_PM2_HOME} (namespace ${NAMESPACE}):`);
