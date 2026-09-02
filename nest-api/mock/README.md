@@ -70,12 +70,77 @@ close on their own.
 its `pm2 jlist` against **only** that daemon — two lines in `nest-api/.env`, which the fleet
 refuses to start without (`.env.example` shows them). This machine's real `~/.pm2` is never read,
 never listed, never touched: nothing but mock data reaches the database. Restart `pnpm dev`
-once after adding the lines; the API reads `.env` at boot. Ports are its own as well: every
-dummy listens in the 47100 block — outside every range Zeus's registry allocates (`7N00–7N99`
-APIs, `30xx` fronts), so no future app can be handed one — and the registry's
-`healthUrl`/`metricsUrl` are pointed at it (the seed's paths kept), never at a real app's port. A
-fleet left running does not block `pfa` or `worldweathr` when their own dev servers start on
-6100 or 6500 an hour later.
+once after adding the lines; the API reads `.env` at boot. The corollary is deliberate: a real
+app you start under your everyday pm2 never shows up in a dev Iknos — only the fleet does.
+
+### Two daemons, and why `pm2 list` shows none of it
+
+`pm2` is not one program but two: a **CLI** (the client) and a **daemon** (which owns the
+processes). The client talks to the daemon over a Unix socket, and `PM2_HOME` is the directory
+where the daemon keeps everything — that socket included. The two directories have exactly the
+same shape:
+
+```
+~/.pm2/                       ~/.iknos-mock/pm2/
+  rpc.sock   ← the socket       rpc.sock   ← ANOTHER socket
+  pm2.pid                       pm2.pid
+  dump.pm2   ← the list         dump.pm2   ← another list
+  logs/                         logs/
+```
+
+So when `fleet.ts` runs `pm2` with `env: { ...process.env, PM2_HOME: MOCK_PM2_HOME }`, the CLI
+looks for its socket at `~/.iknos-mock/pm2/rpc.sock`, finds no live daemon there, and **forks a
+new one**. That second daemon has its own pid, its own process list, its own logs; the two never
+share a file and never learn of each other. Which is why your usual `pm2 list` (bound for
+`~/.pm2/rpc.sock`) shows nothing of the fleet. To address it by hand:
+
+```bash
+PM2_HOME=~/.iknos-mock/pm2 pm2 list
+```
+
+`pnpm mock:fleet:status` is the same question without the prefix. And the API lands on the right
+logs because `IKNOS_PM2_LOG_GLOB` in `.env` points at `~/.iknos-mock/pm2/logs/*.log` — never at
+`~/.pm2/logs`.
+
+### Ports
+
+Every dummy binds **`47100 + its index` in `profiles.ts`**, never the port the registry names:
+
+| dummy | port | | dummy | port |
+|---|---|---|---|---|
+| `pfa-nest-api` | 47100 | | `conway-gol-api` | 47109 |
+| `worldweathr-api` | 47101 | | `hiwaysim` | 47110 — stopped, binds nothing |
+| `spira-nest-api` | 47102 | | `iknos-front` | 47111 |
+| `iknos-api` | 47103 | | `pfa-front` | 47112 |
+| `zeus-nest-api` | 47104 | | `spira-front` | 47113 |
+| `bkmk-server` | 47105 | | `zeus-front` | 47114 |
+| `trekker-api` | 47106 | | `worldweathr-front` | 47115 |
+| `shatter-api` | 47107 | | `trekker-front` | 47116 |
+| `1991chat-backend` | 47108 | | `bkmk-front` | 47117 |
+| | | | `1991chat-front` | 47118 |
+
+The real dev processes stay where they are: the API on 4310, the front on 3006.
+
+**Why not the registry's own ports.** The first version inherited them — `pfa-nest-api` on 6100,
+`worldweathr-api` on 6500, `worldweathr-front` on 3002 — and reserved only 4310 and 3006. Those
+three are exactly the ports `pfa/nest-api/.env`, `worldweathr/api/.env` and worldweathr's
+`next dev -p 3002` use, and the fleet does not stop when Iknos is closed: whichever started
+second failed to bind, so the next `pnpm dev` in pfa, hours later, would have died on "port in
+use" over a fleet nobody remembered. The 7100 block was no better — it is the next free API
+block in Zeus's port registry (`7N00–7N99`), so a future app would have been handed the collision
+on the day it was allocated. 47100 sits outside every range Zeus hands out (`7N00–7N99` APIs,
+`30xx` fronts) and below macOS's ephemeral range (49152+, `sysctl net.inet.ip.portrange`), and
+nothing in `/etc/services` claims it: no future app can be given one of these, so nobody has to
+remember the number. Should some tool ever take 47100 anyway, its dummy shows `errored` in
+`pnpm mock:fleet:status`, and `PORT_BASE` in `fleet.ts` is the one constant to change.
+
+**The registry follows the dummy.** `fleet start` rewrites the dev database's `healthUrl` and
+`metricsUrl` to the dummy's port, keeping the seed's path (`/api/health` for pfa, `/` for
+worldweathr-front). It is the one place a real URL from `seed.ts` is overwritten — a dev database
+only, behind the production guards — and `pnpm seed` leaves existing rows alone (`upsert` with
+`update: {}`), so a later `pnpm mock` does not undo it. `hiwaysim` is `stopped` and keeps a null
+`healthUrl` and the loader's silent placeholder: a probe at a dead port would write a failing
+row, and a scrape there a warn line every fifteen seconds.
 
 **Bounded on purpose.** A few lines a minute per service (~35 000 a day fleet-wide), metrics at
 the scraper's 15 s cadence (~1M rows a day for nineteen services). Retention keeps the database

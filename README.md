@@ -390,7 +390,7 @@ pnpm install
 pnpm migrate:deploy          # schema, including the hand-written partition clauses
 pnpm seed                    # the service registry — every PM2 process on ks-b
 pnpm seed:user you@example.com
-pnpm dev                     # 4310
+pnpm dev                     # 4310 — also starts the mock fleet (47100–47118) and loads the corpus if the database is empty
 ```
 
 ```
@@ -413,10 +413,16 @@ is a row in a database bound to `127.0.0.1` and means nothing on ks-b:
 | password | `iknoslocal123` — 12 characters is the floor (`MIN_PASSWORD`) |
 | recovery passphrase | `iknos local recovery` — 13 is the floor (`MIN_PASSPHRASE`) |
 
-What a fresh checkout does **not** get is data. The collector reads `~/.pm2/logs/*.log` and
-scrapes `/metrics` endpoints that only exist on ks-b, so on a bare laptop the views come up
-empty. The answer is the committed mock corpus (IKN-61): run `pnpm mock` in `nest-api/` and the
-last seven days fill in — see `nest-api/mock/README.md` for what it loads and how prod uses it.
+What a fresh checkout does **not** get is real data: the collector tails pm2 logs and scrapes
+`/metrics` endpoints that only exist on ks-b. So on a laptop `pnpm dev` first runs
+`mock/dev-up.ts`, which loads the committed corpus (IKN-61 — the last seven days) when the
+database is empty and starts the mock fleet (IKN-64): nineteen fake services under a pm2 daemon
+of their own (`PM2_HOME=~/.iknos-mock/pm2`, ports **47100–47118**), writing random log lines the
+real collector tails and serving the health and `/metrics` routes it probes. Your everyday
+`pm2 list` shows none of it — `pnpm mock:fleet:status` does, or
+`PM2_HOME=~/.iknos-mock/pm2 pm2 list`. Two lines in `nest-api/.env` do the wiring
+(`.env.example` shows them); `nest-api/mock/README.md` has the whole story — the two daemons,
+the ports and why those — and how prod loads the same corpus.
 
 ## Milestones
 
