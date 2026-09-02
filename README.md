@@ -409,9 +409,12 @@ is a row in a database bound to `127.0.0.1` and means nothing on ks-b:
 
 | | |
 |---|---|
-| email | `test@iknos.local` |
-| password | `iknoslocal123` — 12 characters is the floor (`MIN_PASSWORD`) |
-| recovery passphrase | `iknos local recovery` — 13 is the floor (`MIN_PASSPHRASE`) |
+| email | `local.dev@mock.io` |
+| password | `azertyazerty` — 12 characters is the floor (`MIN_PASSWORD`), which is why it is not `azerty` |
+| recovery passphrase | `mock local recovery` — 13 is the floor (`MIN_PASSPHRASE`) |
+
+The same dev account, on purpose, in every project that has a mock (zeus, spira, trekker): one
+thing to remember, nothing derived from an app's name.
 
 What a fresh checkout does **not** get is real data: the collector tails pm2 logs and scrapes
 `/metrics` endpoints that only exist on ks-b. So on a laptop `pnpm dev` first runs
