@@ -3,14 +3,14 @@
  * deterministic) and the live fleet (`fleet-node.ts`, random by design). One table, so the past
  * the corpus wrote and the present the fleet writes are the same nineteen services with the same
  * routes, latencies and recurring errors: a demo where the last seven days and the next minute
- * disagree about what `pfa-nest-api` does would read as two apps.
+ * disagree about what `atlas-api` does would read as two apps.
  *
  * Pure data and pure helpers. Nothing here reads the clock or the PRNG — that stays with the
  * caller, which is what keeps `author.ts` byte-stable.
  */
 
 /** Where the fleet writes from — every ECS line carries it as `host.hostname`. */
-export const HOSTNAME = "ks-b";
+export const HOSTNAME = "web01";
 
 /** Hour-of-day weights: a night trough and an afternoon crest, so the histogram has a curve. */
 export const HOUR_WEIGHT = [
@@ -41,8 +41,8 @@ export type Profile = {
  */
 export const PROFILES: Profile[] = [
   {
-    name: "pfa-nest-api",
-    logger: "pfa",
+    name: "atlas-api",
+    logger: "atlas",
     weight: 0.115,
     debug: 0.06,
     routes: [
@@ -59,7 +59,7 @@ export const PROFILES: Profile[] = [
     ],
   },
   {
-    name: "worldweathr-api",
+    name: "beacon-api",
     logger: "weathr",
     weight: 0.105,
     debug: 0.04,
@@ -69,11 +69,11 @@ export const PROFILES: Profile[] = [
       { method: "GET", route: "/api/forecast/:city", w: 3, median: 210 },
       { method: "GET", route: "/api/ranking", w: 2, median: 48 },
     ],
-    events: ["open-meteo sync finished: {n} cities", "ranking recomputed in {n} ms", "declaration window rolled over"],
+    events: ["forecast sync finished: {n} cities", "ranking recomputed in {n} ms", "declaration window rolled over"],
   },
   {
-    name: "spira-nest-api",
-    logger: "spira",
+    name: "cinder-api",
+    logger: "cinder",
     weight: 0.09,
     debug: 0.05,
     routes: [
@@ -86,8 +86,8 @@ export const PROFILES: Profile[] = [
     events: ["issue counter advanced to {n}", "backup dump written: {n} KB", "session store compacted"],
   },
   {
-    name: "iknos-api",
-    logger: "iknos",
+    name: "keystone-api",
+    logger: "keystone",
     weight: 0.095,
     debug: 0.07,
     routes: [
@@ -103,8 +103,8 @@ export const PROFILES: Profile[] = [
     ],
   },
   {
-    name: "zeus-nest-api",
-    logger: "zeus",
+    name: "dovetail-api",
+    logger: "dovetail",
     weight: 0.08,
     debug: 0.04,
     routes: [
@@ -116,8 +116,8 @@ export const PROFILES: Profile[] = [
     events: ["fleet sweep finished: {n} services probed", "cron report accepted", "db dump pushed offsite in {n} ms"],
   },
   {
-    name: "bkmk-server",
-    logger: "bkmk",
+    name: "fathom-api",
+    logger: "fathom",
     weight: 0.05,
     debug: 0.03,
     routes: [
@@ -128,8 +128,8 @@ export const PROFILES: Profile[] = [
     events: ["favicon cache pruned: {n} entries", "import finished: {n} bookmarks"],
   },
   {
-    name: "trekker-api",
-    logger: "trekker",
+    name: "ember-api",
+    logger: "ember",
     weight: 0.055,
     debug: 0.05,
     routes: [
@@ -140,8 +140,8 @@ export const PROFILES: Profile[] = [
     events: ["disk scan finished: {n} entries", "sha256 job done in {n} ms", "retention pass pruned {n} rows"],
   },
   {
-    name: "shatter-api",
-    logger: "shatter",
+    name: "harbor-api",
+    logger: "harbor",
     weight: 0.03,
     debug: 0.02,
     routes: [
@@ -151,7 +151,7 @@ export const PROFILES: Profile[] = [
     events: ["daily leaderboard rebuilt"],
   },
   {
-    name: "1991chat-backend",
+    name: "gale-api",
     logger: "chat",
     weight: 0.035,
     debug: 0.03,
@@ -162,23 +162,23 @@ export const PROFILES: Profile[] = [
     events: ["websocket peers: {n}", "history compacted"],
   },
   {
-    name: "conway-gol-api",
-    logger: "conway",
+    name: "ivory-api",
+    logger: "ivory",
     weight: 0.02,
     debug: 0.02,
     routes: [{ method: "GET", route: "/api/patterns", w: 1, median: 16 }],
     events: ["pattern library reloaded: {n} patterns"],
   },
   {
-    name: "hiwaysim",
-    logger: "hiwaysim",
+    name: "juniper",
+    logger: "juniper",
     weight: 0.008,
     debug: 0,
     routes: [{ method: "GET", route: "/api/state", w: 1, median: 9 }],
     events: ["simulation tick drift {n} ms"],
   },
   {
-    name: "iknos-front",
+    name: "keystone-front",
     logger: "next",
     weight: 0.05,
     debug: 0.02,
@@ -186,7 +186,7 @@ export const PROFILES: Profile[] = [
     events: frontEvents(),
   },
   {
-    name: "pfa-front",
+    name: "atlas-front",
     logger: "next",
     weight: 0.045,
     debug: 0.02,
@@ -194,7 +194,7 @@ export const PROFILES: Profile[] = [
     events: frontEvents(),
   },
   {
-    name: "spira-front",
+    name: "cinder-front",
     logger: "next",
     weight: 0.04,
     debug: 0.02,
@@ -202,7 +202,7 @@ export const PROFILES: Profile[] = [
     events: frontEvents(),
   },
   {
-    name: "zeus-front",
+    name: "dovetail-front",
     logger: "next",
     weight: 0.035,
     debug: 0.02,
@@ -210,7 +210,7 @@ export const PROFILES: Profile[] = [
     events: frontEvents(),
   },
   {
-    name: "worldweathr-front",
+    name: "beacon-front",
     logger: "next",
     weight: 0.035,
     debug: 0.02,
@@ -218,7 +218,7 @@ export const PROFILES: Profile[] = [
     events: frontEvents(),
   },
   {
-    name: "trekker-front",
+    name: "ember-front",
     logger: "next",
     weight: 0.03,
     debug: 0.02,
@@ -226,7 +226,7 @@ export const PROFILES: Profile[] = [
     events: frontEvents(),
   },
   {
-    name: "bkmk-front",
+    name: "fathom-front",
     logger: "next",
     weight: 0.025,
     debug: 0.02,
@@ -234,7 +234,7 @@ export const PROFILES: Profile[] = [
     events: frontEvents(),
   },
   {
-    name: "1991chat-front",
+    name: "gale-front",
     logger: "next",
     weight: 0.022,
     debug: 0.02,
@@ -291,17 +291,17 @@ export type ErrorTemplate = {
 
 export const ERROR_TEMPLATES: ErrorTemplate[] = [
   {
-    service: "pfa-nest-api",
-    logger: "pfa",
+    service: "atlas-api",
+    logger: "atlas",
     type: "TypeError",
     message: "Cannot read properties of undefined (reading 'siret')",
     stack: [
       "TypeError: Cannot read properties of undefined (reading 'siret')",
-      "    at ExpenseMapper.toRow (/var/www/pfa/nest-api/dist/expenses/expense-mapper.js:87:31)",
+      "    at ExpenseMapper.toRow (/opt/apps/atlas/nest-api/dist/expenses/expense-mapper.js:87:31)",
       "    at Array.map (<anonymous>)",
-      "    at ExpensesService.list (/var/www/pfa/nest-api/dist/expenses/expenses.service.js:54:28)",
-      "    at ExpensesController.list (/var/www/pfa/nest-api/dist/expenses/expenses.controller.js:40:39)",
-      "    at /var/www/pfa/nest-api/node_modules/@nestjs/core/router/router-execution-context.js:38:29",
+      "    at ExpensesService.list (/opt/apps/atlas/nest-api/dist/expenses/expenses.service.js:54:28)",
+      "    at ExpensesController.list (/opt/apps/atlas/nest-api/dist/expenses/expenses.controller.js:40:39)",
+      "    at /opt/apps/atlas/nest-api/node_modules/@nestjs/core/router/router-execution-context.js:38:29",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -317,16 +317,16 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "worldweathr-api",
+    service: "beacon-api",
     logger: "weathr",
     type: "FetchError",
-    message: "open-meteo request timed out after 8000 ms",
+    message: "forecast upstream request timed out after 8000 ms",
     stack: [
-      "FetchError: open-meteo request timed out after 8000 ms",
-      "    at ForecastClient.fetchCity (/var/www/worldweathr/nest-api/dist/forecast/forecast-client.js:61:19)",
-      "    at ForecastService.refresh (/var/www/worldweathr/nest-api/dist/forecast/forecast.service.js:112:24)",
-      "    at ForecastController.byCity (/var/www/worldweathr/nest-api/dist/forecast/forecast.controller.js:33:27)",
-      "    at /var/www/worldweathr/nest-api/node_modules/@nestjs/core/router/router-proxy.js:9:17",
+      "FetchError: forecast upstream request timed out after 8000 ms",
+      "    at ForecastClient.fetchCity (/opt/apps/beacon/nest-api/dist/forecast/forecast-client.js:61:19)",
+      "    at ForecastService.refresh (/opt/apps/beacon/nest-api/dist/forecast/forecast.service.js:112:24)",
+      "    at ForecastController.byCity (/opt/apps/beacon/nest-api/dist/forecast/forecast.controller.js:33:27)",
+      "    at /opt/apps/beacon/nest-api/node_modules/@nestjs/core/router/router-proxy.js:9:17",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -341,7 +341,7 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "worldweathr-api",
+    service: "beacon-api",
     logger: "weathr",
     type: "Error",
     message: "connect ECONNREFUSED 127.0.0.1:6379",
@@ -353,15 +353,15 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     clusters: [[0.125, 6]],
   },
   {
-    service: "spira-nest-api",
-    logger: "spira",
+    service: "cinder-api",
+    logger: "cinder",
     type: "PrismaClientKnownRequestError",
     message: "Unique constraint failed on the constraint: `issue_owner_identifier_key`",
     stack: [
       "PrismaClientKnownRequestError: Unique constraint failed on the constraint: `issue_owner_identifier_key`",
-      "    at Proxy.create (/var/www/spira/nest-api/node_modules/@prisma/client/runtime/library.js:112:1363)",
-      "    at IssuesService.create (/var/www/spira/nest-api/dist/issues/issues.service.js:141:26)",
-      "    at IssuesController.create (/var/www/spira/nest-api/dist/issues/issues.controller.js:52:33)",
+      "    at Proxy.create (/opt/apps/cinder/nest-api/node_modules/@prisma/client/runtime/library.js:112:1363)",
+      "    at IssuesService.create (/opt/apps/cinder/nest-api/dist/issues/issues.service.js:141:26)",
+      "    at IssuesController.create (/opt/apps/cinder/nest-api/dist/issues/issues.controller.js:52:33)",
     ].join("\n"),
     levelName: "error",
     status: "resolved",
@@ -373,15 +373,15 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "iknos-api",
-    logger: "iknos",
+    service: "keystone-api",
+    logger: "keystone",
     type: "RangeError",
     message: "byte offset ran past the rotated file",
     stack: [
       "RangeError: byte offset ran past the rotated file",
-      "    at Tailer.readSlice (/var/www/iknos/nest-api/dist/src/ingest/tailer.js:171:15)",
-      "    at Tailer.poll (/var/www/iknos/nest-api/dist/src/ingest/tailer.js:129:22)",
-      "    at IngestService.tick (/var/www/iknos/nest-api/dist/src/ingest/ingest.service.js:63:20)",
+      "    at Tailer.readSlice (/opt/apps/keystone/nest-api/dist/src/ingest/tailer.js:171:15)",
+      "    at Tailer.poll (/opt/apps/keystone/nest-api/dist/src/ingest/tailer.js:129:22)",
+      "    at IngestService.tick (/opt/apps/keystone/nest-api/dist/src/ingest/ingest.service.js:63:20)",
     ].join("\n"),
     levelName: "error",
     status: "ignored",
@@ -394,15 +394,15 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "1991chat-backend",
+    service: "gale-api",
     logger: "chat",
     type: "WebSocketError",
     message: "peer closed mid-frame",
     stack: [
       "WebSocketError: peer closed mid-frame",
-      "    at Session.onFrame (/var/www/1991chat/backend/dist/session.js:203:11)",
+      "    at Session.onFrame (/opt/apps/gale/backend/dist/session.js:203:11)",
       "    at WebSocket.emit (node:events:519:28)",
-      "    at Receiver.receiverOnMessage (/var/www/1991chat/backend/node_modules/ws/lib/websocket.js:1220:20)",
+      "    at Receiver.receiverOnMessage (/opt/apps/gale/backend/node_modules/ws/lib/websocket.js:1220:20)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -415,14 +415,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "zeus-nest-api",
-    logger: "zeus",
+    service: "dovetail-api",
+    logger: "dovetail",
     type: "HttpException",
     message: "deploy report rejected: unknown service 'nginx'",
     stack: [
       "HttpException: deploy report rejected: unknown service 'nginx'",
-      "    at DeployReportsService.accept (/var/www/zeus/nest-api/dist/deploys/deploy-reports.service.js:77:15)",
-      "    at DeployReportsController.report (/var/www/zeus/nest-api/dist/deploys/deploy-reports.controller.js:29:41)",
+      "    at DeployReportsService.accept (/opt/apps/dovetail/nest-api/dist/deploys/deploy-reports.service.js:77:15)",
+      "    at DeployReportsController.report (/opt/apps/dovetail/nest-api/dist/deploys/deploy-reports.controller.js:29:41)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -436,15 +436,15 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
   },
   /* ── the rest of the fleet: every service has at least one recurring error this week ──────── */
   {
-    service: "iknos-api",
-    logger: "iknos",
+    service: "keystone-api",
+    logger: "keystone",
     type: "PrismaClientKnownRequestError",
     message: "Can't reach database server at `127.0.0.1:3306`",
     stack: [
       "PrismaClientKnownRequestError: Can't reach database server at `127.0.0.1:3306`",
-      "    at Proxy.$queryRaw (/var/www/iknos/nest-api/node_modules/@prisma/client/runtime/library.js:112:2010)",
-      "    at HistogramService.buckets (/var/www/iknos/nest-api/dist/src/logs/histogram.service.js:71:33)",
-      "    at LogsController.histogram (/var/www/iknos/nest-api/dist/src/logs/logs.controller.js:88:40)",
+      "    at Proxy.$queryRaw (/opt/apps/keystone/nest-api/node_modules/@prisma/client/runtime/library.js:112:2010)",
+      "    at HistogramService.buckets (/opt/apps/keystone/nest-api/dist/src/logs/histogram.service.js:71:33)",
+      "    at LogsController.histogram (/opt/apps/keystone/nest-api/dist/src/logs/logs.controller.js:88:40)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -457,14 +457,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "iknos-front",
+    service: "keystone-front",
     logger: "next",
     type: "TypeError",
     message: "Cannot read properties of null (reading 'bucketMs')",
     stack: [
       "TypeError: Cannot read properties of null (reading 'bucketMs')",
-      "    at Histogram (/var/www/iknos/front/.next/server/app/(app)/logs/page.js:1:41833)",
-      "    at renderWithHooks (/var/www/iknos/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+      "    at Histogram (/opt/apps/keystone/front/.next/server/app/(app)/logs/page.js:1:41833)",
+      "    at renderWithHooks (/opt/apps/keystone/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -477,14 +477,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "pfa-front",
+    service: "atlas-front",
     logger: "next",
     type: "TypeError",
     message: "Hydration failed: cannot read 'amount' of undefined",
     stack: [
       "TypeError: Hydration failed: cannot read 'amount' of undefined",
-      "    at ExpenseRow (/var/www/pfa/front/.next/server/app/expenses/page.js:1:22981)",
-      "    at renderWithHooks (/var/www/pfa/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+      "    at ExpenseRow (/opt/apps/atlas/front/.next/server/app/expenses/page.js:1:22981)",
+      "    at renderWithHooks (/opt/apps/atlas/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -497,14 +497,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "spira-front",
+    service: "cinder-front",
     logger: "next",
     type: "ChunkLoadError",
     message: "Loading chunk 483 failed (timeout: /_next/static/chunks/483-9c1f2.js)",
     stack: [
       "ChunkLoadError: Loading chunk 483 failed (timeout: /_next/static/chunks/483-9c1f2.js)",
-      "    at __webpack_require__.f.j (/var/www/spira/front/.next/static/chunks/webpack-8a1e.js:1:4211)",
-      "    at BoardPage (/var/www/spira/front/.next/server/app/board/page.js:1:18102)",
+      "    at __webpack_require__.f.j (/opt/apps/cinder/front/.next/static/chunks/webpack-8a1e.js:1:4211)",
+      "    at BoardPage (/opt/apps/cinder/front/.next/server/app/board/page.js:1:18102)",
     ].join("\n"),
     levelName: "error",
     status: "resolved",
@@ -516,14 +516,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "zeus-front",
+    service: "dovetail-front",
     logger: "next",
     type: "TypeError",
     message: "Cannot read properties of undefined (reading 'lastRunAt')",
     stack: [
       "TypeError: Cannot read properties of undefined (reading 'lastRunAt')",
-      "    at CronRow (/var/www/zeus/front/.next/server/app/cron/page.js:1:15644)",
-      "    at renderWithHooks (/var/www/zeus/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+      "    at CronRow (/opt/apps/dovetail/front/.next/server/app/cron/page.js:1:15644)",
+      "    at renderWithHooks (/opt/apps/dovetail/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -535,14 +535,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "worldweathr-front",
+    service: "beacon-front",
     logger: "next",
     type: "RangeError",
     message: "Invalid time value",
     stack: [
       "RangeError: Invalid time value",
       "    at Date.toISOString (<anonymous>)",
-      "    at DeclareForm (/var/www/worldweathr/front/.next/server/app/declare/page.js:1:9020)",
+      "    at DeclareForm (/opt/apps/beacon/front/.next/server/app/declare/page.js:1:9020)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -555,14 +555,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "trekker-front",
+    service: "ember-front",
     logger: "next",
     type: "AbortError",
     message: "The operation was aborted: listing /var/log cancelled by navigation",
     stack: [
       "AbortError: The operation was aborted: listing /var/log cancelled by navigation",
       "    at abortSignal (node:internal/abort_controller:389:5)",
-      "    at usePane (/var/www/trekker/front/.next/server/app/browse/page.js:1:27310)",
+      "    at usePane (/opt/apps/ember/front/.next/server/app/browse/page.js:1:27310)",
     ].join("\n"),
     levelName: "error",
     status: "ignored",
@@ -575,14 +575,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "bkmk-front",
+    service: "fathom-front",
     logger: "next",
     type: "TypeError",
     message: "Failed to fetch favicon: NetworkError when attempting to fetch resource",
     stack: [
       "TypeError: Failed to fetch favicon: NetworkError when attempting to fetch resource",
-      "    at Favicon (/var/www/bkmk/front/.next/server/app/page.js:1:11207)",
-      "    at renderWithHooks (/var/www/bkmk/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+      "    at Favicon (/opt/apps/fathom/front/.next/server/app/page.js:1:11207)",
+      "    at renderWithHooks (/opt/apps/fathom/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -595,13 +595,13 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "1991chat-front",
+    service: "gale-front",
     logger: "next",
     type: "WebSocketError",
     message: "socket closed before handshake completed",
     stack: [
       "WebSocketError: socket closed before handshake completed",
-      "    at Room.connect (/var/www/1991chat/front/.next/static/chunks/room-4c2e.js:1:8801)",
+      "    at Room.connect (/opt/apps/gale/front/.next/static/chunks/room-4c2e.js:1:8801)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -613,14 +613,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "bkmk-server",
-    logger: "bkmk",
+    service: "fathom-api",
+    logger: "fathom",
     type: "Error",
-    message: "connect ETIMEDOUT 104.16.0.12:443",
+    message: "connect ETIMEDOUT 198.51.100.12:443",
     stack: [
-      "Error: connect ETIMEDOUT 104.16.0.12:443",
+      "Error: connect ETIMEDOUT 198.51.100.12:443",
       "    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1615:16)",
-      "    at FaviconFetcher.fetch (/var/www/bkmk/server/dist/favicon/favicon-fetcher.js:44:19)",
+      "    at FaviconFetcher.fetch (/opt/apps/fathom/server/dist/favicon/favicon-fetcher.js:44:19)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -633,14 +633,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "trekker-api",
-    logger: "trekker",
+    service: "ember-api",
+    logger: "ember",
     type: "Error",
-    message: "EACCES: permission denied, scandir '/var/www/pfa/nest-api/.env'",
+    message: "EACCES: permission denied, scandir '/opt/apps/atlas/nest-api/.env'",
     stack: [
-      "Error: EACCES: permission denied, scandir '/var/www/pfa/nest-api/.env'",
-      "    at LocalDriver.list (/var/www/trekker/nest-api/dist/hosts/local-driver.js:58:22)",
-      "    at ListingService.list (/var/www/trekker/nest-api/dist/listing/listing.service.js:33:28)",
+      "Error: EACCES: permission denied, scandir '/opt/apps/atlas/nest-api/.env'",
+      "    at LocalDriver.list (/opt/apps/ember/nest-api/dist/hosts/local-driver.js:58:22)",
+      "    at ListingService.list (/opt/apps/ember/nest-api/dist/listing/listing.service.js:33:28)",
     ].join("\n"),
     levelName: "error",
     status: "resolved",
@@ -652,13 +652,13 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "shatter-api",
-    logger: "shatter",
+    service: "harbor-api",
+    logger: "harbor",
     type: "ValidationError",
     message: "score must be an integer between 0 and 999999",
     stack: [
       "ValidationError: score must be an integer between 0 and 999999",
-      "    at ScoresController.submit (/var/www/shatter/api/dist/scores/scores.controller.js:21:15)",
+      "    at ScoresController.submit (/opt/apps/harbor/api/dist/scores/scores.controller.js:21:15)",
     ].join("\n"),
     levelName: "error",
     status: "ignored",
@@ -670,14 +670,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "conway-gol-api",
-    logger: "conway",
+    service: "ivory-api",
+    logger: "ivory",
     type: "RangeError",
     message: "Maximum call stack size exceeded",
     stack: [
       "RangeError: Maximum call stack size exceeded",
-      "    at step (/var/www/conway-gol/api/dist/life/step.js:14:20)",
-      "    at step (/var/www/conway-gol/api/dist/life/step.js:22:12)",
+      "    at step (/opt/apps/ivory/api/dist/life/step.js:14:20)",
+      "    at step (/opt/apps/ivory/api/dist/life/step.js:22:12)",
     ].join("\n"),
     levelName: "fatal",
     status: "unresolved",
@@ -686,8 +686,8 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     clusters: [[1.1, 2]],
   },
   {
-    service: "hiwaysim",
-    logger: "hiwaysim",
+    service: "juniper",
+    logger: "juniper",
     type: "Error",
     message: "listen EADDRINUSE: address already in use :::7110",
     stack: [
@@ -703,14 +703,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
   },
   /* ── a second, still-open error for the services whose first one is already closed ─────────── */
   {
-    service: "spira-nest-api",
-    logger: "spira",
+    service: "cinder-api",
+    logger: "cinder",
     type: "TypeError",
     message: "Cannot read properties of undefined (reading 'issueCounter')",
     stack: [
       "TypeError: Cannot read properties of undefined (reading 'issueCounter')",
-      "    at ProjectsService.nextIdentifier (/var/www/spira/nest-api/dist/projects/projects.service.js:88:31)",
-      "    at IssuesService.create (/var/www/spira/nest-api/dist/issues/issues.service.js:136:44)",
+      "    at ProjectsService.nextIdentifier (/opt/apps/cinder/nest-api/dist/projects/projects.service.js:88:31)",
+      "    at IssuesService.create (/opt/apps/cinder/nest-api/dist/issues/issues.service.js:136:44)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -722,14 +722,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "spira-front",
+    service: "cinder-front",
     logger: "next",
     type: "TypeError",
     message: "Cannot read properties of null (reading 'workflowState')",
     stack: [
       "TypeError: Cannot read properties of null (reading 'workflowState')",
-      "    at IssueCard (/var/www/spira/front/.next/server/app/board/page.js:1:23310)",
-      "    at renderWithHooks (/var/www/spira/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+      "    at IssueCard (/opt/apps/cinder/front/.next/server/app/board/page.js:1:23310)",
+      "    at renderWithHooks (/opt/apps/cinder/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -741,14 +741,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "trekker-api",
-    logger: "trekker",
+    service: "ember-api",
+    logger: "ember",
     type: "Error",
-    message: "ENOSPC: no space left on device, write '/tmp/trekker-scan-8f2c.json'",
+    message: "ENOSPC: no space left on device, write '/tmp/ember-scan-8f2c.json'",
     stack: [
-      "Error: ENOSPC: no space left on device, write '/tmp/trekker-scan-8f2c.json'",
-      "    at DiskScanService.persist (/var/www/trekker/nest-api/dist/scans/disk-scan.service.js:142:17)",
-      "    at DiskScanService.run (/var/www/trekker/nest-api/dist/scans/disk-scan.service.js:97:22)",
+      "Error: ENOSPC: no space left on device, write '/tmp/ember-scan-8f2c.json'",
+      "    at DiskScanService.persist (/opt/apps/ember/nest-api/dist/scans/disk-scan.service.js:142:17)",
+      "    at DiskScanService.run (/opt/apps/ember/nest-api/dist/scans/disk-scan.service.js:97:22)",
     ].join("\n"),
     levelName: "fatal",
     status: "unresolved",
@@ -760,14 +760,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "trekker-front",
+    service: "ember-front",
     logger: "next",
     type: "TypeError",
     message: "Cannot read properties of undefined (reading 'mtimeMs')",
     stack: [
       "TypeError: Cannot read properties of undefined (reading 'mtimeMs')",
-      "    at Row (/var/www/trekker/front/.next/server/app/browse/page.js:1:31166)",
-      "    at renderWithHooks (/var/www/trekker/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
+      "    at Row (/opt/apps/ember/front/.next/server/app/browse/page.js:1:31166)",
+      "    at renderWithHooks (/opt/apps/ember/front/node_modules/react-dom/cjs/react-dom-server.node.production.js:5124:16)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",
@@ -780,14 +780,14 @@ export const ERROR_TEMPLATES: ErrorTemplate[] = [
     ],
   },
   {
-    service: "shatter-api",
-    logger: "shatter",
+    service: "harbor-api",
+    logger: "harbor",
     type: "PrismaClientKnownRequestError",
     message: "Timed out fetching a new connection from the connection pool",
     stack: [
       "PrismaClientKnownRequestError: Timed out fetching a new connection from the connection pool",
-      "    at Proxy.findMany (/var/www/shatter/api/node_modules/@prisma/client/runtime/library.js:112:1363)",
-      "    at ScoresService.top (/var/www/shatter/api/dist/scores/scores.service.js:27:30)",
+      "    at Proxy.findMany (/opt/apps/harbor/api/node_modules/@prisma/client/runtime/library.js:112:1363)",
+      "    at ScoresService.top (/opt/apps/harbor/api/dist/scores/scores.service.js:27:30)",
     ].join("\n"),
     levelName: "error",
     status: "unresolved",

@@ -1,10 +1,12 @@
 # The mock corpus (IKN-61)
 
-These files are seven days of a plausible ks-b: ~14 000 ECS log lines across the 19 registry
+These files are seven days of a plausible host called `web01`, running the invented fleet every
+project's mock shares (IKN-67 — `atlas-api`, `beacon-api`, … never a real app, machine, address or
+upstream): ~14 000 ECS log lines across the 19 registry
 services (`mock/logs/<service>.ndjson` — `.ndjson` because `.gitignore` eats `*.log`), metric
 samples and hourly rollups for the whole fleet — fronts included, each with its own volume and
 latency character, at full density for the two really instrumented services and a lighter grid
-for the rest (`metrics.json`, `rollups.json`; `hiwaysim` alone has none, on purpose — it is
+for the rest (`metrics.json`, `rollups.json`; `juniper` alone has none, on purpose — it is
 stopped in pm2, and one service demonstrating the honest empty-tiles state is coverage) — health
 probes for the five services that carry a `healthUrl` (`health.json`), machine and pm2 readings
 (`host.json`, `processes.json`), and the grouped history the M3 views read (`issues.json`,
@@ -15,7 +17,7 @@ coherent across logs, metrics, probes, issues and alerts. The files are ordinary
 them, edit them, diff them; two loads give the same demo because it is the same file.
 
 One registry nuance: the signal tiles only exist for a service whose row carries a `metricsUrl`,
-and the real fleet has two. So after seeding, the loader fills the missing `metricsUrl` with a
+and two of the mock's carry one. So after seeding, the loader fills the missing `metricsUrl` with a
 placeholder pointing at the front's own port — a 200 the exposition parser silently reads zero
 samples from, so the scraper never warns. Fill-only: the day an app gets real instrumentation,
 `seed.ts` sets the true URL and the loader never touches it. `healthUrl` is deliberately left
@@ -108,24 +110,24 @@ Every dummy binds **`47100 + its index` in `profiles.ts`**, never the port the r
 
 | dummy | port | | dummy | port |
 |---|---|---|---|---|
-| `pfa-nest-api` | 47100 | | `conway-gol-api` | 47109 |
-| `worldweathr-api` | 47101 | | `hiwaysim` | 47110 — stopped, binds nothing |
-| `spira-nest-api` | 47102 | | `iknos-front` | 47111 |
-| `iknos-api` | 47103 | | `pfa-front` | 47112 |
-| `zeus-nest-api` | 47104 | | `spira-front` | 47113 |
-| `bkmk-server` | 47105 | | `zeus-front` | 47114 |
-| `trekker-api` | 47106 | | `worldweathr-front` | 47115 |
-| `shatter-api` | 47107 | | `trekker-front` | 47116 |
-| `1991chat-backend` | 47108 | | `bkmk-front` | 47117 |
-| | | | `1991chat-front` | 47118 |
+| `atlas-api` | 47100 | | `ivory-api` | 47109 |
+| `beacon-api` | 47101 | | `juniper` | 47110 — stopped, binds nothing |
+| `cinder-api` | 47102 | | `keystone-front` | 47111 |
+| `keystone-api` | 47103 | | `atlas-front` | 47112 |
+| `dovetail-api` | 47104 | | `cinder-front` | 47113 |
+| `fathom-api` | 47105 | | `dovetail-front` | 47114 |
+| `ember-api` | 47106 | | `beacon-front` | 47115 |
+| `harbor-api` | 47107 | | `ember-front` | 47116 |
+| `gale-api` | 47108 | | `fathom-front` | 47117 |
+| | | | `gale-front` | 47118 |
 
 The real dev processes stay where they are: the API on 4310, the front on 3006.
 
-**Why not the registry's own ports.** The first version inherited them — `pfa-nest-api` on 6100,
-`worldweathr-api` on 6500, `worldweathr-front` on 3002 — and reserved only 4310 and 3006. Those
-three are exactly the ports `pfa/nest-api/.env`, `worldweathr/api/.env` and worldweathr's
+**Why not the registry's own ports.** The first version inherited them — `atlas-api` on 6100,
+`beacon-api` on 6500, `beacon-front` on 3002 — and reserved only 4310 and 3006. Those
+three are exactly the ports `atlas/nest-api/.env`, `beacon/api/.env` and beacon's
 `next dev -p 3002` use, and the fleet does not stop when Iknos is closed: whichever started
-second failed to bind, so the next `pnpm dev` in pfa, hours later, would have died on "port in
+second failed to bind, so the next `pnpm dev` in atlas, hours later, would have died on "port in
 use" over a fleet nobody remembered. The 7100 block was no better — it is the next free API
 block in Zeus's port registry (`7N00–7N99`), so a future app would have been handed the collision
 on the day it was allocated. 47100 sits outside every range Zeus hands out (`7N00–7N99` APIs,
@@ -135,10 +137,10 @@ remember the number. Should some tool ever take 47100 anyway, its dummy shows `e
 `pnpm mock:fleet:status`, and `PORT_BASE` in `fleet.ts` is the one constant to change.
 
 **The registry follows the dummy.** `fleet start` rewrites the dev database's `healthUrl` and
-`metricsUrl` to the dummy's port, keeping the seed's path (`/api/health` for pfa, `/` for
-worldweathr-front). It is the one place a real URL from `seed.ts` is overwritten — a dev database
+`metricsUrl` to the dummy's port, keeping the seed's path (`/api/health` for atlas, `/` for
+beacon-front). It is the one place a real URL from `seed.ts` is overwritten — a dev database
 only, behind the production guards — and `pnpm seed` leaves existing rows alone (`upsert` with
-`update: {}`), so a later `pnpm mock` does not undo it. `hiwaysim` is `stopped` and keeps a null
+`update: {}`), so a later `pnpm mock` does not undo it. `juniper` is `stopped` and keeps a null
 `healthUrl` and the loader's silent placeholder: a probe at a dead port would write a failing
 row, and a scrape there a warn line every fifteen seconds.
 

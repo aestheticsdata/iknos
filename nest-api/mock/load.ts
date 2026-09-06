@@ -1,11 +1,12 @@
-import { spawnSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { parse } from "@ingest/parser";
 import { persistBatch } from "@ingest/writer";
 import { loadDatabaseUrl, looksLikeProduction, openPrisma, refuseUnlessLoopback } from "./env";
+import { PROFILES } from "./profiles";
 
 import type { PrismaService } from "@db/prisma.service";
+import type { PrismaClient } from "@generated/prisma/client";
 import type { LogRecord } from "@ingest/log-record";
 
 /**
@@ -47,13 +48,25 @@ if (isProduction && !wantsProduction) {
 
 /* ── the registry first — without its rows the rail is empty and no view opens ────────────────── */
 
-const seed = spawnSync("pnpm", ["seed"], {
-  stdio: "inherit",
-  env: { ...process.env, DATABASE_URL: url },
-});
-if (seed.status !== 0) {
-  console.error("registry seed failed — not touching the data tables.");
-  process.exit(1);
+/**
+ * The MOCK registry, never the production one. `prisma/seed.ts` names the real fleet on ks-b,
+ * and a dev database seeded from it puts the real project names into every screen — and so into
+ * the demo film and its stills. The corpus is written for an invented fleet (`profiles.ts`, the
+ * same names Zeus's mock uses), so the registry the dev database holds is derived from those
+ * profiles: one row per profile, and any row the profiles do not name is removed, because a rail
+ * that lists both fleets is neither. Dev only — the guards above refuse anything else.
+ */
+async function syncMockRegistry(prisma: PrismaClient): Promise<void> {
+  const names = PROFILES.map((profile) => profile.name);
+  for (const name of names) {
+    await prisma.service.upsert({
+      where: { name },
+      create: { name, pm2Name: name, metricsUrl: null, healthUrl: null },
+      update: {},
+    });
+  }
+  const removed = await prisma.service.deleteMany({ where: { name: { notIn: names } } });
+  if (removed.count > 0) console.log(`registry: ${removed.count} row(s) outside the mock fleet removed`);
 }
 
 /**
@@ -254,6 +267,7 @@ async function withRetry<T>(label: string, run: () => Promise<T>): Promise<T> {
 }
 
 async function main(): Promise<void> {
+  await syncMockRegistry(prisma);
   const unlocked = await prisma.service.updateMany({
     where: { metricsUrl: null },
     data: { metricsUrl: MOCK_METRICS_PLACEHOLDER },
@@ -390,23 +404,33 @@ async function main(): Promise<void> {
 
   let issueEvents = 0;
   for (const issue of issues) {
-    const created = await prisma.issue.create({
-      data: {
-        fingerprint: issue.fingerprint,
-        service: issue.service,
-        type: issue.type,
-        message: issue.message,
-        culprit: issue.culprit,
-        level: issue.level,
-        levelName: issue.levelName,
-        status: issue.status,
-        regression: issue.regression,
-        firstSeen: shift(issue.firstSeen),
-        lastSeen: shift(issue.lastSeen),
-        eventCount: issue.eventCount,
-        // Same seam as the writer's `attrs as object`: JSON columns take the object whole.
-        sample: issue.sample === null ? undefined : (issue.sample as object),
-      },
+    /*
+     * Upsert, not create: the fake fleet (IKN-64) keeps writing under the camera, and the running
+     * API groups its error lines into issues by the same `fingerprintOf` the corpus was authored
+     * with. Between the reset above and this loop the collector can already have re-created the
+     * beacon `FetchError` issue from a live line — the unique fingerprint then refused the corpus
+     * row and the whole load died on `issue_fingerprint_key`. The corpus wins on every scalar
+     * (it carries the history the live row lacks); the live row's events stay beside the corpus's.
+     */
+    const row = {
+      service: issue.service,
+      type: issue.type,
+      message: issue.message,
+      culprit: issue.culprit,
+      level: issue.level,
+      levelName: issue.levelName,
+      status: issue.status,
+      regression: issue.regression,
+      firstSeen: shift(issue.firstSeen),
+      lastSeen: shift(issue.lastSeen),
+      eventCount: issue.eventCount,
+      // Same seam as the writer's `attrs as object`: JSON columns take the object whole.
+      sample: issue.sample === null ? undefined : (issue.sample as object),
+    };
+    const created = await prisma.issue.upsert({
+      where: { fingerprint: issue.fingerprint },
+      create: { fingerprint: issue.fingerprint, ...row },
+      update: row,
     });
     const events = issue.events
       .map((event) => ({

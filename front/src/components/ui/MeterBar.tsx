@@ -20,19 +20,22 @@ export const MeterBar = ({
   tone = "ok",
   surface = "work",
   className,
+  ...rest
 }: {
   /** 0–1. Clamped, because a gauge that overflows its own track is a rendering fault, not a reading. */
   share: number;
   tone?: Tone;
   surface?: Surface;
   className?: string;
-}) => {
+  // The spread is what lets a `data-testid` reach the track — see `Card`.
+} & React.ComponentPropsWithRef<"span">) => {
   const filled = Math.min(1, Math.max(0, Number.isFinite(share) ? share : 0));
 
   return (
     <span
       aria-hidden="true"
       className={cn("h-1 flex-1 overflow-hidden rounded-full", SURFACE_INSET_BG[surface], className)}
+      {...rest}
     >
       <span
         className={cn(

@@ -6,7 +6,7 @@ import { TONE_TEXT } from "./surface";
 import { Tooltip } from "./Tooltip";
 import { useCursorHover } from "./useCursorHover";
 
-import type { MouseEvent, ReactNode } from "react";
+import type { MouseEvent, ReactNode, SVGProps } from "react";
 import type { SeriesValue } from "./series";
 import type { Surface, Tone } from "./surface";
 
@@ -35,6 +35,7 @@ export const AreaSpark = ({
   label,
   tip,
   className,
+  ...rest
 }: {
   values: SeriesValue[];
   tone?: Tone;
@@ -45,7 +46,8 @@ export const AreaSpark = ({
   /** What the reading at `index` says under the pointer — see `Sparkline`, which shares the shape. */
   tip?: (index: number) => ReactNode;
   className?: string;
-}) => {
+  // The spread and the omissions are `Sparkline`'s, for the same reasons.
+} & Omit<SVGProps<SVGSVGElement>, "values" | "width" | "height">) => {
   /* Before the early return below, because hooks cannot run conditionally. */
   const { hover, show, clear } = useCursorHover<number>();
 
@@ -74,6 +76,7 @@ export const AreaSpark = ({
         onMouseLeave={tip ? clear : undefined}
         onMouseMove={tip ? track : undefined}
         className={cn("block h-full w-full overflow-visible", TONE_TEXT[surface][tone], className)}
+        {...rest}
       >
         {layout.runs.map((run) =>
           run.values.length > 1 ? (

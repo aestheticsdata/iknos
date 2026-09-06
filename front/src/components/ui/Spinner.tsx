@@ -37,12 +37,14 @@ import { cn } from "@lib/utils";
  * `aria-hidden`, always: the region it decorates already carries `aria-busy`, and the mark beside
  * it says the same thing in real words. A spinner is punctuation.
  */
-export const Spinner = ({ className }: { className?: string }) => (
+export const Spinner = ({ className, ...rest }: { className?: string } & React.ComponentPropsWithRef<"svg">) => (
+  // The spread is what lets a `data-testid` reach the ring — see `Card`.
   <svg
     viewBox="0 0 24 24"
     fill="none"
     aria-hidden="true"
     className={cn("size-6 animate-pending-spin", className)}
+    {...rest}
   >
     {/* The track. Faint enough to read as the space the arc travels through rather than as a second
         mark, and present because an arc alone on a busy tile has no circle to be an arc OF. */}

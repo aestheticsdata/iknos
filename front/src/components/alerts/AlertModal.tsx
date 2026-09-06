@@ -54,22 +54,32 @@ export const AlertModal = ({
           ? ALERTS_TEXT.hint
           : `${ALERTS_TEXT.hint} ${ALERTS_TEXT.cadence(Math.round(evalIntervalMs / 1000))}`
       }
+      testId="alert-modal"
       actions={
         alert && alert.resolvedAt === null ? (
+          // All three POST, and none of them is drawn on a resolved alert — so on the fixture
+          // fleet this footer is absent altogether, and a storyboard closes with Esc.
           <>
             <Button
               variant="quiet"
               onClick={() => act(alert.id, "silence")}
+              data-testid="alert-silence"
             >
               {ALERTS_TEXT.silence}
             </Button>
             <Button
               variant="quiet"
               onClick={() => act(alert.id, "ack")}
+              data-testid="alert-acknowledge"
             >
               {ALERTS_TEXT.ack}
             </Button>
-            <Button onClick={() => act(alert.id, "resolve")}>{ALERTS_TEXT.resolve}</Button>
+            <Button
+              onClick={() => act(alert.id, "resolve")}
+              data-testid="alert-resolve"
+            >
+              {ALERTS_TEXT.resolve}
+            </Button>
           </>
         ) : undefined
       }
@@ -112,13 +122,31 @@ const Body = ({
       </div>
 
       <dl className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-        <Tile label={ALERTS_TEXT.tileState}>
+        <Tile
+          label={ALERTS_TEXT.tileState}
+          tile="state"
+        >
           <span className={TONE_TEXT.chassis[tone]}>{ALERTS_TEXT.states[alert.state]}</span>{" "}
           <span className="text-chassis-text-dim">{formatDuration(openFor(alert, now))}</span>
         </Tile>
-        <Tile label={ALERTS_TEXT.tileService}>{alert.service}</Tile>
-        <Tile label={ALERTS_TEXT.tileValue}>{formatValue(alert.value, alert.unit)}</Tile>
-        <Tile label={ALERTS_TEXT.tileThreshold}>{formatValue(alert.threshold, alert.unit)}</Tile>
+        <Tile
+          label={ALERTS_TEXT.tileService}
+          tile="service"
+        >
+          {alert.service}
+        </Tile>
+        <Tile
+          label={ALERTS_TEXT.tileValue}
+          tile="value"
+        >
+          {formatValue(alert.value, alert.unit)}
+        </Tile>
+        <Tile
+          label={ALERTS_TEXT.tileThreshold}
+          tile="threshold"
+        >
+          {formatValue(alert.threshold, alert.unit)}
+        </Tile>
       </dl>
 
       <div>
@@ -154,6 +182,7 @@ const Body = ({
           },
         })}
         className="text-row text-chassis-text-muted underline underline-offset-2 transition-colors duration-150 ease-out hover:text-chassis-text-bright"
+        data-testid="alert-open-logs"
       >
         {ALERTS_TEXT.openLogs}
       </Link>
@@ -161,8 +190,16 @@ const Body = ({
   );
 };
 
-const Tile = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div className="min-w-0 rounded-chip border border-chassis-border bg-chassis-inset px-2 py-1.5">
+/**
+ * `tile` is the tile's key for the demo film — `state`, `service` — never its label. Scope by
+ * the open dialog: `Modal` keeps this body in a closed one too.
+ */
+const Tile = ({ label, tile, children }: { label: string; tile?: string; children: React.ReactNode }) => (
+  <div
+    className="min-w-0 rounded-chip border border-chassis-border bg-chassis-inset px-2 py-1.5"
+    data-testid="alert-tile"
+    data-tile={tile}
+  >
     <dt className="text-kicker tracking-kicker text-chassis-text-dim uppercase">{label}</dt>
     <dd className="truncate text-row text-chassis-text-bright">{children}</dd>
   </div>

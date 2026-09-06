@@ -1,6 +1,6 @@
 [
   {
-    "service": "iknos-api",
+    "service": "keystone-api",
     "rows": [
       {
         "ts": "2026-08-29T13:00:00.000Z",
@@ -23135,7 +23135,7 @@
     ]
   },
   {
-    "service": "iknos-front",
+    "service": "keystone-front",
     "rows": [
       {
         "ts": "2026-08-29T13:00:00.000Z",
@@ -34705,7 +34705,7 @@
     ]
   },
   {
-    "service": "pfa-nest-api",
+    "service": "atlas-api",
     "rows": [
       {
         "ts": "2026-08-29T13:00:00.000Z",
@@ -57840,7 +57840,7 @@
     ]
   },
   {
-    "service": "worldweathr-api",
+    "service": "beacon-api",
     "rows": [
       {
         "ts": "2026-08-29T13:00:00.000Z",
@@ -80822,7 +80822,7 @@
     ]
   },
   {
-    "service": "worldweathr-front",
+    "service": "beacon-front",
     "rows": [
       {
         "ts": "2026-08-29T13:00:00.000Z",

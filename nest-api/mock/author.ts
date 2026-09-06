@@ -205,14 +205,14 @@ for (const profile of PROFILES) {
 /* Traces: a front request fanning into its API, 4–12 lines over 2–3 services (IKN-12's cascade). */
 
 const TRACE_PAIRS: Array<[string, string]> = [
-  ["pfa-front", "pfa-nest-api"],
-  ["spira-front", "spira-nest-api"],
-  ["iknos-front", "iknos-api"],
-  ["worldweathr-front", "worldweathr-api"],
-  ["zeus-front", "zeus-nest-api"],
-  ["bkmk-front", "bkmk-server"],
-  ["1991chat-front", "1991chat-backend"],
-  ["trekker-front", "trekker-api"],
+  ["atlas-front", "atlas-api"],
+  ["cinder-front", "cinder-api"],
+  ["keystone-front", "keystone-api"],
+  ["beacon-front", "beacon-api"],
+  ["dovetail-front", "dovetail-api"],
+  ["fathom-front", "fathom-api"],
+  ["gale-front", "gale-api"],
+  ["ember-front", "ember-api"],
 ];
 
 const profileOf = (name: string): Profile => {
@@ -229,7 +229,7 @@ for (let i = 0; i < 72; i++) {
   const start = weightedInstant();
   const apiRoute = weightedRoute(api.routes);
   const spanCount = int(2, 6);
-  const threeServices = apiName === "zeus-nest-api" && chance(0.6);
+  const threeServices = apiName === "dovetail-api" && chance(0.6);
 
   let cursor = start + int(2, 9);
   let innerTotal = 0;
@@ -254,9 +254,9 @@ for (let i = 0; i < 72; i++) {
 
   if (threeServices) {
     const hop = int(4, 18);
-    push("iknos-api", {
+    push("keystone-api", {
       ts: cursor,
-      text: ecs(cursor, "info", "iknos", "GET /api/collector/status 200 in 4 ms", {
+      text: ecs(cursor, "info", "keystone", "GET /api/collector/status 200 in 4 ms", {
         "trace.id": id,
         "http.request.method": "GET",
         "url.path": "/api/collector/status",
@@ -332,36 +332,36 @@ for (const template of ERROR_TEMPLATES) {
 
 /* ── the three incidents ──────────────────────────────────────────────────────────────────────── */
 
-/** I1 — worldweathr-api, day −4: a 25-minute 5xx burst (the FetchError clusters above sit in it). */
+/** I1 — beacon-api, day −4: a 25-minute 5xx burst (the FetchError clusters above sit in it). */
 const I1_START = REFERENCE_MS - 4.05 * DAY;
 const I1_END = I1_START + 25 * MINUTE;
 for (let ts = I1_START; ts < I1_END; ts += int(8, 20) * 1000) {
-  push("worldweathr-api", httpLine(profileOf("worldweathr-api"), ts, { status: 500, factor: 4 }));
+  push("beacon-api", httpLine(profileOf("beacon-api"), ts, { status: 500, factor: 4 }));
 }
 
-/** I2 — pfa-nest-api, −26 h: a 40-minute latency spike, warn lines and a fat duration tail. */
+/** I2 — atlas-api, −26 h: a 40-minute latency spike, warn lines and a fat duration tail. */
 const I2_START = REFERENCE_MS - 26 * HOUR;
 const I2_END = I2_START + 40 * MINUTE;
 for (let ts = I2_START; ts < I2_END; ts += int(10, 30) * 1000) {
   if (chance(0.3)) {
-    push("pfa-nest-api", {
+    push("atlas-api", {
       ts,
-      text: ecs(ts, "warn", "pfa", `slow query: expenses list took ${int(1400, 5200)} ms`, {
+      text: ecs(ts, "warn", "atlas", `slow query: expenses list took ${int(1400, 5200)} ms`, {
         pool_waiting: int(1, 4),
       }),
     });
   } else {
-    push("pfa-nest-api", httpLine(profileOf("pfa-nest-api"), ts, { factor: 9 }));
+    push("atlas-api", httpLine(profileOf("atlas-api"), ts, { factor: 9 }));
   }
 }
 
-/** I3 — worldweathr-api, −3 h: Redis gone for 20 minutes; the probe fails, then a restart. */
+/** I3 — beacon-api, −3 h: Redis gone for 20 minutes; the probe fails, then a restart. */
 const I3_START = REFERENCE_MS - 3 * HOUR;
 const I3_END = I3_START + 20 * MINUTE;
 for (let ts = I3_START; ts < I3_END; ts += int(20, 45) * 1000) {
   // No error.* keys here on purpose: the groupable form of this failure is the fatal template
   // above, and these companion lines must not inflate its occurrence count.
-  push("worldweathr-api", {
+  push("beacon-api", {
     ts,
     text: ecs(ts, "error", "weathr", "session store unreachable, request refused", {
       refused_ip: "127.0.0.1:6379",
@@ -377,29 +377,29 @@ const BOOT_LINES = [
   "[Nest] 4021  - 09/01/2026, 9:20:42 AM     LOG [NestApplication] Nest application successfully started",
 ];
 BOOT_LINES.forEach((text, i) => {
-  push("worldweathr-api", { ts: bootAt + i * 350, text });
+  push("beacon-api", { ts: bootAt + i * 350, text });
 });
 
 /* One line that was trying to be JSON and lost — the parser's `degraded` path, on purpose. */
-push("trekker-api", {
+push("ember-api", {
   ts: REFERENCE_MS - 2.3 * DAY,
   text: '{"@timestamp":"2026-08-30T05:12:44.102Z","log.level":"info","message":"transfer finished","bytes":48211',
 });
 
 /* A couple of alias level names — LEVELS maps them, and the corpus should prove it. */
-push("zeus-nest-api", {
+push("dovetail-api", {
   ts: REFERENCE_MS - 1.4 * DAY,
-  text: ecs(REFERENCE_MS - 1.4 * DAY, "warning", "zeus", "offsite push took 41 s, twice the usual", {}),
+  text: ecs(REFERENCE_MS - 1.4 * DAY, "warning", "dovetail", "offsite push took 41 s, twice the usual", {}),
 });
-push("iknos-api", {
+push("keystone-api", {
   ts: REFERENCE_MS - 3.1 * DAY,
-  text: ecs(REFERENCE_MS - 3.1 * DAY, "critical", "iknos", "queue high-water mark: 18452 of 20000 records", {}),
+  text: ecs(REFERENCE_MS - 3.1 * DAY, "critical", "keystone", "queue high-water mark: 18452 of 20000 records", {}),
 });
 
 /* The newest line of the corpus sits exactly on the reference instant. */
-push("iknos-api", {
+push("keystone-api", {
   ts: REFERENCE_MS,
-  text: ecs(REFERENCE_MS, "info", "iknos", "GET /api/services 200 in 19 ms", {
+  text: ecs(REFERENCE_MS, "info", "keystone", "GET /api/services 200 in 19 ms", {
     "http.request.method": "GET",
     "url.path": "/api/services",
     "http.response.status_code": 200,
@@ -425,12 +425,12 @@ type RollupSeries = Omit<Series, "points"> & { hours: RollupRow[] };
 /**
  * Every service gets metrics — the mockup's world is a fleet where everything is instrumented,
  * and a demo that only lights two tiles out of nineteen reads as a half-finished product. The
- * two services ks-b actually instruments keep the full-density grid; the rest get a lighter one
- * and fewer series — still enough for every chart at every range. `hiwaysim` alone gets none,
+ * two services the host actually instruments keep the full-density grid; the rest get a lighter one
+ * and fewer series — still enough for every chart at every range. `juniper` alone gets none,
  * deliberately: it is stopped in pm2, and one service demonstrating the honest empty-tiles state
  * is coverage, not a gap.
  */
-const FLAGSHIP = new Set(["pfa-nest-api", "worldweathr-api"]);
+const FLAGSHIP = new Set(["atlas-api", "beacon-api"]);
 
 /**
  * The raw sample grid, dense where the narrow ranges look: the 15 m view buckets at 15 s and the
@@ -454,16 +454,16 @@ function rpm(profile: Profile, tag: string, t: number): number {
   if (tag === "2xx") return base * curve;
   if (tag === "4xx") return base * 0.035 * curve;
   if (tag === "5xx") {
-    if (profile.name === "worldweathr-api" && t >= I1_START && t < I1_END) return 24;
-    if (profile.name === "worldweathr-api" && t >= I3_START && t < I3_END) return 11;
+    if (profile.name === "beacon-api" && t >= I1_START && t < I1_END) return 24;
+    if (profile.name === "beacon-api" && t >= I3_START && t < I3_END) return 11;
     return base * 0.0025;
   }
   return 0;
 }
 
-/** Share of requests answered under each latency bound — per character, and pfa's I2 shifts it. */
+/** Share of requests answered under each latency bound — per character, and atlas's I2 shifts it. */
 function leShares(profile: Profile, t: number): Record<string, number> {
-  if (profile.name === "pfa-nest-api" && t >= I2_START && t < I2_END) {
+  if (profile.name === "atlas-api" && t >= I2_START && t < I2_END) {
     return { "0.025": 0.04, "0.1": 0.18, "0.5": 0.55, "1": 0.78, "+Inf": 1 };
   }
   // Fronts render pages, APIs answer queries — their latency distributions must not look alike.
@@ -477,7 +477,7 @@ const metricSeries: Series[] = [];
 const rollupSeries: RollupSeries[] = [];
 
 for (const profile of PROFILES) {
-  if (profile.name === "hiwaysim") continue;
+  if (profile.name === "juniper") continue;
   const service = profile.name;
   const flagship = FLAGSHIP.has(service);
   const isFront = service.endsWith("-front");
@@ -603,11 +603,11 @@ type HealthRow = {
 };
 
 const PROBED: Array<{ service: string; api: boolean; version: string | null }> = [
-  { service: "iknos-api", api: true, version: "2026.08.30-5c514cb" },
-  { service: "iknos-front", api: false, version: null },
-  { service: "pfa-nest-api", api: true, version: "2026.08.22-c41d09a" },
-  { service: "worldweathr-api", api: true, version: "2026.08.27-8b3e1f2" },
-  { service: "worldweathr-front", api: false, version: null },
+  { service: "keystone-api", api: true, version: "2026.08.30-5c514cb" },
+  { service: "keystone-front", api: false, version: null },
+  { service: "atlas-api", api: true, version: "2026.08.22-c41d09a" },
+  { service: "beacon-api", api: true, version: "2026.08.27-8b3e1f2" },
+  { service: "beacon-front", api: false, version: null },
 ];
 
 const health: Array<{ service: string; rows: HealthRow[] }> = [];
@@ -622,7 +622,7 @@ for (const { service, api, version } of PROBED) {
   for (let t = REFERENCE_MS - 4 * HOUR; t <= REFERENCE_MS; t += 30 * 1000) grid.push(t);
 
   for (const t of grid) {
-    const inOutage = service === "worldweathr-api" && t >= I3_START && t < I3_END;
+    const inOutage = service === "beacon-api" && t >= I3_START && t < I3_END;
     if (inOutage) {
       const transport = chance(0.35);
       rows.push({
@@ -709,13 +709,13 @@ const processes: ProcessRow[] = [];
   const facts = PROFILES.map((profile, i) => ({
     name: profile.name,
     pm2Id: i,
-    stopped: profile.name === "hiwaysim",
-    restarts: profile.name === "worldweathr-api" ? 7 : int(0, 4),
+    stopped: profile.name === "juniper",
+    restarts: profile.name === "beacon-api" ? 7 : int(0, 4),
     startedAt: REFERENCE_MS - int(2, 12) * DAY + int(0, 20) * HOUR,
     mem: int(58, 240) * 1_000_000,
   }));
-  /* worldweathr-api restarted after I3 — its startedAt is recent and its counter one higher. */
-  const weathr = facts.find((f) => f.name === "worldweathr-api");
+  /* beacon-api restarted after I3 — its startedAt is recent and its counter one higher. */
+  const weathr = facts.find((f) => f.name === "beacon-api");
   if (weathr !== undefined) weathr.startedAt = bootAt;
 
   for (let t = REFERENCE_MS - 20 * MINUTE; t <= REFERENCE_MS; t += 30 * 1000) {
@@ -817,7 +817,7 @@ type AlertRow = {
 const alerts: AlertRow[] = [
   {
     ruleKey: "error_rate",
-    service: "worldweathr-api",
+    service: "beacon-api",
     severity: "warning",
     title: "5xx rate above threshold",
     expr: "rate(http_5xx[10m]) > 5%",
@@ -840,7 +840,7 @@ const alerts: AlertRow[] = [
   },
   {
     ruleKey: "latency_p95",
-    service: "pfa-nest-api",
+    service: "atlas-api",
     severity: "warning",
     title: "p95 latency above threshold",
     expr: "p95(http_duration[10m]) > 1000ms",
@@ -863,7 +863,7 @@ const alerts: AlertRow[] = [
   },
   {
     ruleKey: "health_down",
-    service: "worldweathr-api",
+    service: "beacon-api",
     severity: "critical",
     title: "Health endpoint failing",
     expr: "probe_failures[90s] >= 2",
@@ -960,7 +960,7 @@ const RULE_SHAPES: RuleShape[] = [
 ];
 
 for (const profile of PROFILES) {
-  const episodes = profile.name === "hiwaysim" ? 1 : int(1, 3);
+  const episodes = profile.name === "juniper" ? 1 : int(1, 3);
   for (let k = 0; k < episodes; k++) {
     const rule = pick(RULE_SHAPES);
     const openedAt = REFERENCE_MS - int(3, 160) * HOUR - int(0, 59) * MINUTE;

@@ -47,3 +47,9 @@ front/.env.production
 
 # The accounts crib sheet — one per repo, never committed.
 ACCOUNTS.md
+
+# The demo film harness (see front/e2e/demo/README.md): a take writes a gigabyte of JPEG in flight,
+# and the setup project writes a live session cookie.
+front/e2e/demo/out/
+**/e2e/.auth/
+!.env.test.local.example

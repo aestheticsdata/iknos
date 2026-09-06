@@ -6,7 +6,7 @@ import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from "r
 import { createPortal } from "react-dom";
 
 import type { CursorPoint } from "@components/ui/useCursorHover";
-import type { FocusEvent, KeyboardEvent, ReactNode } from "react";
+import type { ComponentPropsWithRef, FocusEvent, KeyboardEvent, ReactNode } from "react";
 
 /**
  * Iknos's only tooltip — ported from Zeus (ZEU-40/43/45), which took it from PFA (PFA-107).
@@ -109,7 +109,10 @@ type HoverModeProps = {
    */
   className?: string;
   maxWidth?: number;
-};
+  // Everything else lands on the wrapper `<span>`, so a `data-testid` and a companion can name the
+  // trigger — the trace lanes and the runtime meters are this wrapper and nothing else (see `Card`
+  // for why the spread has to exist). `content` is omitted because HTML spells it too, as a string.
+} & Omit<ComponentPropsWithRef<"span">, "content" | "children">;
 
 type TooltipProps = CursorModeProps | HoverModeProps;
 
@@ -226,6 +229,9 @@ const Bubble = ({
    * effect runs, so a server render never touches `document`.
    */
   return createPortal(
+    /* ⚠️ `tooltip` matches every bubble in the document, and a bubble outlives its pointer by
+       `FADE_MS + 40`: sweep from one chart to the next and, for ~190ms, two of these are up. A
+       storyboard that reads the bubble waits for its content, not for the first `tooltip`. */
     <div
       id={id}
       ref={ref}
@@ -233,6 +239,7 @@ const Bubble = ({
       /* Shown from the layout effect above, never from an attribute — a popover is `display: none`
          until `showPopover()`, so the two have to happen in the same frame the box is measured. */
       popover="manual"
+      data-testid="tooltip"
       className={cn(SURFACE, "fixed transition-opacity duration-150 ease-out", visible ? "opacity-100" : "opacity-0")}
       style={{
         left: pos ? pos.left : snapshot.point.x + gap,
@@ -255,7 +262,8 @@ const Bubble = ({
  * the same element object every time, so React skips the subtree. Lifting the same state into the
  * view would re-render every row beside it, per pointer move.
  */
-const HoverTooltip = ({ children, content, className, maxWidth }: HoverModeProps) => {
+// `mode` is pulled out so it does not land on the span as an attribute; everything else in `rest` does.
+const HoverTooltip = ({ mode: _mode, children, content, className, maxWidth, ...rest }: HoverModeProps) => {
   const { hover, move, clear } = useCursorHover();
   const [focused, setFocused] = useState<CursorPoint | null>(null);
   const id = useId();
@@ -305,6 +313,7 @@ const HoverTooltip = ({ children, content, className, maxWidth }: HoverModeProps
         onMouseEnter={move()}
         onMouseLeave={clear}
         onMouseMove={move()}
+        {...rest}
       >
         {children}
       </span>

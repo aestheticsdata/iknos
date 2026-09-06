@@ -455,7 +455,10 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
   usePublishViewStatus({ live, count: items.length, tookMs: older.tookMs });
 
   return (
-    <section className="flex h-full min-h-0 flex-col bg-chassis-deep">
+    <section
+      className="flex h-full min-h-0 flex-col bg-chassis-deep"
+      data-testid="log-panel"
+    >
       <QueryBar
         state={state}
         services={services.map((service) => service.name)}
@@ -500,10 +503,12 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         onRetry={histogram.reload}
       />
 
+      {/* The text carries the live count (`3 new lines · back to top`), so the name is the handle. */}
       {held > 0 && (
         <button
           type="button"
           onClick={backToTop}
+          data-testid="new-lines-bar"
           className="border-y border-chassis-border bg-chassis-raised px-3 py-1 text-label text-chassis-accent transition-[filter] duration-150 ease-out hover:brightness-110"
         >
           {LOGS_TEXT.newLines(held)} · {LOGS_TEXT.resume}
@@ -536,6 +541,7 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
           ref={listRef}
           onScroll={onScroll}
           onWheel={onWheel}
+          data-testid="stream-scroll"
           className={cn("ik-scroll ik-scroll-head h-full overflow-y-auto bg-chassis-inset", HEAD_BAND)}
         >
           <LogTable

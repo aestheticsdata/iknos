@@ -51,6 +51,7 @@ export const ChassisFrame = ({ children }: { children: React.ReactNode }) => {
          */
         zoneFlashClass(pulse),
       )}
+      data-testid="chassis-frame"
     >
       {children}
     </div>

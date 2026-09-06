@@ -14,21 +14,33 @@ export const AuthField = ({
   action,
   error,
   children,
+  ...rest
 }: {
   label: string;
   hint?: string;
   action?: React.ReactNode;
   error?: string;
   children: React.ReactNode;
-}) => (
-  <div className="flex flex-col gap-1.25">
+  // The spread is what lets a `data-testid` and a `data-field` companion reach the wrapper — see `Card`.
+} & React.ComponentPropsWithRef<"div">) => (
+  <div
+    className="flex flex-col gap-1.25"
+    {...rest}
+  >
     <div className="flex items-center gap-2">
       <span className="flex-1 text-kicker tracking-kicker text-chassis-text-dim">{label}</span>
       {hint ? <span className="text-kicker text-chassis-text-dim">{hint}</span> : null}
       {action}
     </div>
     {children}
-    <span className="min-h-[13px] text-micro text-chassis-error">{error ?? ""}</span>
+    {/* Named because its text is the validation state — empty, then `required`, then empty again —
+        so a text locator has nothing stable to hold. Scope it by the wrapper's `data-field`. */}
+    <span
+      className="min-h-[13px] text-micro text-chassis-error"
+      data-testid="auth-field-error"
+    >
+      {error ?? ""}
+    </span>
   </div>
 );
 

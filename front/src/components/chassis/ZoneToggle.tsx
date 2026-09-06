@@ -94,6 +94,7 @@ export const ZoneToggle = () => {
       aria-hidden={!known || undefined}
       aria-label={CHASSIS_TEXT.zoneLabel}
       disabled={!known}
+      data-testid="zone-group"
       className={cn(
         /*
          * `grid-cols-2` is what keeps the press from moving the bar, and it is doing more work
@@ -149,6 +150,10 @@ export const ZoneToggle = () => {
           type="button"
           onClick={() => setZone(half)}
           aria-pressed={known ? zone === half : undefined}
+          // The half's own name is the handle, never its label: the label is empty until the zone
+          // is known, and the local one changes its three letters twice a year.
+          data-testid="zone-toggle"
+          data-zone={half}
           title={CHASSIS_TEXT.zoneHint}
           className={cn(
             /*

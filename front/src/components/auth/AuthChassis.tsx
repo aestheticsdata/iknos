@@ -37,7 +37,13 @@ export const AuthChassis = ({ page, children }: { page: AuthPage; children: Reac
   const onAbout = page === "about";
 
   return (
-    <main className="relative flex min-h-dvh flex-col overflow-hidden bg-chassis-deep font-mono">
+    // One shell, four screens: `data-page` is what says which, since the chrome bar and the footer
+    // are the same on all of them.
+    <main
+      className="relative flex min-h-dvh flex-col overflow-hidden bg-chassis-deep font-mono"
+      data-page={page}
+      data-testid="auth-chassis"
+    >
       {/*
        * The backdrop: two washes and the wordmark, bled off the bottom-left corner.
        *
@@ -70,6 +76,9 @@ export const AuthChassis = ({ page, children }: { page: AuthPage; children: Reac
       </div>
 
       <header className="relative flex h-[38px] flex-none items-center gap-3.5 border-b border-chassis-raised bg-chassis-surface/80 px-3.5">
+        {/* ⚠️ `IKNOS` is on this page three times — the backdrop, this wordmark, and the sign-in
+            kicker — so a text locator for it over-matches silently. Address the screen by
+            `auth-chassis` + `data-page` instead. */}
         <span className="text-ui font-bold tracking-chrome text-chassis-text">IKNOS</span>
         <span className="text-row tracking-chrome text-chassis-text-dim">
           {onAbout ? AUTH_TEXT.chrome.crumbAbout : AUTH_TEXT.chrome.crumb}
@@ -92,7 +101,12 @@ export const AuthChassis = ({ page, children }: { page: AuthPage; children: Reac
       <div className="relative flex min-h-0 flex-1 items-center justify-center py-10">
         <div className={`flex flex-col ${CARD_WIDTH[page]} max-w-[calc(100vw-2rem)]`}>
           <div className="mb-1.75 text-kicker tracking-kicker text-chassis-text-dim">{kicker}</div>
-          <h1 className="mb-5 text-title font-bold tracking-title text-chassis-text-bright">{title}</h1>
+          <h1
+            className="mb-5 text-title font-bold tracking-title text-chassis-text-bright"
+            data-testid="auth-title"
+          >
+            {title}
+          </h1>
 
           <div className="rounded-overlay border border-chassis-border bg-chassis-surface/95 px-5.5 py-5 shadow-overlay backdrop-blur-[3px]">
             {children}
@@ -101,8 +115,11 @@ export const AuthChassis = ({ page, children }: { page: AuthPage; children: Reac
           <p className="mt-4 text-row/prose text-chassis-border-focus">{AUTH_TEXT.tagline}</p>
 
           <div className="mt-3 flex items-center gap-4">
+            {/* Named because its label flips with the page — `ABOUT IKNOS →` here, `‹ BACK TO SIGN IN`
+                on the about screen — and so does where it goes. */}
             <Link
               className="text-label tracking-control text-chassis-accent/70 transition-colors duration-150 ease-out hover:text-chassis-text"
+              data-testid="auth-about-link"
               href={onAbout ? ROUTES.login : ROUTES.about}
             >
               {onAbout ? AUTH_TEXT.aboutBack : AUTH_TEXT.aboutLink}

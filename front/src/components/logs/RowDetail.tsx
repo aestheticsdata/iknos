@@ -21,6 +21,9 @@ import { LOGS_TEXT } from "@text/logs";
 import type { LogRow } from "@lib/logTypes";
 import type { LogDetailState } from "@lib/useLogDetail";
 
+/** The pane's rows, by the key the copy is filed under — `data-field`'s value, never its label. */
+type DetailFieldKey = keyof typeof LOGS_TEXT.detailFields;
+
 /**
  * The log line's detail, in a modal — IKN-60.
  *
@@ -96,6 +99,7 @@ export const RowDetail = ({
       closeOnBackdropClick
       // Two panes of JSON side by side need more than 560px — see `wide` in `Modal`'s own doc.
       wide
+      testId="row-detail"
       tag={row?.service ?? ""}
       title={row !== null ? fullInstant(row.ts, tz) : ""}
       actions={
@@ -108,6 +112,7 @@ export const RowDetail = ({
             <Button
               variant="quiet"
               onClick={onClose}
+              data-testid="row-detail-close"
             >
               {LOGS_TEXT.close}
             </Button>
@@ -115,6 +120,7 @@ export const RowDetail = ({
               <Button
                 variant="quiet"
                 onClick={() => onOpenTrace(traceId)}
+                data-testid="row-detail-trace"
               >
                 {LOGS_TEXT.openTrace}
               </Button>
@@ -130,12 +136,15 @@ export const RowDetail = ({
             <Button
               variant="quiet"
               onClick={() => onOpenIssue(row)}
+              data-testid="row-detail-issue"
             >
               {LOGS_TEXT.openIssue}
             </Button>
+            {/* Writes the clipboard — its own name, so nothing aimed at `close` can land here. */}
             <Button
               variant="quiet"
               onClick={() => onCopy(detail ?? row)}
+              data-testid="row-detail-copy"
             >
               {LOGS_TEXT.copyRow}
             </Button>
@@ -147,7 +156,12 @@ export const RowDetail = ({
         /* One column below `rail`, where the rail has already folded and two panes of JSON side by
            side would each be too narrow to hold a line of it. */
         <div className="grid grid-cols-1 gap-3 rail:grid-cols-2">
-          <section>
+          {/* The two panes are named by what they hold, not by their heading — the right one reads
+              `context` or `stack` by severity, and the left one grows `· utc` with the zone. */}
+          <section
+            data-testid="detail-pane"
+            data-pane="event"
+          >
             <PaneHeading>{LOGS_TEXT.rawEvent(abbrev)}</PaneHeading>
             {/*
              * The event serialised — the same object `copy NDJSON` puts on the clipboard, pretty
@@ -181,12 +195,16 @@ export const RowDetail = ({
                 SURFACE_INSET_BG.chassis,
                 SURFACE_TEXT_MUTED.chassis,
               )}
+              data-testid="detail-raw"
             >
               {JSON.stringify(detail ?? row, null, 2)}
             </pre>
           </section>
 
-          <section>
+          <section
+            data-testid="detail-pane"
+            data-pane="context"
+          >
             <PaneHeading>{isError ? LOGS_TEXT.stack : LOGS_TEXT.context}</PaneHeading>
             <div className={cn("rounded-chip border p-2", SURFACE_BORDER.chassis, SURFACE_INSET_BG.chassis)}>
               {isError && (
@@ -204,25 +222,56 @@ export const RowDetail = ({
                * never had that problem to solve.
                */}
               <dl className="flex flex-col gap-1 text-row">
-                <DetailField label={LOGS_TEXT.detailFields.time(abbrev)}>
+                <DetailField
+                  field="time"
+                  label={LOGS_TEXT.detailFields.time(abbrev)}
+                >
                   <span className="ik-zone-flash ik-zone-lift">{fullInstant(row.ts, tz)}</span>
                 </DetailField>
-                <DetailField label={LOGS_TEXT.detailFields.service}>{row.service}</DetailField>
-                <DetailField label={LOGS_TEXT.detailFields.level}>
+                <DetailField
+                  field="service"
+                  label={LOGS_TEXT.detailFields.service}
+                >
+                  {row.service}
+                </DetailField>
+                <DetailField
+                  field="level"
+                  label={LOGS_TEXT.detailFields.level}
+                >
                   {row.levelName} ({row.level})
                 </DetailField>
                 {row.route !== null && (
-                  <DetailField label={LOGS_TEXT.detailFields.route}>
+                  <DetailField
+                    field="route"
+                    label={LOGS_TEXT.detailFields.route}
+                  >
                     {row.httpMethod === null ? row.route : `${row.httpMethod} ${row.route}`}
                   </DetailField>
                 )}
                 {row.statusCode !== null && (
-                  <DetailField label={LOGS_TEXT.detailFields.status}>{row.statusCode}</DetailField>
+                  <DetailField
+                    field="status"
+                    label={LOGS_TEXT.detailFields.status}
+                  >
+                    {row.statusCode}
+                  </DetailField>
                 )}
                 {row.durationMs !== null && (
-                  <DetailField label={LOGS_TEXT.detailFields.duration}>{row.durationMs} ms</DetailField>
+                  <DetailField
+                    field="duration"
+                    label={LOGS_TEXT.detailFields.duration}
+                  >
+                    {row.durationMs} ms
+                  </DetailField>
                 )}
-                {traceId !== null && <DetailField label={LOGS_TEXT.detailFields.trace}>{traceId}</DetailField>}
+                {traceId !== null && (
+                  <DetailField
+                    field="trace"
+                    label={LOGS_TEXT.detailFields.trace}
+                  >
+                    {traceId}
+                  </DetailField>
+                )}
                 {/*
                  * The half of the line that had to be fetched — IKN-58, and the reason this pane
                  * can now answer "who". Same rule as the pairs above: a field the event does not
@@ -233,7 +282,10 @@ export const RowDetail = ({
                  * that app's logger rather than something for this pane to second-guess.
                  */}
                 {clientIp !== null && (
-                  <DetailField label={LOGS_TEXT.detailFields.client}>
+                  <DetailField
+                    field="client"
+                    label={LOGS_TEXT.detailFields.client}
+                  >
                     {/*
                      * The one value in this pane with a control beside it, because it is the one a
                      * reader takes *somewhere else* — a whois, a firewall rule, a grep across
@@ -250,10 +302,12 @@ export const RowDetail = ({
                         mode="hover"
                         content={LOGS_TEXT.copy}
                       >
+                        {/* Writes the clipboard on press. The film hovers it for the bubble and never clicks. */}
                         <button
                           type="button"
                           onClick={() => onCopyText(clientIp)}
                           aria-label={LOGS_TEXT.copyIp}
+                          data-testid="ip-copy"
                           className={cn(
                             "self-center transition-colors duration-150 ease-out",
                             SURFACE_TEXT_DIM.chassis,
@@ -267,12 +321,29 @@ export const RowDetail = ({
                   </DetailField>
                 )}
                 {detail?.userId != null && (
-                  <DetailField label={LOGS_TEXT.detailFields.user}>{detail.userId}</DetailField>
+                  <DetailField
+                    field="user"
+                    label={LOGS_TEXT.detailFields.user}
+                  >
+                    {detail.userId}
+                  </DetailField>
                 )}
                 {detail?.hostname != null && (
-                  <DetailField label={LOGS_TEXT.detailFields.host}>{detail.hostname}</DetailField>
+                  <DetailField
+                    field="host"
+                    label={LOGS_TEXT.detailFields.host}
+                  >
+                    {detail.hostname}
+                  </DetailField>
                 )}
-                {agent !== null && <DetailField label={LOGS_TEXT.detailFields.agent}>{agent}</DetailField>}
+                {agent !== null && (
+                  <DetailField
+                    field="agent"
+                    label={LOGS_TEXT.detailFields.agent}
+                  >
+                    {agent}
+                  </DetailField>
+                )}
                 {/*
                  * One line while the fetch is in flight, so the panel grows into its answer from
                  * somewhere rather than appearing out of nothing. The mark is what makes it read as
@@ -288,7 +359,14 @@ export const RowDetail = ({
                  * the modal and still readable, and only the fetched half is missing. A banner over
                  * the stream would suggest the search had failed, which it has not.
                  */}
-                {detailError !== null && <p className={TONE_TEXT.chassis.warn}>{detailError}</p>}
+                {detailError !== null && (
+                  <p
+                    data-testid="detail-error"
+                    className={TONE_TEXT.chassis.warn}
+                  >
+                    {detailError}
+                  </p>
+                )}
               </dl>
             </div>
           </section>
@@ -341,8 +419,21 @@ const PaneHeading = ({ children }: { children: React.ReactNode }) => (
  * `dur` was given. Sized to the longest of them rather than to the average, because a label that
  * wraps onto two lines puts its value halfway down the row it names.
  */
-const DetailField = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div className="flex gap-2">
+const DetailField = ({
+  field,
+  label,
+  children,
+}: {
+  /** The row's key in `detailFields` — what `data-field` says, since `label` for `time` moves with the zone. */
+  field: DetailFieldKey;
+  label: string;
+  children: React.ReactNode;
+}) => (
+  <div
+    className="flex gap-2"
+    data-testid="detail-field"
+    data-field={field}
+  >
     <dt className={cn("w-20 flex-none", SURFACE_TEXT_DIM.chassis)}>{label}</dt>
     <dd className={cn("min-w-0 flex-1 break-all", SURFACE_TEXT.chassis)}>{children}</dd>
   </div>

@@ -15,16 +15,19 @@ export const Dot = ({
   surface = "work",
   label,
   className,
+  ...rest
 }: {
   tone: Tone;
   surface?: Surface;
   label: string;
   className?: string;
-}) => (
+  // The spread is what lets a `data-testid` reach the pastille — see `Card`.
+} & React.ComponentPropsWithRef<"span">) => (
   <span
     role="img"
     aria-label={label}
     title={label}
     className={cn("inline-block size-1.5 rounded-full", TONE_FILL[surface][tone], className)}
+    {...rest}
   />
 );

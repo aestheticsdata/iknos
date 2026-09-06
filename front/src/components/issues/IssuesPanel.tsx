@@ -57,6 +57,8 @@ export const IssuesPanel = ({ service }: { service: string }) => {
       className="flex min-h-0 flex-1 flex-col overflow-hidden"
       // The body is the scrolling child, flush to the card's edges — see `Card`'s own note.
       bodyClassName={cn("flex min-h-0 flex-1 flex-col overflow-y-auto", SURFACE_SCROLL.work)}
+      bodyTestid="issues-panel-scroll"
+      data-testid="issues-panel"
     >
       {rows.length > 0 ? (
         <>
@@ -78,6 +80,7 @@ export const IssuesPanel = ({ service }: { service: string }) => {
                 "bg-work-inset px-2.75 py-1.75 text-micro transition-colors duration-150 ease-out hover:text-work-text",
                 SURFACE_TEXT_MUTED.work,
               )}
+              data-testid="issues-more-link"
             >
               {ISSUES_TEXT.more(remaining)}
             </Link>
@@ -112,7 +115,11 @@ const Empty = ({
   nothingAtAll: boolean;
   onRetry: () => void;
 }) => (
-  <p className={cn("px-2.75 py-3 text-micro leading-relaxed", SURFACE_TEXT_MUTED.work)}>
+  // One element for three sentences — which is why it has a name and the sentences do not.
+  <p
+    className={cn("px-2.75 py-3 text-micro leading-relaxed", SURFACE_TEXT_MUTED.work)}
+    data-testid="issues-panel-empty"
+  >
     {loading ? (
       <Pending>{ISSUES_TEXT.loading}</Pending>
     ) : error !== null ? (
@@ -122,6 +129,7 @@ const Empty = ({
           type="button"
           onClick={onRetry}
           className="underline underline-offset-2 transition-colors duration-150 ease-out hover:text-work-text"
+          data-testid="issues-panel-retry"
         >
           {ISSUES_TEXT.retry}
         </button>

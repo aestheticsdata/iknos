@@ -24,6 +24,10 @@ export const AlertCard = ({ alert, now, onOpen }: { alert: AlertRow; now: number
   const firing = alert.state === "firing";
 
   return (
+    // The companions ride the component rather than its call sites, so the rail panel and the
+    // view (`alerts-panel`, `alerts-view` — never both on one screen) can never disagree about
+    // them. `data-rule` is the rule's key; the id is minted per load. The badge and the
+    // `for 27m` beside it move with the clock, which is why the card is not found by its text.
     <button
       type="button"
       onClick={onOpen}
@@ -33,6 +37,9 @@ export const AlertCard = ({ alert, now, onOpen }: { alert: AlertRow; now: number
         TONE_FILL.work[tone].replace("bg-", "border-l-"),
         firing ? "bg-work-error-bg hover:brightness-[1.04]" : "hover:bg-work-inset",
       )}
+      data-testid="alert-card"
+      data-alert-id={alert.id}
+      data-rule={alert.ruleKey}
     >
       <div className="mb-1 flex items-center gap-1.75">
         <span

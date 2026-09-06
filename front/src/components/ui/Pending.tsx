@@ -31,8 +31,16 @@
  * they are punctuation and motion, and neither is worth a syllable. Where a container genuinely
  * wants marking, the site does it — `SignalTile` and `LogTable`'s load-more button both do.
  */
-export const Pending = ({ children, className }: { children?: React.ReactNode; className?: string }) => (
-  <span className={className}>
+export const Pending = ({
+  children,
+  className,
+  ...rest
+}: { children?: React.ReactNode; className?: string } & React.ComponentPropsWithRef<"span">) => (
+  // The spread is what lets a `data-testid` reach the mark — see `Card`.
+  <span
+    className={className}
+    {...rest}
+  >
     {children}
     {/* Empty on purpose: the dots are `content` on `::after`, so they are one clipped box rather
         than three elements, and one `aria-hidden` covers all of them. With no children this is the

@@ -51,13 +51,18 @@ export const IssuesView = () => {
   const capped = hasMore && limit >= CEILING;
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-work-ground px-3 py-2.75">
+    <div
+      className="flex h-full min-h-0 flex-col bg-work-ground px-3 py-2.75"
+      data-testid="issues-view"
+    >
       <header className="mb-2.75 flex flex-none flex-wrap items-center gap-3 rounded-card border border-work-border bg-work-surface px-3.25 py-2">
         <h1 className="font-sans text-ui font-medium text-work-text">{ISSUES_TEXT.title}</h1>
         <span className="text-kicker tracking-kicker text-work-text-dim uppercase">{ISSUES_TEXT.tag}</span>
 
         {/* The counts beside the labels come from the counts route, never from the page: a segment
             count read off the current page would be the length of the page. */}
+        {/* `data-segment`, not the label: the label carries that live count, so `unresolved 6` names
+            a button that reads `unresolved 5` the moment one is resolved. */}
         <fieldset
           aria-label={ISSUES_TEXT.segmentLabel}
           className="ml-auto flex items-center gap-1"
@@ -72,6 +77,8 @@ export const IssuesView = () => {
                 // it already scrolled past its own top.
                 setLimit(PAGE);
               }}
+              data-testid="issues-segment"
+              data-segment={one}
             >
               {ISSUES_TEXT.segments[one]}
               {counts !== null && <span className="ml-1 tabular-nums text-work-text-dim">{counts[one]}</span>}
@@ -88,6 +95,8 @@ export const IssuesView = () => {
               key={one}
               active={sort === one}
               onPick={() => setSort(one)}
+              data-testid="issues-sort"
+              data-sort={one}
             >
               {ISSUES_TEXT.sorts[one]}
             </Segment>
@@ -108,6 +117,7 @@ export const IssuesView = () => {
               type="button"
               onClick={issues.reload}
               className="underline underline-offset-2 transition-colors duration-150 ease-out hover:text-work-text"
+              data-testid="issues-retry"
             >
               {ISSUES_TEXT.retry}
             </button>
@@ -131,6 +141,7 @@ export const IssuesView = () => {
                   type="button"
                   onClick={() => setLimit((current) => Math.min(current + PAGE, CEILING))}
                   className="bg-work-inset px-3 py-2 text-left text-micro text-work-text-muted transition-colors duration-150 ease-out hover:text-work-text"
+                  data-testid="issues-load-more"
                 >
                   {ISSUES_TEXT.loadMore}
                 </button>
@@ -143,8 +154,18 @@ export const IssuesView = () => {
   );
 };
 
-/** A segmented control's cell — the shape the range buttons already use in the top bar. */
-const Segment = ({ active, onPick, children }: { active: boolean; onPick: () => void; children: React.ReactNode }) => (
+/**
+ * A segmented control's cell — the shape the range buttons already use in the top bar.
+ *
+ * The `...rest` onto the button is what lets a call site name it: a `data-testid` handed to a
+ * closed props object compiles and never reaches the DOM — see `Card`'s note.
+ */
+const Segment = ({
+  active,
+  onPick,
+  children,
+  ...rest
+}: { active: boolean; onPick: () => void; children: React.ReactNode } & React.ComponentPropsWithoutRef<"button">) => (
   <button
     type="button"
     onClick={onPick}
@@ -155,6 +176,7 @@ const Segment = ({ active, onPick, children }: { active: boolean; onPick: () => 
         ? "border-work-border-strong bg-work-inset text-work-text"
         : "border-transparent text-work-text-muted hover:text-work-text",
     )}
+    {...rest}
   >
     {children}
   </button>

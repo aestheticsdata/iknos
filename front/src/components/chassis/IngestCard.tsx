@@ -29,11 +29,15 @@ export const IngestCard = () => {
   const rate = status?.rate ?? null;
 
   return (
-    <section className="mx-1 rounded-card border border-chassis-border bg-chassis-inset px-2.5 py-2 max-rail:mx-0 max-rail:px-1">
+    <section
+      className="mx-1 rounded-card border border-chassis-border bg-chassis-inset px-2.5 py-2 max-rail:mx-0 max-rail:px-1"
+      data-testid="ingest-card"
+    >
       <button
         type="button"
         onClick={() => setOpen(true)}
         className="flex w-full flex-col gap-1.5 text-left"
+        data-testid="ingest-open"
         title={CHASSIS_TEXT.ingestOpen}
       >
         <span className="flex items-baseline gap-1 text-kicker tracking-kicker text-chassis-text-dim uppercase">
@@ -57,7 +61,11 @@ export const IngestCard = () => {
               label={CHASSIS_TEXT.ingestEvents(formatCount(rate.lines))}
               className="w-full max-rail:hidden"
             />
-            <span className="flex w-full justify-between text-micro tabular-nums text-chassis-text-dim max-rail:flex-col max-rail:items-center max-rail:gap-0.5">
+            {/* Here only once the collector has a reading — what a take waits for before it films the rail. */}
+            <span
+              className="flex w-full justify-between text-micro tabular-nums text-chassis-text-dim max-rail:flex-col max-rail:items-center max-rail:gap-0.5"
+              data-testid="ingest-reading"
+            >
               <span>{CHASSIS_TEXT.ingestEvents(formatCount(rate.lines))}</span>
               <span>{formatBytes(rate.bytes)}</span>
             </span>
@@ -80,6 +88,8 @@ export const IngestCard = () => {
       <Modal
         open={open}
         onClose={() => setOpen(false)}
+        // Six dialogs sit closed in the DOM at once; this is how the film tells this one apart.
+        testId="storage-modal"
         tag={CHASSIS_TEXT.storageTag}
         title={CHASSIS_TEXT.storageTitle}
         hint={status === null ? undefined : CHASSIS_TEXT.storageFiles(status.files.length)}
@@ -96,6 +106,7 @@ export const IngestCard = () => {
             <button
               type="button"
               onClick={reload}
+              data-testid="ingest-retry"
               className="text-chassis-info underline"
             >
               {CHASSIS_TEXT.storageRetry}

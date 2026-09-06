@@ -19,7 +19,8 @@
       "@src/*": ["./src/*"],
       "@components/*": ["./src/components/*"],
       "@lib/*": ["./src/lib/*"],
-      "@text/*": ["./src/text/*"]
+      "@text/*": ["./src/text/*"],
+      "@e2e/*": ["./e2e/*"]
     },
     "plugins": [{ "name": "next" }],
     "incremental": true

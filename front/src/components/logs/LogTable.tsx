@@ -178,7 +178,10 @@ export const LogTable = ({
      * clear of the toast stack at `z-50`, which is the one thing the isolation was protecting.
      * Modals are native `<dialog>`s in the top layer and are unaffected either way.
      */
-    <div className={cn(SURFACE_INSET_BG.chassis, SURFACE_TEXT.chassis)}>
+    <div
+      className={cn(SURFACE_INSET_BG.chassis, SURFACE_TEXT.chassis)}
+      data-testid="log-table"
+    >
       <table className="w-full border-collapse text-row tabular-nums">
         <thead>
           <tr>
@@ -226,7 +229,7 @@ export const LogTable = ({
            * editing filters that were never applied.
            */}
           {items.length === 0 && !error && !loading && (
-            <tr>
+            <tr data-testid="log-empty">
               <td
                 colSpan={COLUMN_COUNT}
                 className={cn("px-2 py-6 text-center", SURFACE_TEXT_DIM.chassis)}
@@ -358,6 +361,11 @@ const LogTableRow = memo(
              at ten thousand rows, and ten thousand scroll effects is exactly the cost `React.memo`
              is here to avoid. */
           data-row-key={rowKey}
+          /* `data-row-key` is the DB id and changes with every load; these two are what a storyboard
+             can actually name — "an error row of pfa-nest-api" — and neither moves between takes. */
+          data-testid="log-row"
+          data-service={row.service}
+          data-severity={severity}
           className={cn(
             // The whole row opens the detail modal, not just the button in the time cell, so the
             // whole row admits it under the pointer. The base rule covers buttons and cannot reach
@@ -417,6 +425,7 @@ const LogTableRow = memo(
               type="button"
               title={fullInstant(row.ts, tz)}
               aria-label={`${fullInstant(row.ts, tz)} · ${LOGS_TEXT.openRow}`}
+              data-testid="log-time"
               className="ik-zone-flash ik-zone-lift text-left"
             >
               {timeOfDay(row.ts, tz)}
@@ -473,6 +482,8 @@ const LogTableRow = memo(
                 }}
                 title={traceId}
                 aria-label={`${LOGS_TEXT.openTrace} ${traceId}`}
+                data-testid="log-trace"
+                data-trace={traceId}
                 className={cn(
                   "underline decoration-dotted underline-offset-2 transition-[filter] duration-150 ease-out hover:brightness-125",
                   TONE_TEXT.chassis.info,
@@ -528,7 +539,7 @@ const NoValue = () => (
  * lines still looks perfectly continuous.
  */
 const GapRow = ({ dropped }: { dropped: number }) => (
-  <tr>
+  <tr data-testid="gap-row">
     <td
       colSpan={COLUMN_COUNT}
       className="px-2 py-2"
@@ -591,6 +602,7 @@ const Footer = ({
         <Button
           variant="quiet"
           onClick={onRetry}
+          data-testid="stream-retry"
         >
           {LOGS_TEXT.retry}
         </Button>
@@ -625,8 +637,13 @@ const Footer = ({
   );
 };
 
+// One strip at a time — failed, loading, or the end — so one name covers whichever is up, and what
+// it says is the state. Read the text; there is no companion for it.
 const FooterStrip = ({ children }: { children: React.ReactNode }) => (
-  <div className={cn("flex items-center justify-center gap-3 border-t px-2 py-3 text-row", SURFACE_BORDER.chassis)}>
+  <div
+    className={cn("flex items-center justify-center gap-3 border-t px-2 py-3 text-row", SURFACE_BORDER.chassis)}
+    data-testid="stream-footer"
+  >
     {children}
   </div>
 );

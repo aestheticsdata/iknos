@@ -98,7 +98,10 @@ export const Signals = ({
   /** Set when the request failed. An absence and a failure are not the same sentence. */
   error: string | null;
 }) => (
-  <div className="flex flex-none flex-col gap-1.5">
+  <div
+    className="flex flex-none flex-col gap-1.5"
+    data-testid="signals"
+  >
     {/* Four tiles, always — an unscraped service included. The full-width sentence this replaces
        made a service switch flash four loaders and then collapse them into one band, which read
        as the row failing to render rather than as an answer. The tiles hold their geometry in
@@ -153,6 +156,7 @@ const ThroughputTile = ({
 
   return (
     <SignalTile
+      tile="throughput"
       kicker={SERVICE_TEXT.throughput}
       value={formatRate(signals?.throughput.value ?? null)}
       unit={SERVICE_TEXT.throughputUnit}
@@ -165,6 +169,8 @@ const ThroughputTile = ({
           tone="ok"
           label={SERVICE_TEXT.throughputChart(service)}
           tip={seriesTip(points, signals?.bucketMs ?? 0, tz, SERVICE_TEXT.throughputUnit, formatRate)}
+          data-testid="tile-chart"
+          data-tile="throughput"
         />
       ) : (
         <NoChart
@@ -205,6 +211,7 @@ const ErrorRateTile = ({
 
   return (
     <SignalTile
+      tile="error-rate"
       kicker={SERVICE_TEXT.errorRate}
       value={formatPercent(value)}
       unit={SERVICE_TEXT.errorRateUnit}
@@ -224,6 +231,8 @@ const ErrorRateTile = ({
           /* The one chart whose bars are drawn against a fixed floor rather than their own peak,
              which is exactly the kind of scale a reader cannot see and has to be told. */
           tip={seriesTip(points, signals?.bucketMs ?? 0, tz, SERVICE_TEXT.errorRateUnit, formatPercent)}
+          data-testid="tile-chart"
+          data-tile="error-rate"
         />
       ) : (
         <NoChart
@@ -254,6 +263,7 @@ const LatencyTile = ({
 
   return (
     <SignalTile
+      tile="latency"
       kicker={SERVICE_TEXT.latency}
       value={formatMs(value)}
       unit={SERVICE_TEXT.latencyUnit}
@@ -276,6 +286,8 @@ const LatencyTile = ({
              how far up is "up". The dashed rule is named in the header's hint, the bars in this. */
           tip={seriesTip(points, signals?.bucketMs ?? 0, tz, SERVICE_TEXT.latencyUnit, formatMs)}
           className="h-full w-full"
+          data-testid="tile-chart"
+          data-tile="latency"
         />
       ) : (
         <NoChart
@@ -313,6 +325,7 @@ const RuntimeTile = ({
 
   return (
     <SignalTile
+      tile="runtime"
       kicker={SERVICE_TEXT.runtime}
       value={heap.value}
       unit={heap.unit}
@@ -343,6 +356,7 @@ const RuntimeTile = ({
         <div className="flex h-full w-full flex-col justify-center gap-1">
           {lag !== null && (
             <MeterRow
+              meter="event-loop"
               label={SERVICE_TEXT.loopLag}
               share={loopShare(lag)}
               tone={loopTone(lag)}
@@ -364,6 +378,7 @@ const RuntimeTile = ({
           )}
           {pool !== null && (
             <MeterRow
+              meter="db-pool"
               label={SERVICE_TEXT.dbPool}
               share={poolShare(pool)}
               tone={poolTone(pool)}
@@ -391,12 +406,15 @@ const RuntimeTile = ({
 };
 
 const MeterRow = ({
+  meter,
   label,
   tip,
   share,
   tone,
   value,
 }: {
+  /** `event-loop` or `db-pool`, as `data-meter` — the row's key, not its label (ZEU-78). */
+  meter: string;
   label: string;
   /** The block the row shows under the pointer — what the bar is a share of, in numbers. */
   tip: ReactNode;
@@ -410,6 +428,8 @@ const MeterRow = ({
     mode="hover"
     content={tip}
     className="flex items-center gap-1.5 text-micro leading-none text-work-text-muted"
+    data-testid="meter-row"
+    data-meter={meter}
   >
     {/* 60px, not 52: `event loop` is ten characters, and at 10px of JetBrains Mono that is exactly
         60. A column an em too narrow wraps it onto a second line, which is how two rows of meters

@@ -59,6 +59,8 @@ export const AlertsPanel = ({ service }: { service: string }) => {
       actions={<span className={cn("text-micro", SURFACE_TEXT_DIM.work)}>{ALERTS_TEXT.panelNote}</span>}
       className="flex flex-none flex-col overflow-hidden"
       bodyClassName={cn("flex max-h-[280px] flex-col overflow-y-auto", SURFACE_SCROLL.work)}
+      bodyTestid="alerts-panel-scroll"
+      data-testid="alerts-panel"
     >
       {rows.length > 0 ? (
         <>
@@ -77,6 +79,7 @@ export const AlertsPanel = ({ service }: { service: string }) => {
                 "bg-work-inset px-2.75 py-1.75 text-micro transition-colors duration-150 ease-out hover:text-work-text",
                 SURFACE_TEXT_MUTED.work,
               )}
+              data-testid="alerts-more-link"
             >
               {ALERTS_TEXT.more(remaining)}
             </Link>
@@ -84,7 +87,14 @@ export const AlertsPanel = ({ service }: { service: string }) => {
         </>
       ) : recent.rows.length > 0 ? (
         <>
-          <p className={cn("px-2.75 pt-2 pb-1 text-kicker tracking-kicker uppercase", SURFACE_TEXT_DIM.work)}>
+          {/* ⚠️ The cards under this heading are `alert-card` too — the same family as the firing
+              ones above, and the only ones the panel holds when nothing is burning. A storyboard
+              that takes `alerts-panel`'s first card for a live one opens a modal with no actions
+              in it; this heading is how it can tell which list it is looking at. */}
+          <p
+            className={cn("px-2.75 pt-2 pb-1 text-kicker tracking-kicker uppercase", SURFACE_TEXT_DIM.work)}
+            data-testid="alerts-panel-recent"
+          >
             {ALERTS_TEXT.recentResolved}
           </p>
           {recent.rows.slice(0, RAIL_LIMIT).map((row) => (
@@ -121,7 +131,11 @@ const Empty = ({
   nothingAtAll: boolean;
   onRetry: () => void;
 }) => (
-  <p className={cn("px-2.75 py-3 text-micro leading-relaxed", SURFACE_TEXT_MUTED.work)}>
+  // One element for three sentences — which is why it has a name and the sentences do not.
+  <p
+    className={cn("px-2.75 py-3 text-micro leading-relaxed", SURFACE_TEXT_MUTED.work)}
+    data-testid="alerts-panel-empty"
+  >
     {loading ? (
       <Pending>{ALERTS_TEXT.loading}</Pending>
     ) : error !== null ? (
@@ -131,6 +145,7 @@ const Empty = ({
           type="button"
           onClick={onRetry}
           className="underline underline-offset-2 transition-colors duration-150 ease-out hover:text-work-text"
+          data-testid="alerts-panel-retry"
         >
           {ALERTS_TEXT.retry}
         </button>

@@ -35,8 +35,10 @@ export const CollectorPill = () => {
   const age = status === null ? null : ageOfPoll(status, receivedAt, now);
 
   return (
+    // Named, because its text *is* the state — `starting`, then `lag 0.4s` — and the title moves with it.
     <span
       className="flex items-center gap-1.5 text-kicker tracking-control text-chassis-text-dim"
+      data-testid="collector-pill"
       title={hint(health, age)}
     >
       <Dot

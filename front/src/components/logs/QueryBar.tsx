@@ -129,7 +129,10 @@ export const QueryBar = ({
   };
 
   return (
-    <div className="flex flex-col gap-1.5 border-b border-chassis-border bg-chassis-surface px-2.5 py-1.5">
+    <div
+      className="flex flex-col gap-1.5 border-b border-chassis-border bg-chassis-surface px-2.5 py-1.5"
+      data-testid="query-bar"
+    >
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
         <span
           id={labelId}
@@ -141,14 +144,20 @@ export const QueryBar = ({
         <ul
           ref={listRef}
           aria-labelledby={labelId}
+          data-testid="filter-list"
           className="flex flex-wrap items-center gap-1.5"
         >
           {LOG_FILTER_KEYS.map((key) => {
             const value = state.values[key];
             if (!value) return null;
 
+            // `data-filter` is the key, not the chip's text: the value half is whatever was typed.
             return (
-              <li key={key}>
+              <li
+                key={key}
+                data-testid="filter-chip"
+                data-filter={key}
+              >
                 <FilterChip
                   name={LOGS_TEXT.filterNames[key]}
                   value={displayValue(key, value)}
@@ -172,6 +181,7 @@ export const QueryBar = ({
             ref={triggerRef}
             variant="quiet"
             onClick={() => setDraft({ key: unset[0], value: seedFor(unset[0]) })}
+            data-testid="add-filter"
             className="h-6 px-2"
           >
             + {LOGS_TEXT.addFilter}
@@ -186,6 +196,7 @@ export const QueryBar = ({
               ref={jumpTriggerRef}
               variant="quiet"
               onClick={() => setJumpOpen(true)}
+              data-testid="jump-to-time"
               className="h-6 px-2"
             >
               {LOGS_TEXT.jumpToTime}
@@ -197,6 +208,7 @@ export const QueryBar = ({
               <Badge
                 tone="info"
                 surface="chassis"
+                data-testid="pinned-badge"
               >
                 {LOGS_TEXT.pinnedWindow}
               </Badge>
@@ -207,6 +219,7 @@ export const QueryBar = ({
               <Button
                 variant="quiet"
                 onClick={onUnpinWindow}
+                data-testid="unpin"
                 className="h-6 px-2"
               >
                 {LOGS_TEXT.unpinWindow}
@@ -219,11 +232,19 @@ export const QueryBar = ({
            * to fix. Rendered only when a query has actually reported one — a `q 0ms` before the
            * first response is a claim nobody measured.
            */}
-          {tookMs !== null && <span className="text-kicker tracking-control text-chassis-text-dim">q {tookMs}ms</span>}
+          {tookMs !== null && (
+            <span
+              data-testid="query-took"
+              className="text-kicker tracking-control text-chassis-text-dim"
+            >
+              q {tookMs}ms
+            </span>
+          )}
 
           <Button
             variant="quiet"
             onClick={onRefresh}
+            data-testid="refresh"
             className="h-6 px-2"
           >
             {LOGS_TEXT.refresh}
@@ -317,21 +338,25 @@ const FilterChip = ({
      * have told them apart. The toggle's name stays *stable* across states — `aria-pressed` is
      * what changes — because a name that rewrites itself reads as two different controls.
      */}
+    {/* The glyph and the title both flip with `active`; the name below does not. */}
     <button
       type="button"
       onClick={onToggle}
       aria-pressed={active}
       aria-label={`${name}:${value}`}
       title={active ? LOGS_TEXT.filterOn : LOGS_TEXT.filterOff}
+      data-testid="filter-toggle"
       className="ml-0.5 px-0.5 leading-none text-chassis-text-dim transition-colors duration-150 ease-out hover:text-chassis-text"
     >
       {active ? "×" : "+"}
     </button>
+    {/* ⚠️ One glyph from the toggle, and this one drops the filter. Its own name, never a fuzzy match. */}
     <button
       type="button"
       onClick={onRemove}
       aria-label={`${LOGS_TEXT.removeFilter} — ${name}:${value}`}
       title={LOGS_TEXT.removeFilter}
+      data-testid="filter-remove"
       className="px-0.5 text-kicker leading-none text-chassis-text-dim transition-colors duration-150 ease-out hover:text-chassis-text"
     >
       rm
@@ -397,13 +422,17 @@ const Drawer = ({
         event.stopPropagation();
         onCancel();
       }}
+      data-testid="filter-drawer"
       className="flex flex-wrap items-end gap-2 rounded-control border border-chassis-border bg-chassis-inset px-2 py-1.5"
     >
+      {/* `Select` and `Field` spread onto the control itself, so these name the `<select>` and the
+          `<input>` — the things a script picks from and types into. */}
       <Select
         ref={keyRef}
         surface="chassis"
         label={LOGS_TEXT.addFilter}
         value={draft.key}
+        data-testid="filter-drawer-key"
         onChange={(event) => {
           const key = event.target.value as LogFilterKey;
           onChange({ key, value: onSeed(key) });
@@ -418,6 +447,7 @@ const Drawer = ({
           label={LOGS_TEXT.filterNames[draft.key]}
           value={draft.value}
           onChange={(event) => onChange({ key: draft.key, value: event.target.value })}
+          data-testid="filter-drawer-value"
           options={
             draft.key === "service"
               ? services.map((service) => ({ value: service, label: service }))
@@ -426,11 +456,13 @@ const Drawer = ({
           className="w-[184px]"
         />
       ) : (
+        // Same name as the closed-set select above: one of the two renders, and both are the value.
         <Field
           surface="chassis"
           label={LOGS_TEXT.filterNames[draft.key]}
           value={draft.value}
           onChange={(event) => onChange({ key: draft.key, value: event.target.value })}
+          data-testid="filter-drawer-value"
           required
           // `required` alone accepts `"   "`. This makes the browser demand a non-space character,
           // so the refusal comes with its own message instead of a submit that quietly does nothing.
@@ -446,6 +478,7 @@ const Drawer = ({
       <Button
         type="submit"
         variant="quiet"
+        data-testid="filter-drawer-submit"
         className="h-7 px-2"
       >
         {LOGS_TEXT.addFilter}
@@ -460,6 +493,7 @@ const Drawer = ({
         type="button"
         variant="quiet"
         onClick={onCancel}
+        data-testid="filter-drawer-close"
         className="h-7 px-2"
       >
         {LOGS_TEXT.close}
@@ -515,6 +549,7 @@ const TimeJumpDrawer = ({
         event.stopPropagation();
         onCancel();
       }}
+      data-testid="jump-drawer"
       className="flex flex-wrap items-end gap-2 rounded-control border border-chassis-border bg-chassis-inset px-2 py-1.5"
     >
       <Field
@@ -525,6 +560,7 @@ const TimeJumpDrawer = ({
         label={LOGS_TEXT.jumpToTime}
         value={value}
         onChange={(event) => setValue(event.target.value)}
+        data-testid="jump-input"
         required
         className="w-[210px]"
       />
@@ -532,6 +568,7 @@ const TimeJumpDrawer = ({
       <Button
         type="submit"
         variant="quiet"
+        data-testid="jump-submit"
         className="h-7 px-2"
       >
         {LOGS_TEXT.go}
@@ -541,6 +578,7 @@ const TimeJumpDrawer = ({
         type="button"
         variant="quiet"
         onClick={onCancel}
+        data-testid="jump-close"
         className="h-7 px-2"
       >
         {LOGS_TEXT.close}
@@ -574,6 +612,8 @@ const LiveToggle = ({ live, onToggle }: { live: boolean; onToggle: () => void })
     onClick={onToggle}
     aria-pressed={live}
     title={LOGS_TEXT.liveHint}
+    /* The text reads LIVE or PAUSED by state; `aria-pressed` says which, this says where. */
+    data-testid="live-toggle"
     /* The four properties written out rather than `transition-colors`: `Button` already sets
        `transition-[filter,background-color,color]`, and tailwind-merge keeps only the last transition
        utility — a bare `transition-colors` here would silently delete the hover brightness. */

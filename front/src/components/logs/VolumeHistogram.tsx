@@ -284,7 +284,10 @@ export const VolumeHistogram = ({
   const marker = anomaly ? columns[anomaly.index] : undefined;
 
   return (
-    <div className="flex flex-col gap-1">
+    <div
+      className="flex flex-col gap-1"
+      data-testid="histogram"
+    >
       {/*
        * Fixed height, and exactly `CHART_UNITS` of it: the viewBox depends on that equality for its
        * 1 unit = 1px vertical scale, and the table below depends on it for not jumping a row every
@@ -303,6 +306,7 @@ export const VolumeHistogram = ({
             <Button
               variant="quiet"
               onClick={onRetry}
+              data-testid="histogram-retry"
               className="h-6 px-2 text-label"
             >
               {LOGS_TEXT.retry}
@@ -318,7 +322,12 @@ export const VolumeHistogram = ({
           </div>
         ) : silent ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-micro text-chassis-text-dim">{LOGS_TEXT.noVolume}</span>
+            <span
+              data-testid="histogram-empty"
+              className="text-micro text-chassis-text-dim"
+            >
+              {LOGS_TEXT.noVolume}
+            </span>
           </div>
         ) : (
           <>
@@ -374,12 +383,16 @@ export const VolumeHistogram = ({
             {/* `onMouseLeave` on the strip rather than on each button: leaving one bucket for the
                 next fires a leave before the enter, and a bubble that closes and reopens between
                 every pair of bars flickers its way across the chart. */}
+            {/* ⚠️ `data-bucket` is the bucket's own start (`column.key`, the API's ISO `t`), and it is
+                the only stable handle here: the `aria-label` carries the three live counts, which
+                move with every refetch and with the tail. Never select on the name. */}
             {/* biome-ignore lint/a11y/noStaticElementInteractions: the strip is a container of real
                 buttons and gains nothing but the pointer's exit — every bucket's numbers are on its
                 own button's accessible name, which is how the keyboard already reads them */}
             <div
               className="absolute inset-0 flex"
               onMouseLeave={clear}
+              data-testid="histogram-strip"
             >
               {columns.map((column, index) => (
                 <button
@@ -391,6 +404,8 @@ export const VolumeHistogram = ({
                   tabIndex={index === roving ? 0 : -1}
                   disabled={column.bounds === null}
                   aria-label={column.name}
+                  data-testid="histogram-bucket"
+                  data-bucket={column.key}
                   onFocus={() => setActive(index)}
                   /* Enter as well as move — a pointer that lands on a bucket and stops moving is
                      still pointing at it. */
@@ -481,6 +496,8 @@ export const VolumeHistogram = ({
                   onClick={() => marker.bounds && onSelectBucket(marker.bounds)}
                   disabled={marker.bounds === null}
                   aria-label={`${marker.label} · ${LOGS_TEXT.anomaly(anomaly.excess)} · ${LOGS_TEXT.anomalyHint}`}
+                  data-testid="histogram-anomaly"
+                  data-bucket={marker.key}
                   className="text-chassis-info transition-[filter] duration-150 ease-out hover:brightness-125"
                 >
                   <span aria-hidden="true">▲ </span>

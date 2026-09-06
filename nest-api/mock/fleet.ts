@@ -33,8 +33,8 @@ const LOADER_PLACEHOLDER = "http://127.0.0.1:3006/";
 
 /**
  * Every dummy binds `PORT_BASE + its index`, never the port the registry names. Those ports are
- * the real apps' own — pfa's 6100, worldweathr's 6500 and 3002, iknos-front's 3006 — and a dummy
- * squatting one would block the real app the next time it is started in dev, hours after iknos
+ * the real apps' own — atlas's 6100, beacon's 6500 and 3002, keystone-front's 3006 — and a dummy
+ * squatting one would block the real app the next time it is started in dev, hours after keystone
  * was closed and its fleet forgotten. The base sits outside every range Zeus's port registry
  * hands out (`7N00–7N99` for APIs, `30xx` for fronts) and below macOS's ephemeral range (49152+),
  * so no future app is ever allocated a port a forgotten fleet is sitting on — nobody has to
@@ -155,7 +155,7 @@ async function start(): Promise<void> {
     if (row === undefined) continue; // the seed decides who exists, not the fleet
 
     const port = PORT_BASE + i;
-    const kind = profile.name === "hiwaysim" ? "stopped" : profile.name.endsWith("-front") ? "front" : "api";
+    const kind = profile.name === "juniper" ? "stopped" : profile.name.endsWith("-front") ? "front" : "api";
     const healthPath = pathOf(row.healthUrl, "/health");
     const metricsPath = pathOf(row.metricsUrl, "/metrics");
 

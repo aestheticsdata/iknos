@@ -66,7 +66,12 @@ const ToastHost = ({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: num
     role="status"
     aria-live="polite"
     className="pointer-events-none fixed right-3 bottom-8 z-50 flex flex-col items-end gap-1.5"
+    data-testid="toast-host"
   >
+    {/* ⚠️ `toast` matches every toast on the stack, and each one is gone `LIFETIME_MS` after it was
+        raised. The companion is the tone — the one stable thing about a toast; its `id` is a
+        counter and its message is copy — so a storyboard asks the host for its last `toast`, or
+        for the `error` one, and reads the message from there. */}
     {toasts.map((toast) => (
       <div
         key={toast.id}
@@ -75,12 +80,15 @@ const ToastHost = ({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: num
           "bg-chassis-raised px-2.5 py-1.5 font-mono text-dense shadow-menu",
           TONE_TEXT.chassis[toast.tone],
         )}
+        data-testid="toast"
+        data-tone={toast.tone}
       >
         <span>{toast.message}</span>
         <button
           type="button"
           onClick={() => onDismiss(toast.id)}
           aria-label="Dismiss"
+          data-testid="toast-dismiss"
           className="text-chassis-text-dim transition-colors duration-150 ease-out hover:text-chassis-text"
         >
           ×

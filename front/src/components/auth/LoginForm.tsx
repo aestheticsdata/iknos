@@ -72,11 +72,13 @@ export const LoginForm = ({ notice, canRegister }: { notice?: LoginNotice; canRe
 
   return (
     <form
+      data-testid="login-form"
       noValidate
       onSubmit={onSubmit}
     >
       {notice ? (
         <AuthBanner
+          data-notice={notice}
           tone={NOTICE[notice].tone}
           title={NOTICE[notice].title}
         />
@@ -89,6 +91,8 @@ export const LoginForm = ({ notice, canRegister }: { notice?: LoginNotice; canRe
       ) : null}
 
       <AuthField
+        data-field="email"
+        data-testid="login-field"
         error={formState.errors.email?.message}
         label={AUTH_TEXT.fields.email}
       >
@@ -96,6 +100,7 @@ export const LoginForm = ({ notice, canRegister }: { notice?: LoginNotice; canRe
           aria-invalid={Boolean(formState.errors.email)}
           autoComplete="username"
           autoFocus
+          data-testid="login-email"
           placeholder={AUTH_TEXT.fields.emailPlaceholder}
           type="email"
           {...register("email", { onBlur: () => clearOnEmpty("email") })}
@@ -103,40 +108,56 @@ export const LoginForm = ({ notice, canRegister }: { notice?: LoginNotice; canRe
       </AuthField>
 
       <AuthField
+        data-field="password"
+        data-testid="login-field"
         error={formState.errors.password?.message}
         label={AUTH_TEXT.fields.password}
       >
         <AuthInput
           aria-invalid={Boolean(formState.errors.password)}
           autoComplete="current-password"
+          data-testid="login-password"
           type="password"
           {...register("password", { onBlur: () => clearOnEmpty("password") })}
         />
       </AuthField>
 
       <div className="mt-1 mb-4 flex items-center gap-3.5">
+        {/* Named because the label is the state: `Sign in` becomes `verifying` for the length of
+            the request, so a text locator loses the button at exactly the moment a take waits on it. */}
         <Button
+          data-testid="login-submit"
           disabled={busy}
           type="submit"
         >
           {busy ? <Pending>{t.submitting}</Pending> : t.submit}
         </Button>
         <span className="text-row text-chassis-text-dim">{t.or}</span>
+        {/* Two names, not one with a flag. The `<a>` is the door to `/register`, which creates the
+            instance's one account — so it gets a name no fuzzy match can reach — and the greyed
+            `<span>` is not a control at all. A sealed instance has only `login-register-sealed`. */}
         {canRegister ? (
           <Link
             className="text-label tracking-control text-chassis-accent transition-[filter] duration-150 ease-out hover:brightness-125"
+            data-testid="login-register-link"
             href={ROUTES.register}
           >
             {t.register}
           </Link>
         ) : (
-          <span className="text-label tracking-control text-chassis-border-focus">{t.register}</span>
+          <span
+            className="text-label tracking-control text-chassis-border-focus"
+            data-testid="login-register-sealed"
+          >
+            {t.register}
+          </span>
         )}
       </div>
 
       <div className="border-t border-chassis-border pt-3.5">
         <Link
           className="text-label tracking-control text-chassis-accent transition-colors duration-150 ease-out hover:text-chassis-text"
+          data-testid="login-recover-link"
           href={ROUTES.recover}
         >
           {t.recover}

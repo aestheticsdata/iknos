@@ -23,20 +23,33 @@ export const TopBar = () => {
   const [range, setRange] = useTimeRange();
 
   return (
-    <header className="flex h-9 flex-none items-center gap-3.5 border-b border-chassis-border bg-chassis-surface px-3.5">
+    <header
+      className="flex h-9 flex-none items-center gap-3.5 border-b border-chassis-border bg-chassis-surface px-3.5"
+      data-testid="top-bar"
+    >
       <span className="text-ui font-bold tracking-chrome text-chassis-text">IKNOS</span>
 
-      <span className="rounded-chip border border-chassis-border-strong px-1.5 py-0.5 text-kicker tracking-kicker text-chassis-text-muted">
-        {CHASSIS_TEXT.host}
+      <span
+        className="rounded-chip border border-chassis-border-strong px-1.5 py-0.5 text-kicker tracking-kicker text-chassis-text-muted"
+        data-testid="host-badge"
+      >
+        {process.env.NEXT_PUBLIC_IKNOS_HOST_LABEL ?? CHASSIS_TEXT.host}
       </span>
 
       <nav
         aria-label={CHASSIS_TEXT.breadcrumbLabel}
         className="flex items-center gap-1.5 text-label"
+        data-testid="breadcrumb"
       >
         <span className="text-chassis-text-dim">{CHASSIS_TEXT.services}</span>
         <span className="text-chassis-text-dim">/</span>
-        <span className="text-chassis-text">{service ?? CHASSIS_TEXT.allServices}</span>
+        {/* Named because its text is the selection — `all` on one click, a service name on the next. */}
+        <span
+          className="text-chassis-text"
+          data-testid="breadcrumb-scope"
+        >
+          {service ?? CHASSIS_TEXT.allServices}
+        </span>
       </nav>
 
       <div className="ml-auto flex items-center gap-3.5">
@@ -52,6 +65,7 @@ export const TopBar = () => {
         <fieldset
           className="flex items-center gap-0.5"
           aria-label={CHASSIS_TEXT.rangeLabel}
+          data-testid="range-group"
         >
           {RANGE_KEYS.map((key) => (
             <button
@@ -59,6 +73,8 @@ export const TopBar = () => {
               type="button"
               onClick={() => setRange(key)}
               aria-pressed={range === key}
+              data-testid="range-button"
+              data-range={key}
               className={cn(
                 // On the shared base rather than in either branch: a transition present on only
                 // one side of a swap animates in one direction and snaps back in the other.
@@ -107,7 +123,10 @@ const Clock = () => {
   }, [tz]);
 
   return (
-    <span className="w-[62px] text-right text-row tabular-nums text-chassis-text-muted">
+    <span
+      className="w-[62px] text-right text-row tabular-nums text-chassis-text-muted"
+      data-testid="clock"
+    >
       {/* The flash sits on a child of the box that carries the ink, never on the box itself:
           `ik-zone-flash` mixes from `currentcolor`, and inside the `color` property that resolves
           to the *inherited* colour. Both on one element would be the class mixing with itself. */}

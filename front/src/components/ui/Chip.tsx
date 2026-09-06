@@ -19,13 +19,15 @@ export const Chip = ({
   surface = "work",
   onRemove,
   className,
+  ...rest
 }: {
   label: string;
   value: string;
   surface?: Surface;
   onRemove?: () => void;
   className?: string;
-}) => (
+  // The spread is what lets a `data-testid` and a `data-filter` companion reach the token — see `Card`.
+} & React.ComponentPropsWithRef<"span">) => (
   <span
     className={cn(
       "inline-flex items-center gap-1 rounded-chip border px-1.5 py-0.5 text-row",
@@ -33,14 +35,18 @@ export const Chip = ({
       SURFACE_BORDER_STRONG[surface],
       className,
     )}
+    {...rest}
   >
     <span className={SURFACE_TEXT_DIM[surface]}>{label}:</span>
     <span className={SURFACE_TEXT[surface]}>{value}</span>
     {onRemove && (
+      /* Named, because its accessible name is `Remove {label} {value}` — it changes with every
+         token, so a storyboard scopes to the chip and asks for this rather than for a label. */
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${label} ${value}`}
+        data-testid="chip-remove"
         className={cn(
           "ml-0.5 leading-none transition-[filter] duration-150 ease-out hover:brightness-125",
           SURFACE_TEXT_DIM[surface],

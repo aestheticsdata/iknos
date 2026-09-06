@@ -67,7 +67,12 @@ export const AppChassis = async ({ children }: { children: React.ReactNode }) =>
                       <TopBar />
                       <div className="flex min-h-0 flex-1">
                         <ServiceRail services={services} />
-                        <main className="ik-scroll-work min-w-0 flex-1 overflow-auto bg-work-surface">{children}</main>
+                        <main
+                          className="ik-scroll-work min-w-0 flex-1 overflow-auto bg-work-surface"
+                          data-testid="work-main"
+                        >
+                          {children}
+                        </main>
                       </div>
                       <StatusBar />
                       {/* One issue modal for the application, opened by `?issue=` from wherever — the

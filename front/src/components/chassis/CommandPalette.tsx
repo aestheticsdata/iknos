@@ -173,6 +173,7 @@ export const CommandPalette = () => {
     <Modal
       open={open}
       onClose={hide}
+      testId="palette"
       tag={CHASSIS_TEXT.paletteTag}
       title={CHASSIS_TEXT.paletteTitle}
       hint={CHASSIS_TEXT.paletteHint}
@@ -185,13 +186,17 @@ export const CommandPalette = () => {
           onKeyDown={onKeyDown}
           placeholder={CHASSIS_TEXT.palettePlaceholder}
           aria-label={CHASSIS_TEXT.paletteTitle}
+          data-testid="palette-input"
           /* The global listener suppresses every shortcut while focus is in a field, so the arrows
              and enter above are the palette's alone and cannot also move the log selection. */
           className="w-full rounded-chip border border-chassis-border-strong bg-chassis-inset px-2 py-1.5 text-ui text-chassis-text-bright outline-none transition-colors duration-150 ease-out placeholder:text-chassis-text-dim focus:border-chassis-accent"
         />
 
         {results.length > 0 ? (
-          <ul className="ik-scroll flex max-h-[320px] flex-col overflow-y-auto">
+          <ul
+            className="ik-scroll flex max-h-[320px] flex-col overflow-y-auto"
+            data-testid="palette-results"
+          >
             {results.map((hit, index) => (
               <Row
                 key={`${hit.type}:${hit.value}`}
@@ -203,7 +208,11 @@ export const CommandPalette = () => {
             ))}
           </ul>
         ) : (
-          <p className="px-1 py-2 text-row text-chassis-text-dim">
+          /* One slot, four sentences — failed, searching, the prompt, no match — so it is named, not read. */
+          <p
+            className="px-1 py-2 text-row text-chassis-text-dim"
+            data-testid="palette-status"
+          >
             {failed ? (
               CHASSIS_TEXT.paletteFailed
             ) : loading ? (
@@ -236,6 +245,11 @@ const Row = ({
       type="button"
       onClick={onPick}
       onMouseMove={onHover}
+      data-testid="palette-row"
+      data-type={hit.type}
+      /* `value` is what enter acts on — a service name, a route path, a trace id, a fingerprint, a
+         view href. A route is free text off the wire: quote it in a selector rather than trust it. */
+      data-value={hit.value}
       /* The keyboard owns the cursor and the mouse follows it, rather than the two keeping separate
          highlights — the row under enter and the row under the pointer must be the same row. */
       className={cn(

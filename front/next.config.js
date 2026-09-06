@@ -18,7 +18,11 @@ const nextConfig = {
    * filesystem; it does not, despite appearances, skip that redirect.
    */
   async rewrites() {
-    if (process.env.NODE_ENV !== "development") return [];
+    // Development always; otherwise only when `IKNOS_API_ORIGIN` is set explicitly. That second case
+    // is a production build with no nginx in front of it — the scripted demo film (IKN-67) runs
+    // `next build && next start` on a laptop, where `/api/` would otherwise be nobody's. The deploy
+    // builds on ks-b without the variable, so there the rewrite list stays empty as before.
+    if (process.env.NODE_ENV !== "development" && !process.env.IKNOS_API_ORIGIN) return [];
 
     // Keep in step with `src/lib/apiOrigin.ts`, which resolves the same thing for the server
     // components. This file cannot import it — `next.config.js` is CommonJS and loaded before the

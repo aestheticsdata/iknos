@@ -45,8 +45,16 @@ export const ServiceHeader = ({
   const facts = runtime.process;
 
   return (
-    <header className="flex h-[52px] flex-none items-center gap-3 rounded-card border border-work-border bg-work-surface px-3.25">
-      <h1 className="flex-none font-mono text-signal font-semibold text-work-text">{runtime.service}</h1>
+    <header
+      className="flex h-[52px] flex-none items-center gap-3 rounded-card border border-work-border bg-work-surface px-3.25"
+      data-testid="service-header"
+    >
+      <h1
+        className="flex-none font-mono text-signal font-semibold text-work-text"
+        data-testid="service-name"
+      >
+        {runtime.service}
+      </h1>
       {/*
        * The one thing on the row that gives way.
        *
@@ -62,22 +70,27 @@ export const ServiceHeader = ({
       <ul
         aria-label={SERVICE_TEXT.chipsLabel}
         className="flex flex-none items-center gap-1.5"
+        data-testid="service-chips"
       >
         <Chip
+          chip="pm2"
           label={SERVICE_TEXT.chipPm2}
           value={facts?.pm2Id == null ? ABSENT : String(facts.pm2Id)}
         />
         <Chip
+          chip="node"
           label={SERVICE_TEXT.chipNode}
           value={facts?.nodeVersion ?? ABSENT}
         />
         <Chip
+          chip="release"
           label={SERVICE_TEXT.chipRelease}
           value={runtime.release ?? ABSENT}
           title={runtime.release === null ? SERVICE_TEXT.releaseHint : undefined}
         />
         <Uptime process={facts} />
         <Chip
+          chip="restarts"
           label={SERVICE_TEXT.chipRestarts}
           value={facts === null ? ABSENT : String(facts.restarts)}
           tone={facts !== null && facts.restarts > 0 ? "error" : "neutral"}
@@ -110,6 +123,10 @@ export const ServiceHeader = ({
  *
  * Labelled with the *action*, not the state, and `aria-expanded` carries the state — a button that
  * reads `signals` when signals are showing is the one every reader clicks twice to work out.
+ *
+ * That label flips on every click, which is why the testid exists: `show signals` names nothing a
+ * second later. One control, two possible parents — `service-header` or `service-notice`, never
+ * both at once.
  */
 export const SignalsToggle = ({ open, onToggle }: { open: boolean; onToggle: () => void }) => (
   <button
@@ -117,6 +134,7 @@ export const SignalsToggle = ({ open, onToggle }: { open: boolean; onToggle: () 
     onClick={onToggle}
     aria-expanded={open}
     title={SERVICE_TEXT.signalsHint}
+    data-testid="signals-toggle"
     className="flex-none rounded-chip border border-work-border-strong bg-work-inset px-1.75 py-0.5 text-row whitespace-nowrap text-work-text-muted transition-colors duration-150 ease-out hover:border-work-text-dim hover:text-work-text"
   >
     {open ? SERVICE_TEXT.hideSignals : SERVICE_TEXT.showSignals}
@@ -149,10 +167,14 @@ const Uptime = ({ process: facts }: { process: ProcessFacts | null | undefined }
 
   return (
     <Chip
+      chip="uptime"
       label={SERVICE_TEXT.chipUptime}
       value={stopped ? facts.status : formatUptime(facts?.startedAt ?? null, now)}
       tone={stopped ? "error" : "neutral"}
       title={stopped ? SERVICE_TEXT.stoppedHint(facts.status) : undefined}
+      /* The one figure on the row that changes by itself — a minute later, or the word `stopped` —
+         so the storyboard gets the value alone under a name of its own, beside the chip's. */
+      valueTestId="uptime"
     />
   );
 };
@@ -162,20 +184,29 @@ const Uptime = ({ process: facts }: { process: ProcessFacts | null | undefined }
  * use so that a row of them scans as a list of values with their fields attached.
  */
 const Chip = ({
+  chip,
   label,
   value,
   tone = "neutral",
   title,
   suppressHydrationWarning,
+  valueTestId,
 }: {
+  /** Which fact this is — `pm2`, `node`, `release`, `uptime`, `restarts` — as `data-chip`, so a
+   *  storyboard names the member by its key and never by a label or a value (ZEU-78). */
+  chip: string;
   label: string;
   value: string;
   tone?: "neutral" | "error";
   title?: string;
   suppressHydrationWarning?: boolean;
+  /** A name for the value span alone, for the one chip whose figure ticks — see `Uptime`. */
+  valueTestId?: string;
 }) => (
   <li
     title={title}
+    data-testid="service-chip"
+    data-chip={chip}
     className={cn(
       "flex-none rounded-chip border px-1.75 py-0.5 text-row whitespace-nowrap transition-colors duration-150 ease-out",
       /*
@@ -195,6 +226,7 @@ const Chip = ({
     <span
       className="text-work-text"
       suppressHydrationWarning={suppressHydrationWarning}
+      data-testid={valueTestId}
     >
       {value}
     </span>
@@ -228,7 +260,10 @@ const HealthPills = ({
 }) => {
   if (probe === null) {
     return (
-      <span className="flex-none text-row text-work-text-dim">
+      <span
+        className="flex-none text-row text-work-text-dim"
+        data-testid="health-absent"
+      >
         {probed ? SERVICE_TEXT.probedNever : SERVICE_TEXT.probedNot}
       </span>
     );
@@ -249,10 +284,14 @@ const HealthPills = ({
       : null;
 
   return (
-    <div className="flex flex-none items-center gap-1.5">
+    <div
+      className="flex flex-none items-center gap-1.5"
+      data-testid="health-pills"
+    >
       {probe.checks.map((check) => (
         <Pill
           key={check.name}
+          check={check.name}
           tone={check.status === "ok" ? "ok" : "error"}
           label={`${check.name} ${checkLabel(check)}`}
           title={SERVICE_TEXT.checkHint(
@@ -267,6 +306,7 @@ const HealthPills = ({
         />
       ))}
       <Pill
+        check="endpoint"
         tone={probe.status}
         label={`${SERVICE_TEXT.endpoint} ${probe.httpStatus ?? SERVICE_TEXT.noAnswer}`}
         title={
@@ -296,12 +336,19 @@ const checkLabel = (check: ProbeCheck): string =>
  * label and why the title below spells the state out in words as well.
  */
 const Pill = ({
+  check,
   tone,
   label,
   title,
   href,
   hrefTitle,
 }: {
+  /**
+   * The check's own name — `db`, `redis` — verbatim, or `endpoint` for the probe itself, as
+   * `data-check`. The label is `db 4ms` while it is well and `db error` once it is not, so the
+   * label names nothing a storyboard can hold on to; this does (ZEU-78).
+   */
+  check: string;
   tone: "ok" | "error" | "stale";
   label: string;
   title: string;
@@ -334,6 +381,8 @@ const Pill = ({
       <span
         title={title}
         className={skin}
+        data-testid="health-pill"
+        data-check={check}
       >
         {dot}
         {label}
@@ -341,11 +390,15 @@ const Pill = ({
     );
   }
 
+  /* Same family as the inert pill above — a member turns into an `<a>` the moment it fails, and the
+     storyboard finds it under the same name either way. It navigates; it posts nothing. */
   return (
     <Link
       href={href}
       title={`${title} · ${hrefTitle}`}
       className={cn(skin, "transition-[filter] duration-150 ease-out hover:brightness-[1.06]")}
+      data-testid="health-pill"
+      data-check={check}
     >
       {dot}
       {label}

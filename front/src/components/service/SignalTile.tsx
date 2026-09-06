@@ -23,6 +23,7 @@ import type { ReactNode } from "react";
  * destination exists, and not before.
  */
 export const SignalTile = ({
+  tile,
   kicker,
   value,
   unit,
@@ -32,6 +33,13 @@ export const SignalTile = ({
   hint,
   children,
 }: {
+  /**
+   * Which of the four this is — `throughput`, `error-rate`, `latency`, `runtime` — as `data-tile`
+   * on the root, beside `signal-tile` (ZEU-78). Required rather than optional on purpose: a tile
+   * without it would be a member of the family that no storyboard can name, and that is a bug that
+   * compiles.
+   */
+  tile: string;
   kicker: string;
   value: string;
   unit: string;
@@ -65,10 +73,14 @@ export const SignalTile = ({
     <>
       {/* The same two boxes whether or not there is a hint: with none, the wrapper is not rendered
           at all and these are the flex children they have always been. */}
+      {/* ⚠️ `tile-header` goes with the wrapper — a tile with no hint (latency before its p95, the
+          runtime tile without a heap total) has no header to hover and no element by this name.
+          The kicker and `tile-value` below are there in every state. */}
       <Tooltip
         mode="hover"
         content={hint}
         className="flex flex-col gap-1.25"
+        data-testid="tile-header"
       >
         <span className="text-kicker tracking-kicker font-medium text-work-text-dim uppercase">{kicker}</span>
         <div className="flex items-baseline gap-1.5">
@@ -80,6 +92,7 @@ export const SignalTile = ({
                 "text-signal font-medium tabular-nums transition-[color] duration-150 ease-out",
                 tone === "error" ? "text-work-error" : "text-work-text",
               )}
+              data-testid="tile-value"
             >
               {value}
             </span>
@@ -111,17 +124,23 @@ export const SignalTile = ({
       <section
         aria-busy={pending || undefined}
         className={skin}
+        data-testid="signal-tile"
+        data-tile={tile}
       >
         {body}
       </section>
     );
   }
 
+  /* The same name on both roots: the error-rate tile is a `<section>` until its series is known
+     and an `<a>` after, and the storyboard should not have to care which. */
   return (
     <Link
       href={href}
       aria-busy={pending || undefined}
       className={cn(skin, "transition-[border-color] duration-150 ease-out hover:border-work-text-dim")}
+      data-testid="signal-tile"
+      data-tile={tile}
     >
       {body}
     </Link>
@@ -153,5 +172,10 @@ const PendingFigure = () => (
 
 /** The sentence a tile shows in place of a chart. Never a flat line, never a zero baseline. */
 export const TileEmpty = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-micro leading-hint text-work-text-dim">{children}</p>
+  <p
+    className="text-micro leading-hint text-work-text-dim"
+    data-testid="tile-empty"
+  >
+    {children}
+  </p>
 );

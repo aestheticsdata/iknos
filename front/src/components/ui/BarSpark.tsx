@@ -6,7 +6,7 @@ import { TONE_TEXT } from "./surface";
 import { Tooltip } from "./Tooltip";
 import { useCursorHover } from "./useCursorHover";
 
-import type { MouseEvent, ReactNode } from "react";
+import type { MouseEvent, ReactNode, SVGProps } from "react";
 import type { SeriesValue } from "./series";
 import type { Surface, Tone } from "./surface";
 
@@ -47,6 +47,7 @@ export const BarSpark = ({
   label,
   tip,
   className,
+  ...rest
 }: {
   values: SeriesValue[];
   tone?: Tone;
@@ -71,7 +72,9 @@ export const BarSpark = ({
    */
   tip?: (index: number) => ReactNode;
   className?: string;
-}) => {
+  // The spread and the omissions are `Sparkline`'s, for the same reasons — plus `max`, which the
+  // SVG DOM also spells as an animation attribute and which is a number here.
+} & Omit<SVGProps<SVGSVGElement>, "values" | "height" | "max">) => {
   /* Before the early return below, because hooks cannot run conditionally. */
   const { hover, show, clear } = useCursorHover<number>();
 
@@ -106,6 +109,7 @@ export const BarSpark = ({
         onMouseLeave={tip ? clear : undefined}
         onMouseMove={tip ? track : undefined}
         className={cn("block h-full w-full", TONE_TEXT[surface][tone], className)}
+        {...rest}
       >
         {values.map((value, index) =>
           value === null || !Number.isFinite(value) ? null : (

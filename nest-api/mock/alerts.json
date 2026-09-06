@@ -1,7 +1,7 @@
 [
   {
     "ruleKey": "error_rate",
-    "service": "worldweathr-api",
+    "service": "beacon-api",
     "severity": "warning",
     "title": "5xx rate above threshold",
     "expr": "rate(http_5xx[10m]) > 5%",
@@ -39,7 +39,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "pfa-nest-api",
+    "service": "atlas-api",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -77,7 +77,7 @@
   },
   {
     "ruleKey": "health_down",
-    "service": "worldweathr-api",
+    "service": "beacon-api",
     "severity": "critical",
     "title": "Health endpoint failing",
     "expr": "probe_failures[90s] >= 2",
@@ -109,7 +109,7 @@
   },
   {
     "ruleKey": "error_rate",
-    "service": "pfa-nest-api",
+    "service": "atlas-api",
     "severity": "warning",
     "title": "5xx rate above threshold",
     "expr": "rate(http_5xx[10m]) > 5%",
@@ -147,7 +147,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "pfa-nest-api",
+    "service": "atlas-api",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -185,7 +185,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "worldweathr-api",
+    "service": "beacon-api",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -223,7 +223,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "spira-nest-api",
+    "service": "cinder-api",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -261,7 +261,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "spira-nest-api",
+    "service": "cinder-api",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -299,7 +299,7 @@
   },
   {
     "ruleKey": "error_rate",
-    "service": "iknos-api",
+    "service": "keystone-api",
     "severity": "warning",
     "title": "5xx rate above threshold",
     "expr": "rate(http_5xx[10m]) > 5%",
@@ -337,7 +337,7 @@
   },
   {
     "ruleKey": "process_restart",
-    "service": "iknos-api",
+    "service": "keystone-api",
     "severity": "critical",
     "title": "Process restarted",
     "expr": "increase(pm2_restarts[10m]) > 0",
@@ -369,7 +369,7 @@
   },
   {
     "ruleKey": "error_rate",
-    "service": "zeus-nest-api",
+    "service": "dovetail-api",
     "severity": "warning",
     "title": "5xx rate above threshold",
     "expr": "rate(http_5xx[10m]) > 5%",
@@ -407,7 +407,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "bkmk-server",
+    "service": "fathom-api",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -445,7 +445,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "bkmk-server",
+    "service": "fathom-api",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -483,7 +483,7 @@
   },
   {
     "ruleKey": "no_logs",
-    "service": "trekker-api",
+    "service": "ember-api",
     "severity": "warning",
     "title": "Service has gone silent",
     "expr": "log_lines[1h] >= 60 and absent(log_lines[15m])",
@@ -515,7 +515,7 @@
   },
   {
     "ruleKey": "no_logs",
-    "service": "trekker-api",
+    "service": "ember-api",
     "severity": "warning",
     "title": "Service has gone silent",
     "expr": "log_lines[1h] >= 60 and absent(log_lines[15m])",
@@ -547,7 +547,7 @@
   },
   {
     "ruleKey": "no_logs",
-    "service": "shatter-api",
+    "service": "harbor-api",
     "severity": "warning",
     "title": "Service has gone silent",
     "expr": "log_lines[1h] >= 60 and absent(log_lines[15m])",
@@ -579,7 +579,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "shatter-api",
+    "service": "harbor-api",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -617,7 +617,7 @@
   },
   {
     "ruleKey": "no_logs",
-    "service": "shatter-api",
+    "service": "harbor-api",
     "severity": "warning",
     "title": "Service has gone silent",
     "expr": "log_lines[1h] >= 60 and absent(log_lines[15m])",
@@ -649,7 +649,7 @@
   },
   {
     "ruleKey": "error_rate",
-    "service": "1991chat-backend",
+    "service": "gale-api",
     "severity": "warning",
     "title": "5xx rate above threshold",
     "expr": "rate(http_5xx[10m]) > 5%",
@@ -687,7 +687,7 @@
   },
   {
     "ruleKey": "no_logs",
-    "service": "conway-gol-api",
+    "service": "ivory-api",
     "severity": "warning",
     "title": "Service has gone silent",
     "expr": "log_lines[1h] >= 60 and absent(log_lines[15m])",
@@ -719,7 +719,7 @@
   },
   {
     "ruleKey": "process_restart",
-    "service": "conway-gol-api",
+    "service": "ivory-api",
     "severity": "critical",
     "title": "Process restarted",
     "expr": "increase(pm2_restarts[10m]) > 0",
@@ -751,7 +751,7 @@
   },
   {
     "ruleKey": "process_restart",
-    "service": "conway-gol-api",
+    "service": "ivory-api",
     "severity": "critical",
     "title": "Process restarted",
     "expr": "increase(pm2_restarts[10m]) > 0",
@@ -783,7 +783,7 @@
   },
   {
     "ruleKey": "error_rate",
-    "service": "hiwaysim",
+    "service": "juniper",
     "severity": "warning",
     "title": "5xx rate above threshold",
     "expr": "rate(http_5xx[10m]) > 5%",
@@ -821,7 +821,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "iknos-front",
+    "service": "keystone-front",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -859,7 +859,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "iknos-front",
+    "service": "keystone-front",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -897,7 +897,7 @@
   },
   {
     "ruleKey": "process_restart",
-    "service": "pfa-front",
+    "service": "atlas-front",
     "severity": "critical",
     "title": "Process restarted",
     "expr": "increase(pm2_restarts[10m]) > 0",
@@ -929,7 +929,7 @@
   },
   {
     "ruleKey": "health_down",
-    "service": "pfa-front",
+    "service": "atlas-front",
     "severity": "critical",
     "title": "Health endpoint failing",
     "expr": "probe_failures[90s] >= 2",
@@ -961,7 +961,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "pfa-front",
+    "service": "atlas-front",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -999,7 +999,7 @@
   },
   {
     "ruleKey": "process_restart",
-    "service": "spira-front",
+    "service": "cinder-front",
     "severity": "critical",
     "title": "Process restarted",
     "expr": "increase(pm2_restarts[10m]) > 0",
@@ -1031,7 +1031,7 @@
   },
   {
     "ruleKey": "process_restart",
-    "service": "zeus-front",
+    "service": "dovetail-front",
     "severity": "critical",
     "title": "Process restarted",
     "expr": "increase(pm2_restarts[10m]) > 0",
@@ -1063,7 +1063,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "zeus-front",
+    "service": "dovetail-front",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -1101,7 +1101,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "zeus-front",
+    "service": "dovetail-front",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -1139,7 +1139,7 @@
   },
   {
     "ruleKey": "process_restart",
-    "service": "worldweathr-front",
+    "service": "beacon-front",
     "severity": "critical",
     "title": "Process restarted",
     "expr": "increase(pm2_restarts[10m]) > 0",
@@ -1171,7 +1171,7 @@
   },
   {
     "ruleKey": "no_logs",
-    "service": "worldweathr-front",
+    "service": "beacon-front",
     "severity": "warning",
     "title": "Service has gone silent",
     "expr": "log_lines[1h] >= 60 and absent(log_lines[15m])",
@@ -1203,7 +1203,7 @@
   },
   {
     "ruleKey": "health_down",
-    "service": "trekker-front",
+    "service": "ember-front",
     "severity": "critical",
     "title": "Health endpoint failing",
     "expr": "probe_failures[90s] >= 2",
@@ -1235,7 +1235,7 @@
   },
   {
     "ruleKey": "error_rate",
-    "service": "trekker-front",
+    "service": "ember-front",
     "severity": "warning",
     "title": "5xx rate above threshold",
     "expr": "rate(http_5xx[10m]) > 5%",
@@ -1273,7 +1273,7 @@
   },
   {
     "ruleKey": "latency_p95",
-    "service": "trekker-front",
+    "service": "ember-front",
     "severity": "warning",
     "title": "p95 latency above threshold",
     "expr": "p95(http_duration[10m]) > 1000ms",
@@ -1311,7 +1311,7 @@
   },
   {
     "ruleKey": "error_rate",
-    "service": "bkmk-front",
+    "service": "fathom-front",
     "severity": "warning",
     "title": "5xx rate above threshold",
     "expr": "rate(http_5xx[10m]) > 5%",
@@ -1349,7 +1349,7 @@
   },
   {
     "ruleKey": "health_down",
-    "service": "bkmk-front",
+    "service": "fathom-front",
     "severity": "critical",
     "title": "Health endpoint failing",
     "expr": "probe_failures[90s] >= 2",
@@ -1381,7 +1381,7 @@
   },
   {
     "ruleKey": "health_down",
-    "service": "1991chat-front",
+    "service": "gale-front",
     "severity": "critical",
     "title": "Health endpoint failing",
     "expr": "probe_failures[90s] >= 2",

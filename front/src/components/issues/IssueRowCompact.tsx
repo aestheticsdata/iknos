@@ -41,6 +41,8 @@ export const IssueRowCompact = ({
   const hot = isHot(row, now);
 
   return (
+    // `issue-row-compact`, apart from the table's `issue-row`: the same fingerprint is drawn by
+    // both, and a scope should never have to ask which list it is in.
     <button
       type="button"
       onClick={onOpen}
@@ -51,6 +53,8 @@ export const IssueRowCompact = ({
         // painted hot under a warn dot would be saying two things about one issue.
         hot && "bg-work-error-bg",
       )}
+      data-testid="issue-row-compact"
+      data-fingerprint={row.fingerprint}
     >
       <span className="flex items-center gap-1.75">
         <Dot
@@ -85,7 +89,12 @@ export const IssueRowCompact = ({
         {/* 52×14, the mockup's own box. Bars rather than the prototype's polyline: an occurrence
             count per two-hour interval is a measurement of that interval and nothing lies between
             two of them — the argument `BarSpark` makes for itself. */}
-        <span className="h-3.5 w-13 flex-none">
+        {/* The same `issue-spark` as the table's column — the two lists are never on one screen,
+            and the panel's are reached through `issues-panel` regardless. */}
+        <span
+          className="h-3.5 w-13 flex-none"
+          data-testid="issue-spark"
+        >
           <BarSpark
             values={row.spark}
             tone={hot ? "error" : "neutral"}

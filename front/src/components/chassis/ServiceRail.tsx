@@ -119,15 +119,18 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
   const { total: firing } = useAlertCounts();
 
   return (
+    // The nav is its own scroller — there is no inner box — so a wheel aimed at the rail lands here.
     <nav
       aria-label={CHASSIS_TEXT.railLabel}
       className="ik-scroll flex w-[188px] flex-none flex-col gap-4 overflow-y-auto border-r border-chassis-border bg-chassis-surface px-2 py-3 max-rail:w-[52px] max-rail:px-1"
+      data-testid="service-rail"
     >
-      <section>
+      <section data-testid="rail-services">
         <RailHeading>{CHASSIS_TEXT.services}</RailHeading>
         <ul className="flex flex-col">
           <li>
             <RailRow
+              service="all"
               selected={selected === null}
               onClick={() => setSelected(null)}
               monogram={CHASSIS_TEXT.allServicesShort}
@@ -138,6 +141,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
           {services.map((service) => (
             <li key={service.name}>
               <RailRow
+                service={service.name}
                 selected={selected === service.name}
                 onClick={() => setSelected(service.name)}
                 muted={!service.enabled}
@@ -182,7 +186,10 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
       </section>
 
       {/* Collapsed, the headings are gone, so the groups need the rule the words were providing. */}
-      <section className="max-rail:border-t max-rail:border-chassis-border max-rail:pt-2">
+      <section
+        className="max-rail:border-t max-rail:border-chassis-border max-rail:pt-2"
+        data-testid="rail-views"
+      >
         <RailHeading>{CHASSIS_TEXT.views}</RailHeading>
         <ul className="flex flex-col">
           {VIEWS.map((view) => (
@@ -190,6 +197,8 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
               <Link
                 href={withScope(view.href)}
                 aria-current={pathname.startsWith(view.href) ? "page" : undefined}
+                data-testid="rail-view-link"
+                data-view={view.key}
                 className={`flex items-center justify-between rounded-chip px-2 py-1.5 text-label transition-colors duration-150 ease-out max-rail:justify-center max-rail:px-0 ${
                   pathname.startsWith(view.href)
                     ? "bg-chassis-raised text-chassis-text-bright"
@@ -205,10 +214,18 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
                  *
                  * Nothing at all while the count is unknown, rather than a `0` that would be a
                  * claim — see `IngestCard`'s "no reading yet".
+                 *
+                 * `rail-badge` names the slot whatever it holds — a count or the shortcut letter —
+                 * and `data-view` says whose. The text is live for two of the three, and the
+                 * letter is repeated by the collapsed twin below, so neither is a handle.
                  */}
                 {view.badge === "issues" ? (
                   issues !== null && (
-                    <span className="rounded-chip bg-chassis-raised px-1.25 text-kicker tabular-nums text-chassis-text-muted max-rail:hidden">
+                    <span
+                      className="rounded-chip bg-chassis-raised px-1.25 text-kicker tabular-nums text-chassis-text-muted max-rail:hidden"
+                      data-testid="rail-badge"
+                      data-view={view.key}
+                    >
                       {issues.unresolved}
                     </span>
                   )
@@ -220,12 +237,18 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
                   firing > 0 && (
                     <span
                       className={`rounded-chip bg-chassis-raised px-1.25 text-kicker tabular-nums max-rail:hidden ${TONE_TEXT.chassis.error}`}
+                      data-testid="rail-badge"
+                      data-view={view.key}
                     >
                       {firing}
                     </span>
                   )
                 ) : (
-                  <span className="text-kicker tracking-kicker text-chassis-text-dim max-rail:hidden">
+                  <span
+                    className="text-kicker tracking-kicker text-chassis-text-dim max-rail:hidden"
+                    data-testid="rail-badge"
+                    data-view={view.key}
+                  >
                     {view.short}
                   </span>
                 )}
@@ -267,12 +290,20 @@ const railTitle = (service: Service): string => {
   return `${base} · ${CHASSIS_TEXT.healthHint(word, latency)}`;
 };
 
+// Two of these, `sr-only` collapsed — so the sections are named apart (`rail-services`,
+// `rail-views`) and a heading is reached by scoping into one rather than by its text.
 const RailHeading = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="px-2 pb-1 text-kicker tracking-kicker text-chassis-text-dim uppercase max-rail:sr-only">{children}</h2>
+  <h2
+    className="px-2 pb-1 text-kicker tracking-kicker text-chassis-text-dim uppercase max-rail:sr-only"
+    data-testid="rail-heading"
+  >
+    {children}
+  </h2>
 );
 
 const RailRow = ({
   children,
+  service,
   selected,
   muted,
   title,
@@ -282,6 +313,13 @@ const RailRow = ({
   onClick,
 }: {
   children: React.ReactNode;
+  /**
+   * The row's `data-service` — the registry name, or `all`. Required rather than optional so the
+   * family cannot have a member with no name: the demo film addresses a row by it, because the
+   * name it shows is `sr-only` collapsed and the monogram is hidden expanded — neither text is a
+   * handle at every width.
+   */
+  service: string;
   selected: boolean;
   muted?: boolean;
   title?: string;
@@ -297,6 +335,8 @@ const RailRow = ({
     onClick={onClick}
     title={title}
     aria-pressed={selected}
+    data-testid="rail-row"
+    data-service={service}
     className={`flex w-full items-center rounded-chip px-2 py-1.5 text-left text-label transition-colors duration-150 ease-out max-rail:justify-center max-rail:px-0 ${
       selected
         ? "bg-chassis-raised text-chassis-text-bright"
@@ -343,6 +383,8 @@ const UserMenu = () => {
         type="button"
         onClick={leave}
         disabled={leaving}
+        // Its label is `log out` until pressed and `logging out…` after — the name, not the text.
+        data-testid="logout"
         className="flex w-full items-center rounded-chip px-2 py-1.5 text-label text-chassis-text-muted transition-[color,background-color,opacity] duration-150 ease-out hover:bg-chassis-raised/60 hover:text-chassis-text disabled:opacity-50 max-rail:justify-center max-rail:px-0"
       >
         <span className="max-rail:sr-only">

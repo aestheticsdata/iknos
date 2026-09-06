@@ -9,18 +9,21 @@ import type { Surface, Tone } from "./surface";
  * Text-coloured on a hairline border rather than a filled block: a row of solid colour chips reads
  * as decoration, and at 9px a filled badge has to choose between a legible foreground and the tone
  * being recognisable. The tone lives in the text, which `pnpm run contrast` holds to 4.5:1.
+ *
+ * `...rest` reaches the `<span>` so a `data-testid` handed to a badge arrives — see the note on `Card`.
  */
 export const Badge = ({
   tone = "neutral",
   surface = "work",
   className,
   children,
+  ...rest
 }: {
   tone?: Tone;
   surface?: Surface;
   className?: string;
   children: React.ReactNode;
-}) => (
+} & React.ComponentPropsWithRef<"span">) => (
   <span
     className={cn(
       "inline-flex items-center rounded-chip border px-1.5 py-0.5 text-kicker tracking-kicker uppercase",
@@ -28,6 +31,7 @@ export const Badge = ({
       TONE_TEXT[surface][tone],
       className,
     )}
+    {...rest}
   >
     {children}
   </span>

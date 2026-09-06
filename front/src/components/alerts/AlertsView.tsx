@@ -48,11 +48,15 @@ export const AlertsView = () => {
   const groups = SEVERITIES.map((level) => ({ level, rows: rows.filter((row) => row.severity === level) }));
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-work-ground px-3 py-2.75">
+    <div
+      className="flex h-full min-h-0 flex-col bg-work-ground px-3 py-2.75"
+      data-testid="alerts-view"
+    >
       <header className="mb-2.75 flex flex-none flex-wrap items-center gap-3 rounded-card border border-work-border bg-work-surface px-3.25 py-2">
         <h1 className="font-sans text-ui font-medium text-work-text">{ALERTS_TEXT.title}</h1>
         <span className="text-kicker tracking-kicker text-work-text-dim uppercase">{ALERTS_TEXT.tag}</span>
 
+        {/* `data-state` carries the view's key (`open`, `acked`…), not its label. */}
         <fieldset className="flex items-center gap-1">
           <legend className="sr-only">{ALERTS_TEXT.segmentLabel}</legend>
           {ALERT_VIEWS.map((one) => (
@@ -60,17 +64,23 @@ export const AlertsView = () => {
               key={one}
               active={view === one}
               onClick={() => setView(one)}
+              data-testid="alerts-state"
+              data-state={one}
             >
               {ALERTS_TEXT.segments[one]}
             </Segment>
           ))}
         </fieldset>
 
+        {/* The severity word is also every group heading below, so a text locator on `critical`
+            lands on two things; the companion is what keeps the segment its own. */}
         <fieldset className="ml-auto flex items-center gap-1">
           <legend className="sr-only">{ALERTS_TEXT.severityLabel}</legend>
           <Segment
             active={severity === null}
             onClick={() => setSeverity(null)}
+            data-testid="alerts-severity"
+            data-severity="all"
           >
             {ALERTS_TEXT.allSeverities}
           </Segment>
@@ -79,6 +89,8 @@ export const AlertsView = () => {
               key={level}
               active={severity === level}
               onClick={() => setSeverity(level)}
+              data-testid="alerts-severity"
+              data-severity={level}
             >
               <span className={severity === level ? undefined : TONE_TEXT.work[SEVERITY_TONE[level]]}>{level}</span>
             </Segment>
@@ -91,9 +103,14 @@ export const AlertsView = () => {
           "min-h-0 flex-1 overflow-y-auto rounded-card border border-work-border bg-work-surface",
           SURFACE_SCROLL.work,
         )}
+        data-testid="alerts-scroll"
       >
         {rows.length === 0 ? (
-          <p className="px-3 py-4 text-center text-row text-work-text-muted">
+          // Three sentences in one element — loading, failed, nothing here — hence the name.
+          <p
+            className="px-3 py-4 text-center text-row text-work-text-muted"
+            data-testid="alerts-empty"
+          >
             {alerts.loading ? (
               <Pending>{ALERTS_TEXT.loading}</Pending>
             ) : alerts.error !== null ? (
@@ -127,6 +144,7 @@ export const AlertsView = () => {
               type="button"
               onClick={() => setLimit((n) => Math.min(n + PAGE, CEILING))}
               className="w-full border-work-border border-t bg-work-inset px-3 py-2 text-micro text-work-text-muted transition-colors duration-150 ease-out hover:text-work-text"
+              data-testid="alerts-load-more"
             >
               {ALERTS_TEXT.loadMore}
             </button>
@@ -149,12 +167,17 @@ const Group = ({
   now: number;
   onOpen: (id: number) => void;
 }) => (
-  <section>
+  <section
+    data-testid="alert-group"
+    data-severity={level}
+  >
+    {/* The heading's text carries the group's count, which the load-more button changes. */}
     <h2
       className={cn(
         "sticky top-0 z-10 border-work-border border-b bg-work-inset px-3 py-1 text-kicker tracking-kicker uppercase",
         TONE_TEXT.work[SEVERITY_TONE[level]],
       )}
+      data-testid="alert-group-heading"
     >
       {level} · {rows.length}
     </h2>
@@ -169,15 +192,17 @@ const Group = ({
   </section>
 );
 
+/** The `...rest` onto the button is what lets a call site name it — see `Card`'s note. */
 const Segment = ({
   active,
   onClick,
   children,
+  ...rest
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
-}) => (
+} & Omit<React.ComponentPropsWithoutRef<"button">, "onClick">) => (
   <button
     type="button"
     onClick={onClick}
@@ -186,6 +211,7 @@ const Segment = ({
       "rounded-chip px-2 py-0.5 text-row transition-colors duration-150 ease-out",
       active ? "bg-work-inset text-work-text" : "text-work-text-muted hover:text-work-text",
     )}
+    {...rest}
   >
     {children}
   </button>

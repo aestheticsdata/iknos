@@ -82,24 +82,31 @@ export const IssueModal = ({ fingerprint, onClose }: { fingerprint: string | nul
       tag={issue?.service ?? ""}
       title={issue === null ? ISSUES_TEXT.title : issueTitle(issue)}
       hint={issue === null ? undefined : issue.fingerprint}
+      testId="issue-modal"
       actions={
         issue !== null && (
           <>
             {/* Close is an action here too: `Modal` draws no control of its own beyond the `esc`
-                hint, and a reader on a keyboard alone still needs something to aim `Enter` at. */}
+                hint, and a reader on a keyboard alone still needs something to aim `Enter` at.
+
+                ⚠️ It sits one gap from `resolve`, and the three beside it each POST. The demo film
+                reaches this one by `issue-close` and nothing looser. */}
             <Button
               variant="quiet"
               onClick={onClose}
+              data-testid="issue-close"
             >
               {ISSUES_TEXT.close}
             </Button>
             {/* Three acts, and only the two that mean something in the issue's current state. A
                 resolve button on an issue that is already resolved is a control that does nothing,
-                which the design doc treats the same way as a control that is visibly dead. */}
+                which the design doc treats the same way as a control that is visibly dead. Which
+                two are on screen follows the status, so each has a name of its own. */}
             {status !== "resolved" && (
               <Button
                 variant="quiet"
                 onClick={() => act("resolve")}
+                data-testid="issue-resolve"
               >
                 {ISSUES_TEXT.resolve}
               </Button>
@@ -108,6 +115,7 @@ export const IssueModal = ({ fingerprint, onClose }: { fingerprint: string | nul
               <Button
                 variant="quiet"
                 onClick={() => act("ignore")}
+                data-testid="issue-ignore"
               >
                 {ISSUES_TEXT.ignore}
               </Button>
@@ -116,6 +124,7 @@ export const IssueModal = ({ fingerprint, onClose }: { fingerprint: string | nul
               <Button
                 variant="quiet"
                 onClick={() => act("reopen")}
+                data-testid="issue-reopen"
               >
                 {ISSUES_TEXT.reopen}
               </Button>
@@ -191,26 +200,48 @@ const Body = ({
       {/* Five tiles, the mockup's own set. `min-w-0` on the grid children so a long service name
           or a full fingerprint wraps inside its tile rather than widening the row. */}
       <dl className="grid grid-cols-2 gap-2 rail:grid-cols-5">
-        <Tile label={ISSUES_TEXT.tileFingerprint}>{issue.fingerprint}</Tile>
-        <Tile label={ISSUES_TEXT.tileOccurrences}>{formatCount(issue.eventCount)}</Tile>
+        <Tile
+          label={ISSUES_TEXT.tileFingerprint}
+          tile="fingerprint"
+        >
+          {issue.fingerprint}
+        </Tile>
+        <Tile
+          label={ISSUES_TEXT.tileOccurrences}
+          tile="occurrences"
+        >
+          {formatCount(issue.eventCount)}
+        </Tile>
         <Tile
           label={ISSUES_TEXT.tileLastSeen}
           title={fullInstant(issue.lastSeen, tz)}
+          tile="last-seen"
         >
           {formatAgo(issue.lastSeen, now)}
         </Tile>
         <Tile
           label={ISSUES_TEXT.tileFirstSeen}
           title={fullInstant(issue.firstSeen, tz)}
+          tile="first-seen"
         >
           {formatAgo(issue.firstSeen, now)}
         </Tile>
-        <Tile label={ISSUES_TEXT.tileService}>{issue.service}</Tile>
+        <Tile
+          label={ISSUES_TEXT.tileService}
+          tile="service"
+        >
+          {issue.service}
+        </Tile>
       </dl>
 
       <section className="flex flex-col gap-1.5">
         <h3 className="text-kicker tracking-kicker text-chassis-text-dim uppercase">{ISSUES_TEXT.occurrences}</h3>
-        <div className="h-16 w-full">
+        {/* Its own name, not `issue-spark`: `Modal` latches this body while closed, and on the
+            issues view a closed dialog holding a third `issue-spark` would be one too many. */}
+        <div
+          className="h-16 w-full"
+          data-testid="issue-occurrences"
+        >
           {series !== null && series.counts.length > 0 ? (
             <BarSpark
               values={series.counts}
@@ -237,7 +268,10 @@ const Body = ({
           /* `overflow-x-auto` on the block rather than a wrap: a stack frame is one line and
              folding it at the card's edge turns twelve frames into twenty-five lines of noise. The
              chassis is `h-dvh`, so this scrolls inside itself and never widens the page. */
-          <pre className="ik-scroll-x max-h-64 overflow-auto rounded-chip border border-chassis-border bg-chassis-inset p-2 text-row leading-relaxed text-chassis-text">
+          <pre
+            className="ik-scroll-x max-h-64 overflow-auto rounded-chip border border-chassis-border bg-chassis-inset p-2 text-row leading-relaxed text-chassis-text"
+            data-testid="issue-stack"
+          >
             {issue.latest.stack}
           </pre>
         ) : (
@@ -262,6 +296,7 @@ const Body = ({
             "self-start text-row underline underline-offset-2 transition-colors duration-150 ease-out hover:text-chassis-text-bright",
             TONE_TEXT.chassis.info,
           )}
+          data-testid="issue-open-logs"
         >
           {ISSUES_TEXT.openLogs}
         </Link>
@@ -272,8 +307,26 @@ const Body = ({
   );
 };
 
-const Tile = ({ label, title, children }: { label: string; title?: string; children: React.ReactNode }) => (
-  <div className="min-w-0 rounded-chip border border-chassis-border bg-chassis-inset px-2 py-1.5">
+/**
+ * `tile` is the tile's key for the demo film — `fingerprint`, `last-seen` — never its label. Scope
+ * by the open dialog: `Modal` keeps this body in a closed one too.
+ */
+const Tile = ({
+  label,
+  title,
+  tile,
+  children,
+}: {
+  label: string;
+  title?: string;
+  tile?: string;
+  children: React.ReactNode;
+}) => (
+  <div
+    className="min-w-0 rounded-chip border border-chassis-border bg-chassis-inset px-2 py-1.5"
+    data-testid="issue-tile"
+    data-tile={tile}
+  >
     <dt className="text-kicker tracking-kicker text-chassis-text-dim uppercase">{label}</dt>
     <dd
       title={title}

@@ -81,6 +81,8 @@ export const IssuesTable = ({
           type="button"
           onClick={() => onOpen(row.fingerprint)}
           className="flex w-full min-w-0 flex-col text-left transition-colors duration-150 ease-out hover:text-work-accent"
+          data-testid="issue-open"
+          data-fingerprint={row.fingerprint}
         >
           <span className="flex items-center gap-1.5">
             <span className={cn("truncate", isHot(row, now) && TONE_TEXT.work.error)}>{issueTitle(row)}</span>
@@ -100,7 +102,10 @@ export const IssuesTable = ({
       header: ISSUES_TEXT.colEvents,
       render: (row) =>
         spark === null ? null : (
-          <span className="block h-3.5 w-13">
+          <span
+            className="block h-3.5 w-13"
+            data-testid="issue-spark"
+          >
             <BarSpark
               values={row.spark}
               tone={isHot(row, now) ? "error" : "neutral"}
@@ -137,11 +142,16 @@ export const IssuesTable = ({
   ];
 
   return (
+    /* `issues-scroll` is this box, not the view's section around it: the table is a scroll
+       container, so it is the flex child that shrinks and the one that owns the vertical bar —
+       see the nesting note on `DenseTable`. `rowAttrs` is the only way onto a `<tr>`. */
     <DenseTable
       columns={columns}
       rows={rows}
       rowKey={(row) => row.fingerprint}
+      rowAttrs={(row) => ({ "data-testid": "issue-row", "data-fingerprint": row.fingerprint })}
       empty={ISSUES_TEXT.emptyTable}
+      testId="issues-scroll"
     />
   );
 };

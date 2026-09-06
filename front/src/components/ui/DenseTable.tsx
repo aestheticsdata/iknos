@@ -27,22 +27,35 @@ export type Column<Row> = {
  *
  * Horizontal overflow scrolls **inside** the table rather than widening the page — the chassis is
  * `h-dvh` with no page scrollbar, and a table that grows past the viewport would break that.
+ *
+ * Two handles for the demo film, both additive. `rowAttrs` puts a family name and a companion on
+ * every `<tr>` — `data-testid="issue-row" data-fingerprint={…}` — which is the only way a row of
+ * this table can be addressed: `rowKey` is consumed by React and never reaches the DOM. `testId`
+ * names the scroller, per call site, defaulting to `dense-table`; a `data-testid` attribute does
+ * the same and wins — see the note on `Card` for why the spread exists at all.
  */
 export const DenseTable = <Row,>({
   columns,
   rows,
   rowKey,
+  rowAttrs,
   surface = "work",
   empty = "Nothing to show.",
   className,
+  testId = "dense-table",
+  ...rest
 }: {
   columns: Column<Row>[];
   rows: Row[];
   rowKey: (row: Row) => string;
+  /** Attributes spread onto each row's `<tr>` — a `data-testid` family plus a stable companion. */
+  rowAttrs?: (row: Row) => Record<string, string>;
   surface?: Surface;
   empty?: string;
   className?: string;
-}) => (
+  /** The scroller's name. The thing a storyboard wheels, so it is per call site rather than shared. */
+  testId?: string;
+} & React.ComponentPropsWithRef<"div">) => (
   /* `ik-scroll-head` because this box scrolls in both axes — `overflow-x: auto` computes the other
      one to `auto` as well — and the heading band above sticks inside it. Without it the vertical
      bar starts level with the column titles and its thumb sits across them, and the band itself
@@ -51,6 +64,8 @@ export const DenseTable = <Row,>({
      the same ground the rows are on. */
   <div
     className={cn(SURFACE_SCROLL_X[surface], SURFACE_HEAD_BAND[surface], "ik-scroll-head overflow-x-auto", className)}
+    data-testid={testId}
+    {...rest}
   >
     <table className="w-full border-collapse text-row tabular-nums">
       <thead>
@@ -81,6 +96,7 @@ export const DenseTable = <Row,>({
           <tr
             key={rowKey(row)}
             className={cn("border-b last:border-0", SURFACE_BORDER[surface])}
+            {...rowAttrs?.(row)}
           >
             {columns.map((column) => (
               <td

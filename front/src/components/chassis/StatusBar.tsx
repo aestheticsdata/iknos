@@ -39,20 +39,43 @@ export const StatusBar = () => {
   const { total: firing } = useAlertCounts();
 
   return (
-    <footer className="flex h-6 flex-none items-center gap-3 border-t border-chassis-border bg-chassis-surface px-3.5 text-kicker tracking-control text-chassis-text-dim">
+    <footer
+      className="flex h-6 flex-none items-center gap-3 border-t border-chassis-border bg-chassis-surface px-3.5 text-kicker tracking-control text-chassis-text-dim"
+      data-testid="status-bar"
+    >
+      {/* Every cell's text is live — the mode flips under a modal, the count and the query time move
+          with each fetch — so a cell is addressed by `data-cell`, never by what it currently says. */}
       {/* The mode is what tells you why `j` just did nothing: a modal has the keyboard. */}
-      <span className="text-chassis-text-muted">
+      <span
+        className="text-chassis-text-muted"
+        data-testid="status-cell"
+        data-cell="mode"
+      >
         {mode === "MODAL" ? CHASSIS_TEXT.modeModal : CHASSIS_TEXT.modeNormal}
       </span>
       <Divider />
-      <span>{service ?? CHASSIS_TEXT.allServices}</span>
+      <span
+        data-testid="status-cell"
+        data-cell="scope"
+      >
+        {service ?? CHASSIS_TEXT.allServices}
+      </span>
       <Divider />
-      <span>{range}</span>
+      <span
+        data-testid="status-cell"
+        data-cell="range"
+      >
+        {range}
+      </span>
 
       {live !== null && (
         <>
           <Divider />
-          <span className={cn("transition-colors duration-150 ease-out", live && "text-chassis-accent")}>
+          <span
+            className={cn("transition-colors duration-150 ease-out", live && "text-chassis-accent")}
+            data-testid="status-cell"
+            data-cell="tail"
+          >
             {live ? CHASSIS_TEXT.tailOn : CHASSIS_TEXT.tailOff}
           </span>
         </>
@@ -61,14 +84,26 @@ export const StatusBar = () => {
       {count !== null && (
         <>
           <Divider />
-          <span className="tabular-nums">{CHASSIS_TEXT.events(formatCount(count), range)}</span>
+          <span
+            className="tabular-nums"
+            data-testid="status-cell"
+            data-cell="events"
+          >
+            {CHASSIS_TEXT.events(formatCount(count), range)}
+          </span>
         </>
       )}
 
       {tookMs !== null && (
         <>
           <Divider />
-          <span className="tabular-nums">{CHASSIS_TEXT.queryTime(tookMs)}</span>
+          <span
+            className="tabular-nums"
+            data-testid="status-cell"
+            data-cell="query"
+          >
+            {CHASSIS_TEXT.queryTime(tookMs)}
+          </span>
         </>
       )}
 
@@ -77,6 +112,7 @@ export const StatusBar = () => {
           <Divider />
           <Link
             href={ROUTES.alerts}
+            data-testid="status-alerts-link"
             title={CHASSIS_TEXT.alertsCounterHint}
             className="text-chassis-error tabular-nums transition-[filter] duration-150 ease-out hover:brightness-125"
           >
@@ -85,7 +121,13 @@ export const StatusBar = () => {
         </>
       )}
 
-      <span className="ml-auto hidden text-chassis-text-dim rail:inline">{CHASSIS_TEXT.keyLegend}</span>
+      <span
+        className="ml-auto hidden text-chassis-text-dim rail:inline"
+        data-testid="status-cell"
+        data-cell="keys"
+      >
+        {CHASSIS_TEXT.keyLegend}
+      </span>
     </footer>
   );
 };

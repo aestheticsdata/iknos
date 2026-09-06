@@ -6,7 +6,7 @@ import { TONE_TEXT } from "./surface";
 import { Tooltip } from "./Tooltip";
 import { useCursorHover } from "./useCursorHover";
 
-import type { MouseEvent, ReactNode } from "react";
+import type { MouseEvent, ReactNode, SVGProps } from "react";
 import type { SeriesValue } from "./series";
 import type { Surface, Tone } from "./surface";
 
@@ -42,6 +42,7 @@ export const Sparkline = ({
   label,
   tip,
   className,
+  ...rest
 }: {
   values: SeriesValue[];
   tone?: Tone;
@@ -66,7 +67,10 @@ export const Sparkline = ({
    */
   tip?: (index: number) => ReactNode;
   className?: string;
-}) => {
+  // The spread is what lets a `data-testid` reach the `<svg>` — see `Card`. `values`, `width` and
+  // `height` are omitted because the SVG DOM already claims the names and means something else by
+  // them: `values` is an animation's keyframe string, and the two sizes here are numbers, not lengths.
+} & Omit<SVGProps<SVGSVGElement>, "values" | "width" | "height">) => {
   /* Before the early return below, because hooks cannot run conditionally. */
   const { hover, show, clear } = useCursorHover<number>();
 
@@ -118,6 +122,7 @@ export const Sparkline = ({
         onMouseLeave={tip ? clear : undefined}
         onMouseMove={tip ? track : undefined}
         className={cn("overflow-visible", TONE_TEXT[surface][tone], className)}
+        {...rest}
       >
         {rule !== null && (
           /* The same ink as the line, faded — a second colour here would be a second thing to read,

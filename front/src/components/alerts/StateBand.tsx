@@ -87,8 +87,11 @@ export const StateBand = ({
         aria-label={ALERTS_TEXT.historyTitle}
         onMouseLeave={clear}
         className="relative h-3 w-full overflow-hidden rounded-chip bg-chassis-inset"
+        data-testid="state-band"
       >
-        {segments.map((segment) => (
+        {/* `data-index` as well as the state: a flapping alert draws the same state several times
+            over, and the position along the band is what tells one firing stretch from the next. */}
+        {segments.map((segment, index) => (
           /* biome-ignore lint/a11y/noStaticElementInteractions: a painted stretch inside a
              `role="img"`, not a control — the pointer is an extra way to read the band, and the
              modal around it prints the state, the reading and the duration in words regardless */
@@ -98,6 +101,9 @@ export const StateBand = ({
             onMouseMove={move(segment)}
             className={cn("absolute inset-y-0", TONE_FILL.chassis[STATE_TONE[segment.state]])}
             style={{ left: `${segment.left}%`, width: `${segment.width}%` }}
+            data-testid="state-band-segment"
+            data-state={segment.state}
+            data-index={index}
           />
         ))}
       </div>

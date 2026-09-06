@@ -55,6 +55,7 @@ export const Modal = ({
   title,
   hint,
   actions,
+  testId,
   children,
 }: {
   open: boolean;
@@ -67,6 +68,15 @@ export const Modal = ({
   title: string;
   hint?: string;
   actions?: React.ReactNode;
+  /**
+   * The `<dialog>`'s `data-testid`, and the only way the demo film can tell six of these apart.
+   *
+   * Every overlay is mounted **closed** on every route — palette, storage, issue, alert, trace, row
+   * detail — so `role="dialog"` matches all six, and the latch below keeps the last title on a
+   * closed one, so its text is not a handle either. A narrow prop rather than a rest spread: the
+   * element already carries a `ref`, `onClose` and `onClick` this component owns.
+   */
+  testId?: string;
   children: React.ReactNode;
 }) => {
   const ref = useRef<HTMLDialogElement>(null);
@@ -142,6 +152,7 @@ export const Modal = ({
         wide ? "w-[min(1120px,calc(100vw-2rem))]" : "w-[min(560px,calc(100vw-2rem))]",
         "bg-chassis-surface p-0 font-mono text-chassis-text shadow-overlay backdrop:bg-chassis-inset/70",
       )}
+      data-testid={testId}
     >
       <header className="flex items-baseline gap-2 border-b border-chassis-border px-3 py-2">
         {view.tag && <span className="text-kicker tracking-kicker text-chassis-text-dim uppercase">{view.tag}</span>}

@@ -63,6 +63,7 @@ export const TraceTimeline = ({
        */
       open={loading || error !== null || trace !== null}
       onClose={onClose}
+      testId="trace-timeline"
       tag={LOGS_TEXT.traceTitle}
       /*
        * The header names the trace the moment the id is known and says nothing before that. The id
@@ -80,15 +81,18 @@ export const TraceTimeline = ({
           <Button
             variant="quiet"
             onClick={onClose}
+            data-testid="trace-close"
           >
             {LOGS_TEXT.close}
           </Button>
+          {/* Writes the clipboard — named apart from `close` beside it. */}
           <Button
             variant="quiet"
             disabled={traceId === null}
             onClick={() => {
               if (traceId !== null) onCopyId(traceId);
             }}
+            data-testid="trace-copy-id"
           >
             {LOGS_TEXT.copyTraceId}
           </Button>
@@ -97,6 +101,7 @@ export const TraceTimeline = ({
             onClick={() => {
               if (traceId !== null) onOpenInLogs(traceId);
             }}
+            data-testid="trace-open-logs"
           >
             {LOGS_TEXT.openInLogs}
           </Button>
@@ -126,7 +131,15 @@ const TraceBody = ({ trace, loading, error }: { trace: Trace | null; loading: bo
      the reader came from is on. Two clocks for one dataset is the rule `@lib/zone` exists for. */
   const { tz } = useZone();
 
-  if (error !== null) return <p className={cn("text-ui leading-hint", TONE_TEXT.chassis.error)}>{error}</p>;
+  if (error !== null)
+    return (
+      <p
+        data-testid="trace-error"
+        className={cn("text-ui leading-hint", TONE_TEXT.chassis.error)}
+      >
+        {error}
+      </p>
+    );
 
   // Before the `trace === null` check, not after it: a hook that keeps the previous trace while
   // fetching the next one would otherwise render the old rows under the new id, with nothing on
@@ -143,13 +156,23 @@ const TraceBody = ({ trace, loading, error }: { trace: Trace | null; loading: bo
   if (trace === null) return null;
 
   if (trace.rows.length === 0)
-    return <p className={cn("text-ui leading-hint", SURFACE_TEXT_DIM.chassis)}>{LOGS_TEXT.traceEmpty}</p>;
+    return (
+      <p
+        data-testid="trace-empty"
+        className={cn("text-ui leading-hint", SURFACE_TEXT_DIM.chassis)}
+      >
+        {LOGS_TEXT.traceEmpty}
+      </p>
+    );
 
   const lanes = lanesFor(trace);
 
   return (
     <div className="flex flex-col gap-2">
-      <p className={cn("text-dense tabular-nums", SURFACE_TEXT_MUTED.chassis)}>
+      <p
+        data-testid="trace-total"
+        className={cn("text-dense tabular-nums", SURFACE_TEXT_MUTED.chassis)}
+      >
         {LOGS_TEXT.traceTotal(Math.round(trace.totalMs))}
       </p>
 
@@ -160,7 +183,12 @@ const TraceBody = ({ trace, loading, error }: { trace: Trace | null; loading: bo
        * about to draw a conclusion from a shape that is missing its middle.
        */}
       {trace.truncated && (
-        <p className={cn("text-micro leading-hint", TONE_TEXT.chassis.warn)}>{LOGS_TEXT.traceTruncated}</p>
+        <p
+          data-testid="trace-truncated"
+          className={cn("text-micro leading-hint", TONE_TEXT.chassis.warn)}
+        >
+          {LOGS_TEXT.traceTruncated}
+        </p>
       )}
 
       {/*
@@ -171,10 +199,19 @@ const TraceBody = ({ trace, loading, error }: { trace: Trace | null; loading: bo
        */}
       <ol
         aria-label={LOGS_TEXT.traceTitle}
+        data-testid="trace-lanes"
         className="ik-scroll flex max-h-[46vh] flex-col gap-1.5 overflow-y-auto"
       >
-        {lanes.map((lane) => (
-          <li key={lane.key}>
+        {/* `data-index` is the lane's place in the trace — a static snapshot, so it holds — and
+            `data-service` is which service wrote it. The `<li>` and not the `Tooltip` inside: the
+            wrapper is `w-full`, so a pointer aimed at the item's centre lands on the bubble's trigger. */}
+        {lanes.map((lane, index) => (
+          <li
+            key={lane.key}
+            data-testid="trace-lane"
+            data-index={index}
+            data-service={lane.row.service}
+          >
             {/*
              * One bubble for the whole row, and it carries the three things the row cannot: the
              * absolute instant (the line only shows `+12` since the trace started), the message in

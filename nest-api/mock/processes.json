@@ -1,7 +1,7 @@
 [
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -12,7 +12,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -23,7 +23,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -34,7 +34,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -45,7 +45,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -56,7 +56,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -67,7 +67,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -78,7 +78,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -89,7 +89,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -100,7 +100,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -111,7 +111,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -122,7 +122,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -133,7 +133,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -144,7 +144,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -155,7 +155,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -166,7 +166,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -177,7 +177,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -188,7 +188,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -199,7 +199,7 @@
   },
   {
     "ts": "2026-09-01T11:40:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -210,7 +210,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -221,7 +221,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -232,7 +232,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -243,7 +243,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -254,7 +254,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -265,7 +265,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -276,7 +276,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -287,7 +287,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -298,7 +298,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -309,7 +309,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -320,7 +320,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -331,7 +331,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -342,7 +342,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -353,7 +353,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -364,7 +364,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -375,7 +375,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -386,7 +386,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -397,7 +397,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -408,7 +408,7 @@
   },
   {
     "ts": "2026-09-01T11:40:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -419,7 +419,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -430,7 +430,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -441,7 +441,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -452,7 +452,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -463,7 +463,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -474,7 +474,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -485,7 +485,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -496,7 +496,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -507,7 +507,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -518,7 +518,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -529,7 +529,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -540,7 +540,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -551,7 +551,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -562,7 +562,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -573,7 +573,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -584,7 +584,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -595,7 +595,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -606,7 +606,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -617,7 +617,7 @@
   },
   {
     "ts": "2026-09-01T11:41:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -628,7 +628,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -639,7 +639,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -650,7 +650,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -661,7 +661,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -672,7 +672,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -683,7 +683,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -694,7 +694,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -705,7 +705,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -716,7 +716,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -727,7 +727,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -738,7 +738,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -749,7 +749,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -760,7 +760,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -771,7 +771,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -782,7 +782,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -793,7 +793,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -804,7 +804,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -815,7 +815,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -826,7 +826,7 @@
   },
   {
     "ts": "2026-09-01T11:41:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -837,7 +837,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -848,7 +848,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -859,7 +859,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -870,7 +870,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -881,7 +881,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -892,7 +892,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -903,7 +903,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -914,7 +914,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -925,7 +925,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -936,7 +936,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -947,7 +947,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -958,7 +958,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -969,7 +969,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -980,7 +980,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -991,7 +991,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -1002,7 +1002,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -1013,7 +1013,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -1024,7 +1024,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -1035,7 +1035,7 @@
   },
   {
     "ts": "2026-09-01T11:42:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -1046,7 +1046,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -1057,7 +1057,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -1068,7 +1068,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -1079,7 +1079,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -1090,7 +1090,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -1101,7 +1101,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -1112,7 +1112,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -1123,7 +1123,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -1134,7 +1134,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -1145,7 +1145,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -1156,7 +1156,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -1167,7 +1167,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -1178,7 +1178,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -1189,7 +1189,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -1200,7 +1200,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -1211,7 +1211,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -1222,7 +1222,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -1233,7 +1233,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -1244,7 +1244,7 @@
   },
   {
     "ts": "2026-09-01T11:42:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -1255,7 +1255,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -1266,7 +1266,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -1277,7 +1277,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -1288,7 +1288,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -1299,7 +1299,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -1310,7 +1310,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -1321,7 +1321,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -1332,7 +1332,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -1343,7 +1343,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -1354,7 +1354,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -1365,7 +1365,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -1376,7 +1376,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -1387,7 +1387,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -1398,7 +1398,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -1409,7 +1409,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -1420,7 +1420,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -1431,7 +1431,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -1442,7 +1442,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -1453,7 +1453,7 @@
   },
   {
     "ts": "2026-09-01T11:43:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -1464,7 +1464,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -1475,7 +1475,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -1486,7 +1486,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -1497,7 +1497,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -1508,7 +1508,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -1519,7 +1519,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -1530,7 +1530,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -1541,7 +1541,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -1552,7 +1552,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -1563,7 +1563,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -1574,7 +1574,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -1585,7 +1585,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -1596,7 +1596,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -1607,7 +1607,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -1618,7 +1618,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -1629,7 +1629,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -1640,7 +1640,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -1651,7 +1651,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -1662,7 +1662,7 @@
   },
   {
     "ts": "2026-09-01T11:43:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -1673,7 +1673,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -1684,7 +1684,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -1695,7 +1695,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -1706,7 +1706,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -1717,7 +1717,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -1728,7 +1728,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -1739,7 +1739,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -1750,7 +1750,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -1761,7 +1761,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -1772,7 +1772,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -1783,7 +1783,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -1794,7 +1794,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -1805,7 +1805,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -1816,7 +1816,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -1827,7 +1827,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -1838,7 +1838,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -1849,7 +1849,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -1860,7 +1860,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -1871,7 +1871,7 @@
   },
   {
     "ts": "2026-09-01T11:44:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -1882,7 +1882,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -1893,7 +1893,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -1904,7 +1904,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -1915,7 +1915,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -1926,7 +1926,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -1937,7 +1937,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -1948,7 +1948,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -1959,7 +1959,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -1970,7 +1970,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -1981,7 +1981,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -1992,7 +1992,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -2003,7 +2003,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -2014,7 +2014,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -2025,7 +2025,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -2036,7 +2036,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -2047,7 +2047,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -2058,7 +2058,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -2069,7 +2069,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -2080,7 +2080,7 @@
   },
   {
     "ts": "2026-09-01T11:44:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -2091,7 +2091,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -2102,7 +2102,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -2113,7 +2113,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -2124,7 +2124,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -2135,7 +2135,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -2146,7 +2146,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -2157,7 +2157,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -2168,7 +2168,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -2179,7 +2179,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -2190,7 +2190,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -2201,7 +2201,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -2212,7 +2212,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -2223,7 +2223,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -2234,7 +2234,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -2245,7 +2245,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -2256,7 +2256,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -2267,7 +2267,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -2278,7 +2278,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -2289,7 +2289,7 @@
   },
   {
     "ts": "2026-09-01T11:45:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -2300,7 +2300,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -2311,7 +2311,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -2322,7 +2322,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -2333,7 +2333,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -2344,7 +2344,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -2355,7 +2355,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -2366,7 +2366,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -2377,7 +2377,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -2388,7 +2388,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -2399,7 +2399,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -2410,7 +2410,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -2421,7 +2421,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -2432,7 +2432,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -2443,7 +2443,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -2454,7 +2454,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -2465,7 +2465,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -2476,7 +2476,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -2487,7 +2487,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -2498,7 +2498,7 @@
   },
   {
     "ts": "2026-09-01T11:45:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -2509,7 +2509,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -2520,7 +2520,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -2531,7 +2531,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -2542,7 +2542,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -2553,7 +2553,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -2564,7 +2564,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -2575,7 +2575,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -2586,7 +2586,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -2597,7 +2597,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -2608,7 +2608,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -2619,7 +2619,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -2630,7 +2630,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -2641,7 +2641,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -2652,7 +2652,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -2663,7 +2663,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -2674,7 +2674,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -2685,7 +2685,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -2696,7 +2696,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -2707,7 +2707,7 @@
   },
   {
     "ts": "2026-09-01T11:46:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -2718,7 +2718,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -2729,7 +2729,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -2740,7 +2740,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -2751,7 +2751,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -2762,7 +2762,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -2773,7 +2773,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -2784,7 +2784,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -2795,7 +2795,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -2806,7 +2806,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -2817,7 +2817,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -2828,7 +2828,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -2839,7 +2839,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -2850,7 +2850,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -2861,7 +2861,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -2872,7 +2872,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -2883,7 +2883,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -2894,7 +2894,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -2905,7 +2905,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -2916,7 +2916,7 @@
   },
   {
     "ts": "2026-09-01T11:46:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -2927,7 +2927,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -2938,7 +2938,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -2949,7 +2949,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -2960,7 +2960,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -2971,7 +2971,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -2982,7 +2982,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -2993,7 +2993,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -3004,7 +3004,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -3015,7 +3015,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -3026,7 +3026,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -3037,7 +3037,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -3048,7 +3048,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -3059,7 +3059,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -3070,7 +3070,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -3081,7 +3081,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -3092,7 +3092,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -3103,7 +3103,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -3114,7 +3114,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -3125,7 +3125,7 @@
   },
   {
     "ts": "2026-09-01T11:47:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -3136,7 +3136,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -3147,7 +3147,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -3158,7 +3158,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -3169,7 +3169,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -3180,7 +3180,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -3191,7 +3191,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -3202,7 +3202,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -3213,7 +3213,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -3224,7 +3224,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -3235,7 +3235,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -3246,7 +3246,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -3257,7 +3257,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -3268,7 +3268,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -3279,7 +3279,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -3290,7 +3290,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -3301,7 +3301,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -3312,7 +3312,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -3323,7 +3323,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -3334,7 +3334,7 @@
   },
   {
     "ts": "2026-09-01T11:47:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -3345,7 +3345,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -3356,7 +3356,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -3367,7 +3367,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -3378,7 +3378,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -3389,7 +3389,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -3400,7 +3400,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -3411,7 +3411,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -3422,7 +3422,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -3433,7 +3433,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -3444,7 +3444,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -3455,7 +3455,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -3466,7 +3466,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -3477,7 +3477,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -3488,7 +3488,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -3499,7 +3499,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -3510,7 +3510,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -3521,7 +3521,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -3532,7 +3532,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -3543,7 +3543,7 @@
   },
   {
     "ts": "2026-09-01T11:48:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -3554,7 +3554,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -3565,7 +3565,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -3576,7 +3576,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -3587,7 +3587,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -3598,7 +3598,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -3609,7 +3609,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -3620,7 +3620,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -3631,7 +3631,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -3642,7 +3642,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -3653,7 +3653,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -3664,7 +3664,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -3675,7 +3675,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -3686,7 +3686,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -3697,7 +3697,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -3708,7 +3708,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -3719,7 +3719,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -3730,7 +3730,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -3741,7 +3741,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -3752,7 +3752,7 @@
   },
   {
     "ts": "2026-09-01T11:48:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -3763,7 +3763,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -3774,7 +3774,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -3785,7 +3785,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -3796,7 +3796,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -3807,7 +3807,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -3818,7 +3818,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -3829,7 +3829,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -3840,7 +3840,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -3851,7 +3851,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -3862,7 +3862,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -3873,7 +3873,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -3884,7 +3884,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -3895,7 +3895,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -3906,7 +3906,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -3917,7 +3917,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -3928,7 +3928,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -3939,7 +3939,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -3950,7 +3950,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -3961,7 +3961,7 @@
   },
   {
     "ts": "2026-09-01T11:49:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -3972,7 +3972,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -3983,7 +3983,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -3994,7 +3994,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -4005,7 +4005,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -4016,7 +4016,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -4027,7 +4027,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -4038,7 +4038,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -4049,7 +4049,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -4060,7 +4060,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -4071,7 +4071,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -4082,7 +4082,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -4093,7 +4093,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -4104,7 +4104,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -4115,7 +4115,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -4126,7 +4126,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -4137,7 +4137,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -4148,7 +4148,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -4159,7 +4159,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -4170,7 +4170,7 @@
   },
   {
     "ts": "2026-09-01T11:49:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -4181,7 +4181,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -4192,7 +4192,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -4203,7 +4203,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -4214,7 +4214,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -4225,7 +4225,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -4236,7 +4236,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -4247,7 +4247,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -4258,7 +4258,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -4269,7 +4269,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -4280,7 +4280,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -4291,7 +4291,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -4302,7 +4302,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -4313,7 +4313,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -4324,7 +4324,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -4335,7 +4335,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -4346,7 +4346,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -4357,7 +4357,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -4368,7 +4368,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -4379,7 +4379,7 @@
   },
   {
     "ts": "2026-09-01T11:50:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -4390,7 +4390,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -4401,7 +4401,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -4412,7 +4412,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -4423,7 +4423,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -4434,7 +4434,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -4445,7 +4445,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -4456,7 +4456,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -4467,7 +4467,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -4478,7 +4478,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -4489,7 +4489,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -4500,7 +4500,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -4511,7 +4511,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -4522,7 +4522,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -4533,7 +4533,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -4544,7 +4544,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -4555,7 +4555,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -4566,7 +4566,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -4577,7 +4577,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -4588,7 +4588,7 @@
   },
   {
     "ts": "2026-09-01T11:50:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -4599,7 +4599,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -4610,7 +4610,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -4621,7 +4621,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -4632,7 +4632,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -4643,7 +4643,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -4654,7 +4654,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -4665,7 +4665,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -4676,7 +4676,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -4687,7 +4687,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -4698,7 +4698,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -4709,7 +4709,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -4720,7 +4720,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -4731,7 +4731,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -4742,7 +4742,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -4753,7 +4753,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -4764,7 +4764,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -4775,7 +4775,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -4786,7 +4786,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -4797,7 +4797,7 @@
   },
   {
     "ts": "2026-09-01T11:51:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -4808,7 +4808,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -4819,7 +4819,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -4830,7 +4830,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -4841,7 +4841,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -4852,7 +4852,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -4863,7 +4863,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -4874,7 +4874,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -4885,7 +4885,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -4896,7 +4896,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -4907,7 +4907,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -4918,7 +4918,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -4929,7 +4929,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -4940,7 +4940,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -4951,7 +4951,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -4962,7 +4962,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -4973,7 +4973,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -4984,7 +4984,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -4995,7 +4995,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -5006,7 +5006,7 @@
   },
   {
     "ts": "2026-09-01T11:51:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -5017,7 +5017,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -5028,7 +5028,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -5039,7 +5039,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -5050,7 +5050,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -5061,7 +5061,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -5072,7 +5072,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -5083,7 +5083,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -5094,7 +5094,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -5105,7 +5105,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -5116,7 +5116,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -5127,7 +5127,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -5138,7 +5138,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -5149,7 +5149,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -5160,7 +5160,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -5171,7 +5171,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -5182,7 +5182,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -5193,7 +5193,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -5204,7 +5204,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -5215,7 +5215,7 @@
   },
   {
     "ts": "2026-09-01T11:52:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -5226,7 +5226,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -5237,7 +5237,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -5248,7 +5248,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -5259,7 +5259,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -5270,7 +5270,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -5281,7 +5281,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -5292,7 +5292,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -5303,7 +5303,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -5314,7 +5314,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -5325,7 +5325,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -5336,7 +5336,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -5347,7 +5347,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -5358,7 +5358,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -5369,7 +5369,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -5380,7 +5380,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -5391,7 +5391,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -5402,7 +5402,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -5413,7 +5413,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -5424,7 +5424,7 @@
   },
   {
     "ts": "2026-09-01T11:52:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -5435,7 +5435,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -5446,7 +5446,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -5457,7 +5457,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -5468,7 +5468,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -5479,7 +5479,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -5490,7 +5490,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -5501,7 +5501,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -5512,7 +5512,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -5523,7 +5523,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -5534,7 +5534,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -5545,7 +5545,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -5556,7 +5556,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -5567,7 +5567,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -5578,7 +5578,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -5589,7 +5589,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -5600,7 +5600,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -5611,7 +5611,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -5622,7 +5622,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -5633,7 +5633,7 @@
   },
   {
     "ts": "2026-09-01T11:53:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -5644,7 +5644,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -5655,7 +5655,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -5666,7 +5666,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -5677,7 +5677,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -5688,7 +5688,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -5699,7 +5699,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -5710,7 +5710,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -5721,7 +5721,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -5732,7 +5732,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -5743,7 +5743,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -5754,7 +5754,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -5765,7 +5765,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -5776,7 +5776,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -5787,7 +5787,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -5798,7 +5798,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -5809,7 +5809,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -5820,7 +5820,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -5831,7 +5831,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -5842,7 +5842,7 @@
   },
   {
     "ts": "2026-09-01T11:53:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -5853,7 +5853,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -5864,7 +5864,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -5875,7 +5875,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -5886,7 +5886,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -5897,7 +5897,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -5908,7 +5908,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -5919,7 +5919,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -5930,7 +5930,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -5941,7 +5941,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -5952,7 +5952,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -5963,7 +5963,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -5974,7 +5974,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -5985,7 +5985,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -5996,7 +5996,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -6007,7 +6007,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -6018,7 +6018,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -6029,7 +6029,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -6040,7 +6040,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -6051,7 +6051,7 @@
   },
   {
     "ts": "2026-09-01T11:54:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -6062,7 +6062,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -6073,7 +6073,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -6084,7 +6084,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -6095,7 +6095,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -6106,7 +6106,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -6117,7 +6117,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -6128,7 +6128,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -6139,7 +6139,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -6150,7 +6150,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -6161,7 +6161,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -6172,7 +6172,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -6183,7 +6183,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -6194,7 +6194,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -6205,7 +6205,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -6216,7 +6216,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -6227,7 +6227,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -6238,7 +6238,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -6249,7 +6249,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -6260,7 +6260,7 @@
   },
   {
     "ts": "2026-09-01T11:54:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -6271,7 +6271,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -6282,7 +6282,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -6293,7 +6293,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -6304,7 +6304,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -6315,7 +6315,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -6326,7 +6326,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -6337,7 +6337,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -6348,7 +6348,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -6359,7 +6359,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -6370,7 +6370,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -6381,7 +6381,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -6392,7 +6392,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -6403,7 +6403,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -6414,7 +6414,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -6425,7 +6425,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -6436,7 +6436,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -6447,7 +6447,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -6458,7 +6458,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -6469,7 +6469,7 @@
   },
   {
     "ts": "2026-09-01T11:55:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -6480,7 +6480,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -6491,7 +6491,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -6502,7 +6502,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -6513,7 +6513,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -6524,7 +6524,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -6535,7 +6535,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -6546,7 +6546,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -6557,7 +6557,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -6568,7 +6568,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -6579,7 +6579,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -6590,7 +6590,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -6601,7 +6601,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -6612,7 +6612,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -6623,7 +6623,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -6634,7 +6634,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -6645,7 +6645,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -6656,7 +6656,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -6667,7 +6667,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -6678,7 +6678,7 @@
   },
   {
     "ts": "2026-09-01T11:55:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -6689,7 +6689,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -6700,7 +6700,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -6711,7 +6711,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -6722,7 +6722,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -6733,7 +6733,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -6744,7 +6744,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -6755,7 +6755,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -6766,7 +6766,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -6777,7 +6777,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -6788,7 +6788,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -6799,7 +6799,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -6810,7 +6810,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -6821,7 +6821,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -6832,7 +6832,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -6843,7 +6843,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -6854,7 +6854,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -6865,7 +6865,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -6876,7 +6876,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -6887,7 +6887,7 @@
   },
   {
     "ts": "2026-09-01T11:56:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -6898,7 +6898,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -6909,7 +6909,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -6920,7 +6920,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -6931,7 +6931,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -6942,7 +6942,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -6953,7 +6953,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -6964,7 +6964,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -6975,7 +6975,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -6986,7 +6986,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -6997,7 +6997,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -7008,7 +7008,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -7019,7 +7019,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -7030,7 +7030,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -7041,7 +7041,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -7052,7 +7052,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -7063,7 +7063,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -7074,7 +7074,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -7085,7 +7085,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -7096,7 +7096,7 @@
   },
   {
     "ts": "2026-09-01T11:56:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -7107,7 +7107,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -7118,7 +7118,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -7129,7 +7129,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -7140,7 +7140,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -7151,7 +7151,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -7162,7 +7162,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -7173,7 +7173,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -7184,7 +7184,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -7195,7 +7195,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -7206,7 +7206,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -7217,7 +7217,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -7228,7 +7228,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -7239,7 +7239,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -7250,7 +7250,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -7261,7 +7261,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -7272,7 +7272,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -7283,7 +7283,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -7294,7 +7294,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -7305,7 +7305,7 @@
   },
   {
     "ts": "2026-09-01T11:57:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -7316,7 +7316,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -7327,7 +7327,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -7338,7 +7338,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -7349,7 +7349,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -7360,7 +7360,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -7371,7 +7371,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -7382,7 +7382,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -7393,7 +7393,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -7404,7 +7404,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -7415,7 +7415,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -7426,7 +7426,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -7437,7 +7437,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -7448,7 +7448,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -7459,7 +7459,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -7470,7 +7470,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -7481,7 +7481,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -7492,7 +7492,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -7503,7 +7503,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -7514,7 +7514,7 @@
   },
   {
     "ts": "2026-09-01T11:57:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -7525,7 +7525,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -7536,7 +7536,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -7547,7 +7547,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -7558,7 +7558,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -7569,7 +7569,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -7580,7 +7580,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -7591,7 +7591,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -7602,7 +7602,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -7613,7 +7613,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -7624,7 +7624,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -7635,7 +7635,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -7646,7 +7646,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -7657,7 +7657,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -7668,7 +7668,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -7679,7 +7679,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -7690,7 +7690,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -7701,7 +7701,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -7712,7 +7712,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -7723,7 +7723,7 @@
   },
   {
     "ts": "2026-09-01T11:58:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -7734,7 +7734,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -7745,7 +7745,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -7756,7 +7756,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -7767,7 +7767,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -7778,7 +7778,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -7789,7 +7789,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -7800,7 +7800,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -7811,7 +7811,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -7822,7 +7822,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -7833,7 +7833,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -7844,7 +7844,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -7855,7 +7855,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -7866,7 +7866,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -7877,7 +7877,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -7888,7 +7888,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -7899,7 +7899,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -7910,7 +7910,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -7921,7 +7921,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -7932,7 +7932,7 @@
   },
   {
     "ts": "2026-09-01T11:58:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -7943,7 +7943,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -7954,7 +7954,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -7965,7 +7965,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -7976,7 +7976,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -7987,7 +7987,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -7998,7 +7998,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -8009,7 +8009,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -8020,7 +8020,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -8031,7 +8031,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -8042,7 +8042,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -8053,7 +8053,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -8064,7 +8064,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -8075,7 +8075,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -8086,7 +8086,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -8097,7 +8097,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -8108,7 +8108,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -8119,7 +8119,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -8130,7 +8130,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -8141,7 +8141,7 @@
   },
   {
     "ts": "2026-09-01T11:59:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -8152,7 +8152,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -8163,7 +8163,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -8174,7 +8174,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -8185,7 +8185,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -8196,7 +8196,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -8207,7 +8207,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -8218,7 +8218,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -8229,7 +8229,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -8240,7 +8240,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -8251,7 +8251,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -8262,7 +8262,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -8273,7 +8273,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -8284,7 +8284,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -8295,7 +8295,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -8306,7 +8306,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -8317,7 +8317,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -8328,7 +8328,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -8339,7 +8339,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -8350,7 +8350,7 @@
   },
   {
     "ts": "2026-09-01T11:59:30.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,
@@ -8361,7 +8361,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "pfa-nest-api",
+    "pm2Name": "atlas-api",
     "pm2Id": 0,
     "status": "online",
     "restarts": 0,
@@ -8372,7 +8372,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "worldweathr-api",
+    "pm2Name": "beacon-api",
     "pm2Id": 1,
     "status": "online",
     "restarts": 7,
@@ -8383,7 +8383,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "spira-nest-api",
+    "pm2Name": "cinder-api",
     "pm2Id": 2,
     "status": "online",
     "restarts": 0,
@@ -8394,7 +8394,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "iknos-api",
+    "pm2Name": "keystone-api",
     "pm2Id": 3,
     "status": "online",
     "restarts": 0,
@@ -8405,7 +8405,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "zeus-nest-api",
+    "pm2Name": "dovetail-api",
     "pm2Id": 4,
     "status": "online",
     "restarts": 4,
@@ -8416,7 +8416,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "bkmk-server",
+    "pm2Name": "fathom-api",
     "pm2Id": 5,
     "status": "online",
     "restarts": 2,
@@ -8427,7 +8427,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "trekker-api",
+    "pm2Name": "ember-api",
     "pm2Id": 6,
     "status": "online",
     "restarts": 4,
@@ -8438,7 +8438,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "shatter-api",
+    "pm2Name": "harbor-api",
     "pm2Id": 7,
     "status": "online",
     "restarts": 2,
@@ -8449,7 +8449,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "1991chat-backend",
+    "pm2Name": "gale-api",
     "pm2Id": 8,
     "status": "online",
     "restarts": 4,
@@ -8460,7 +8460,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "conway-gol-api",
+    "pm2Name": "ivory-api",
     "pm2Id": 9,
     "status": "online",
     "restarts": 0,
@@ -8471,7 +8471,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "hiwaysim",
+    "pm2Name": "juniper",
     "pm2Id": 10,
     "status": "stopped",
     "restarts": 1,
@@ -8482,7 +8482,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "iknos-front",
+    "pm2Name": "keystone-front",
     "pm2Id": 11,
     "status": "online",
     "restarts": 1,
@@ -8493,7 +8493,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "pfa-front",
+    "pm2Name": "atlas-front",
     "pm2Id": 12,
     "status": "online",
     "restarts": 4,
@@ -8504,7 +8504,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "spira-front",
+    "pm2Name": "cinder-front",
     "pm2Id": 13,
     "status": "online",
     "restarts": 0,
@@ -8515,7 +8515,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "zeus-front",
+    "pm2Name": "dovetail-front",
     "pm2Id": 14,
     "status": "online",
     "restarts": 1,
@@ -8526,7 +8526,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "worldweathr-front",
+    "pm2Name": "beacon-front",
     "pm2Id": 15,
     "status": "online",
     "restarts": 3,
@@ -8537,7 +8537,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "trekker-front",
+    "pm2Name": "ember-front",
     "pm2Id": 16,
     "status": "online",
     "restarts": 0,
@@ -8548,7 +8548,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "bkmk-front",
+    "pm2Name": "fathom-front",
     "pm2Id": 17,
     "status": "online",
     "restarts": 3,
@@ -8559,7 +8559,7 @@
   },
   {
     "ts": "2026-09-01T12:00:00.000Z",
-    "pm2Name": "1991chat-front",
+    "pm2Name": "gale-front",
     "pm2Id": 18,
     "status": "online",
     "restarts": 4,

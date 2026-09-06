@@ -32,7 +32,10 @@ export const StoragePanel = ({ storage }: { storage: CollectorStorage }) => {
   const largest = Math.max(...storage.tables.map((t) => t.bytes), 1);
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div
+      className="flex flex-col gap-2.5"
+      data-testid="storage-panel"
+    >
       <ul className="flex flex-col gap-1.5">
         {storage.tables.map((table) => (
           <Row
@@ -87,7 +90,11 @@ const Sep = () => (
 );
 
 const Row = ({ table, share }: { table: StorageTable; share: number }) => (
-  <li className="flex items-center gap-2 text-row text-chassis-text-muted">
+  <li
+    className="flex items-center gap-2 text-row text-chassis-text-muted"
+    data-testid="storage-row"
+    data-table={table.name}
+  >
     <span className="w-[104px] shrink-0 truncate text-chassis-text">{table.name}</span>
     {/*
      * `aria-hidden`, because the bar is a second rendering of the number sitting next to it. A

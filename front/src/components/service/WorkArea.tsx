@@ -80,7 +80,10 @@ export const WorkArea = ({ services }: { services: Service[] }) => {
      * than it should with nothing on screen to explain the space. Owned by the rows, the spacing
      * collapses with the row that owns it, in the same 150ms.
      */
-    <div className="flex h-full min-h-0 flex-col bg-work-ground px-3 py-2.75">
+    <div
+      className="flex h-full min-h-0 flex-col bg-work-ground px-3 py-2.75"
+      data-testid="work-area"
+    >
       {runtime.data !== null ? (
         /*
          * A reading in hand beats a failed poll, and it is checked first for that reason.
@@ -108,6 +111,7 @@ export const WorkArea = ({ services }: { services: Service[] }) => {
             type="button"
             onClick={runtime.reload}
             className="underline underline-offset-2 transition-colors duration-150 ease-out hover:text-work-text"
+            data-testid="runtime-retry"
           >
             {SERVICE_TEXT.retry}
           </button>
@@ -151,6 +155,7 @@ export const WorkArea = ({ services }: { services: Service[] }) => {
         // the whole row out of the tab order and off the accessibility tree, which a folded-away
         // row has no business being in.
         inert={!signalsOpen}
+        data-testid="signals-fold"
       >
         <div className="min-h-0 overflow-hidden">
           <Signals
@@ -180,7 +185,12 @@ export const WorkArea = ({ services }: { services: Service[] }) => {
             in, so rounding it there would round the wrong route too. `chassis-border`, not
             `work-border` — the panel is a dark window on this page's ground, the pairing
             `IngestCard` uses rather than the one its `Notice`/`ServiceHeader` siblings do. */}
-        <div className="min-w-0 flex-1 overflow-hidden rounded-card border border-chassis-border">
+        {/* Named apart from the edge-to-edge explorer above: the same `LogPanel` renders in both
+            shapes, so a storyboard that wants *this* one scopes into the card (ZEU-78). */}
+        <div
+          className="min-w-0 flex-1 overflow-hidden rounded-card border border-chassis-border"
+          data-testid="work-log-card"
+        >
           <LogPanel services={services} />
         </div>
 
@@ -196,7 +206,10 @@ export const WorkArea = ({ services }: { services: Service[] }) => {
          * has already collapsed to monograms, and 296px of the remaining space is most of what is
          * left for the log list this column is meant to annotate.
          */}
-        <aside className="flex min-h-0 w-[296px] flex-none flex-col gap-2.75 max-rail:hidden">
+        <aside
+          className="flex min-h-0 w-[296px] flex-none flex-col gap-2.75 max-rail:hidden"
+          data-testid="work-aside"
+        >
           {/* `flex-none` above `flex-1` — the mockup's own split, and the right one: an alerts card
               is usually empty or two rows tall, and giving it half the column would be reserving
               space for bad news. The issues panel below takes whatever is left. */}
@@ -218,7 +231,13 @@ const Notice = ({
   signalsOpen: boolean;
   onToggleSignals: () => void;
 }) => (
-  <section className="mb-2.75 flex h-[52px] flex-none items-center gap-3 rounded-card border border-work-border bg-work-surface px-3.25 text-row text-work-text-muted">
+  /* The header's slot, before the header exists — `service-header` and this are never both mounted,
+     and the toggle inside is the same `signals-toggle` either way; the `runtime-retry` button is
+     what tells a failed notice from a waiting one, not the sentence. */
+  <section
+    className="mb-2.75 flex h-[52px] flex-none items-center gap-3 rounded-card border border-work-border bg-work-surface px-3.25 text-row text-work-text-muted"
+    data-testid="service-notice"
+  >
     <p className="min-w-0 flex-1">{children}</p>
     <SignalsToggle
       open={signalsOpen}
