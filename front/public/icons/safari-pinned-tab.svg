@@ -1,4 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
-<mask id="k" maskUnits="userSpaceOnUse" x="-2" y="-2" width="36" height="36"><rect x="-2" y="-2" width="36" height="36" fill="#fff"/><rect x="27.6" y="27.6" width="6.4" height="6.4" fill="#000"/></mask>
-<g mask="url(#k)"><g fill="none" stroke="#000" stroke-width="4.4"><rect x="2.2" y="2.2" width="27.6" height="27.6"/><path d="M0 11 H19"/><path d="M0 21 H12.5"/></g></g>
-</svg>
+<mask id="m" maskUnits="userSpaceOnUse" x="-2" y="-2" width="36" height="36">
+<polygon points="1.5,21 6.5,15.5 25.5,15.5 30.5,21 30.5,28.5 27,32 5,32 1.5,28.5" fill="#fff"/>
+<polygon points="0.00,10.50 2.00,8.50 4.05,8.50 6.05,10.50 6.05,18.50 4.05,20.50 2.00,20.50 0.00,18.50" fill="#000" stroke="#000" stroke-width="5.2" stroke-linejoin="miter"/>
+<polygon points="8.65,4.00 10.65,2.00 12.70,2.00 14.70,4.00 14.70,19.50 12.70,21.50 10.65,21.50 8.65,19.50" fill="#000" stroke="#000" stroke-width="5.2" stroke-linejoin="miter"/>
+<polygon points="17.30,4.00 19.30,2.00 21.35,2.00 23.35,4.00 23.35,19.50 21.35,21.50 19.30,21.50 17.30,19.50" fill="#000" stroke="#000" stroke-width="5.2" stroke-linejoin="miter"/>
+<polygon points="25.95,10.50 27.95,8.50 30.00,8.50 32.00,10.50 32.00,18.50 30.00,20.50 27.95,20.50 25.95,18.50" fill="#000" stroke="#000" stroke-width="5.2" stroke-linejoin="miter"/>
+<polygon points="0.00,10.50 2.00,8.50 4.05,8.50 6.05,10.50 6.05,18.50 4.05,20.50 2.00,20.50 0.00,18.50" fill="#fff"/>
+<polygon points="8.65,4.00 10.65,2.00 12.70,2.00 14.70,4.00 14.70,19.50 12.70,21.50 10.65,21.50 8.65,19.50" fill="#fff"/>
+<polygon points="17.30,4.00 19.30,2.00 21.35,2.00 23.35,4.00 23.35,19.50 21.35,21.50 19.30,21.50 17.30,19.50" fill="#fff"/>
+<polygon points="25.95,10.50 27.95,8.50 30.00,8.50 32.00,10.50 32.00,18.50 30.00,20.50 27.95,20.50 25.95,18.50" fill="#fff"/>
+</mask>
+<rect class="ink" x="-2" y="-2" width="36" height="36" fill="#000" mask="url(#m)"/></svg>
