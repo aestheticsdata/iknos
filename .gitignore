@@ -16,6 +16,12 @@ nest-api/generated/
 # Tests
 coverage/
 
+# Playwright writes both of these on every run. Untracked and unignored, they made
+# `require_clean_tree` refuse to deploy after any e2e run — spira and trekker have
+# ignored them since their suites landed.
+test-results/
+playwright-report/
+
 # Environment
 .env
 .env.*
