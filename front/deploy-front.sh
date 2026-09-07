@@ -565,9 +565,14 @@ command -v pnpm >/dev/null 2>&1 || { echo "❌ ERROR: pnpm not found on the serv
 cd "$FRONT_DIR"
 rm -rf node_modules .next
 
-# --prod=false explicitly: the build needs Tailwind, TypeScript and the React compiler plugin, all
+# --no-prod explicitly: the build needs Tailwind, TypeScript and the React compiler plugin, all
 # devDependencies, and NODE_ENV=production would otherwise skip them.
-pnpm install --frozen-lockfile --prod=false
+#
+# Spelled `--no-prod` and not `--prod=false`, which is what this was and what pnpm 10 stopped
+# accepting — `--prod` is a boolean flag, so a value after it aborts the install with "unexpected
+# value 'false' for '--prod'", the deploy fails after the release switch, and the auto-rollback puts
+# the previous version back. trekker's script has always spelled it this way.
+pnpm install --frozen-lockfile --no-prod
 
 # `next/font` downloads the two families at build time and self-hosts them. That is one outbound
 # request from ks-b during the build and none at all afterwards — the price of the eventual CSP
