@@ -33,21 +33,48 @@ export const metadata: Metadata = {
   // A single-admin monitor for one VPS has no business in an index.
   robots: { index: false, follow: false },
   /*
-   * IKN-33. Every file here is rasterised from `public/icons/favicon.svg` by `pnpm icons`; none of
-   * them is drawn.
+   * IKN-33, revised. The tab is now the monochrome mark from the favicon family: no tile, no plate,
+   * a glyph that bleeds to the edges of a 32×32 grid. Having no plate means it cannot supply its
+   * own contrast, so the ink follows the browser chrome instead — hence a pair, in which `-dark`
+   * names the ink and not the scheme. The dark glyph is what a *light* tab strip gets.
    *
-   * `favicon.ico` sits next to this file and is not listed: Next special-cases that one name and
-   * emits its tag whatever this field says. The 512 does not get that treatment — declaring any
-   * `icon` here suppresses the file convention's own `<link>`, so an `src/app/icon.png` would
-   * become a route nothing points at. It is served from `public/` and named, like the SVG, which
-   * has no convention at all and which every browser that understands it prefers to the `.ico`.
+   * The undecorated entry is first and repeated last because `media` on `rel="icon"` is not
+   * honoured by every engine. One that ignores it lands on `/icons/favicon.svg` whether it takes
+   * the first candidate or the last, and that file carries its own `prefers-color-scheme` rule
+   * inside the SVG as the second line of defence.
+   *
+   * Two things left this list, and both were serving the previous identity behind the new one:
+   *
+   * * `icon-512.png` — declaring it here made it a *browser* icon rather than merely a manifest
+   *   one, so any client preferring a sized raster to an SVG rendered the old dark tile. It is
+   *   still named by `site.webmanifest`, which is what a 512 is actually for.
+   * * `src/app/favicon.ico` — deleted, along with the line in `scripts/icons.mjs` that wrote it. It
+   *   was a file convention, so Next emitted its `<link>` by presence alone and ahead of everything
+   *   declared here: while it existed, Safari and every bare `GET /favicon.ico` served the old ring
+   *   whatever this field said. Do not reintroduce one.
+   *
+   * The PNG set under `public/icons/` still carries the old artwork. An install tile and a maskable
+   * icon both need an opaque full-bleed background — Android crops a maskable to whatever
+   * silhouette the launcher uses — and the new mark was drawn to have nothing behind it, so it is
+   * not a drop-in there. They are rasterised by `pnpm icons` from `public/icons/app-tile.svg`,
+   * which is that old drawing under a name that says what it is now for.
    *
    * `mask-icon` is Safari's pinned tab: a monochrome glyph macOS paints in the colour given here.
+   * That one *was* redrawn — the new mark in black, which is the form Safari requires.
    */
   icons: {
     icon: [
       { url: "/icons/favicon.svg", type: "image/svg+xml" },
-      { url: "/icons/icon-512.png", type: "image/png", sizes: "512x512" },
+      {
+        url: "/icons/favicon-dark.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/icons/favicon.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: dark)",
+      },
     ],
     other: [{ rel: "mask-icon", url: "/icons/safari-pinned-tab.svg", color: "#86b99a" }],
   },
