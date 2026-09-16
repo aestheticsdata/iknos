@@ -700,9 +700,19 @@ command -v pnpm >/dev/null 2>&1 || { echo "❌ ERROR: pnpm not found on the serv
 cd "$NEST_DIR"
 rm -rf node_modules dist
 
-# --prod=false explicitly: the build needs the Prisma CLI and the Nest CLI, both devDependencies,
-# and NODE_ENV=production would otherwise skip them.
-pnpm install --frozen-lockfile --prod=false
+# The build needs the Prisma CLI and the Nest CLI, both devDependencies, and a production install
+# would skip them.
+#
+# Spelled as NODE_ENV and not as a flag, which is the third spelling this line has had. It was
+# `--prod=false` until pnpm 10 made `--prod` a boolean and rejected the value; `a7df298` moved it
+# to `--no-prod`; pnpm 12 dropped that too — `-P, --prod` now has no negation at all and its help
+# says it "Takes precedence over NODE_ENV", which is the hint. With no `--prod` given, pnpm reads
+# NODE_ENV, so setting it here says the same thing in the one spelling that is not a flag and
+# cannot be deprecated out from under this script again.
+#
+# It is set rather than merely left unset because a non-interactive ssh session does not source
+# the profile and this must not depend on what the server's environment happens not to carry.
+NODE_ENV=development pnpm install --frozen-lockfile
 
 # `prebuild` runs `prisma generate`, which only needs DATABASE_URL to exist — it never connects.
 # Reading the production one here anyway keeps a single source for it.

@@ -574,11 +574,16 @@ rm -rf node_modules .next
 # --no-prod explicitly: the build needs Tailwind, TypeScript and the React compiler plugin, all
 # devDependencies, and NODE_ENV=production would otherwise skip them.
 #
-# Spelled `--no-prod` and not `--prod=false`, which is what this was and what pnpm 10 stopped
-# accepting — `--prod` is a boolean flag, so a value after it aborts the install with "unexpected
-# value 'false' for '--prod'", the deploy fails after the release switch, and the auto-rollback puts
-# the previous version back. trekker's script has always spelled it this way.
-pnpm install --frozen-lockfile --no-prod
+# Spelled as NODE_ENV and not as a flag, which is the third spelling this line has had. It was
+# `--prod=false` until pnpm 10 made `--prod` a boolean and rejected the value; `a7df298` moved it
+# to `--no-prod`; pnpm 12 dropped that too — `-P, --prod` now has no negation at all and its help
+# says it "Takes precedence over NODE_ENV", which is the hint. With no `--prod` given, pnpm reads
+# NODE_ENV, so setting it here says the same thing in the one spelling that is not a flag and
+# cannot be deprecated out from under this script again.
+#
+# It is set rather than merely left unset because a non-interactive ssh session does not source
+# the profile and this must not depend on what the server's environment happens not to carry.
+NODE_ENV=development pnpm install --frozen-lockfile
 
 # `next/font` downloads the two families at build time and self-hosts them. That is one outbound
 # request from ks-b during the build and none at all afterwards — the price of the eventual CSP
