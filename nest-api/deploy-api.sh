@@ -148,6 +148,14 @@ run_preflight_checks() {
   # no test names at all. Streaming a step that says nothing until it is over defeats the reason
   # it is streamed.
   #
+  # **The bare `--` in front of it is load-bearing, and was not always there.** pnpm 12 has a
+  # `--reporter` of its own — default|append-only|ndjson|silent — and takes the flag for itself
+  # rather than forwarding it, so the run dies on `invalid value 'verbose'` before vitest is
+  # reached. The flag arrived with IKN-43 and worked; `f0fa7c0` pinned pnpm 12 under it and every
+  # api deploy has failed its own test gate since, on an error that names vitest's reporter and
+  # blames nothing. Same family as `a7df298`, where `--no-prod` was the spelling pnpm still
+  # accepted. Anything after `--` is the script's, not pnpm's.
+  #
   # `IKNOS_LOG_LEVEL=error`: the e2e suites boot the real application, `.env` sets `debug` on this
   # machine, and every request and every maintenance tick then writes its ECS line — hundreds of
   # them, with the test names lost somewhere in between. `error` and not `silent` because
@@ -157,7 +165,7 @@ run_preflight_checks() {
   #
   # Set here rather than exported around the loop so that the hint printed on failure — "re-run
   # it on its own with: ${commands[$index]}" — reproduces exactly the run that failed.
-  local commands=("pnpm check" "pnpm typecheck" "IKNOS_LOG_LEVEL=error pnpm test --reporter=verbose" "pnpm build")
+  local commands=("pnpm check" "pnpm typecheck" "IKNOS_LOG_LEVEL=error pnpm test -- --reporter=verbose" "pnpm build")
   local index output
 
   # `IKNOS_SKIP_TESTS=1 ./deploy-api.sh` ships without running the suite.
