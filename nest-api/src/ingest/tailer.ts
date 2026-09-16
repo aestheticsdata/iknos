@@ -1,15 +1,18 @@
-import { glob, open, stat } from "node:fs/promises";
-import path from "node:path";
+import { open, stat } from "node:fs/promises";
+import { logger } from "@common/logger";
 import { LineBuffer } from "./line-buffer";
-import { parse } from "./parser";
 import { decide } from "./rotation";
 
 import type { LogRecord } from "./log-record";
 import type { StoredOffset } from "./rotation";
+import type { Source, SourceFile } from "./source";
 import type { Chunk } from "./writer";
 
 /**
- * Follows every file matching the PM2 log glob and turns growth into parsed records.
+ * Follows every file its sources list, and turns growth into parsed records.
+ *
+ * It knows nothing about log formats or filenames any more: a `Source` says which files to sweep
+ * and how to read a line, and everything here is the I/O and the bookkeeping around that.
  *
  * Polling by `stat` on an interval, **not `fs.watch`** — watch is unreliable across filesystems
  * and editors, and at a one-second cadence polling seventeen files costs nothing measurable.
@@ -18,31 +21,6 @@ import type { Chunk } from "./writer";
  */
 
 const READ_CHUNK = 256 * 1024;
-
-/**
- * PM2 names its files `<app>-out-<pm_id>.log` and `<app>-error-<pm_id>.log`.
- *
- * **The trailing process id is the part that matters here.** Without stripping it, `pfa-nest-api`
- * arrives as `pfa-nest-api-out-39` — a service name nobody recognises, a rail full of duplicates,
- * and stdout and stderr recorded as two unrelated applications. Worse, the stream is then read as
- * `out` for an error file, so a line that carried no explicit level is stored as info.
- *
- * That id also changes: PM2 hands out a new one on every restart, so the same application has
- * `…-out-45.log` and `…-out-5.log` side by side. Both must resolve to one service.
- *
- * A few apps configure `out_file` explicitly and get a plain `<name>.log` with no suffix at all.
- * Those fall through to the last line, which is the right answer for them.
- */
-export function serviceAndStream(file: string): { service: string; stream: "out" | "err" } {
-  const stem = path.basename(file, path.extname(file));
-  // Only the id, and only at the end. An application legitimately called `foo-2` keeps its name:
-  // its file is `foo-2-out-14.log`, and what is removed is `-14`.
-  const named = stem.replace(/-\d+$/, "");
-
-  if (named.endsWith("-error")) return { service: named.slice(0, -"-error".length), stream: "err" };
-  if (named.endsWith("-out")) return { service: named.slice(0, -"-out".length), stream: "out" };
-  return { service: stem, stream: "out" };
-}
 
 export class Tailer {
   /** `committed` is the last position handed downstream, which is how a chunk's byte span is measured. */
@@ -64,7 +42,7 @@ export class Tailer {
   lastPollAt: Date | null = null;
 
   constructor(
-    private readonly pattern: string,
+    private readonly sources: Source[],
     private readonly submit: (chunk: Chunk) => void,
   ) {}
 
@@ -84,18 +62,32 @@ export class Tailer {
   }
 
   /**
-   * One pass over every matching file. Driven on a one-second interval by the ingest service.
+   * One pass over every file of every source. Driven on a one-second interval by the ingest
+   * service.
    *
-   * Re-globbing each tick is how a newly deployed PM2 app is picked up without restarting Iknos —
-   * `fs.promises.glob` is native since Node 22, so this costs no dependency.
+   * Sources are asked for their files each tick rather than at boot, which is how a newly
+   * deployed PM2 app — and now a newly registered site — is picked up without restarting Iknos.
    */
   async poll(): Promise<void> {
-    for await (const file of glob(this.pattern)) {
+    for (const source of this.sources) {
+      let files: SourceFile[];
       try {
-        await this.pollOne(file);
-      } catch {
-        // A file that vanished mid-poll is normal during rotation. Never let one bad file stop
-        // the others.
+        files = await source.files();
+      } catch (err) {
+        // A source that cannot even list its files must not stop the others. The nginx source
+        // reads MySQL to find them, so this is the database-down case — and the PM2 logs are
+        // exactly what someone debugging a database outage is reading.
+        logger.error({ err, source: source.name }, "source file listing failed");
+        continue;
+      }
+
+      for (const sf of files) {
+        try {
+          await this.pollOne(sf, source);
+        } catch {
+          // A file that vanished mid-poll is normal during rotation. Never let one bad file stop
+          // the others.
+        }
       }
     }
     // Stamped after the whole sweep, and only on the way out. A pass that threw before reaching
@@ -110,7 +102,8 @@ export class Tailer {
     return this.state.size;
   }
 
-  private async pollOne(file: string): Promise<void> {
+  private async pollOne(sf: SourceFile, source: Source): Promise<void> {
+    const { file, service, stream } = sf;
     const st = await stat(file, { bigint: true });
     const now = { dev: st.dev, inode: st.ino, len: st.size };
 
@@ -129,7 +122,6 @@ export class Tailer {
       this.state.set(file, entry);
     }
 
-    const { service, stream } = serviceAndStream(file);
     const fh = await open(file, "r");
     try {
       let pos = action.from;
@@ -155,7 +147,7 @@ export class Tailer {
 
         const records: LogRecord[] = [];
         for (let line = entry.buffer.nextLine(); line !== null; line = entry.buffer.nextLine()) {
-          const record = parse(line, service, stream);
+          const record = source.parse(line, service, stream);
           if (record) records.push(record);
         }
         if (records.length === 0) continue;

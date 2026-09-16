@@ -3,6 +3,7 @@ import { appendFile, mkdtemp, rename, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PrismaService } from "@db/prisma.service";
+import { Pm2Source } from "@ingest/pm2-source";
 import { Tailer } from "@ingest/tailer";
 import { persistBatch, Writer } from "@ingest/writer";
 import { afterAll, describe, expect, it } from "vitest";
@@ -20,7 +21,10 @@ const services: string[] = [];
 
 const wire = () => {
   const writer = new Writer({ persist: (r, o) => persistBatch(prisma, r, o) });
-  return { writer, makeTailer: (pattern: string) => new Tailer(pattern, (chunk) => writer.submit(chunk)) };
+  return {
+    writer,
+    makeTailer: (pattern: string) => new Tailer([new Pm2Source(pattern)], (chunk) => writer.submit(chunk)),
+  };
 };
 
 afterAll(async () => {

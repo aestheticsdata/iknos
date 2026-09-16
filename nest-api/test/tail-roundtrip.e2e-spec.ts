@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { PrismaService } from "@db/prisma.service";
 import { IngestService } from "@ingest/ingest.service";
+import { Pm2Source } from "@ingest/pm2-source";
 import { LogBus } from "@stream/log-bus";
 import { afterAll, describe, expect, it } from "vitest";
 
@@ -37,7 +38,7 @@ describe("tail roundtrip", () => {
     const published: LogRecord[] = [];
     bus.subscribe((r) => published.push(r));
 
-    const ingest = new IngestService(`${dir}/*.log`, bus, prisma);
+    const ingest = new IngestService([new Pm2Source(`${dir}/*.log`)], bus, prisma);
     await ingest.onApplicationBootstrap();
 
     // Append after startup, proving new bytes are picked up and not just the contents present

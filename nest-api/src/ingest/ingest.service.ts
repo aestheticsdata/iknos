@@ -7,6 +7,7 @@ import { FLUSH_INTERVAL_MS, persistBatch, Writer } from "./writer";
 
 import type { OnApplicationBootstrap, OnApplicationShutdown } from "@nestjs/common";
 import type { RateSnapshot } from "./rate-window";
+import type { Source } from "./source";
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -46,14 +47,14 @@ export class IngestService implements OnApplicationBootstrap, OnApplicationShutd
   private readonly offsets = new Map<string, bigint>();
 
   constructor(
-    private readonly pattern: string,
+    private readonly sources: Source[],
     private readonly bus: LogBus,
     private readonly prisma: PrismaService,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
     this.writer = new Writer({ persist: (records, offsets) => persistBatch(this.prisma, records, offsets) }, this.bus);
-    this.tailer = new Tailer(this.pattern, (chunk) => {
+    this.tailer = new Tailer(this.sources, (chunk) => {
       this.writer.submit(chunk);
       this.offsets.set(chunk.offset.filePath, chunk.offset.byteOffset);
     });

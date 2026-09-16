@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { serviceAndStream } from "./tailer";
+import { serviceAndStream } from "./pm2-source";
 
 /**
  * Every case here comes from ks-b's actual `~/.pm2/logs` listing.
