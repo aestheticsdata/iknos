@@ -13,9 +13,15 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
  * Iknos' own two are in here, and that is not vanity. It watches itself through the same pipeline
  * it asks of everything else (spec §3.3).
  *
- * `nginx` is deliberately absent: it is not a PM2 process and its logs come from somewhere else
- * entirely. It joins the registry with IKN-16, which brings its own ingestion source — and it is
- * the case that will finally make `name` and `pm2Name` differ.
+ * `nginx` is not in here as a service of its own, and no longer needs to be. IKN-16 brought the
+ * ingestion source it was waiting for, and the answer turned out to be per-site rather than one
+ * `nginx` row: `combined` carries no `$host`, so a vhost's lines are only attributable if that
+ * vhost writes its own file — and once it does, the file belongs to the site rather than to the
+ * server. A site's access log is therefore a column on the site's row, `logGlob`.
+ *
+ * `landing-page` is the first row here that names no PM2 process, which is what `pm2Name` was
+ * always held open for. It does not make the two columns differ — there is simply nothing to put
+ * in the second one, so it repeats the first.
  *
  * WorldWeathr's two joined with IKN-52, which is what the drift above looks like from the other
  * side: both processes had been running on ks-b, and their logs had been read and stored, for as
@@ -81,7 +87,14 @@ const prisma = new PrismaClient({
  * Alphabetical, which is also the order `/api/services` returns and therefore the order of the
  * rail — a list this long is scanned, not read.
  */
-const SERVICES = [
+const SERVICES: {
+  name: string;
+  pm2Name: string;
+  metricsUrl: string | null;
+  healthUrl: string | null;
+  /** Set only on the rows nginx writes an access log for — `NginxSource` reads exactly these. */
+  logGlob?: string;
+}[] = [
   { name: "1991chat-backend", pm2Name: "1991chat-backend", metricsUrl: null, healthUrl: null },
   { name: "1991chat-front", pm2Name: "1991chat-front", metricsUrl: null, healthUrl: null },
   { name: "bkmk-front", pm2Name: "bkmk-front", metricsUrl: null, healthUrl: null },
@@ -99,6 +112,24 @@ const SERVICES = [
     healthUrl: "http://127.0.0.1:6900/health",
   },
   { name: "iknos-front", pm2Name: "iknos-front", metricsUrl: null, healthUrl: "http://127.0.0.1:3006/" },
+  /*
+   * The portfolio at 1991computer.com, and the first row in this table that names no process at
+   * all: a Next `output: "export"` build rsynced to a document root, with no PM2 entry, no port
+   * and no stdout. `pm2Name` repeats `name` because there is nothing else to put there — the
+   * consumers that read it look for a `process_sample` and correctly find none.
+   *
+   * It reaches this table by two doors, and both are named here. `logGlob` is the access log
+   * nginx writes for its vhost, which IKN-16's source reads; the browser reporter posts JavaScript
+   * errors under this same name, which is what makes one rail entry hold both. Neither works
+   * until ks-b has the `access_log` line and the origin — see DEPLOY.md.
+   */
+  {
+    name: "landing-page",
+    pm2Name: "landing-page",
+    metricsUrl: null,
+    healthUrl: null,
+    logGlob: "/var/log/nginx/1991computer.access.log",
+  },
   { name: "pfa-front", pm2Name: "pfa-front", metricsUrl: null, healthUrl: null },
   {
     name: "pfa-nest-api",
