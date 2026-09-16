@@ -4,11 +4,13 @@ A self-hosted monitoring console for a small fleet of applications running on a 
 Logs, metrics, issues and alerts for apps you already run, without operating an ELK stack to
 get them.
 
-**Status: M1 in progress.** The API and the collector are deployed and running on the box:
-single-account auth, the PM2 log collector, and the log read routes (search, histogram, trace,
-live tail). The four authentication screens are the real Next app; `/` is still the static mock
-of the console at **<https://iknos.1991computer.com>**, because the app chassis and its views
-have not landed yet. Work is tracked in Spira under the `IKN` project.
+**Status: M1 and M3 shipped, M2 and M4 in progress.** The whole console is the real Next app at
+**<https://iknos.1991computer.com>** — the service rail over logs, service, issues and alerts,
+with the four authentication screens in front of it. M1 delivered logs end to end, M3 grouped
+errors into issues and added the alert rule engine. M2 is metrics and health, part landed. M4 is
+the nginx access logs: a second ingestion source, so that what nginx answered without proxying —
+and the traffic of a static site with no process at all — is readable beside everything else.
+Work is tracked in Spira under the `IKN` project.
 
 ---
 
@@ -54,7 +56,7 @@ iknos-front (Next App Router) ── /api/* over localhost, session cookie forwa
 - **Self-observation** — Iknos logs through the same pino emitter it asks of everything else,
   so it is monitored by its own pipeline with no special casing.
 
-### Two ways in
+### Three ways in
 
 Tailing covers everything with a stdout, which is every backend and every server-rendered page.
 It cannot reach a browser: a page has no stdout, so a JavaScript error never touches the host's
@@ -78,6 +80,16 @@ token configured the route answers 503 and the rest of the API boots normally.
 
 `front/src/instrumentation-client.ts` is the reference client, meant to be copied into the fleet's
 other frontends rather than imported by them.
+
+The third arrived with IKN-16, and it is the collector again with a different pair of glasses: an
+**nginx access log**, followed by the same tailer with the same rotation and offset guarantees,
+parsed from `combined` instead of from ECS. It exists for what no application can report — what
+nginx answered without ever proxying — and for a static site that has no process to report
+anything at all. A `Source` names its files and reads one line; everything below that has always
+dealt in one record type and did not change.
+
+Which service a line belongs to comes from the **registry row**, not from the line: `combined`
+carries no `$host`, so each vhost writes its own file and `Service.logGlob` says whose it is.
 
 ### The read routes
 

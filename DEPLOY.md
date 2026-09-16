@@ -115,3 +115,78 @@ before the route existed rather than after the first silent bug.
 Then retire `deploy/deploy-mock.sh` and `mock/`, and pick up `IKN-4` for the real deploy scripts:
 rsync to a timestamped release directory, atomic switch, automatic rollback, deploy changelog — the
 shape pfa, zeus and trekker already share.
+
+## nginx access logs (IKN-16)
+
+Three things on the box, none of them in this repository, and all three failing **silently** when
+missed: the reporter swallows its own failures by design, and a tailer whose file does not exist
+simply has nothing to say.
+
+### 1. The site's vhost writes its own access log
+
+In `/etc/nginx/sites-available/1991computer`, inside the `server` block:
+
+```
+access_log /var/log/nginx/1991computer.access.log combined;
+```
+
+Without it the site's requests go to the shared `/var/log/nginx/access.log` along with everything
+else, and `combined` carries **no `$host` field** — so there is no way to tell which lines are the
+landing page's. Iknos' own vhost already has the equivalent at `deploy/nginx/iknos.conf`.
+
+The path must match the `logGlob` value on that service's row in `nest-api/prisma/seed.ts`,
+character for character. Then:
+
+```bash
+ssh debian@ks-b 'sudo nginx -t && sudo systemctl reload nginx'
+```
+
+### 2. The API's user reads it through the `adm` group
+
+Files under `/var/log/nginx/` belong to `root:adm`. The pm2 user needs to be in `adm` — a
+read-only grant on log files, not a sudo rule and not a root process. Zeus needed the same and
+documents it; if it was done for Zeus it is already done for Iknos, since both run as the same
+user.
+
+Check rather than assume:
+
+```bash
+ssh debian@ks-b 'sudo -u debian head -c 200 /var/log/nginx/1991computer.access.log && echo "  ← readable"'
+```
+
+If it is not, `sudo usermod -aG adm debian` and then **restart** the API — group membership is
+read at process start, so a reload is not enough.
+
+### 3. The origin is allowed to post browser errors
+
+`IKNOS_INGEST_ORIGINS` in `nest-api/ecosystem.config.js` gains the site, comma-separated, each
+entry a bare scheme and host with no trailing slash:
+
+```js
+IKNOS_INGEST_ORIGINS: "https://1991computer.com",
+```
+
+Environment changes need `--update-env`; a plain reload keeps the old environment:
+
+```bash
+ssh debian@ks-b 'cd /var/www/iknos && pm2 reload ecosystem.config.js --update-env'
+```
+
+### Order matters
+
+Seed the registry row **after** the vhost is writing its file. Seeded first, the collector spends
+the gap stat-ing a path that does not exist — the same ordering trap `seed.ts` already warns about
+for worldweathr's two rows.
+
+### What this can and cannot see
+
+- **The live file only.** logrotate's gzipped generations are out of scope: a tailer follows
+  forward, and history from before it started is not its subject.
+- **Access logs, not error logs.** `error_log` on ks-b is global rather than per-vhost, so
+  per-site attribution would need a second and less pleasant prerequisite. A follow-up under
+  IKN-28.
+- **No `duration_ms`.** `combined` has no `$request_time`, so that column stays null for these
+  rows and the Signals p95 is unaffected by them.
+- **The same 14-day window as everything else.** `log_entry` is day-partitioned and dropped
+  wholesale by `IKNOS_RETENTION_DAYS`; these rows cannot have a shorter one without a separate
+  table.
