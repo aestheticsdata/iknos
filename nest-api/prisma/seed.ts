@@ -100,6 +100,31 @@ const SERVICES: {
   { name: "bkmk-front", pm2Name: "bkmk-front", metricsUrl: null, healthUrl: null },
   { name: "bkmk-server", pm2Name: "bkmk-server", metricsUrl: null, healthUrl: null },
   { name: "conway-gol-api", pm2Name: "conway-gol-api", metricsUrl: null, healthUrl: null },
+  /*
+   * Folio's two arrive with FOL-18, registered from day one rather than found later by drift. The
+   * API is instrumented in the same ticket (ECS logs, `/api/metrics`, a health that probes MySQL
+   * and Redis), so both of its URLs are filled. Seed AFTER Folio's first deploy, for the same
+   * reason as worldweathr's rows: before it, the collector writes failures for routes that do not
+   * exist yet.
+   *
+   * The access log sits on the front's row, following `landing-page`: `folio.conf` is the site's
+   * vhost and writes its own file, so its lines belong to the site. That file carries the `/api/`
+   * requests nginx proxied as well; the API's own view of those is in its PM2 lines.
+   */
+  {
+    name: "folio-front",
+    pm2Name: "folio-front",
+    metricsUrl: null,
+    // Root, like `worldweathr-front`: a Next front has no health route.
+    healthUrl: "http://127.0.0.1:3013/",
+    logGlob: "/var/log/nginx/folio.access.log",
+  },
+  {
+    name: "folio-nest-api",
+    pm2Name: "folio-nest-api",
+    metricsUrl: "http://127.0.0.1:7100/api/metrics",
+    healthUrl: "http://127.0.0.1:7100/api/health",
+  },
   // Stopped in PM2 today, and still enabled here: `enabled` says whether Iknos collects, not
   // whether the process is up. Its files are on disk and its history stays readable.
   { name: "hiwaysim", pm2Name: "hiwaysim", metricsUrl: null, healthUrl: null },
