@@ -61,6 +61,18 @@ test("keystone, end to end", async ({ demo }) => {
   const railRow = (service: string) => page.locator(`[data-testid="rail-row"][data-service="${service}"]`);
   const railView = (view: string) => page.locator(`[data-testid="rail-view-link"][data-view="${view}"]`);
 
+  /**
+   * Marks a dialog once it has finished opening. Each one scales in, and a box read on the frame it
+   * became visible is the box of its first animation frame — smaller than the dialog, so the film's
+   * spotlight would ring part of it.
+   */
+  const markSettled = async (target: Locator) => {
+    await target.evaluate((node) =>
+      Promise.all(node.getAnimations({ subtree: true }).map((animation) => animation.finished)),
+    );
+    await demo.mark(target);
+  };
+
   /** Walk the pointer along a family of marks, pausing on each. */
   const sweep = async (marks: Locator, positions: number[], hold: number) => {
     for (const index of positions) {
@@ -88,6 +100,10 @@ test("keystone, end to end", async ({ demo }) => {
   await expect(railRow(SERVICE)).toBeVisible();
   demo.shot("logs");
   await demo.dwell(1800);
+  // For the landing page's film: what it frames whole — the histogram, and the stream's top, where
+  // the fake fleet's live lines land.
+  await demo.mark(page.getByTestId("histogram-bucket").first().locator("xpath=.."));
+  await demo.mark(page.getByTestId("stream-scroll"));
 
   // The rail: nineteen services, a sparkline of the last hour beside each.
   await demo.moveTo(railRow("atlas-api"), { dwell: 700 });
@@ -120,6 +136,22 @@ test("keystone, end to end", async ({ demo }) => {
   await demo.click(page.locator('[data-testid="range-button"][data-range="7d"]'));
   await demo.dwell(1100);
 
+  // Search: `/` opens the filter on its free text, a word typed, applied — the stream and the
+  // histogram narrow to it — and the chip taken off again, so the URL is back where it was.
+  await demo.press("/");
+  const drawer = page.getByTestId("filter-drawer");
+  await expect(drawer).toBeVisible();
+  await demo.mark(page.getByTestId("query-bar"));
+  await demo.fill(drawer.getByTestId("filter-drawer-value"), "timeout");
+  await demo.dwell(400);
+  await demo.click(drawer.getByTestId("filter-drawer-submit"));
+  const searched = page.locator('[data-testid="filter-chip"][data-filter="q"]');
+  await expect(searched).toBeVisible();
+  await demo.dwell(1800);
+  await demo.click(searched.getByTestId("filter-remove"));
+  await expect(searched).toHaveCount(0);
+  await demo.dwell(900);
+
   // The stream owns its own scroller; pausing it is what scrolling away does.
   const stream = page.getByTestId("stream-scroll");
   await demo.scroll(stream, 620, 1100);
@@ -132,9 +164,11 @@ test("keystone, end to end", async ({ demo }) => {
   const palette = modal("palette");
   await expect(palette).toBeVisible();
   await demo.dwell(700);
+  await markSettled(palette);
   await demo.type("beacon");
   const hit = palette.locator('[data-testid="palette-row"]', { hasText: SERVICE }).first();
   await expect(hit).toBeVisible();
+  await markSettled(palette);
   await demo.dwell(1100);
   await demo.click(hit, { aim: "text" });
   await expect(page.getByTestId("service-header")).toBeVisible();
@@ -144,6 +178,8 @@ test("keystone, end to end", async ({ demo }) => {
   await demo.chapter("One service");
   demo.shot("service");
   await demo.dwell(1200);
+  await demo.mark(page.getByTestId("service-header"));
+  await demo.mark(page.getByTestId("signal-tile").first().locator("xpath=.."));
 
   const header = page.getByTestId("service-header");
   await sweep(header.getByTestId("service-chip"), [0, 1, 3, 4], 600);
@@ -198,6 +234,7 @@ test("keystone, end to end", async ({ demo }) => {
   await demo.click(errorRow, { aim: "text" });
   const detail = modal("row-detail");
   await expect(detail).toBeVisible();
+  await markSettled(detail);
   await demo.dwell(2000);
   // ⚠️ Hovered for its bubble, never pressed: it writes the clipboard. An error line carries no
   // client address, so on this row the glyph is absent — the pointer reads the fields instead.
@@ -213,6 +250,7 @@ test("keystone, end to end", async ({ demo }) => {
   await demo.click(errorRow.getByTestId("log-trace"));
   const trace = modal("trace-timeline");
   await expect(trace).toBeVisible();
+  await markSettled(trace);
   await demo.dwell(1600);
   const lanes = trace.getByTestId("trace-lane");
   const laneCount = await lanes.count();
@@ -228,6 +266,7 @@ test("keystone, end to end", async ({ demo }) => {
   // The rail link carries the scope: this service's issues first.
   await demo.click(railView("issues"));
   await expect(page.getByTestId("issues-view")).toBeVisible();
+  await demo.mark(page.getByTestId("issues-view"));
   demo.shot("issues");
   await demo.dwell(1500);
 
@@ -245,6 +284,7 @@ test("keystone, end to end", async ({ demo }) => {
   await demo.click(page.locator(`[data-testid="issue-open"][data-fingerprint="${ISSUE}"]`), { aim: "text" });
   const issue = modal("issue-modal");
   await expect(issue).toBeVisible();
+  await markSettled(issue);
   await demo.dwell(1600);
   await sweep(issue.getByTestId("issue-tile"), [0, 1, 2, 4], 600);
   await demo.dwell(1600);
@@ -267,6 +307,7 @@ test("keystone, end to end", async ({ demo }) => {
   await demo.dwell(1300);
   await demo.click(page.locator('[data-testid="alerts-state"][data-state="resolved"]'));
   await expect(page.getByTestId("alert-card").first()).toBeVisible();
+  await demo.mark(page.getByTestId("alerts-view"));
   demo.shot("alerts");
   await demo.dwell(1400);
   await demo.click(page.locator('[data-testid="alerts-severity"][data-severity="critical"]'));
@@ -285,6 +326,7 @@ test("keystone, end to end", async ({ demo }) => {
   await demo.click(card, { aim: "text" });
   const alert = modal("alert-modal");
   await expect(alert).toBeVisible();
+  await markSettled(alert);
   await demo.dwell(1600);
   await sweep(alert.getByTestId("alert-tile"), [0, 1, 2, 3], 600);
   const segments = alert.getByTestId("state-band-segment");

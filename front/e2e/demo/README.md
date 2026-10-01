@@ -16,6 +16,7 @@ Output lands in `e2e/demo/out/` (gitignored):
 - `chapters.vtt` — WebVTT, for `<track kind="chapters">` on the portfolio's own `<video>`
 - `chapters.ffmeta` — ffmpeg metadata; already applied to the mp4, kept so a re-encode can reapply it
 - `chapters.json` — the same marks with millisecond precision
+- `events.json` — everything the hand did, on the film's clock: see **For the landing page's films**
 - `shots/01-logs.png` and four more — stills at 3840×2160, for a page that wants pictures too
 
 This is a port of Zeus's harness, which is a port of Spira's. `pacing.ts`, `recorder.ts`,
@@ -109,6 +110,31 @@ Five chapters, **143.0s — two minutes twenty-three**, at the default `DEMO_SPE
 `beacon-api` is the through-line: a 5xx burst four days back, a Redis outage and a restart three
 hours back, `restarts 7` on its chip, the 49-count `FetchError` issue and the one critical alert
 whose state band has transitions.
+
+## For the landing page's films: `events.json`
+
+The landing page cuts a film of about a minute from this take with Remotion (`landing-page/films/`):
+it pushes in on each action, speeds through the reading pauses, and draws its own big pointer.
+Pixels alone cannot drive that, so every take also writes `events.json` (`events.ts`, ported from
+Zeus's harness with the log in `cursor.ts`, `fixture.ts` and `recorder.ts`): every pointer step,
+every press, every key, and every storyboard verb — `click`, `moveTo`, `fill`, `type`, `press`,
+`scroll`, `dwell` — with its start and end on the film's clock and the `data-testid`, `data-*`
+members and box of the element it was aimed at. The edit names its beats by those marks, never by
+a second, so a re-take keeps it. `demo.mark(locator)` notes where an element is with no pointer
+and no time: the storyboard marks what the film frames whole — the histogram, the stream, the query
+bar, the palette, the service header and its signals, the row detail, the trace, the issues and
+alerts views and their modals. The take also searches (`/`, `timeout`, applied, the chip taken off
+again), because search is the first thing the film says Iknos does. A take for a film is filmed
+without the drawn arrow, which the film redraws:
+
+```bash
+DEMO_CURSOR=off DEMO_FPS=30 pnpm video:generate
+```
+
+⚠️ **The suite replaces the house account.** `pnpm test` leaves `test@iknos.local` in
+`app_user`, and the setup project then fails on `Unauthorized`. Put the house account back first,
+as § dev account in the repository README says: `DELETE FROM app_user`, then
+`pnpm seed:user local.dev@mock.io`.
 
 ## The stills
 
