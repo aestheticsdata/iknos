@@ -1,9 +1,8 @@
 "use client";
 
-import { boundsFor } from "@lib/timeRange";
 import { usePolledResource } from "@lib/usePolledResource";
+import { useSlidingBounds } from "@lib/useSlidingBounds";
 import { SERVICE_TEXT } from "@text/service";
-import { useEffect, useState } from "react";
 
 import type { ServiceRuntime, ServiceSignals } from "@lib/serviceTypes";
 import type { RangeKey } from "@lib/timeRange";
@@ -48,30 +47,10 @@ export const useServiceRuntime = (service: string | null) =>
  * would mean clicking a bar in the log chart silently re-scoped the four tiles above it, and there
  * is nothing on screen that would say so.
  *
- * `now` is re-taken on a timer rather than on every render: `boundsFor` is a function of the
- * current instant, so a bare call would produce a new URL on every keystroke elsewhere on the page
- * and re-fetch three aggregates each time.
+ * `now` is re-taken on a timer rather than on every render — see `useSlidingBounds`.
  */
 export const useServiceSignals = (service: string | null, range: RangeKey, active = true) => {
-  const [anchor, setAnchor] = useState(() => new Date());
-
-  useEffect(() => {
-    // Visible tabs only, for the reason `usePolledResource` gives: the alternative is grouping a
-    // week of samples every half minute for a tab nobody is looking at, all night.
-    const reanchor = () => {
-      if (document.visibilityState === "visible") setAnchor(new Date());
-    };
-
-    const id = setInterval(reanchor, SIGNALS_POLL_MS);
-    document.addEventListener("visibilitychange", reanchor);
-
-    return () => {
-      clearInterval(id);
-      document.removeEventListener("visibilitychange", reanchor);
-    };
-  }, []);
-
-  const bounds = boundsFor(range, anchor);
+  const bounds = useSlidingBounds(range, SIGNALS_POLL_MS);
   /*
    * `active` is the tiles being on screen — collapsed, there is nothing to pay three aggregates
    * for. It gates the *URL* and deliberately not the identity below: the payload is still about

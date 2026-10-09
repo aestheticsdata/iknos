@@ -1,5 +1,15 @@
 @layer base {
   /**
+   * No rubber band, anywhere. `none` rather than `contain`: `contain` only stops the chaining and
+   * keeps the local bounce, which is the part that reads as broken in an app shell. On `*` so the
+   * next scroller is covered without anyone remembering. Vertical only — the horizontal axis is the
+   * browser's back gesture.
+   */
+  * {
+    overscroll-behavior-y: none;
+  }
+
+  /**
    * The document is chassis-dark. Every screen shipped so far — the four auth pages — is chassis,
    * and the work surface arrives as light *cards on top of it*, never as a light page. Painting
    * the root anything else would mean every screen starting by covering it up.

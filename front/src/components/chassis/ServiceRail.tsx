@@ -24,7 +24,7 @@ import type { Service, ServiceHealth } from "@lib/services";
 const HEALTH_TONE: Record<ServiceHealth["status"], Tone> = { ok: "ok", error: "error", stale: "warn" };
 
 /**
- * The views this application can fill. Metrics and alerts join the list with IKN-23 and IKN-15.
+ * The views this application can fill — each one joined with the ticket that gave it data.
  *
  * There is no `service` row: it led to a screen that was this one with a header on top, and the
  * header now arrives with the selection instead. Picking a service in the list above *is* opening
@@ -37,10 +37,12 @@ const HEALTH_TONE: Record<ServiceHealth["status"], Tone> = { ok: "ok", error: "e
  * is a warning, so one is neutral and the other is red.
  *
  * Three renderings is where a `view.key === "issues"` ternary stopped being readable, which is why
- * the kind is a field rather than a condition.
+ * the kind is a field rather than a condition. `none` is the fourth (IKN-23): metrics has no
+ * shortcut and no count, and its two collapsed letters are not a hint worth repeating expanded.
  */
 const VIEWS = [
   { key: "logs", label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs, short: "L", badge: "shortcut" },
+  { key: "metrics", label: CHASSIS_TEXT.viewMetrics, href: ROUTES.metrics, short: "ME", badge: "none" },
   { key: "issues", label: CHASSIS_TEXT.viewIssues, href: ROUTES.issues, short: "IS", badge: "issues" },
   { key: "alerts", label: CHASSIS_TEXT.viewAlerts, href: ROUTES.alerts, short: "AL", badge: "alerts" },
 ] as const;
@@ -243,7 +245,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
                       {firing}
                     </span>
                   )
-                ) : (
+                ) : view.badge === "shortcut" ? (
                   <span
                     className="text-kicker tracking-kicker text-chassis-text-dim max-rail:hidden"
                     data-testid="rail-badge"
@@ -251,7 +253,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
                   >
                     {view.short}
                   </span>
-                )}
+                ) : null}
                 {/* Collapsed, the badge *is* the row, so it takes the row's own size and colour.
                     A count would be unreadable as an identity at 52px — `IS` says which row it is,
                     which is what the collapsed rail is for. */}

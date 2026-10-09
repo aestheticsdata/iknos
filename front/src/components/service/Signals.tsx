@@ -8,6 +8,7 @@ import { Sparkline } from "@components/ui/Sparkline";
 import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
 import { formatBytes } from "@lib/format";
 import { logsHref } from "@lib/logsHref";
+import { metricsHref } from "@lib/metricsHref";
 import {
   formatHeap,
   formatMs,
@@ -115,6 +116,7 @@ export const Signals = ({
       <ThroughputTile
         service={service}
         signals={signals}
+        range={range}
         loading={loading}
         error={error}
       />
@@ -128,6 +130,7 @@ export const Signals = ({
       <LatencyTile
         service={service}
         signals={signals}
+        range={range}
         loading={loading}
         error={error}
       />
@@ -140,17 +143,20 @@ export const Signals = ({
   </div>
 );
 
-const ThroughputTile = ({
-  service,
-  signals,
-  loading,
-  error,
-}: {
+/**
+ * The two tiles that lead to the routes table (IKN-23): a throughput or a p95 is a sum over routes,
+ * and the metrics view is where it comes apart. Only for a scraped service — an unscraped one has
+ * no route to open, and a link to a sentence saying so is a worse promise than no link.
+ */
+type RangedTileProps = {
   service: string;
   signals: ServiceSignals | null;
+  range: RangeKey;
   loading: boolean;
   error: string | null;
-}) => {
+};
+
+const ThroughputTile = ({ service, signals, range, loading, error }: RangedTileProps) => {
   const { tz } = useZone();
   const points = signals?.throughput.points ?? [];
 
@@ -162,6 +168,7 @@ const ThroughputTile = ({
       unit={SERVICE_TEXT.throughputUnit}
       pending={loading}
       hint={SERVICE_TEXT.throughputHint}
+      href={signals?.scraped ? metricsHref({ service, range }) : null}
     >
       {hasSeries(points) ? (
         <AreaSpark
@@ -246,17 +253,7 @@ const ErrorRateTile = ({
   );
 };
 
-const LatencyTile = ({
-  service,
-  signals,
-  loading,
-  error,
-}: {
-  service: string;
-  signals: ServiceSignals | null;
-  loading: boolean;
-  error: string | null;
-}) => {
+const LatencyTile = ({ service, signals, range, loading, error }: RangedTileProps) => {
   const { tz } = useZone();
   const points = signals?.p95.points ?? [];
   const value = signals?.p95.value ?? null;
@@ -269,6 +266,7 @@ const LatencyTile = ({
       unit={SERVICE_TEXT.latencyUnit}
       pending={loading}
       hint={value === null ? undefined : SERVICE_TEXT.latencyReference(formatMs(value))}
+      href={signals?.scraped ? metricsHref({ service, range }) : null}
     >
       {hasSeries(points) ? (
         <Sparkline

@@ -105,9 +105,8 @@ export const SERVICE_TEXT = {
   retry: "retry",
 
   /* ── Links ────────────────────────────────────────────────────────────────────────────────── */
-  /* Two, because two blocks have somewhere real to lead today. The throughput and latency tiles
-     point at the routes table (IKN-23) and carry no affordance until it exists — a link that lands
-     on the screen the reader is already looking at is a worse promise than no link. */
+  /* The error tile and the probe pills lead to logs. The throughput and latency tiles lead to the
+     routes table since IKN-23 — see `RangedTileProps`. */
   toErrorLogs: "Open this service's error logs for the selected range",
   toProbeLogs: "Open this service's error logs around the failed probe",
 

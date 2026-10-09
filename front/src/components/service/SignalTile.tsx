@@ -19,8 +19,7 @@ import type { ReactNode } from "react";
  * **A tile is a link only when it has somewhere real to lead.** §4 makes a block with no data
  * inert; the same reasoning takes one more step here, because a link that lands on the screen the
  * reader is already looking at is a worse promise than no link. The throughput and latency tiles
- * point at the routes table, which is IKN-23 — so they carry their affordance the day their
- * destination exists, and not before.
+ * point at the routes table (IKN-23), the error tile at the error lines.
  */
 export const SignalTile = ({
   tile,

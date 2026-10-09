@@ -2,9 +2,8 @@
  * Every path in one place — `trailingSlash: true` means these are compared with the slash stripped.
  *
  * `logs` is the work area: the log explorer when the rail is on `all`, one service's dashboard with
- * the same panel underneath when it is not. `issues` joined it with IKN-14, which is the ticket
- * that gave it rows. Metrics and alerts are still absent rather than disabled — a view whose data
- * does not exist yet is not in the list until it does (§4) — and they join with IKN-23 and IKN-15.
+ * the same panel underneath when it is not. `issues` joined it with IKN-14, `alerts` with IKN-15
+ * and `metrics` with IKN-23 — each with the ticket that gave it data, never before (§4).
  */
 export const ROUTES = {
   login: "/login",
@@ -14,6 +13,8 @@ export const ROUTES = {
   logs: "/logs",
   /** Grouped errors (IKN-14). Not a log-query view — see `LOG_QUERY_VIEWS` below. */
   issues: "/issues",
+  /** Which route costs the selected service its p95 (IKN-23). */
+  metrics: "/metrics",
   /** What the collector's rule engine is saying about the fleet (IKN-15). */
   alerts: "/alerts",
   /**

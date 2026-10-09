@@ -39,6 +39,8 @@ export const DenseTable = <Row,>({
   rows,
   rowKey,
   rowAttrs,
+  rowClassName,
+  onRowClick,
   surface = "work",
   empty = "Nothing to show.",
   className,
@@ -50,6 +52,14 @@ export const DenseTable = <Row,>({
   rowKey: (row: Row) => string;
   /** Attributes spread onto each row's `<tr>` — a `data-testid` family plus a stable companion. */
   rowAttrs?: (row: Row) => Record<string, string>;
+  /** Classes for one row — a selection tint, an error ground (IKN-23). Merged after the border. */
+  rowClassName?: (row: Row) => string | false | null | undefined;
+  /**
+   * The whole row under the pointer, for a table whose rows are selected rather than followed. The
+   * keyboard still needs a real button in one cell — a `<tr>` is not a control — so this is the
+   * mouse's half of the affordance, never the only half.
+   */
+  onRowClick?: (row: Row) => void;
   surface?: Surface;
   empty?: string;
   className?: string;
@@ -95,7 +105,8 @@ export const DenseTable = <Row,>({
         {rows.map((row) => (
           <tr
             key={rowKey(row)}
-            className={cn("border-b last:border-0", SURFACE_BORDER[surface])}
+            className={cn("border-b last:border-0", SURFACE_BORDER[surface], rowClassName?.(row))}
+            onClick={onRowClick ? () => onRowClick(row) : undefined}
             {...rowAttrs?.(row)}
           >
             {columns.map((column) => (

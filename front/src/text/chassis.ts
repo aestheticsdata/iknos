@@ -17,6 +17,7 @@ export const CHASSIS_TEXT = {
   railLabel: "Services and views",
   views: "views",
   viewLogs: "logs",
+  viewMetrics: "metrics",
   viewIssues: "issues",
   viewAlerts: "alerts",
   paused: "paused",
