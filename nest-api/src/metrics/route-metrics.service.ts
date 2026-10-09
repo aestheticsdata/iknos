@@ -1,7 +1,7 @@
 import { LATENCY_P95_MS } from "@alerts/thresholds";
 import { PrismaService } from "@db/prisma.service";
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { readSamples } from "./metric-samples";
+import { readSamples, rolledThrough } from "./metric-samples";
 import { planSource } from "./metric-window";
 import { buildRouteDetail, buildRouteRows } from "./route-series";
 import { DURATION_BUCKET, PROCESS_START, REQUESTS_TOTAL } from "./signal-series";
@@ -35,7 +35,7 @@ export class RouteMetricsService {
   ) {}
 
   async routes(service: string, from: Date, to: Date): Promise<RouteListResult> {
-    const plan = planSource(from, to, new Date(), this.rawWindowDays);
+    const plan = await this.plan(service, { from, to });
     const rows = await readSamples(this.prisma, { service, from, to, plan, names: NAMES });
 
     return {
@@ -56,7 +56,7 @@ export class RouteMetricsService {
    */
   async detail(service: string, window: TimeWindow, target: RouteKey) {
     const { from, to } = window;
-    const plan = planSource(from, to, new Date(), this.rawWindowDays);
+    const plan = await this.plan(service, { from, to });
     const rows = await readSamples(this.prisma, {
       service,
       from,
@@ -81,5 +81,13 @@ export class RouteMetricsService {
       ...detail,
     };
     return result;
+  }
+
+  /** The source plan, cut at the service's rollup horizon — the same plan the service tiles use. */
+  private async plan(service: string, window: TimeWindow) {
+    const now = new Date();
+    const rawWindowDays = this.rawWindowDays;
+    const through = await rolledThrough(this.prisma, { service, now, rawWindowDays });
+    return planSource({ ...window, now, rawWindowDays, rolledThrough: through });
   }
 }

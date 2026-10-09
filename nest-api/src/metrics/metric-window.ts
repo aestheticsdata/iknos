@@ -58,6 +58,21 @@ export type SourcePlan = {
   source: MetricSource;
 };
 
+/** What a plan is computed from. */
+export type PlanInput = {
+  from: Date;
+  to: Date;
+  now: Date;
+  /** `IKNOS_METRIC_RETENTION_DAYS`: where the raw table stops being reliable. */
+  rawWindowDays: number;
+  /**
+   * The end of the service's newest rolled-up hour, or `null` when nothing is rolled up — see
+   * `rolledThrough` in `metric-samples.ts`. Optional so a caller that cannot know it gets the
+   * cliff-only plan, which is correct and merely slower.
+   */
+  rolledThrough?: Date | null;
+};
+
 /**
  * The grid, the cut, and the name for what came out.
  *
@@ -65,9 +80,10 @@ export type SourcePlan = {
  * cliff wherever they need it — the interesting cases are all about where `from` falls relative to
  * a boundary that is otherwise three days behind whenever the suite happens to run.
  */
-export function planSource(from: Date, to: Date, now: Date, rawWindowDays: number): SourcePlan {
-  const fromMs = +from;
-  const toMs = +to;
+export function planSource(input: PlanInput): SourcePlan {
+  const { now, rawWindowDays, rolledThrough = null } = input;
+  const fromMs = +input.from;
+  const toMs = +input.to;
 
   /*
    * The oldest instant raw samples can still be relied on.
@@ -96,7 +112,24 @@ export function planSource(from: Date, to: Date, now: Date, rawWindowDays: numbe
   // rollups. A bucket straddling the cliff has raw rows for only part of itself, and half an
   // interval reported as a whole one is a dip in the chart at exactly the point a reader would
   // otherwise be told to distrust.
-  const boundary = touchesRollup ? Math.min(buckets, Math.max(0, Math.ceil((rawStartMs - fromMs) / bucketMs))) : 0;
+  const cliff = touchesRollup ? Math.min(buckets, Math.max(0, Math.ceil((rawStartMs - fromMs) / bucketMs))) : 0;
+
+  /*
+   * And on an hourly grid, the rollups answer every bucket they have finished — not only the ones
+   * past the cliff (IKN-20).
+   *
+   * A bucket an hour wide or wider is drawn from the last reading of each series inside it, and the
+   * rollup row of a clock hour *is* that reading, stamped where it was taken. So the two tables give
+   * the same chart, and the rollup gives it from one row per series per hour instead of a hundred:
+   * a `7d` range went from three raw days (over the 8 s ceiling) to the hour or two not yet rolled
+   * up. Rounded *down*, the opposite of the cliff: a bucket the rollups have only half of is whole
+   * in the raw table, so it is read there.
+   */
+  const rolled =
+    rolledThrough !== null && bucketMs % ROLLUP_MS === 0
+      ? Math.min(buckets, Math.max(0, Math.floor((+rolledThrough - fromMs) / bucketMs)))
+      : 0;
+  const boundary = Math.max(cliff, rolled);
 
   return { bucketMs, buckets, boundary, source: sourceOf(boundary, buckets) };
 }

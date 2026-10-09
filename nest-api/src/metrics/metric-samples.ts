@@ -40,6 +40,13 @@ export type SampleQuery = {
   series?: SeriesFilter;
 };
 
+/** One service's rollup horizon, as of `now`. */
+export type RolledThroughQuery = {
+  service: string;
+  now: Date;
+  rawWindowDays: number;
+};
+
 /** A half-open `[from, to)` span of time. */
 export type TimeWindow = { from: Date; to: Date };
 
@@ -128,6 +135,32 @@ export async function readSamples(prisma: PrismaService, query: SampleQuery): Pr
     if (isExecutionTimeout(err)) throw new ServiceUnavailableException(SIGNALS_TOO_SLOW);
     throw err;
   }
+}
+
+/**
+ * The end of the newest hour `metric_rollup` holds for a service, or `null` (IKN-20).
+ *
+ * Asked per service, through `(service, name, labels_hash, ts)`, and only over the last few days:
+ * a rollup older than the raw window changes nothing about where a plan cuts. The plan reads every
+ * bucket before this instant from the rollups whenever the grid is hourly.
+ */
+export async function rolledThrough(prisma: PrismaService, query: RolledThroughQuery): Promise<Date | null> {
+  const since = new Date(+query.now - (query.rawWindowDays + 1) * 86_400_000);
+  let rows: { ts: Date | null }[];
+  try {
+    rows = await prisma.$queryRaw<{ ts: Date | null }[]>`
+      SELECT /*+ MAX_EXECUTION_TIME(${Prisma.raw(String(SIGNALS_MAX_EXECUTION_MS))}) */ MAX(ts) AS ts
+        FROM metric_rollup
+       WHERE service = ${query.service} AND ts >= ${since}`;
+  } catch (err) {
+    // The same translation as the scans: a statement MySQL cut short is a 503, never an empty answer.
+    if (isExecutionTimeout(err)) throw new ServiceUnavailableException(SIGNALS_TOO_SLOW);
+    throw err;
+  }
+  const [row] = rows;
+
+  const newest = row?.ts ?? null;
+  return newest === null ? null : new Date((Math.floor(+newest / 3_600_000) + 1) * 3_600_000);
 }
 
 /** `TRUE` without a filter; otherwise the labelled names narrowed to one method and route. */

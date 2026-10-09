@@ -1,6 +1,6 @@
 import { PrismaService } from "@db/prisma.service";
 import { Injectable } from "@nestjs/common";
-import { readSamples } from "./metric-samples";
+import { readSamples, rolledThrough } from "./metric-samples";
 import { planSource } from "./metric-window";
 import { buildSignals, METRIC_NAMES } from "./signal-series";
 
@@ -30,7 +30,9 @@ export class SignalsService {
   ) {}
 
   async signals(service: string, from: Date, to: Date, now: Date = new Date()): Promise<SignalsResult> {
-    const plan = planSource(from, to, now, this.rawWindowDays);
+    const rawWindowDays = this.rawWindowDays;
+    const through = await rolledThrough(this.prisma, { service, now, rawWindowDays });
+    const plan = planSource({ from, to, now, rawWindowDays, rolledThrough: through });
     const rows = await readSamples(this.prisma, { service, from, to, plan, names: METRIC_NAMES });
 
     return {

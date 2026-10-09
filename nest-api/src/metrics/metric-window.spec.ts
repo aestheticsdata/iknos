@@ -21,7 +21,7 @@ const DAY = 86_400_000;
 
 describe("planSource", () => {
   it("answers a recent range from the raw table, on the log histogram's own grid", () => {
-    const plan = planSource(ago(HOUR), NOW, NOW, RAW_DAYS);
+    const plan = planSource({ from: ago(HOUR), to: NOW, now: NOW, rawWindowDays: RAW_DAYS });
 
     // One hour at sixty buckets is a minute each — `chooseBucketMs`, shared with IKN-19 so that
     // two charts on the same screen are not laid out on two different ideas of a readable axis.
@@ -29,7 +29,7 @@ describe("planSource", () => {
   });
 
   it("answers a range entirely older than the raw window from the rollups", () => {
-    const plan = planSource(ago(30 * DAY), ago(10 * DAY), NOW, RAW_DAYS);
+    const plan = planSource({ from: ago(30 * DAY), to: ago(10 * DAY), now: NOW, rawWindowDays: RAW_DAYS });
 
     expect(plan.source).toBe("rollup");
     expect(plan.boundary).toBe(plan.buckets);
@@ -38,7 +38,7 @@ describe("planSource", () => {
 
   it("cuts a range that straddles the cliff, and cuts it on a bucket boundary", () => {
     const from = ago(7 * DAY);
-    const plan = planSource(from, NOW, NOW, RAW_DAYS);
+    const plan = planSource({ from, to: NOW, now: NOW, rawWindowDays: RAW_DAYS });
 
     expect(plan.source).toBe("mixed");
     expect(plan.bucketMs).toBe(6 * HOUR);
@@ -53,7 +53,7 @@ describe("planSource", () => {
     // half an interval reported as a whole one is a dip in the chart at exactly the point a reader
     // would otherwise be told to distrust.
     const from = new Date(CLIFF.getTime() - 30 * 60_000);
-    const plan = planSource(from, new Date(CLIFF.getTime() + 30 * 60_000), NOW, RAW_DAYS);
+    const plan = planSource({ from, to: new Date(CLIFF.getTime() + 30 * 60_000), now: NOW, rawWindowDays: RAW_DAYS });
 
     expect(plan.bucketMs).toBe(ROLLUP_MS);
     expect(plan.buckets).toBe(1);
@@ -64,7 +64,7 @@ describe("planSource", () => {
   it("never asks an hourly aggregate for a finer interval than it has", () => {
     // Twelve hours would naturally bucket at fifteen minutes. Reaching past the cliff forces the
     // hour, because four empty bars beside every full one is not a chart.
-    const plan = planSource(ago(3 * DAY + 12 * HOUR), ago(3 * DAY), NOW, RAW_DAYS);
+    const plan = planSource({ from: ago(3 * DAY + 12 * HOUR), to: ago(3 * DAY), now: NOW, rawWindowDays: RAW_DAYS });
 
     expect(plan.bucketMs).toBe(ROLLUP_MS);
     expect(plan.source).toBe("rollup");
@@ -72,7 +72,7 @@ describe("planSource", () => {
 
   it("leaves the grid alone when nothing comes from the rollups", () => {
     // The same twelve hours, entirely inside the raw window: fifteen-minute buckets, as chosen.
-    const plan = planSource(ago(12 * HOUR), NOW, NOW, RAW_DAYS);
+    const plan = planSource({ from: ago(12 * HOUR), to: NOW, now: NOW, rawWindowDays: RAW_DAYS });
 
     expect(plan.bucketMs).toBe(900_000);
     expect(plan.source).toBe("raw");
@@ -82,7 +82,7 @@ describe("planSource", () => {
 describe("windowsFor", () => {
   it("primes the raw window with one interval before the range", () => {
     const from = ago(HOUR);
-    const plan = planSource(from, NOW, NOW, RAW_DAYS);
+    const plan = planSource({ from, to: NOW, now: NOW, rawWindowDays: RAW_DAYS });
     const { raw, rollup } = windowsFor(from, NOW, plan);
 
     expect(rollup).toBeNull();
@@ -94,7 +94,7 @@ describe("windowsFor", () => {
   it("primes the rollup window instead when the rollups answer the start of the range", () => {
     const from = ago(30 * DAY);
     const to = ago(10 * DAY);
-    const plan = planSource(from, to, NOW, RAW_DAYS);
+    const plan = planSource({ from, to, now: NOW, rawWindowDays: RAW_DAYS });
     const { raw, rollup } = windowsFor(from, to, plan);
 
     expect(raw).toBeNull();
@@ -103,7 +103,7 @@ describe("windowsFor", () => {
 
   it("hands the two sources adjacent windows — no overlap at the seam, and no gap", () => {
     const from = ago(7 * DAY);
-    const plan = planSource(from, NOW, NOW, RAW_DAYS);
+    const plan = planSource({ from, to: NOW, now: NOW, rawWindowDays: RAW_DAYS });
     const { raw, rollup } = windowsFor(from, NOW, plan);
 
     expect(rollup).not.toBeNull();
@@ -125,5 +125,37 @@ describe("gridStart", () => {
     expect(gridStart(from, HOUR, 0)).toEqual(from);
     expect(gridStart(from, HOUR, 2)).toEqual(new Date("2026-08-23T14:00:00.000Z"));
     expect(gridStart(from, HOUR, -1)).toEqual(new Date("2026-08-23T11:00:00.000Z"));
+  });
+});
+
+describe("planSource at the rollup horizon (IKN-20)", () => {
+  it("reads every finished hour of an hourly grid from the rollups, and only the tail raw", () => {
+    const from = ago(DAY);
+    const rolledThrough = ago(2 * HOUR);
+    const plan = planSource({ from, to: NOW, now: NOW, rawWindowDays: RAW_DAYS, rolledThrough });
+
+    expect(plan.bucketMs).toBe(HOUR);
+    expect(plan.source).toBe("mixed");
+    // 24 hourly buckets; the rollups own the 22 that end at or before the horizon.
+    expect(plan.boundary).toBe(22);
+  });
+
+  it("leaves a bucket the rollups only half cover to the raw table", () => {
+    const from = ago(DAY);
+    const plan = planSource({ from, to: NOW, now: NOW, rawWindowDays: RAW_DAYS, rolledThrough: ago(90 * 60_000) });
+    expect(plan.boundary).toBe(22);
+  });
+
+  it("does not touch a grid finer than an hour, which the rollups cannot draw", () => {
+    const plan = planSource({ from: ago(HOUR), to: NOW, now: NOW, rawWindowDays: RAW_DAYS, rolledThrough: ago(1) });
+    expect(plan.source).toBe("raw");
+    expect(plan.boundary).toBe(0);
+  });
+
+  it("never pulls the cut back before the retention cliff", () => {
+    const from = ago(7 * DAY);
+    const cliffOnly = planSource({ from, to: NOW, now: NOW, rawWindowDays: RAW_DAYS });
+    const withHorizon = planSource({ from, to: NOW, now: NOW, rawWindowDays: RAW_DAYS, rolledThrough: ago(6 * DAY) });
+    expect(withHorizon.boundary).toBe(cliffOnly.boundary);
   });
 });
