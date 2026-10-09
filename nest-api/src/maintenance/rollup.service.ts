@@ -32,6 +32,9 @@ import { dayChunks, type HourRange, pendingHours } from "./rollup-plan";
  * is the API's.
  */
 
+/** How long one day's aggregation may hold its transaction. Generous: it runs in the background. */
+const ROLLUP_TX_TIMEOUT_MS = 10 * 60_000;
+
 /** What one pass did, for the log line and the tests. */
 export type RollupReport = {
   /** The end of the last hour aggregated — everything before it is rolled up. */
@@ -133,13 +136,13 @@ export class RollupService {
     const { from, to } = chunk;
     const onlyService = scope.service ?? null;
 
-    const [, inserted] = await this.prisma.$transaction(
-      [
-        this.prisma.$executeRaw`
+    return this.prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`
         DELETE FROM metric_rollup
          WHERE ts >= ${from} AND ts < ${to}
-           AND (${onlyService} IS NULL OR service = ${onlyService})`,
-        this.prisma.$executeRaw`
+           AND (${onlyService} IS NULL OR service = ${onlyService})`;
+        return tx.$executeRaw`
         INSERT INTO metric_rollup (ts, service, name, labels, labels_hash, count, sum, min, max, last)
         SELECT m.ts, g.service, g.name, m.labels, g.labels_hash, g.c, g.s, g.mn, g.mx, m.value
           FROM (
@@ -160,8 +163,8 @@ export class RollupService {
           JOIN metric_sample m
             ON m.id = g.lid
            AND m.ts >= ${from}
-           AND m.ts <  ${to}`,
-      ],
+           AND m.ts <  ${to}`;
+      },
       /*
        * `READ COMMITTED`, not MySQL's default. Under `REPEATABLE READ` an `INSERT … SELECT` takes
        * shared next-key locks on every row it reads, and a day of `metric_sample` read that way
@@ -169,10 +172,16 @@ export class RollupService {
        * snapshot and locks nothing in the source; the rollup is no less correct for it, since the
        * hours it reads are finished ones nobody writes to any more.
        */
-      { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        /*
+         * Prisma ends a transaction after 5 s by default, and a day of `metric_sample` takes ~44 s
+         * on ks-b (2026-10-09, at the 15 s cadence) — the first catch-up rolled back on exactly
+         * that. The ceiling is for a statement that hangs, not for one that is slow by design.
+         */
+        timeout: ROLLUP_TX_TIMEOUT_MS,
+      },
     );
-
-    return inserted;
   }
 
   /**
