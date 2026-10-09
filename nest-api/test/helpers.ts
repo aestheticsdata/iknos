@@ -5,6 +5,7 @@ import { JSON_BODY_LIMIT } from "@config/body-limit";
 import { PrismaService } from "@db/prisma.service";
 import { buildIngestCors } from "@ingest/ingest-cors";
 import { persistBatch } from "@ingest/writer";
+import { RollupService } from "@maintenance/rollup.service";
 import { ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { RedisService } from "@redis/redis.service";
@@ -39,7 +40,16 @@ function parseIngestOrigins(): string[] {
  * program that does not ship.
  */
 export async function buildTestApp(): Promise<INestApplication> {
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+  /*
+   * The rollup job is taken out of every booted app (IKN-20). Real, it starts a catch-up at boot
+   * that aggregates every service on the database — the developer's corpus included — and races
+   * whatever rows a suite is seeding at the time. `rollup.e2e-spec.ts` drives it directly, scoped
+   * to its own service; nothing else needs it running.
+   */
+  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(RollupService)
+    .useValue({ catchUp: async () => ({ through: null }), catchUpInBackground: () => undefined })
+    .compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>();
 
   // So `X-Forwarded-For` reaches `req.ip` and the rate-limit tests can pose as distinct clients.

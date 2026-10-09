@@ -59,10 +59,17 @@ const RETENTION_WINDOW: Record<ManagedTable, "logs" | "metrics" | "rollups"> = {
 /** The one table whose partitions may not go before their hours are rolled up (IKN-20). */
 const ROLLED_UP_TABLE: ManagedTable = "metric_sample";
 
-/** What `catchUp` must answer before a raw partition is dropped — `RollupService`, in production. */
+/** What the pass needs of the rollups — `RollupService`, in production. */
 export type RollupGate = {
+  /** Must answer before a raw partition is dropped. */
   catchUp: () => Promise<{ through: Date | null }>;
+  /** Started after the boot pass, never during it — see `RollupService.catchUpInBackground`. */
+  catchUpInBackground: () => void;
 };
+
+/** Which pass is running: the boot one may not wait on the rollups, the 3 a.m. one must. */
+export const PASS = { boot: "boot", scheduled: "scheduled" } as const;
+export type Pass = (typeof PASS)[keyof typeof PASS];
 
 /** Everything the pass is configured with. Only `retentionDays` is required. */
 export type MaintenanceOptions = {
@@ -143,15 +150,19 @@ export class MaintenanceService implements OnApplicationBootstrap {
     this.rollups = options.rollups ?? null;
   }
 
-  /** Once at boot, so a fresh deploy is correct immediately rather than at three tomorrow morning. */
+  /**
+   * Once at boot, so a fresh deploy is correct immediately rather than at three tomorrow morning —
+   * then, and only then, the rollups' own catch-up, in the background (IKN-20).
+   */
   async onApplicationBootstrap(): Promise<void> {
-    await this.safeRun();
+    await this.safeRun(PASS.boot);
+    this.rollups?.catchUpInBackground();
   }
 
   // Kept in step with `PURGE_AT`, which is what the storage panel tells the reader (IKN-24).
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async daily(): Promise<void> {
-    await this.safeRun();
+    await this.safeRun(PASS.scheduled);
   }
 
   window(): StorageWindow {
@@ -166,20 +177,20 @@ export class MaintenanceService implements OnApplicationBootstrap {
    * The scheduled entry point. Swallows failures on purpose — see the class comment — but says
    * so loudly enough that the line is findable in Iknos itself.
    */
-  private async safeRun(): Promise<void> {
+  private async safeRun(pass: Pass): Promise<void> {
     try {
-      await this.run();
+      await this.run(pass);
     } catch (error) {
       logger.error({ err: error }, "partition maintenance failed; ingestion continues into p_future");
     }
   }
 
-  async run(): Promise<MaintenanceReport> {
+  async run(pass: Pass = PASS.scheduled): Promise<MaintenanceReport> {
     // A second caller waits for the pass in flight and reports the same result, rather than
     // issuing a REORGANIZE against a table another REORGANIZE is halfway through.
     if (this.running) return this.running;
 
-    this.running = this.execute();
+    this.running = this.execute(pass);
     try {
       return await this.running;
     } finally {
@@ -187,7 +198,7 @@ export class MaintenanceService implements OnApplicationBootstrap {
     }
   }
 
-  private async execute(): Promise<MaintenanceReport> {
+  private async execute(pass: Pass): Promise<MaintenanceReport> {
     const startedAt = Date.now();
 
     const rows = await this.prisma.$queryRaw<{ TABLE_NAME: string; PARTITION_NAME: string }[]>`
@@ -210,7 +221,7 @@ export class MaintenanceService implements OnApplicationBootstrap {
 
       const planned = plan(existing, new Date(), this.retentionFor(table), this.daysAhead);
       const toCreate = planned.toCreate;
-      const toDrop = table === ROLLED_UP_TABLE ? await this.rolledUpOnly(planned.toDrop) : planned.toDrop;
+      const toDrop = table === ROLLED_UP_TABLE ? await this.rolledUpOnly(planned.toDrop, pass) : planned.toDrop;
       for (const name of toCreate) await this.create(table, name);
       for (const name of toDrop) await this.drop(table, name);
 
@@ -271,8 +282,11 @@ export class MaintenanceService implements OnApplicationBootstrap {
    * the raw days stay, the table grows, and the log line says why, which beats a long chart with a
    * permanent hole in it. Without a gate (the tests not about rollups) everything planned goes.
    */
-  private async rolledUpOnly(toDrop: string[]): Promise<string[]> {
+  private async rolledUpOnly(toDrop: string[], pass: Pass): Promise<string[]> {
     if (this.rollups === null || toDrop.length === 0) return toDrop;
+    // The boot pass is awaited by the boot, and a catch-up can take a minute: the raw days wait for
+    // the 3 a.m. pass rather than holding `/health` hostage. A day late, never a hole.
+    if (pass === PASS.boot) return [];
 
     let through: Date | null = null;
     try {

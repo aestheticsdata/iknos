@@ -160,7 +160,11 @@ describe("the purge waits for the rollups (IKN-20)", () => {
     through.setUTCHours(0, 0, 0, 0);
     const catchUp = vi.fn().mockResolvedValue({ through });
 
-    await new MaintenanceService(prisma, { retentionDays: 3, daysAhead: 0, rollups: { catchUp } }).run();
+    await new MaintenanceService(prisma, {
+      retentionDays: 3,
+      daysAhead: 0,
+      rollups: { catchUp, catchUpInBackground: vi.fn() },
+    }).run();
 
     expect(catchUp).toHaveBeenCalledOnce();
     expect(drops(prisma)).toEqual([`ALTER TABLE metric_sample DROP PARTITION ${olderDay}`]);
@@ -170,7 +174,11 @@ describe("the purge waits for the rollups (IKN-20)", () => {
     const prisma = makePrisma(rows);
     const catchUp = vi.fn().mockRejectedValue(new Error("lock wait timeout"));
 
-    await new MaintenanceService(prisma, { retentionDays: 3, daysAhead: 0, rollups: { catchUp } }).run();
+    await new MaintenanceService(prisma, {
+      retentionDays: 3,
+      daysAhead: 0,
+      rollups: { catchUp, catchUpInBackground: vi.fn() },
+    }).run();
 
     expect(drops(prisma)).toEqual([]);
   });
@@ -178,5 +186,32 @@ describe("the purge waits for the rollups (IKN-20)", () => {
   it("keeps metric_rollup on its own window, 90 days by default", () => {
     const service = new MaintenanceService(makePrisma([]), { retentionDays: 14, metricRetentionDays: 3 });
     expect(service.retentionForTable("metric_rollup")).toBe(90);
+  });
+});
+
+describe("the boot pass never waits on the rollups (IKN-20)", () => {
+  it("keeps raw days for the 3 a.m. pass, then starts the catch-up in the background", async () => {
+    const day = partitionName(new Date(Date.now() - 10 * 86_400_000));
+    const prisma = {
+      $queryRaw: vi.fn().mockResolvedValue([
+        { TABLE_NAME: "metric_sample", PARTITION_NAME: day },
+        { TABLE_NAME: "metric_sample", PARTITION_NAME: "p_future" },
+      ]),
+      $executeRawUnsafe: vi.fn().mockResolvedValue(0),
+    } as unknown as PrismaService & { $executeRawUnsafe: ReturnType<typeof vi.fn> };
+    const catchUp = vi.fn();
+    const catchUpInBackground = vi.fn();
+    const service = new MaintenanceService(prisma, {
+      retentionDays: 3,
+      daysAhead: 0,
+      rollups: { catchUp, catchUpInBackground },
+    });
+
+    await service.onApplicationBootstrap();
+
+    expect(catchUp).not.toHaveBeenCalled();
+    expect(catchUpInBackground).toHaveBeenCalledOnce();
+    const statements = prisma.$executeRawUnsafe.mock.calls.map((c) => c[0] as string);
+    expect(statements.some((sql) => sql.includes("DROP PARTITION"))).toBe(false);
   });
 });

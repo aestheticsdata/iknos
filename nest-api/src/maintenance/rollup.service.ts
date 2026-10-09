@@ -5,8 +5,6 @@ import { Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { dayChunks, type HourRange, pendingHours } from "./rollup-plan";
 
-import type { OnApplicationBootstrap } from "@nestjs/common";
-
 /**
  * Hourly aggregates of `metric_sample` into `metric_rollup` (IKN-20).
  *
@@ -49,7 +47,7 @@ export type RollupScope = {
 };
 
 @Injectable()
-export class RollupService implements OnApplicationBootstrap {
+export class RollupService {
   /** One pass at a time: the boot pass, the hourly cron and the 3 a.m. purge can all ask at once. */
   private running: Promise<RollupReport> | null = null;
 
@@ -60,10 +58,13 @@ export class RollupService implements OnApplicationBootstrap {
   ) {}
 
   /**
-   * Catches up at boot without holding the boot up: after a long stop this is a few day-sized
-   * scans, and the API has requests to answer meanwhile.
+   * The boot catch-up, started by `MaintenanceService` once its own boot pass is done — never
+   * alongside it. After a stop this is a few day-sized transactions writing into `metric_rollup`,
+   * and the boot pass's `REORGANIZE` of that table waits for any open one: started side by side on
+   * 2026-10-09, the DDL queued behind a three-day catch-up, the boot never finished, and the deploy
+   * rolled itself back on a silent `/health`. In the background, after, it holds nothing up.
    */
-  onApplicationBootstrap(): void {
+  catchUpInBackground(): void {
     void this.safeCatchUp();
   }
 
