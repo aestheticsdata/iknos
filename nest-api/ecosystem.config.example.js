@@ -47,6 +47,11 @@ const prodConfig = {
   // that boundary as well as the retention it names. Defaults to 3 when unset.
   IKNOS_METRIC_RETENTION_DAYS: "3",
 
+  // Seconds between two scrapes of every /metrics (IKN-63). 30 when unset, 5–60 accepted. The
+  // charts' finest grid is a minute, so 30 keeps two readings in each; it was a hard-coded 15,
+  // which wrote twice the rows for samples no chart could tell apart.
+  IKNOS_SCRAPE_INTERVAL_SECONDS: "30",
+
   // What the collector tails. PM2 writes every app's stdout and stderr here, which is the whole
   // reason Iknos needs no agent installed anywhere.
   IKNOS_PM2_LOG_GLOB: "/home/debian/.pm2/logs/*.log",

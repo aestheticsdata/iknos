@@ -151,7 +151,7 @@ function seriesClause(series: SeriesFilter | undefined): Prisma.Sql {
  * rather than into the priming bucket `-1` — verified in MySQL, not deduced. The grouping below
  * then prefers a later reading in that bucket and the priming value is discarded, which
  * leaves the first interval of the chart with no predecessor to be differenced against and
- * therefore blank, for about one scrape in fifteen. Measuring from the priming interval's own
+ * therefore blank, for about one scrape in fifteen (measured at a 15 s cadence). Measuring from the priming interval's own
  * start makes every difference non-negative, where truncation and flooring are the same thing.
  *
  * **`MAX(id)`, not a window function (IKN-66).** "The last reading of each series in each

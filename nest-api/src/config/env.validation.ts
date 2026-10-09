@@ -3,6 +3,9 @@ import { IsIn, IsInt, IsOptional, IsString, Max, Min, MinLength, validateSync } 
 
 import type { ValidationError } from "class-validator";
 
+/** IKN-63 — see `IKNOS_SCRAPE_INTERVAL_SECONDS` below. Was a hard-coded 15 until then. */
+export const DEFAULT_SCRAPE_INTERVAL_SECONDS = 30;
+
 /**
  * Boot-time contract. Every variable the API needs is declared here, and a missing or malformed
  * one stops the process at startup instead of surfacing as a confusing failure three hours later
@@ -63,6 +66,22 @@ class EnvironmentVariables {
   @Min(1, { message: "IKNOS_METRIC_RETENTION_DAYS must be at least 1" })
   IKNOS_METRIC_RETENTION_DAYS?: number;
 
+  /**
+   * Seconds between two scrapes of every `/metrics` (IKN-63). Optional — 30 unless said otherwise.
+   *
+   * **At most 60, and 30 by default rather than 60.** The finest grid a chart draws is a minute
+   * (`MIN_METRIC_BUCKET_MS`): at 60 s each minute holds exactly one reading, and ordinary jitter
+   * leaves some minute empty — a hole in the chart that is the scrape's punctuality, not the
+   * service. At 30 s every minute holds two, and only a missed scrape can empty one. Above 60 the
+   * holes are guaranteed. No alert rule needs finer than a minute: the engine runs every 60 s and
+   * the two metric rules read ten-minute windows.
+   */
+  @IsOptional()
+  @IsInt({ message: "IKNOS_SCRAPE_INTERVAL_SECONDS must be a number" })
+  @Min(5, { message: "IKNOS_SCRAPE_INTERVAL_SECONDS must be at least 5" })
+  @Max(60, { message: "IKNOS_SCRAPE_INTERVAL_SECONDS must be at most 60 — the charts' finest grid is a minute" })
+  IKNOS_SCRAPE_INTERVAL_SECONDS?: number;
+
   @IsString()
   @MinLength(1, { message: "IKNOS_PM2_LOG_GLOB must not be empty" })
   IKNOS_PM2_LOG_GLOB!: string;
@@ -110,6 +129,8 @@ export type Config = {
   cookieSecret: string;
   retentionDays: number;
   metricRetentionDays: number;
+  /** IKN-63. Milliseconds, converted once here so no caller multiplies by a thousand. */
+  scrapeIntervalMs: number;
   pm2LogGlob: string;
   /** `null` when unset — the ingestion route is then closed. */
   ingestToken: string | null;
@@ -155,6 +176,7 @@ export function parseEnv(source: Record<string, unknown>): Config {
     cookieSecret: parsed.IKNOS_COOKIE_SECRET,
     retentionDays: parsed.IKNOS_RETENTION_DAYS,
     metricRetentionDays: parsed.IKNOS_METRIC_RETENTION_DAYS ?? 3,
+    scrapeIntervalMs: (parsed.IKNOS_SCRAPE_INTERVAL_SECONDS ?? DEFAULT_SCRAPE_INTERVAL_SECONDS) * 1000,
     pm2LogGlob: parsed.IKNOS_PM2_LOG_GLOB,
     ingestToken: parsed.IKNOS_INGEST_TOKEN ?? null,
     ingestOrigins: (parsed.IKNOS_INGEST_ORIGINS ?? "")

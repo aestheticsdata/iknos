@@ -15,7 +15,7 @@ import type { ReactNode } from "react";
  * The provenance line is the reason this card exists rather than four more numbers: it is what
  * stops a p95 being read as a measurement when it is an interpolation inside a bucket (§5.3).
  */
-export const RouteSummaryCard = ({ summary, thresholdMs }: RouteSummaryCardProps) => {
+export const RouteSummaryCard = ({ summary, thresholdMs, scrapeIntervalMs }: RouteSummaryCardProps) => {
   return (
     <DetailCard
       kicker={METRICS_TEXT.summary}
@@ -47,7 +47,7 @@ export const RouteSummaryCard = ({ summary, thresholdMs }: RouteSummaryCardProps
         title={METRICS_TEXT.provenanceHint}
         data-testid="route-provenance"
       >
-        {METRICS_TEXT.provenance}
+        {METRICS_TEXT.provenance(Math.round(scrapeIntervalMs / 1000))}
       </p>
     </DetailCard>
   );
@@ -63,6 +63,7 @@ const Figure = ({ label, tone, children }: FigureProps) => (
 type RouteSummaryCardProps = {
   summary: RouteSummary;
   thresholdMs: number;
+  scrapeIntervalMs: number;
 };
 
 type FigureProps = {

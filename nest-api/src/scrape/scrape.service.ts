@@ -3,6 +3,7 @@ import { readFile, statfs } from "node:fs/promises";
 import os from "node:os";
 import { promisify } from "node:util";
 import { logger } from "@common/logger";
+import { DEFAULT_SCRAPE_INTERVAL_SECONDS } from "@config/env.validation";
 import { PrismaService } from "@db/prisma.service";
 import { Injectable } from "@nestjs/common";
 import { type CpuTimes, cpuPctBetween, cpuTimesFromOs, parseProcStat } from "./host-stats";
@@ -16,7 +17,6 @@ import type { OnApplicationBootstrap, OnApplicationShutdown } from "@nestjs/comm
 import type { ProbeFetch } from "./probe-health";
 import type { FetchLike } from "./scrape-target";
 
-export const SCRAPE_INTERVAL_MS = 15_000;
 export const PROBE_INTERVAL_MS = 30_000;
 export const SAMPLE_INTERVAL_MS = 30_000;
 
@@ -95,11 +95,13 @@ export class ScrapeService implements OnApplicationBootstrap, OnApplicationShutd
   constructor(
     private readonly prisma: PrismaService,
     private readonly io: ScrapeIo,
+    /** `IKNOS_SCRAPE_INTERVAL_SECONDS`, in ms (IKN-63). The probe and sample cadences are not it. */
+    private readonly scrapeIntervalMs: number = DEFAULT_SCRAPE_INTERVAL_SECONDS * 1000,
   ) {}
 
   onApplicationBootstrap(): void {
     this.timers.push(
-      setInterval(() => void this.scrapeTick(), SCRAPE_INTERVAL_MS),
+      setInterval(() => void this.scrapeTick(), this.scrapeIntervalMs),
       setInterval(() => void this.probeTick(), PROBE_INTERVAL_MS),
       setInterval(() => void this.sampleTick(), SAMPLE_INTERVAL_MS),
     );
@@ -110,7 +112,7 @@ export class ScrapeService implements OnApplicationBootstrap, OnApplicationShutd
     this.timers = [];
   }
 
-  /** Every 15 s: each enabled service with a `metricsUrl` → `metric_sample` rows. */
+  /** Every `IKNOS_SCRAPE_INTERVAL_SECONDS`: each enabled service with a `metricsUrl` → `metric_sample` rows. */
   async scrapeTick(): Promise<void> {
     if (this.scraping) return;
     this.scraping = true;

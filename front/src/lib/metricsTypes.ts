@@ -81,6 +81,8 @@ export type RouteDetail = {
   bucketMs: number;
   source: MetricSource;
   p95ThresholdMs: number;
+  /** The collector's scrape cadence — quoted by the provenance line, never hard-coded (IKN-63). */
+  scrapeIntervalMs: number;
   summary: RouteSummary;
   p50: Signal;
   p95: Signal;

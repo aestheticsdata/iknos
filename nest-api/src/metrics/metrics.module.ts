@@ -37,7 +37,7 @@ import { SignalsService } from "./signals.service";
       provide: RouteMetricsService,
       useFactory: (prisma: PrismaService) => {
         const env = parseEnv({ ...process.env });
-        return new RouteMetricsService(prisma, env.metricRetentionDays);
+        return new RouteMetricsService(prisma, env.metricRetentionDays, env.scrapeIntervalMs);
       },
       inject: [PrismaService],
     },

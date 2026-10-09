@@ -87,6 +87,7 @@ export const RouteDetailPanel = ({ service, route, range, detail }: RouteDetailP
             <RouteSummaryCard
               summary={data.summary}
               thresholdMs={data.p95ThresholdMs}
+              scrapeIntervalMs={data.scrapeIntervalMs}
             />
           </>
         ) : (

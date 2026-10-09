@@ -94,6 +94,12 @@ export type RouteDetail = {
   bucketMs: number;
   source: MetricSource;
   p95ThresholdMs: number;
+  /**
+   * The collector's scrape cadence (IKN-63) — what the provenance line under the summary quotes.
+   * Served rather than written into the copy, because it is an env knob and the copy would lie the
+   * day it moved.
+   */
+  scrapeIntervalMs: number;
   /** The route's own figures over the whole range — the summary panel. */
   summary: RouteSummary;
   /** Per-interval percentiles. Each `value` is the whole range, recomputed, never a mean. */

@@ -37,6 +37,16 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ ...full, IKNOS_RETENTION_DAYS: "0" })).toThrow(/IKNOS_RETENTION_DAYS/);
   });
 
+  it("scrapes every 30 s unless told otherwise, in milliseconds (IKN-63)", () => {
+    expect(parseEnv(full).scrapeIntervalMs).toBe(30_000);
+    expect(parseEnv({ ...full, IKNOS_SCRAPE_INTERVAL_SECONDS: "60" }).scrapeIntervalMs).toBe(60_000);
+  });
+
+  it("refuses a scrape interval past the charts' one-minute grid, or absurdly short", () => {
+    expect(() => parseEnv({ ...full, IKNOS_SCRAPE_INTERVAL_SECONDS: "90" })).toThrow(/IKNOS_SCRAPE_INTERVAL_SECONDS/);
+    expect(() => parseEnv({ ...full, IKNOS_SCRAPE_INTERVAL_SECONDS: "1" })).toThrow(/IKNOS_SCRAPE_INTERVAL_SECONDS/);
+  });
+
   it("rejects an unknown log level", () => {
     expect(() => parseEnv({ ...full, IKNOS_LOG_LEVEL: "verbose" })).toThrow(/IKNOS_LOG_LEVEL/);
   });

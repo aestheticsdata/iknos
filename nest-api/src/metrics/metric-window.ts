@@ -34,15 +34,15 @@ export const ROLLUP_MS = 3_600_000;
  * The narrowest interval a scraped metric may be bucketed into.
  *
  * The log histogram happily goes down to one second, because a log line either landed in an
- * interval or it did not. A metric is a *sample*, taken every fifteen seconds and never exactly on
- * time — the four readings on this box sit at `:25.024`, `:39.983`, `:54.983`, `:09.979` — so a
- * fifteen-second bucket holds one reading, or two, or none, from jitter alone. Every one of those
- * empty buckets would be indistinguishable from a collector that had stopped, and half the chart
- * would be holes.
+ * interval or it did not. A metric is a *sample*, taken every `IKNOS_SCRAPE_INTERVAL_SECONDS` and
+ * never exactly on time — at fifteen seconds the four readings on this box sat at `:25.024`,
+ * `:39.983`, `:54.983`, `:09.979` — so a bucket as wide as the cadence holds one reading, or two,
+ * or none, from jitter alone. Every one of those empty buckets would be indistinguishable from a
+ * collector that had stopped, and half the chart would be holes.
  *
- * A minute holds four scrapes. Below that the grid is measuring the scrape's punctuality rather
- * than the service's traffic, and above it a missing bucket means four consecutive misses — which
- * is a genuine gap and is exactly what the chart should show as one.
+ * At the default thirty seconds (IKN-63) a minute holds two scrapes, so only a missed one can
+ * empty it — which is a genuine gap and is exactly what the chart should show as one. The env knob
+ * stops at sixty for this reason: one reading per minute is back to jitter deciding the holes.
  */
 export const MIN_METRIC_BUCKET_MS = 60_000;
 

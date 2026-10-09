@@ -1,3 +1,4 @@
+import { parseEnv } from "@config/env.validation";
 import { PrismaService } from "@db/prisma.service";
 import { Module } from "@nestjs/common";
 import { defaultScrapeIo, ScrapeService } from "./scrape.service";
@@ -14,7 +15,8 @@ import { defaultScrapeIo, ScrapeService } from "./scrape.service";
   providers: [
     {
       provide: ScrapeService,
-      useFactory: (prisma: PrismaService) => new ScrapeService(prisma, defaultScrapeIo()),
+      useFactory: (prisma: PrismaService) =>
+        new ScrapeService(prisma, defaultScrapeIo(), parseEnv({ ...process.env }).scrapeIntervalMs),
       inject: [PrismaService],
     },
   ],

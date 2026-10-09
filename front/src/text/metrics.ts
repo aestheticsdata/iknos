@@ -51,7 +51,9 @@ export const METRICS_TEXT = {
   requests: "requests",
   errorRate: "error rate",
   rateUnit: "req/s",
-  provenance: "scraped from /metrics every 15s · histogram buckets from prom-client",
+  /* The cadence is served by the API (IKN-63): it is an env knob, and a sentence that names it
+     from memory is wrong the day it moves. */
+  provenance: (seconds: number) => `scraped from /metrics every ${seconds}s · histogram buckets from prom-client`,
   provenanceHint:
     "Percentiles are interpolated within these buckets, not measured — like Prometheus' histogram_quantile",
 } as const;

@@ -19,8 +19,8 @@ import type { RangeKey } from "@lib/timeRange";
  */
 
 /**
- * The collector scrapes every 15 s and probes every 30 s, so this is the fastest cadence at which
- * there is ever anything new to see. Faster would be the same numbers, more often.
+ * Half the collector's cadence — it probes every 30 s and scrapes every 30 s by default since IKN-63
+ * (`IKNOS_SCRAPE_INTERVAL_SECONDS`) — so the header is never more than half a reading behind.
  */
 export const RUNTIME_POLL_MS = 15_000;
 

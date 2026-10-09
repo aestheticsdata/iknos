@@ -30,6 +30,8 @@ export class RouteMetricsService {
     private readonly prisma: PrismaService,
     /** `IKNOS_METRIC_RETENTION_DAYS` — see `SignalsService`, which is handed the same number. */
     private readonly rawWindowDays: number,
+    /** `IKNOS_SCRAPE_INTERVAL_SECONDS`, in ms — quoted by the detail's provenance line (IKN-63). */
+    private readonly scrapeIntervalMs: number,
   ) {}
 
   async routes(service: string, from: Date, to: Date): Promise<RouteListResult> {
@@ -75,6 +77,7 @@ export class RouteMetricsService {
       bucketMs: plan.bucketMs,
       source: plan.source,
       p95ThresholdMs: LATENCY_P95_MS,
+      scrapeIntervalMs: this.scrapeIntervalMs,
       ...detail,
     };
     return result;

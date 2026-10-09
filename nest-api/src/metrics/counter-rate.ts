@@ -1,7 +1,7 @@
 /**
  * Counters → per-interval increments (IKN-13). Prometheus' `increase()`, in the small.
  *
- * A Prometheus counter is a number that only goes up, sampled every fifteen seconds. Nothing about
+ * A Prometheus counter is a number that only goes up, sampled every scrape (30 s). Nothing about
  * the value itself is interesting — `http_requests_total 41 823` says how many requests the process
  * has served since it started, which is a fact about the last deploy. What the tiles want is the
  * difference between consecutive readings, and three things make that non-trivial:
