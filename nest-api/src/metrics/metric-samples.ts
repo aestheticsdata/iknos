@@ -56,12 +56,10 @@ type SampleRow = {
  * The server-side ceiling on one signals scan, in milliseconds.
  *
  * **Strictly below the Prisma pool timeout, and that is the whole point.** These two queries read
- * `metric_sample`, which is by far the largest table here — 1.2 GB of the 1.4 GB database on ks-b,
- * growing ~450 MB a day — and when a scan of it stops fitting in the InnoDB buffer pool its cost
- * goes from milliseconds to tens of seconds. On 2026-08-25 it reached 23 s p50 while the service
- * view polls every `SIGNALS_POLL_MS` (30 s), so each poll opened a new scan before the last had
- * finished. Ten of those is the whole pool, and the API answered nothing at all — not the log
- * panel, not the rail, not `/api/services`, none of which read this table.
+ * `metric_sample`, by far the largest table here. On 2026-08-25 a scan reached 23 s p50 while the
+ * service view polls every `SIGNALS_POLL_MS` (30 s), so each poll opened a new scan before the
+ * last had finished. Ten of those is the whole pool, and the API answered nothing at all — not the
+ * log panel, not the rail, not `/api/services`, none of which read this table.
  *
  * `MAX_EXECUTION_TIME` makes MySQL itself end the statement, which is the only cancellation that
  * exists here: aborting the HTTP request does not stop the query, and the connection stays
@@ -71,9 +69,9 @@ type SampleRow = {
  *
  * It is a ceiling, not a target. A signals scan that needs eight seconds is already useless — the
  * tile it feeds is refetched every thirty — so the range that trips this is one nobody could read
- * anyway. The fix for *why* it trips is `innodb_buffer_pool_size`, which is 128 MB by default and
- * has never been set on ks-b, and `metric_rollup` (IKN-20), which would stop wide ranges reading
- * this table at all.
+ * anyway. It is not memory: `innodb_buffer_pool_size` has been 4 GB on ks-b since 2026-08-25 and
+ * the data sits in RAM. What made `24h` trip it was the sort behind a window function, gone with
+ * IKN-66; what still can is a range past the raw retention, which is `metric_rollup`'s (IKN-20).
  */
 export const SIGNALS_MAX_EXECUTION_MS = 8_000;
 
@@ -96,10 +94,10 @@ export const isExecutionTimeout = (err: unknown): boolean =>
  * measured as flat — answering with the same empty tiles an unscraped service gets would put a
  * confident "no traffic" on screen for a service that may well be on fire. Saying the reading
  * could not be taken is the only honest option, and it is a 503 because it is transient by
- * construction: the same range answers fine once the table fits in the buffer pool again.
+ * construction, or as good as: it trips on a range wider than these scans can serve, which a
+ * narrower range answers.
  */
-export const SIGNALS_TOO_SLOW =
-  "the metrics query exceeded its time budget — narrow the range, or see innodb_buffer_pool_size on the host";
+export const SIGNALS_TOO_SLOW = "the metrics query exceeded its time budget — narrow the range";
 
 /**
  * Every row the plan calls for, from whichever tables it names.
@@ -111,14 +109,14 @@ export async function readSamples(prisma: PrismaService, query: SampleQuery): Pr
   const windows = windowsFor(query.from, query.to, query.plan);
 
   /*
-   * The window function picks the last reading of every series in every interval, which is the
-   * only reading a counter difference is allowed to be taken from.
+   * Each scan keeps the last reading of every series in every interval, which is the only reading
+   * a counter difference is allowed to be taken from.
    *
-   * **What bounds this is the partition pruning, not the index.** `EXPLAIN` on a narrow window
-   * takes `(service, name, labels_hash, ts)`, and on a wide one the optimiser costs a scan of the
-   * pruned partitions lower and takes that instead — the index covers neither `labels` nor
-   * `value`, so every match needs the row anyway. The cost past a certain width is the sort of the
-   * qualifying rows rather than the way they were found (IKN-66).
+   * What these cost is the rows that qualify, not the way they are found. The window function this
+   * replaced sorted every one of them — 1.73 M for `pfa-nest-api` at `24h`, 61 s of sort — and no
+   * index changed that, which is why forcing `(service, name, labels_hash, ts)` was once measured
+   * no better. The grouping now aggregates them instead and reads the full row only for the ones
+   * kept (IKN-66). Partition pruning on `ts` is still what bounds the scan itself.
    */
   try {
     const [rollupRows, rawRows] = await Promise.all([
@@ -150,14 +148,25 @@ function seriesClause(series: SeriesFilter | undefined): Prisma.Sql {
  *
  * **Anchored one interval early, and shifted back by one.** `TIMESTAMPDIFF` truncates *toward
  * zero*, not downward, so measuring from `origin` files a sample 0.4 s before it into bucket `0`
- * rather than into the priming bucket `-1` — verified in MySQL, not deduced. The `ROW_NUMBER`
- * below then prefers a later reading in that bucket and the priming value is discarded, which
+ * rather than into the priming bucket `-1` — verified in MySQL, not deduced. The grouping below
+ * then prefers a later reading in that bucket and the priming value is discarded, which
  * leaves the first interval of the chart with no predecessor to be differenced against and
  * therefore blank, for about one scrape in fifteen. Measuring from the priming interval's own
  * start makes every difference non-negative, where truncation and flooring are the same thing.
  *
+ * **`MAX(id)`, not a window function (IKN-66).** "The last reading of each series in each
+ * interval" was a `ROW_NUMBER() OVER (… ORDER BY ts DESC, id DESC)`, and on ks-b at `24h` that is a
+ * sort of 1.73 M rows to keep 8 900 — 61 s of a 70 s statement, against a ceiling of 8. Grouping to
+ * the key and taking the highest id is an aggregation over the 8 900 groups, and `labels` and
+ * `value` are then read for the survivors only, through the primary key.
+ *
+ * The two agree because `id` rises with `ts` inside a series: it is auto-increment, the collector
+ * writes each scrape as it happens, and every row of one scrape carries the same `ts`. That is the
+ * one property this rests on, and `metric-samples.e2e-spec.ts` holds it against the old shape.
+ *
  * The `ts` predicate is not politeness: `metric_sample` is partitioned by day, and it is what
- * discards whole partitions before a row is read.
+ * discards whole partitions before a row is read. It is repeated on the join for the same reason —
+ * the primary key is `(id, ts)`, and an `id` alone would be looked up in every partition.
  */
 async function rawSamples(prisma: PrismaService, query: SampleQuery, window: TimeWindow): Promise<MetricRow[]> {
   const { service, from: origin, plan, names, series } = query;
@@ -167,26 +176,27 @@ async function rawSamples(prisma: PrismaService, query: SampleQuery, window: Tim
 
   const rows = await prisma.$queryRaw<SampleRow[]>`
     SELECT /*+ MAX_EXECUTION_TIME(${Prisma.raw(String(SIGNALS_MAX_EXECUTION_MS))}) */
-           bucket, ts, name, labelsHash, labels, value
+           k.b - 1 AS bucket,
+           m.ts,
+           m.name,
+           m.labels_hash AS labelsHash,
+           m.labels,
+           m.value
       FROM (
-        SELECT CAST(FLOOR(TIMESTAMPDIFF(SECOND, ${anchor}, ts) / ${bucketSec}) AS SIGNED) - 1 AS bucket,
-               ts,
-               name,
-               labels_hash AS labelsHash,
-               labels,
-               value,
-               ROW_NUMBER() OVER (
-                 PARTITION BY name, labels_hash, FLOOR(TIMESTAMPDIFF(SECOND, ${anchor}, ts) / ${bucketSec})
-                 ORDER BY ts DESC, id DESC
-               ) AS rn
+        SELECT MAX(id) AS id,
+               CAST(FLOOR(TIMESTAMPDIFF(SECOND, ${anchor}, ts) / ${bucketSec}) AS SIGNED) AS b
           FROM metric_sample
          WHERE service = ${service}
            AND name IN (${Prisma.join([...names])})
            AND ${seriesClause(series)}
            AND ts >= ${from}
            AND ts <  ${to}
-      ) ranked
-     WHERE ranked.rn = 1`;
+         GROUP BY name, labels_hash, b
+      ) k
+      JOIN metric_sample m
+        ON m.id = k.id
+       AND m.ts >= ${from}
+       AND m.ts <  ${to}`;
 
   return rows.map(toMetricRow);
 }
@@ -196,9 +206,14 @@ async function rawSamples(prisma: PrismaService, query: SampleQuery, window: Tim
  * its hour — so a counter difference taken across the seam is the same subtraction it would have
  * been against the raw rows, and the join loses nothing.
  *
- * Written out rather than sharing a builder with the function above: the two differ in table and
- * value column and nothing else, and the alternative is interpolating a table name into raw SQL,
- * which is the one thing this codebase keeps behind an allow-list (`MANAGED_TABLES`).
+ * **`MAX(ts)` here, not `MAX(id)`.** A rollup row is written by a job, and a job that backfills a
+ * missed hour writes an older `ts` under a newer `id` — the property the raw query rests on does
+ * not hold for this table. `(service, name, labels_hash, ts)` is unique, so the latest `ts` of a
+ * group names exactly one row, whatever order the rows were written in.
+ *
+ * Written out rather than sharing a builder with the function above: the two differ in table, key
+ * and value column, and the alternative is interpolating a table name into raw SQL, which is the
+ * one thing this codebase keeps behind an allow-list (`MANAGED_TABLES`).
  */
 async function rollupSamples(prisma: PrismaService, query: SampleQuery, window: TimeWindow): Promise<MetricRow[]> {
   const { service, from: origin, plan, names, series } = query;
@@ -208,26 +223,30 @@ async function rollupSamples(prisma: PrismaService, query: SampleQuery, window: 
 
   const rows = await prisma.$queryRaw<SampleRow[]>`
     SELECT /*+ MAX_EXECUTION_TIME(${Prisma.raw(String(SIGNALS_MAX_EXECUTION_MS))}) */
-           bucket, ts, name, labelsHash, labels, value
+           k.b - 1 AS bucket,
+           r.ts,
+           r.name,
+           r.labels_hash AS labelsHash,
+           r.labels,
+           r.last AS value
       FROM (
-        SELECT CAST(FLOOR(TIMESTAMPDIFF(SECOND, ${anchor}, ts) / ${bucketSec}) AS SIGNED) - 1 AS bucket,
-               ts,
-               name,
-               labels_hash AS labelsHash,
-               labels,
-               last AS value,
-               ROW_NUMBER() OVER (
-                 PARTITION BY name, labels_hash, FLOOR(TIMESTAMPDIFF(SECOND, ${anchor}, ts) / ${bucketSec})
-                 ORDER BY ts DESC, id DESC
-               ) AS rn
+        SELECT name,
+               labels_hash,
+               MAX(ts) AS ts,
+               CAST(FLOOR(TIMESTAMPDIFF(SECOND, ${anchor}, ts) / ${bucketSec}) AS SIGNED) AS b
           FROM metric_rollup
          WHERE service = ${service}
            AND name IN (${Prisma.join([...names])})
            AND ${seriesClause(series)}
            AND ts >= ${from}
            AND ts <  ${to}
-      ) ranked
-     WHERE ranked.rn = 1`;
+         GROUP BY name, labels_hash, b
+      ) k
+      JOIN metric_rollup r
+        ON r.service = ${service}
+       AND r.name = k.name
+       AND r.labels_hash = k.labels_hash
+       AND r.ts = k.ts`;
 
   return rows.map(toMetricRow);
 }
