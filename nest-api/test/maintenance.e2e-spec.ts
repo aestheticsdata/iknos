@@ -124,7 +124,10 @@ describe("MaintenanceService", () => {
 
     expect(report.dropped).toContain(ANCIENT);
     expect(await partitions()).not.toContain(ANCIENT);
-  });
+    // The carve rewrites the developer's oldest partition, which holds every line older than it —
+    // the whole corpus once it has aged there. Measured 6.5 s on 2026-10-09; the default 5 s is not
+    // a property of this test, only of an emptier database.
+  }, 30_000);
 
   /**
    * The outage case. While the job is down every row lands in `p_future`, whatever day it belongs
