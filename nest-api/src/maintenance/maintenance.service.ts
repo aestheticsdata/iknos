@@ -1,4 +1,5 @@
 import { logger } from "@common/logger";
+import { DEFAULT_ROLLUP_RETENTION_DAYS } from "@config/env.validation";
 import { PrismaService } from "@db/prisma.service";
 import { Prisma } from "@generated/prisma/client";
 import { Injectable } from "@nestjs/common";
@@ -12,9 +13,9 @@ import type { OnApplicationBootstrap } from "@nestjs/common";
  * the metric and probe tables and by IKN-9 for `issue_event`). Membership here is the whole
  * authorization: table names reach `$executeRawUnsafe` from this list and nowhere else.
  *
- * `metric_rollup` is deliberately absent — empty until IKN-20, which owns its retention. So is
- * `issue`, which is an identity table rather than a stream: an issue whose occurrences have all
- * aged out still answers "when did this first appear".
+ * `metric_rollup` joined with IKN-20, on its own year-long window. `issue` stays absent: it is an
+ * identity table rather than a stream, and an issue whose occurrences have all aged out still
+ * answers "when did this first appear".
  */
 export const MANAGED_TABLES = [
   "log_entry",
@@ -24,6 +25,7 @@ export const MANAGED_TABLES = [
   "process_sample",
   "issue_event",
   "alert_state_change",
+  "metric_rollup",
 ] as const;
 
 type ManagedTable = (typeof MANAGED_TABLES)[number];
@@ -38,7 +40,7 @@ type ManagedTable = (typeof MANAGED_TABLES)[number];
  * table would have been quietly right for a week and quietly wrong forever after. A `Record`
  * over `ManagedTable` cannot be added to without answering the question.
  */
-const RETENTION_WINDOW: Record<ManagedTable, "logs" | "metrics"> = {
+const RETENTION_WINDOW: Record<ManagedTable, "logs" | "metrics" | "rollups"> = {
   log_entry: "logs",
   metric_sample: "metrics",
   health_check: "metrics",
@@ -50,6 +52,37 @@ const RETENTION_WINDOW: Record<ManagedTable, "logs" | "metrics"> = {
   // is six hours and would survive either; what would not is someone widening it later against a
   // table that had quietly been pruned at three days all along.
   alert_state_change: "logs",
+  // The long history the raw window gives up (IKN-20) — `IKNOS_ROLLUP_RETENTION_DAYS`, 90 days.
+  metric_rollup: "rollups",
+};
+
+/** The one table whose partitions may not go before their hours are rolled up (IKN-20). */
+const ROLLED_UP_TABLE: ManagedTable = "metric_sample";
+
+/** What `catchUp` must answer before a raw partition is dropped — `RollupService`, in production. */
+export type RollupGate = {
+  catchUp: () => Promise<{ through: Date | null }>;
+};
+
+/** Everything the pass is configured with. Only `retentionDays` is required. */
+export type MaintenanceOptions = {
+  /** `IKNOS_RETENTION_DAYS` — logs, issue occurrences, alert history. */
+  retentionDays: number;
+  /**
+   * Days of partitions kept ahead of today. Three in production — two missed runs still have
+   * somewhere to put their rows — and widened by the tests that need the reorganisation of
+   * `p_future` to reach a day they can write to.
+   */
+  daysAhead?: number;
+  /**
+   * The sample tables' own window (IKN-8). Raw metrics run to over a million rows per day — they
+   * cannot ride the logs' knob, and shortening theirs must never shorten the log window with it.
+   */
+  metricRetentionDays?: number;
+  /** `metric_rollup`'s window (IKN-20). 90 days by default. */
+  rollupRetentionDays?: number;
+  /** Absent in the tests that are not about rollups; there, raw partitions drop unconditionally. */
+  rollups?: RollupGate;
 };
 
 /** What one pass did, for the summary line and for the tests. */
@@ -93,22 +126,22 @@ export class MaintenanceService implements OnApplicationBootstrap {
   /** One pass at a time: boot and the 3 a.m. cron can otherwise overlap and fight over the DDL. */
   private running: Promise<MaintenanceReport> | null = null;
 
+  private readonly retentionDays: number;
+  private readonly daysAhead: number;
+  private readonly metricRetentionDays: number;
+  private readonly rollupRetentionDays: number;
+  private readonly rollups: RollupGate | null;
+
   constructor(
-    private readonly retentionDays: number,
     private readonly prisma: PrismaService,
-    /**
-     * Days of partitions kept ahead of today. Three in production — two missed runs still have
-     * somewhere to put their rows — and widened by the tests that need the reorganisation of
-     * `p_future` to reach a day they can write to.
-     */
-    private readonly daysAhead: number = DAYS_AHEAD,
-    /**
-     * The sample tables' own window (IKN-8). Raw metrics run to ~1.4M rows per day per scraped
-     * service — they cannot ride the logs' knob, and shortening theirs must never shorten the
-     * log window with it. Long ranges are the rollups' job (IKN-20).
-     */
-    private readonly metricRetentionDays: number = retentionDays,
-  ) {}
+    options: MaintenanceOptions,
+  ) {
+    this.retentionDays = options.retentionDays;
+    this.daysAhead = options.daysAhead ?? DAYS_AHEAD;
+    this.metricRetentionDays = options.metricRetentionDays ?? options.retentionDays;
+    this.rollupRetentionDays = options.rollupRetentionDays ?? DEFAULT_ROLLUP_RETENTION_DAYS;
+    this.rollups = options.rollups ?? null;
+  }
 
   /** Once at boot, so a fresh deploy is correct immediately rather than at three tomorrow morning. */
   async onApplicationBootstrap(): Promise<void> {
@@ -175,7 +208,9 @@ export class MaintenanceService implements OnApplicationBootstrap {
       const existing = rows.filter((r) => r.TABLE_NAME === table).map((r) => r.PARTITION_NAME);
       if (existing.length === 0) continue;
 
-      const { toCreate, toDrop } = plan(existing, new Date(), this.retentionFor(table), this.daysAhead);
+      const planned = plan(existing, new Date(), this.retentionFor(table), this.daysAhead);
+      const toCreate = planned.toCreate;
+      const toDrop = table === ROLLED_UP_TABLE ? await this.rolledUpOnly(planned.toDrop) : planned.toDrop;
       for (const name of toCreate) await this.create(table, name);
       for (const name of toDrop) await this.drop(table, name);
 
@@ -205,6 +240,7 @@ export class MaintenanceService implements OnApplicationBootstrap {
         durationMs,
         retentionDays: this.retentionDays,
         metricRetentionDays: this.metricRetentionDays,
+        rollupRetentionDays: this.rollupRetentionDays,
         oldest: this.oldest,
       },
       "partition maintenance",
@@ -219,9 +255,41 @@ export class MaintenanceService implements OnApplicationBootstrap {
    * accumulated there into the partition they belong in, at no cost once the window is being
    * kept, because in steady state `p_future` is empty.
    */
-  /** Logs and issue occurrences keep the log window; the raw sample tables get the shorter one. */
+  /** Logs and issue occurrences keep the log window, the raw samples the short one, rollups their own. */
   retentionFor(table: ManagedTable): number {
-    return RETENTION_WINDOW[table] === "logs" ? this.retentionDays : this.metricRetentionDays;
+    const window = RETENTION_WINDOW[table];
+    if (window === "logs") return this.retentionDays;
+    if (window === "rollups") return this.rollupRetentionDays;
+    return this.metricRetentionDays;
+  }
+
+  /**
+   * The raw partitions that may go: those whose whole day is rolled up (IKN-20).
+   *
+   * The rollup is asked to catch up first, so in steady state this keeps nothing — the hours it
+   * guards were aggregated days ago. What it is for is the day the rollup has been failing: then
+   * the raw days stay, the table grows, and the log line says why, which beats a long chart with a
+   * permanent hole in it. Without a gate (the tests not about rollups) everything planned goes.
+   */
+  private async rolledUpOnly(toDrop: string[]): Promise<string[]> {
+    if (this.rollups === null || toDrop.length === 0) return toDrop;
+
+    let through: Date | null = null;
+    try {
+      ({ through } = await this.rollups.catchUp());
+    } catch (error) {
+      logger.error({ err: error }, "metric rollup failed; keeping every raw partition");
+      return [];
+    }
+
+    const allowed = toDrop.filter((name) => {
+      const day = dateOf(name);
+      return day !== null && through !== null && +day + 86_400_000 <= +through;
+    });
+    const kept = toDrop.filter((name) => !allowed.includes(name));
+    if (kept.length > 0) logger.warn({ kept, through }, "raw partitions kept: their hours are not rolled up yet");
+
+    return allowed;
   }
 
   /**

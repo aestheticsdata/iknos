@@ -20,11 +20,10 @@ import type { MetricSource } from "@contracts/service-signals";
  * has to mean for a counter: not merely two lines that meet, but one difference taken across the
  * seam.
  *
- * ⚠️ `metric_rollup` is **empty until IKN-20 ships**. The plan below is correct today and the
- * `mixed` branch is exercised today — a `7d` range takes it — but the rollup half of that range
- * currently has no rows, so those buckets come back `null` and the chart draws a gap rather than
- * an invention. That is the honest rendering of "nothing has been aggregated yet", and it stops
- * being a gap the day the rollup job runs, with no change to this file.
+ * `metric_rollup` is filled hourly by `RollupService` (IKN-20), one row per series per hour stamped
+ * with the hour's last reading — the same kind of row as a raw one, which is why the seam needs no
+ * special case. Hours from before the job first ran have no rollup and still come back `null`: a
+ * gap in the chart rather than an invention.
  */
 
 /** The rollup table's own granularity. Nothing finer can be reconstructed from it. */

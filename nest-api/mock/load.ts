@@ -337,7 +337,9 @@ async function main(): Promise<void> {
   const rollupRows = rollups
     .flatMap((series) =>
       series.hours.map(([t, count, sum, min, max, last]) => ({
-        ts: shift(t),
+        // The corpus stamps an hour by its start; a rollup is stamped by its last reading (IKN-20),
+        // which the corpus does not keep — one second before the hour ends stands in for it.
+        ts: new Date(shift(t).getTime() + 3_600_000 - 1_000),
         service: series.service,
         name: series.name,
         labels: series.labels ?? undefined,

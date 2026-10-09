@@ -67,7 +67,7 @@ afterAll(async () => {
 
 describe("MaintenanceService", () => {
   it("creates the window ahead and reports what it did", async () => {
-    const service = new MaintenanceService(14, prisma);
+    const service = new MaintenanceService(prisma, { retentionDays: 14 });
 
     const report = await service.run();
 
@@ -83,7 +83,7 @@ describe("MaintenanceService", () => {
   });
 
   it("is a no-op on the second run", async () => {
-    const service = new MaintenanceService(14, prisma);
+    const service = new MaintenanceService(prisma, { retentionDays: 14 });
     const before = await partitions();
 
     const report = await service.run();
@@ -94,7 +94,7 @@ describe("MaintenanceService", () => {
   });
 
   it("keeps the table writable, and today's row lands in today's partition", async () => {
-    const service = new MaintenanceService(14, prisma);
+    const service = new MaintenanceService(prisma, { retentionDays: 14 });
     const name = `t-maintenance-${Date.now()}`;
     testServices.push(name);
 
@@ -107,7 +107,7 @@ describe("MaintenanceService", () => {
   });
 
   it("drops a partition past the retention window", async () => {
-    const service = new MaintenanceService(14, prisma);
+    const service = new MaintenanceService(prisma, { retentionDays: 14 });
     await service.run();
 
     // Split the oldest partition in two rather than appending: a RANGE partition can only be
@@ -149,7 +149,7 @@ describe("MaintenanceService", () => {
 
     // Wide enough to reach that day, which is what makes the sweep happen inside this test.
     const daysAhead = Math.round((+day - Date.UTC(...todayParts())) / 86_400_000) + 1;
-    await new MaintenanceService(14, prisma, daysAhead).run();
+    await new MaintenanceService(prisma, { retentionDays: 14, daysAhead: daysAhead }).run();
 
     expect(await countIn(target, name)).toBe(1);
     expect(await countIn(FUTURE_PARTITION, name)).toBe(0);
@@ -159,7 +159,7 @@ describe("MaintenanceService", () => {
   });
 
   it("reports the window it is enforcing", async () => {
-    const service = new MaintenanceService(9, prisma);
+    const service = new MaintenanceService(prisma, { retentionDays: 9 });
 
     expect(service.window().lastRunAt).toBeNull();
     await service.run();
@@ -176,7 +176,7 @@ describe("MaintenanceService", () => {
    */
   it("survives a database that will not answer", async () => {
     const dead = { $queryRaw: () => Promise.reject(new Error("gone")) } as unknown as PrismaService;
-    const service = new MaintenanceService(14, dead);
+    const service = new MaintenanceService(dead, { retentionDays: 14 });
 
     await expect(service.onApplicationBootstrap()).resolves.toBeUndefined();
     expect(service.window().lastRunAt).toBeNull();

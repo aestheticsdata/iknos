@@ -52,6 +52,10 @@ const prodConfig = {
   // which wrote twice the rows for samples no chart could tell apart.
   IKNOS_SCRAPE_INTERVAL_SECONDS: "30",
 
+  // Days of hourly metric rollups kept (IKN-20). 90 when unset — ~550 MB on ks-b; a year would be
+  // ~2.2 GB. It holds the long history the three raw days cannot.
+  IKNOS_ROLLUP_RETENTION_DAYS: "90",
+
   // What the collector tails. PM2 writes every app's stdout and stderr here, which is the whole
   // reason Iknos needs no agent installed anywhere.
   IKNOS_PM2_LOG_GLOB: "/home/debian/.pm2/logs/*.log",

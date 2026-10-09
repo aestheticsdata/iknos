@@ -6,6 +6,9 @@ import type { ValidationError } from "class-validator";
 /** IKN-63 — see `IKNOS_SCRAPE_INTERVAL_SECONDS` below. Was a hard-coded 15 until then. */
 export const DEFAULT_SCRAPE_INTERVAL_SECONDS = 30;
 
+/** IKN-20 — see `IKNOS_ROLLUP_RETENTION_DAYS` below. */
+export const DEFAULT_ROLLUP_RETENTION_DAYS = 90;
+
 /**
  * Boot-time contract. Every variable the API needs is declared here, and a missing or malformed
  * one stops the process at startup instead of surfacing as a confusing failure three hours later
@@ -65,6 +68,17 @@ class EnvironmentVariables {
   @IsInt({ message: "IKNOS_METRIC_RETENTION_DAYS must be a number" })
   @Min(1, { message: "IKNOS_METRIC_RETENTION_DAYS must be at least 1" })
   IKNOS_METRIC_RETENTION_DAYS?: number;
+
+  /**
+   * Days of hourly rollups kept (IKN-20). Optional — 90. One row per series per hour is about 1 % of
+   * the raw samples of that day, but it is kept thirty times longer: ~1 000 series on ks-b is
+   * ~550 MB at 90 days and ~2.2 GB at a year. The ticket asked for a year; 90 was chosen against
+   * that figure on 2026-10-09.
+   */
+  @IsOptional()
+  @IsInt({ message: "IKNOS_ROLLUP_RETENTION_DAYS must be a number" })
+  @Min(1, { message: "IKNOS_ROLLUP_RETENTION_DAYS must be at least 1" })
+  IKNOS_ROLLUP_RETENTION_DAYS?: number;
 
   /**
    * Seconds between two scrapes of every `/metrics` (IKN-63). Optional — 30 unless said otherwise.
@@ -129,6 +143,8 @@ export type Config = {
   cookieSecret: string;
   retentionDays: number;
   metricRetentionDays: number;
+  /** IKN-20. */
+  rollupRetentionDays: number;
   /** IKN-63. Milliseconds, converted once here so no caller multiplies by a thousand. */
   scrapeIntervalMs: number;
   pm2LogGlob: string;
@@ -176,6 +192,7 @@ export function parseEnv(source: Record<string, unknown>): Config {
     cookieSecret: parsed.IKNOS_COOKIE_SECRET,
     retentionDays: parsed.IKNOS_RETENTION_DAYS,
     metricRetentionDays: parsed.IKNOS_METRIC_RETENTION_DAYS ?? 3,
+    rollupRetentionDays: parsed.IKNOS_ROLLUP_RETENTION_DAYS ?? DEFAULT_ROLLUP_RETENTION_DAYS,
     scrapeIntervalMs: (parsed.IKNOS_SCRAPE_INTERVAL_SECONDS ?? DEFAULT_SCRAPE_INTERVAL_SECONDS) * 1000,
     pm2LogGlob: parsed.IKNOS_PM2_LOG_GLOB,
     ingestToken: parsed.IKNOS_INGEST_TOKEN ?? null,

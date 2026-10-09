@@ -6,9 +6,8 @@ import type { PrismaService } from "@db/prisma.service";
 
 /**
  * The pass manages every raw time-series table, not just `log_entry` (IKN-8): the metric and
- * probe tables would otherwise pile rows into `p_future` until IKN-20, and reorganising a fat
- * `p_future` later costs a full rewrite. `metric_rollup` is deliberately not on the list — it
- * is empty until IKN-20, which owns its retention.
+ * probe tables would otherwise pile rows into `p_future`, and reorganising a fat `p_future`
+ * later costs a full rewrite. `metric_rollup` joined the list with IKN-20, on its own window.
  *
  * The DDL these tests capture goes through `$executeRawUnsafe`; the table names come from the
  * exported whitelist and nowhere else.
@@ -29,12 +28,13 @@ describe("MaintenanceService over the managed tables", () => {
     expect(MANAGED_TABLES).toContain("health_check");
     expect(MANAGED_TABLES).toContain("host_sample");
     expect(MANAGED_TABLES).toContain("process_sample");
-    expect(MANAGED_TABLES).not.toContain("metric_rollup");
+    // On its own year-long window since IKN-20.
+    expect(MANAGED_TABLES).toContain("metric_rollup");
   });
 
   it("creates the day window in every managed table that reports partitions", async () => {
     const prisma = makePrisma(MANAGED_TABLES.map((t) => ({ TABLE_NAME: t, PARTITION_NAME: "p_future" })));
-    const service = new MaintenanceService(14, prisma, 2);
+    const service = new MaintenanceService(prisma, { retentionDays: 14, daysAhead: 2 });
 
     const report = await service.run();
 
@@ -43,7 +43,6 @@ describe("MaintenanceService over the managed tables", () => {
     for (const table of MANAGED_TABLES) {
       expect(statements.filter((s) => s.startsWith(`ALTER TABLE ${table} REORGANIZE`))).toHaveLength(2);
     }
-    expect(statements.some((s) => s.includes("metric_rollup"))).toBe(false);
     expect(report.created).toHaveLength(2 * MANAGED_TABLES.length);
   });
 
@@ -53,7 +52,7 @@ describe("MaintenanceService over the managed tables", () => {
       { TABLE_NAME: "metric_sample", PARTITION_NAME: "p_future" },
       { TABLE_NAME: "metric_sample", PARTITION_NAME: "p20200101" },
     ]);
-    const service = new MaintenanceService(14, prisma, 0);
+    const service = new MaintenanceService(prisma, { retentionDays: 14, daysAhead: 0 });
 
     const report = await service.run();
 
@@ -74,7 +73,7 @@ describe("MaintenanceService over the managed tables", () => {
       { TABLE_NAME: "metric_sample", PARTITION_NAME: "p_future" },
       { TABLE_NAME: "metric_sample", PARTITION_NAME: weekOld },
     ]);
-    const service = new MaintenanceService(14, prisma, 0, 3);
+    const service = new MaintenanceService(prisma, { retentionDays: 14, daysAhead: 0, metricRetentionDays: 3 });
 
     const report = await service.run();
 
@@ -96,7 +95,7 @@ describe("MaintenanceService over the managed tables", () => {
       { TABLE_NAME: "metric_sample", PARTITION_NAME: "p_future" },
       { TABLE_NAME: "metric_sample", PARTITION_NAME: weekOld },
     ]);
-    const service = new MaintenanceService(14, prisma, 0, 3);
+    const service = new MaintenanceService(prisma, { retentionDays: 14, daysAhead: 0, metricRetentionDays: 3 });
 
     await service.run();
 
@@ -112,7 +111,7 @@ describe("MaintenanceService over the managed tables", () => {
   it("skips a table absent from information_schema instead of failing the pass", async () => {
     // A database restored from before the IKN-8 migration: log_entry exists, the rest do not.
     const prisma = makePrisma([{ TABLE_NAME: "log_entry", PARTITION_NAME: "p_future" }]);
-    const service = new MaintenanceService(14, prisma, 0);
+    const service = new MaintenanceService(prisma, { retentionDays: 14, daysAhead: 0 });
 
     await service.run();
 
@@ -127,11 +126,57 @@ describe("MaintenanceService over the managed tables", () => {
       { TABLE_NAME: "metric_sample", PARTITION_NAME: "p20260810" },
       { TABLE_NAME: "metric_sample", PARTITION_NAME: "p_future" },
     ]);
-    const service = new MaintenanceService(365, prisma, 0);
+    const service = new MaintenanceService(prisma, { retentionDays: 365, daysAhead: 0 });
 
     await service.run();
 
     // metric_sample holds an older day, but the storage panel talks about the logs.
     expect(service.window().oldestPartition).toBe("2026-08-20");
+  });
+});
+
+describe("the purge waits for the rollups (IKN-20)", () => {
+  const makePrisma = (rows: Array<{ TABLE_NAME: string; PARTITION_NAME: string }>) =>
+    ({
+      $queryRaw: vi.fn().mockResolvedValue(rows),
+      $executeRawUnsafe: vi.fn().mockResolvedValue(0),
+    }) as unknown as PrismaService & { $executeRawUnsafe: ReturnType<typeof vi.fn> };
+
+  const day = (offset: number) => partitionName(new Date(Date.now() - offset * 86_400_000));
+  const oldDay = day(10);
+  const olderDay = day(11);
+  const rows = [
+    { TABLE_NAME: "metric_sample", PARTITION_NAME: olderDay },
+    { TABLE_NAME: "metric_sample", PARTITION_NAME: oldDay },
+    { TABLE_NAME: "metric_sample", PARTITION_NAME: "p_future" },
+  ];
+  const drops = (prisma: { $executeRawUnsafe: ReturnType<typeof vi.fn> }) =>
+    prisma.$executeRawUnsafe.mock.calls.map((c) => c[0] as string).filter((sql) => sql.includes("DROP PARTITION"));
+
+  it("asks the rollups to catch up, then drops only the days they cover", async () => {
+    const prisma = makePrisma(rows);
+    // Rolled up through the end of `olderDay` and not a minute of `oldDay`.
+    const through = new Date(Date.now() - 10 * 86_400_000);
+    through.setUTCHours(0, 0, 0, 0);
+    const catchUp = vi.fn().mockResolvedValue({ through });
+
+    await new MaintenanceService(prisma, { retentionDays: 3, daysAhead: 0, rollups: { catchUp } }).run();
+
+    expect(catchUp).toHaveBeenCalledOnce();
+    expect(drops(prisma)).toEqual([`ALTER TABLE metric_sample DROP PARTITION ${olderDay}`]);
+  });
+
+  it("keeps every raw day when the rollup fails", async () => {
+    const prisma = makePrisma(rows);
+    const catchUp = vi.fn().mockRejectedValue(new Error("lock wait timeout"));
+
+    await new MaintenanceService(prisma, { retentionDays: 3, daysAhead: 0, rollups: { catchUp } }).run();
+
+    expect(drops(prisma)).toEqual([]);
+  });
+
+  it("keeps metric_rollup on its own window, 90 days by default", () => {
+    const service = new MaintenanceService(makePrisma([]), { retentionDays: 14, metricRetentionDays: 3 });
+    expect(service.retentionForTable("metric_rollup")).toBe(90);
   });
 });

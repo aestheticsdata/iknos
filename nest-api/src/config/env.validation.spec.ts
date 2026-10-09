@@ -42,6 +42,11 @@ describe("parseEnv", () => {
     expect(parseEnv({ ...full, IKNOS_SCRAPE_INTERVAL_SECONDS: "60" }).scrapeIntervalMs).toBe(60_000);
   });
 
+  it("keeps rollups 90 days unless told otherwise (IKN-20)", () => {
+    expect(parseEnv(full).rollupRetentionDays).toBe(90);
+    expect(parseEnv({ ...full, IKNOS_ROLLUP_RETENTION_DAYS: "365" }).rollupRetentionDays).toBe(365);
+  });
+
   it("refuses a scrape interval past the charts' one-minute grid, or absurdly short", () => {
     expect(() => parseEnv({ ...full, IKNOS_SCRAPE_INTERVAL_SECONDS: "90" })).toThrow(/IKNOS_SCRAPE_INTERVAL_SECONDS/);
     expect(() => parseEnv({ ...full, IKNOS_SCRAPE_INTERVAL_SECONDS: "1" })).toThrow(/IKNOS_SCRAPE_INTERVAL_SECONDS/);
