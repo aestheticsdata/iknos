@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBytes, formatCount, formatLag } from "./format";
+import { formatBinaryBytes, formatBytes, formatCount, formatLag } from "./format";
 
 describe("formatBytes", () => {
   it("keeps small numbers whole", () => {
@@ -24,6 +24,20 @@ describe("formatBytes", () => {
   it("says nothing rather than something wrong for a number that is not one", () => {
     expect(formatBytes(Number.NaN)).toBe("—");
     expect(formatBytes(-1)).toBe("—");
+  });
+});
+
+describe("formatBinaryBytes", () => {
+  it("counts in powers of two, as df -h and htop do", () => {
+    expect(formatBinaryBytes(100 * 1024 ** 3)).toBe("100 GiB");
+    expect(formatBinaryBytes(7.8 * 1024 ** 3)).toBe("7.8 GiB");
+    expect(formatBinaryBytes(512 * 1024 ** 2)).toBe("512 MiB");
+    expect(formatBinaryBytes(1000)).toBe("1000 B");
+  });
+
+  it("says nothing rather than something wrong for a number that is not one", () => {
+    expect(formatBinaryBytes(Number.NaN)).toBe("—");
+    expect(formatBinaryBytes(-1)).toBe("—");
   });
 });
 

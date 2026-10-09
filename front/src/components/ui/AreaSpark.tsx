@@ -1,13 +1,14 @@
 "use client";
 
 import { cn } from "@lib/utils";
-import { areaOf, layoutOf, pointIndexAt, pointsOf } from "./series";
+import { areaOf, BASELINE, layoutOf, pointIndexAt, pointsOf } from "./series";
 import { TONE_TEXT } from "./surface";
 import { Tooltip } from "./Tooltip";
 import { useCursorHover } from "./useCursorHover";
 
 import type { MouseEvent, ReactNode, SVGProps } from "react";
-import type { SeriesValue } from "./series";
+import type { ChartMark } from "./interfaces/chartTypes";
+import type { Baseline, SeriesValue } from "./series";
 import type { Surface, Tone } from "./surface";
 
 /**
@@ -34,6 +35,8 @@ export const AreaSpark = ({
   height = 26,
   label,
   tip,
+  baseline = BASELINE.zero,
+  marks = [],
   className,
   ...rest
 }: {
@@ -45,13 +48,17 @@ export const AreaSpark = ({
   label: string;
   /** What the reading at `index` says under the pointer — see `Sparkline`, which shares the shape. */
   tip?: (index: number) => ReactNode;
+  /** `zero` by default — see `Baseline`. The machine panel passes `percent`. */
+  baseline?: Baseline;
+  /** Lines across the box at values on the series' axis — the disk chart's alert lines. */
+  marks?: ChartMark[];
   className?: string;
   // The spread and the omissions are `Sparkline`'s, for the same reasons.
 } & Omit<SVGProps<SVGSVGElement>, "values" | "width" | "height">) => {
   /* Before the early return below, because hooks cannot run conditionally. */
   const { hover, show, clear } = useCursorHover<number>();
 
-  const layout = layoutOf(values, width, height, "zero");
+  const layout = layoutOf(values, width, height, baseline);
   // Nothing known at all: the caller says why in words. Returning `null` is what makes "absent, not
   // faked" true at the component level rather than only in the caller's intentions.
   if (layout.runs.length === 0) return null;
@@ -78,6 +85,22 @@ export const AreaSpark = ({
         className={cn("block h-full w-full overflow-visible", TONE_TEXT[surface][tone], className)}
         {...rest}
       >
+        {/* Behind the series, so a reading that crosses a line is drawn over it rather than cut by it. */}
+        {marks.map((mark) => (
+          <line
+            key={mark.value}
+            x1={0}
+            x2={width}
+            y1={layout.y(mark.value)}
+            y2={layout.y(mark.value)}
+            stroke="currentColor"
+            strokeWidth={1}
+            strokeDasharray="2 3"
+            strokeOpacity={0.7}
+            vectorEffect="non-scaling-stroke"
+            className={TONE_TEXT[surface][mark.tone]}
+          />
+        ))}
         {layout.runs.map((run) =>
           run.values.length > 1 ? (
             <g key={run.start}>

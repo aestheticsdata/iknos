@@ -1,6 +1,6 @@
 "use client";
 
-import { layoutOf, pointIndexAt, pointsOf, runsOf } from "@components/ui/series";
+import { BASELINE, layoutOf, pointIndexAt, pointsOf, runsOf } from "@components/ui/series";
 import { TONE_TEXT } from "@components/ui/surface";
 import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
 import { useCursorHover } from "@components/ui/useCursorHover";
@@ -52,7 +52,7 @@ export const PercentileChart = ({ detail }: PercentileChartProps) => {
 
   // The y of every line from one layout over all three, so the scale is shared; the x is the
   // series' own, because the merged list is three times longer than any line.
-  const scale = layoutOf([...values.p50, ...values.p95, ...values.p99], W, H, "zero");
+  const scale = layoutOf([...values.p50, ...values.p95, ...values.p99], W, H, BASELINE.zero);
   const step = count > 1 ? W / (count - 1) : 0;
   const layout = { ...scale, x: (index: number) => index * step };
 

@@ -25,8 +25,14 @@ export type SeriesValue = number | null;
  * `min` for anything whose *shape* is the point. A p95 that sits between 405ms and 412ms all day is
  * a flat line against a zero baseline, and every bit of the variation a reader is looking for is
  * lost in the bottom pixel.
+ *
+ * `percent` for a share of something whole — the machine panel's CPU, memory and disk (IKN-25).
+ * The axis is pinned to 0–100 so the height of the line *is* the reading: a disk at 40 % drawn to
+ * the top of its box because 40 was the series' own maximum would look full.
  */
-export type Baseline = "zero" | "min";
+export const BASELINE = { zero: "zero", min: "min", percent: "percent" } as const;
+
+export type Baseline = (typeof BASELINE)[keyof typeof BASELINE];
 
 /** One contiguous run of known values, and where in the series it starts. */
 export type Run = {
@@ -56,14 +62,21 @@ const INSET = 1;
  * `preserveAspectRatio="none"` and stretched to whatever its container is, so the box is a
  * coordinate space rather than a size.
  */
-export const layoutOf = (values: SeriesValue[], width: number, height: number, baseline: Baseline = "min"): Layout => {
+export const layoutOf = (
+  values: SeriesValue[],
+  width: number,
+  height: number,
+  baseline: Baseline = BASELINE.min,
+): Layout => {
   const known = values.filter((value): value is number => value !== null && Number.isFinite(value));
 
   const seriesMin = known.length > 0 ? Math.min(...known) : 0;
   const seriesMax = known.length > 0 ? Math.max(...known) : 0;
 
-  const min = baseline === "zero" ? Math.min(0, seriesMin) : seriesMin;
-  const max = seriesMax;
+  const min = baseline === BASELINE.min ? seriesMin : Math.min(0, seriesMin);
+  // `Math.max`, not a bare 100: a reading past the top — a load briefly over its core count, a
+  // rounding overshoot — is still drawn inside the box rather than off it.
+  const max = baseline === BASELINE.percent ? Math.max(100, seriesMax) : seriesMax;
   const span = max - min || 1;
 
   // One point cannot be spread across the box, and dividing by zero would put it at `Infinity`.

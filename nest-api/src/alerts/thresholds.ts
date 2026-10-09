@@ -1,3 +1,5 @@
+import { HOST_LEVEL, type HostLevel } from "@contracts/host";
+
 /**
  * Every number the six rules test against, in one file (IKN-10).
  *
@@ -60,16 +62,36 @@ export const BUSY_MIN_LINES = 60;
 /* ── disk_space ─────────────────────────────────────────────────────────────────────────────── */
 
 /**
- * The pair IKN-25's machine panel will import when it arrives.
+ * The pair the machine panel (IKN-25) colours by.
  *
- * IKN-10 says these must be "the same source" as the panel's colours. There is no such source in
- * either direction today — IKN-25 has no code at all, no disk percentage is computed anywhere in
- * the repo, and `host_sample`'s disk columns have never been read back by anything. So the shared
- * source is *created here*, and the requirement becomes a constraint on IKN-25: import these,
- * never restate them.
+ * IKN-10 says these must be "the same source" as the panel's colours. The source is this file:
+ * the host routes import `diskLevel` below and send the numbers to the front with every reading,
+ * so neither the panel nor the badge restates them.
  */
 export const DISK_WARN_PCT = 85;
 export const DISK_CRITICAL_PCT = 95;
+
+/**
+ * Which side of those two lines a disk reading sits on — the comparison itself, shared.
+ *
+ * Sharing the numbers was not enough: the rule tests `>` and a panel testing `>=` would be green
+ * at exactly 85.0 % for the five minutes the rule is already pending. So the panel imports the
+ * comparison, not just the constants, and the two cannot disagree at the boundary.
+ */
+export function diskLevel(pct: number): HostLevel {
+  if (pct > DISK_CRITICAL_PCT) return HOST_LEVEL.critical;
+  if (pct > DISK_WARN_PCT) return HOST_LEVEL.warning;
+  return HOST_LEVEL.ok;
+}
+
+/**
+ * How old the newest `host_sample` row may be and still count as the machine's current state.
+ *
+ * The sampler writes every 30 s; ten minutes is twenty missed readings, past which "the newest
+ * row" describes a sampler that has stopped, not a machine. The disk rule and the panel read the
+ * same window, so the badge cannot go grey while the rule still believes a reading.
+ */
+export const HOST_SAMPLE_FRESH_MS = 10 * 60_000;
 
 /** A five-minute `for`. Disk crossing a line and coming back is a log rotation, not an incident. */
 export const DISK_FOR_MS = 5 * 60_000;

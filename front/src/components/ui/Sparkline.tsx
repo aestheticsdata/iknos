@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@lib/utils";
-import { layoutOf, pointIndexAt, pointsOf } from "./series";
+import { BASELINE, layoutOf, pointIndexAt, pointsOf } from "./series";
 import { TONE_TEXT } from "./surface";
 import { Tooltip } from "./Tooltip";
 import { useCursorHover } from "./useCursorHover";
@@ -74,7 +74,7 @@ export const Sparkline = ({
   /* Before the early return below, because hooks cannot run conditionally. */
   const { hover, show, clear } = useCursorHover<number>();
 
-  const layout = layoutOf(values, width, height, "min");
+  const layout = layoutOf(values, width, height, BASELINE.min);
   if (layout.runs.length === 0) return null;
 
   /*

@@ -34,6 +34,34 @@ export const formatBytes = (bytes: number): string => {
   return `${value >= 100 ? Math.round(value) : Number(value.toFixed(1))} ${UNITS[unit]}`;
 };
 
+const KIB = 1024;
+const BINARY_UNITS = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"] as const;
+
+/**
+ * `38.2 GiB`, in binary units — the machine panel's spelling (IKN-25), and the one exception to
+ * `formatBytes` above.
+ *
+ * The panel is checked against `df -h` and `htop`, and both count in powers of two. In SI a
+ * 100 GiB volume reads `107 GB` beside a terminal printing `100G`, which is the "two numbers
+ * that disagree" failure `formatBytes` exists to avoid, pointed the other way. The `i` is kept so
+ * that nobody puts the two spellings side by side and thinks one is wrong.
+ *
+ * The same precision rule: one decimal below 100, none above.
+ */
+export const formatBinaryBytes = (bytes: number): string => {
+  if (!Number.isFinite(bytes) || bytes < 0) return "—";
+  if (bytes < KIB) return `${Math.round(bytes)} B`;
+
+  let value = bytes;
+  let unit = 0;
+  while (value >= KIB && unit < BINARY_UNITS.length - 1) {
+    value /= KIB;
+    unit += 1;
+  }
+
+  return `${value >= 100 ? Math.round(value) : Number(value.toFixed(1))} ${BINARY_UNITS[unit]}`;
+};
+
 /**
  * `10 464`, grouped with a **narrow no-break space** — the mockup's spelling, and the one grouping
  * character that cannot be mistaken for a decimal separator by a reader used to either convention.

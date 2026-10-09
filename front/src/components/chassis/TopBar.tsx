@@ -8,10 +8,12 @@ import { useZone } from "@lib/zoneState";
 import { CHASSIS_TEXT } from "@text/chassis";
 import { useEffect, useState } from "react";
 import { CollectorPill } from "./CollectorPill";
+import { HostBadge } from "./host/HostBadge";
 import { ZoneToggle } from "./ZoneToggle";
 
 /**
- * The top bar — brand, host badge, breadcrumb, the global time range.
+ * The top bar — brand, host badge, breadcrumb, the global time range. The host badge opens the
+ * machine panel since IKN-25.
  *
  * The ⌘K trigger the mockup draws here is still **absent, not stubbed** — it belongs to IKN-22. A
  * control that is visible and dead is the greyed-out coming-soon the design doc rules out in as
@@ -29,12 +31,7 @@ export const TopBar = () => {
     >
       <span className="text-ui font-bold tracking-chrome text-chassis-text">IKNOS</span>
 
-      <span
-        className="rounded-chip border border-chassis-border-strong px-1.5 py-0.5 text-kicker tracking-kicker text-chassis-text-muted"
-        data-testid="host-badge"
-      >
-        {process.env.NEXT_PUBLIC_IKNOS_HOST_LABEL ?? CHASSIS_TEXT.host}
-      </span>
+      <HostBadge label={process.env.NEXT_PUBLIC_IKNOS_HOST_LABEL ?? CHASSIS_TEXT.host} />
 
       <nav
         aria-label={CHASSIS_TEXT.breadcrumbLabel}

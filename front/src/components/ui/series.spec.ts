@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { areaOf, barIndexAt, layoutOf, pointIndexAt, pointsOf, runsOf } from "./series";
+import { areaOf, BASELINE, barIndexAt, layoutOf, pointIndexAt, pointsOf, runsOf } from "./series";
 
 /**
  * The geometry the chart primitives share (IKN-13).
@@ -39,7 +39,7 @@ describe("runsOf", () => {
 
 describe("layoutOf", () => {
   it("spreads the points across the box and insets the extremes", () => {
-    const layout = layoutOf([0, 10], 100, 26, "min");
+    const layout = layoutOf([0, 10], 100, 26, BASELINE.min);
 
     expect(layout.x(0)).toBe(0);
     expect(layout.x(1)).toBe(100);
@@ -52,7 +52,7 @@ describe("layoutOf", () => {
     // A constant 412ms drawn along the bottom reads as the fastest the service has ever been. The
     // one unacceptable answer is the division by zero, which renders the path as `NaN` and
     // disappears — indistinguishable from having no data at all.
-    const layout = layoutOf([412, 412, 412], 100, 26, "min");
+    const layout = layoutOf([412, 412, 412], 100, 26, BASELINE.min);
 
     expect(layout.y(412)).toBe(13);
     expect(Number.isNaN(layout.y(412))).toBe(false);
@@ -61,7 +61,7 @@ describe("layoutOf", () => {
   it("keeps a series that is flat at zero on the floor", () => {
     // The rail is full of services that are honestly silent for hours, and a line through the
     // middle of their sparkline would read as steady traffic.
-    const layout = layoutOf([0, 0, 0], 100, 26, "min");
+    const layout = layoutOf([0, 0, 0], 100, 26, BASELINE.min);
 
     expect(layout.y(0)).toBe(25);
   });
@@ -69,7 +69,7 @@ describe("layoutOf", () => {
   it("starts a zero-based series at zero, however high its floor is", () => {
     // An area drawn from the series' own minimum fills the box whatever the numbers are, so a
     // service serving one request a minute and one serving a thousand look identical.
-    const layout = layoutOf([80, 100], 100, 26, "zero");
+    const layout = layoutOf([80, 100], 100, 26, BASELINE.zero);
 
     expect(layout.min).toBe(0);
     expect(layout.base).toBe(25);
@@ -77,7 +77,7 @@ describe("layoutOf", () => {
   });
 
   it("keeps a shape-scaled series on its own floor, so small variation is still visible", () => {
-    const layout = layoutOf([405, 412], 100, 26, "min");
+    const layout = layoutOf([405, 412], 100, 26, BASELINE.min);
 
     expect(layout.min).toBe(405);
     expect(layout.y(405)).toBe(25);
@@ -85,15 +85,30 @@ describe("layoutOf", () => {
   });
 
   it("puts a lone point at the left edge rather than at infinity", () => {
-    const layout = layoutOf([5], 100, 26, "min");
+    const layout = layoutOf([5], 100, 26, BASELINE.min);
 
     expect(layout.x(0)).toBe(0);
     expect(Number.isFinite(layout.x(0))).toBe(true);
   });
 });
 
+describe("layoutOf on a percent axis", () => {
+  it("pins the axis to 0–100, so a disk at 40 % is drawn at 40 % of the box and not at the top", () => {
+    const layout = layoutOf([40, 40], 100, 26, BASELINE.percent);
+
+    expect(layout.min).toBe(0);
+    expect(layout.max).toBe(100);
+    expect(layout.y(40)).toBeCloseTo(15.4);
+    expect(layout.y(100)).toBe(1);
+  });
+
+  it("stretches past 100 rather than drawing a reading off the box", () => {
+    expect(layoutOf([50, 120], 100, 26, BASELINE.percent).max).toBe(120);
+  });
+});
+
 describe("pointsOf and areaOf", () => {
-  const layout = layoutOf([0, 5, 10], 100, 26, "zero");
+  const layout = layoutOf([0, 5, 10], 100, 26, BASELINE.zero);
 
   it("writes a run as SVG points at two decimals", () => {
     expect(pointsOf({ start: 0, values: [0, 5, 10] }, layout)).toBe("0.00,25.00 50.00,13.00 100.00,1.00");

@@ -1,4 +1,5 @@
-import { DISK_CRITICAL_PCT, DISK_FOR_MS, DISK_WARN_PCT } from "../thresholds";
+import { HOST_LEVEL } from "@contracts/host";
+import { DISK_FOR_MS, DISK_WARN_PCT, diskLevel, HOST_SAMPLE_FRESH_MS } from "../thresholds";
 
 import type { Observation, Rule } from "../rule";
 
@@ -33,7 +34,7 @@ export const diskSpace: Rule = {
     const rows = await ctx.prisma.$queryRaw<{ used: bigint | null; total: bigint | null }[]>`
       SELECT disk_used_bytes AS used, disk_total_bytes AS total
         FROM host_sample
-       WHERE ts >= ${new Date(ctx.now - 10 * 60_000)}
+       WHERE ts >= ${new Date(ctx.now - HOST_SAMPLE_FRESH_MS)}
        ORDER BY ts DESC
        LIMIT 1`;
 
@@ -45,13 +46,14 @@ export const diskSpace: Rule = {
     }
 
     const pct = (Number(row.used) / Number(row.total)) * 100;
+    const level = diskLevel(pct);
 
     return [
       {
         service: HOST,
         value: Number(pct.toFixed(1)),
-        breached: pct > DISK_WARN_PCT,
-        severity: pct > DISK_CRITICAL_PCT ? "critical" : "warning",
+        breached: level !== HOST_LEVEL.ok,
+        severity: level === HOST_LEVEL.critical ? "critical" : "warning",
       },
     ];
   },

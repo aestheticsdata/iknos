@@ -1,6 +1,8 @@
 import { parseEnv } from "@config/env.validation";
 import { PrismaService } from "@db/prisma.service";
 import { Module } from "@nestjs/common";
+import { HostController } from "./host.controller";
+import { HostService } from "./host.service";
 import { RouteMetricsService } from "./route-metrics.service";
 import { RuntimeService } from "./runtime.service";
 import { ServiceViewController } from "./service-view.controller";
@@ -16,15 +18,16 @@ import { SignalsService } from "./signals.service";
  * `window()` reports the *log* retention and would quietly hand back the wrong knob.
  *
  * The metrics view (IKN-23) lives here for that reason — `RouteMetricsService` reads the same two
- * tables through the same source decision — and the host panel (IKN-25) belongs here when it
- * arrives. A second copy of that decision is a second answer to "which table holds a week ago".
+ * tables through the same source decision. The host panel (IKN-25) lives here too: it reads
+ * `host_sample` on the same one-minute grid floor the signals use.
  *
  * `PrismaModule` is global, so the providers simply inject `PrismaService`.
  */
 @Module({
-  controllers: [ServiceViewController],
+  controllers: [ServiceViewController, HostController],
   providers: [
     RuntimeService,
+    HostService,
     {
       provide: SignalsService,
       useFactory: (prisma: PrismaService) => {
