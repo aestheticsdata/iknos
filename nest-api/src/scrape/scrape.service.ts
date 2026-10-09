@@ -6,7 +6,7 @@ import { logger } from "@common/logger";
 import { DEFAULT_SCRAPE_INTERVAL_SECONDS } from "@config/env.validation";
 import { PrismaService } from "@db/prisma.service";
 import { Injectable } from "@nestjs/common";
-import { type CpuTimes, cpuPctBetween, cpuTimesFromOs, parseProcStat } from "./host-stats";
+import { type CpuTimes, cpuPctBetween, cpuTimesFromOs, diskUsage, parseProcStat } from "./host-stats";
 import { toMetricRows } from "./metric-rows";
 import { parseJlist } from "./pm2-jlist";
 import { probeHealth } from "./probe-health";
@@ -14,6 +14,7 @@ import { scrapeTarget } from "./scrape-target";
 
 import type { Prisma } from "@generated/prisma/client";
 import type { OnApplicationBootstrap, OnApplicationShutdown } from "@nestjs/common";
+import type { StatfsReading } from "./interfaces/host-stats-types";
 import type { ProbeFetch } from "./probe-health";
 import type { FetchLike } from "./scrape-target";
 
@@ -36,7 +37,7 @@ export type ScrapeIo = {
   loadavg: () => number[];
   freemem: () => number;
   totalmem: () => number;
-  statfs: (path: string) => Promise<{ bavail: number; blocks: number; bsize: number } | null>;
+  statfs: (path: string) => Promise<StatfsReading | null>;
   jlist: () => Promise<string | null>;
 };
 
@@ -51,7 +52,7 @@ export function defaultScrapeIo(): ScrapeIo {
     totalmem: () => os.totalmem(),
     statfs: (path) =>
       statfs(path).then(
-        (s) => ({ bavail: Number(s.bavail), blocks: Number(s.blocks), bsize: Number(s.bsize) }),
+        (s) => ({ bavail: Number(s.bavail), bfree: Number(s.bfree), blocks: Number(s.blocks), bsize: Number(s.bsize) }),
         () => null,
       ),
     jlist: async () => {
@@ -200,7 +201,8 @@ export class ScrapeService implements OnApplicationBootstrap, OnApplicationShutd
 
     const [load1, load5, load15] = this.io.loadavg();
     const totalmem = this.io.totalmem();
-    const disk = await this.io.statfs("/");
+    const statfsReading = await this.io.statfs("/");
+    const disk = statfsReading ? diskUsage(statfsReading) : null;
 
     await this.prisma.hostSample.create({
       data: {
@@ -211,8 +213,8 @@ export class ScrapeService implements OnApplicationBootstrap, OnApplicationShutd
         load15,
         memUsedBytes: totalmem - this.io.freemem(),
         memTotalBytes: totalmem,
-        diskUsedBytes: disk ? (disk.blocks - disk.bavail) * disk.bsize : null,
-        diskTotalBytes: disk ? disk.blocks * disk.bsize : null,
+        diskUsedBytes: disk?.usedBytes ?? null,
+        diskTotalBytes: disk?.totalBytes ?? null,
       },
     });
   }

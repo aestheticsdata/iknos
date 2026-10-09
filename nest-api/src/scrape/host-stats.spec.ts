@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cpuPctBetween, cpuTimesFromOs, parseProcStat } from "./host-stats";
+import { cpuPctBetween, cpuTimesFromOs, diskUsage, parseProcStat } from "./host-stats";
 
 /**
  * CPU is a delta between two cumulative readings (IKN-8) — the arithmetic ends up in
@@ -66,5 +66,17 @@ describe("cpuPctBetween", () => {
     expect(
       cpuPctBetween({ busy: 100, total: 1000, source: "proc" }, { busy: 5000, total: 90000, source: "os" }),
     ).toBeNull();
+  });
+});
+
+describe("diskUsage", () => {
+  it("is df's arithmetic, measured against ks-b on 2026-10-09", () => {
+    // `stat -f /` on ks-b; `df -h /` printed `108G 41G 62G 40%` beside it.
+    const usage = diskUsage({ bsize: 4096, blocks: 28_309_817, bfree: 17_588_204, bavail: 16_138_592 });
+
+    expect(usage.usedBytes / 1024 ** 3).toBeCloseTo(40.9, 1);
+    // `Used + Avail` — the root reserve is in neither, so this is below df's 108G by exactly it.
+    expect((usage.totalBytes - usage.usedBytes) / 1024 ** 3).toBeCloseTo(61.56, 1);
+    expect(Math.ceil((usage.usedBytes / usage.totalBytes) * 100)).toBe(40);
   });
 });

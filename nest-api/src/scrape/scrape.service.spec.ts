@@ -44,7 +44,7 @@ const makeIo = (overrides: Partial<ScrapeIo> = {}): ScrapeIo => ({
   loadavg: () => [0.5, 0.4, 0.3],
   freemem: () => 4_000_000_000,
   totalmem: () => 16_000_000_000,
-  statfs: () => Promise.resolve({ bavail: 1000, blocks: 4000, bsize: 4096 }),
+  statfs: () => Promise.resolve({ bavail: 1000, bfree: 1200, blocks: 4000, bsize: 4096 }),
   jlist: () => Promise.resolve(null),
   ...overrides,
 });

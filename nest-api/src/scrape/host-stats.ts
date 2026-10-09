@@ -9,6 +9,7 @@
  */
 
 import type os from "node:os";
+import type { StatfsReading } from "./interfaces/host-stats-types";
 
 /**
  * `source` matters as much as the numbers: /proc/stat counts USER_HZ jiffies, `os.cpus()`
@@ -58,4 +59,22 @@ export function cpuPctBetween(prev: CpuTimes | null, curr: CpuTimes): number | n
   if (totalDelta <= 0 || busyDelta < 0) return null;
 
   return Math.min(100, Math.max(0, (100 * busyDelta) / totalDelta));
+}
+
+/**
+ * The root filesystem as `df` reports it — IKN-25's "consistent with `df -h`".
+ *
+ * `df` does not divide used by size. Its `Used` is `blocks − bfree`, and its `Use%` is
+ * `Used / (Used + Avail)` with `Avail = bavail`: ext4 keeps ~5 % of the volume for root, and that
+ * reserve is in neither column. The sampler used to store `blocks − bavail` over `blocks`, which
+ * counts the reserve as used — 43.0 % on ks-b while `df` printed 40 %, and the alert rule
+ * three points early.
+ *
+ * So `totalBytes` is `Used + Avail`, the space a non-root process can ever have, and the ratio of
+ * the pair *is* `df`'s `Use%`. It is a little smaller than `df`'s `Size`, by exactly the reserve.
+ */
+export function diskUsage(s: StatfsReading) {
+  const used = s.blocks - s.bfree;
+
+  return { usedBytes: used * s.bsize, totalBytes: (used + s.bavail) * s.bsize };
 }
