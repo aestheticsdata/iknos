@@ -3,6 +3,7 @@ import { LEVELS } from "@ingest/parser";
 import { BadRequestException } from "@nestjs/common";
 import { IsOptional, IsString } from "class-validator";
 import { decodeCursor } from "./cursor";
+import { routeClause } from "./route-template";
 
 /**
  * The filter vocabulary, parsed once and shared by every log route.
@@ -216,7 +217,8 @@ export function whereClause(
 
   if (f.service !== undefined) parts.push(Prisma.sql`service = ${f.service}`);
   if (f.minLevel !== undefined) parts.push(Prisma.sql`level >= ${f.minLevel}`);
-  if (f.route !== undefined) parts.push(Prisma.sql`route = ${f.route}`);
+  // A `:param` pattern from the metrics view matches the raw paths it stands for — see `route-template.ts`.
+  if (f.route !== undefined) parts.push(routeClause(f.route));
   if (f.statusCode !== undefined) parts.push(Prisma.sql`status_code = ${f.statusCode}`);
   // No `ESCAPE` clause: backslash is already MySQL's default escape character for `LIKE`, and
   // spelling it out in a template literal means writing a backslash that has to survive both

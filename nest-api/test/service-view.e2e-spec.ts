@@ -4,6 +4,7 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildTestApp, login } from "./helpers";
 
+import type { RouteDetail, RouteList } from "@contracts/route-metrics";
 import type { ServiceRuntime } from "@contracts/service-runtime";
 import type { ServiceSignals } from "@contracts/service-signals";
 import type { Prisma } from "@generated/prisma/client";
@@ -94,6 +95,11 @@ describe("session", () => {
 
     await server.get(`/api/services/${SCRAPED}/runtime`).expect(401);
     await server.get(`/api/services/${SCRAPED}/signals?${window()}`).expect(401);
+    // The metrics view's two (IKN-23), under the same guard.
+    await server.get(`/api/services/${SCRAPED}/routes?${window()}`).expect(401);
+    await server
+      .get(`/api/services/${SCRAPED}/routes/detail?${window()}&method=GET&route=%2Fapi%2Fdossiers`)
+      .expect(401);
   });
 });
 
@@ -273,5 +279,129 @@ describe("GET /api/services/:service/signals", () => {
     await get(`/api/services/${SCRAPED}/signals`).expect(400);
     await get(`/api/services/${SCRAPED}/signals?from=2026-08-23T12:00:00Z`).expect(400);
     await get(`/api/services/${SCRAPED}/signals?from=nonsense&to=alsononsense`).expect(400);
+  });
+});
+
+describe("GET /api/services/:service/routes (IKN-23)", () => {
+  /*
+   * Two routes on one path — a cheap GET and a slow POST — plus the heartbeat, a minute apart for
+   * six minutes. The labels are the shape prom-client writes: the pattern, never a raw URL.
+   */
+  const ROUTE = "/api/dossiers/:id";
+  const series = (labels: Record<string, string>, hash: string, name: string) => (ts: Date, value: number) => ({
+    ts,
+    service: SCRAPED,
+    name,
+    labels,
+    labelsHash: hash,
+    value,
+  });
+  const heartbeat = (ts: Date) => ({
+    ts,
+    service: SCRAPED,
+    name: "process_start_time_seconds",
+    labelsHash: "e2e0000000000000",
+    value: 1_787_000_000,
+  });
+  const getOk = series({ method: "GET", route: ROUTE, status_code: "200" }, "e2e2000000000001", "http_requests_total");
+  const getFast = series(
+    { le: "0.05", method: "GET", route: ROUTE },
+    "e2e2000000000002",
+    "http_request_duration_seconds_bucket",
+  );
+  const getInf = series(
+    { le: "+Inf", method: "GET", route: ROUTE },
+    "e2e2000000000003",
+    "http_request_duration_seconds_bucket",
+  );
+  const postOk = series(
+    { method: "POST", route: ROUTE, status_code: "201" },
+    "e2e2000000000004",
+    "http_requests_total",
+  );
+  const postFast = series(
+    { le: "0.05", method: "POST", route: ROUTE },
+    "e2e2000000000005",
+    "http_request_duration_seconds_bucket",
+  );
+  const postSlow = series(
+    { le: "1", method: "POST", route: ROUTE },
+    "e2e2000000000006",
+    "http_request_duration_seconds_bucket",
+  );
+  const postInf = series(
+    { le: "+Inf", method: "POST", route: ROUTE },
+    "e2e2000000000007",
+    "http_request_duration_seconds_bucket",
+  );
+
+  const to = new Date();
+  const from = new Date(to.getTime() - 5 * 60_000);
+  const range = () => `from=${from.toISOString()}&to=${to.toISOString()}`;
+
+  beforeAll(async () => {
+    const rows = [0, 1, 2, 3, 4, 5].flatMap((i) => {
+      const ts = new Date(from.getTime() + (i - 1) * 60_000);
+      return [
+        heartbeat(ts),
+        getOk(ts, 100 + i * 10),
+        getFast(ts, 100 + i * 10),
+        getInf(ts, 100 + i * 10),
+        postOk(ts, 10 + i * 2),
+        postFast(ts, 0),
+        postSlow(ts, 10 + i * 2),
+        postInf(ts, 10 + i * 2),
+      ];
+    });
+    await prisma.metricSample.createMany({ data: rows });
+  });
+
+  afterAll(async () => {
+    await prisma.metricSample.deleteMany({ where: { service: SCRAPED } });
+  });
+
+  it("lists both methods as their own routes, slowest p95 first", async () => {
+    const body = (await get(`/api/services/${SCRAPED}/routes?${range()}`).expect(200)).body as RouteList;
+
+    expect(body.scraped).toBe(true);
+    expect(body.p95ThresholdMs).toBe(1_000);
+    expect(body.routes.map((r) => `${r.method} ${r.route}`)).toEqual([`POST ${ROUTE}`, `GET ${ROUTE}`]);
+
+    const [post, read] = body.routes;
+    // Everything POST did sits between 50 ms and 1 s, everything GET did under 50 ms.
+    expect(post.p95).toBeGreaterThan(50);
+    expect(post.p95).toBeLessThanOrEqual(1_000);
+    expect(read.p95).toBeLessThanOrEqual(50);
+    expect(read.share).toBeCloseTo(10 / 12, 6);
+  });
+
+  it("serves one route's detail from rows narrowed to it in SQL", async () => {
+    const url = `/api/services/${SCRAPED}/routes/detail?${range()}&method=POST&route=${encodeURIComponent(ROUTE)}`;
+    const body = (await get(url).expect(200)).body as RouteDetail;
+
+    expect(body.summary.method).toBe("POST");
+    expect(body.summary.requests).toBeGreaterThan(0);
+    expect(body.status["2xx"]).toBe(body.summary.requests);
+    // The bounds as scraped, in milliseconds: 0–50, 50–1000, and everything above.
+    expect(body.distribution.map((b) => [b.fromMs, b.toMs])).toEqual([
+      [0, 50],
+      [50, 1_000],
+      [1_000, null],
+    ]);
+    expect(body.p95.points.length).toBe(body.p50.points.length);
+  });
+
+  it("answers 404 for a route with no series in the range, and 400 without the pair", async () => {
+    await get(`/api/services/${SCRAPED}/routes/detail?${range()}&method=PUT&route=${encodeURIComponent(ROUTE)}`).expect(
+      404,
+    );
+    await get(`/api/services/${SCRAPED}/routes/detail?${range()}&route=${encodeURIComponent(ROUTE)}`).expect(400);
+  });
+
+  it("answers an unscraped service with no routes and says so", async () => {
+    const body = (await get(`/api/services/${BARE}/routes?${range()}`).expect(200)).body as RouteList;
+
+    expect(body.scraped).toBe(false);
+    expect(body.routes).toEqual([]);
   });
 });

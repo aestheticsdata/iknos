@@ -35,7 +35,7 @@ export const PROCESS_START = "process_start_time_seconds";
 export const METRIC_NAMES = [REQUESTS_TOTAL, DURATION_BUCKET, PROCESS_START] as const;
 
 /** Prometheus reports durations in seconds; every latency in this product is milliseconds. */
-const SECONDS_TO_MS = 1000;
+export const SECONDS_TO_MS = 1000;
 
 const P95 = 0.95;
 
@@ -73,11 +73,36 @@ export type SignalSet = {
  * and a tile that goes amber every time somebody signs in badly is a tile that is ignored by the
  * end of the week. The full status-code split belongs to the metrics view (design doc §5.3).
  */
-const isServerError = (tag: string): boolean => tag.startsWith("5");
+export const isServerError = (tag: string): boolean => tag.startsWith("5");
 
 export function buildSignals(rows: MetricRow[], from: Date, plan: SourcePlan): SignalSet {
   const { bucketMs, buckets } = plan;
+  const { elapsed, usable } = intervalsOf(rows, buckets);
 
+  const requests = increments(samplesFor(rows, REQUESTS_TOTAL, "status_code"), buckets);
+  const durations = increments(samplesFor(rows, DURATION_BUCKET, "le"), buckets);
+
+  const totals = sumLines(requests, () => true, buckets);
+  const errors = sumLines(requests, isServerError, buckets);
+
+  return {
+    throughput: throughputOf(totals, usable, elapsed, from, bucketMs),
+    errorRate: errorRateOf(errors, totals, usable, from, bucketMs),
+    p95: p95Of(durations, usable, from, bucketMs, buckets),
+  };
+}
+
+/** How long each interval measured, and whether it can be quoted at all. */
+export type Intervals = {
+  elapsed: (number | null)[];
+  usable: boolean[];
+};
+
+/**
+ * The intervals every figure is allowed to use — shared by the service tiles and the metrics view
+ * (IKN-23), so a route's rate and the service's throughput leave out exactly the same minutes.
+ */
+export function intervalsOf(rows: MetricRow[], buckets: number): Intervals {
   const heartbeat = rows.filter((row) => row.name === PROCESS_START);
   /*
    * The heartbeat is the clock, and every other series is only evidence of itself.
@@ -101,17 +126,7 @@ export function buildSignals(rows: MetricRow[], from: Date, plan: SourcePlan): S
   const elapsed = elapsedOf(clock, buckets);
   const usable = elapsed.map((ms, index) => ms !== null && !restarts.has(index));
 
-  const requests = increments(samplesFor(rows, REQUESTS_TOTAL, "status_code"), buckets);
-  const durations = increments(samplesFor(rows, DURATION_BUCKET, "le"), buckets);
-
-  const totals = sumLines(requests, () => true, buckets);
-  const errors = sumLines(requests, isServerError, buckets);
-
-  return {
-    throughput: throughputOf(totals, usable, elapsed, from, bucketMs),
-    errorRate: errorRateOf(errors, totals, usable, from, bucketMs),
-    p95: p95Of(durations, usable, from, bucketMs, buckets),
-  };
+  return { elapsed, usable };
 }
 
 /**
@@ -223,7 +238,7 @@ export function sumLines(lines: Map<string, number[]>, keep: (tag: string) => bo
   return out;
 }
 
-const pointsOf = (values: (number | null)[], from: Date, bucketMs: number): SignalPoint[] =>
+export const pointsOf = (values: (number | null)[], from: Date, bucketMs: number): SignalPoint[] =>
   values.map((v, i) => ({ t: gridStart(from, bucketMs, i).toISOString(), v }));
 
 export function throughputOf(

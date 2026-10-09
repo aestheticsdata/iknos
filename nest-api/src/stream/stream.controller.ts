@@ -1,4 +1,5 @@
 import { LogQueryDto, parseFilters } from "@logs/log-query";
+import { routeMatches } from "@logs/route-template";
 import { Controller, Get, Query, Req, Res } from "@nestjs/common";
 import { LogBus } from "./log-bus";
 
@@ -119,7 +120,7 @@ function toRow(r: LogRecord): LogRow {
 function matches(r: LogRecord, f: LogFilters): boolean {
   if (f.service !== undefined && r.service !== f.service) return false;
   if (f.minLevel !== undefined && r.level < f.minLevel) return false;
-  if (f.route !== undefined && r.route !== f.route) return false;
+  if (f.route !== undefined && !routeMatches(f.route, r.route)) return false;
   if (f.statusCode !== undefined && r.statusCode !== f.statusCode) return false;
   if (f.q !== undefined && !r.message.toLowerCase().includes(f.q.toLowerCase())) return false;
 

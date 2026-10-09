@@ -106,10 +106,9 @@ const INCIDENT_CHANCE_PER_LINE = 1 / 1_000;
 
 /* ── the counters `/metrics` exposes, bumped by the lines themselves ──────────────────────────── */
 
+/* The corpus's bounds (`author.ts`), so a range spanning the history and the live fleet reads one
+   histogram rather than two that disagree about where the buckets are. */
 const LE_BOUNDS = ["0.025", "0.1", "0.5", "1", "+Inf"];
-const routeOk = profile.routes[0].route;
-const routeMiss = (profile.routes[1] ?? profile.routes[0]).route;
-const routeErr = profile.routes[profile.routes.length - 1].route;
 
 /** Series key → cumulative value. Keys carry the labels in the exposition's own syntax. */
 const counters = new Map<string, number>();
@@ -122,15 +121,29 @@ const labelsOf = (pairs: Record<string, string>): string =>
     .map(([k, v]) => `${k}="${v}"`)
     .join(",")}}`;
 
-for (const [route, status] of [
-  [routeOk, "200"],
-  [routeMiss, "404"],
-  [routeErr, "500"],
-] as const) {
-  counters.set(`http_requests_total${labelsOf({ method: "GET", route, status_code: status })}`, 0);
+/*
+ * Every route's histogram exists from the first scrape, as prom-client's would once the route had
+ * been hit — so a route the dice have not picked yet is in the metrics view as a route with no
+ * samples, which is a state that view has to render (IKN-23).
+ */
+for (const { method, route } of profile.routes) {
+  for (const le of LE_BOUNDS) {
+    counters.set(`http_request_duration_seconds_bucket${labelsOf({ le, method, route })}`, 0);
+  }
 }
-for (const le of LE_BOUNDS) {
-  counters.set(`http_request_duration_seconds_bucket${labelsOf({ le, method: "GET", route: routeOk })}`, 0);
+
+/**
+ * One request, counted the way PFA's middleware counts it (IKN-2): labelled by the route's
+ * *pattern*, its method and its real status code, and observed into that route's own histogram.
+ */
+function observe(route: Route, status: number, durationMs: number): void {
+  const { method } = route;
+  bump(`http_requests_total${labelsOf({ method, route: route.route, status_code: String(status) })}`);
+  for (const le of LE_BOUNDS) {
+    if (le === "+Inf" || durationMs / 1000 <= Number(le)) {
+      bump(`http_request_duration_seconds_bucket${labelsOf({ le, method, route: route.route })}`);
+    }
+  }
 }
 
 function httpLine(): void {
@@ -152,7 +165,8 @@ function httpLine(): void {
 
   const extra: Record<string, unknown> = {
     "http.request.method": route.method,
-    "url.path": route.route,
+    // The path that was asked for, as PFA's logger writes it: a parameter is a real value here.
+    "url.path": route.route.replace(/:[A-Za-z_]\w*/g, () => String(int(1, 9999))),
     "http.response.status_code": status,
     "event.duration": durationMs * 1_000_000,
     "client.ip": pick(CLIENT_IPS),
@@ -162,16 +176,9 @@ function httpLine(): void {
   const userId = pick(USER_IDS);
   if (userId !== null) extra["user.id"] = userId;
   if (chance(0.2)) extra["trace.id"] = traceId();
-  write(ecs(level, `${route.method} ${route.route} ${status} in ${durationMs} ms`, extra));
+  write(ecs(level, `${route.method} ${extra["url.path"]} ${status} in ${durationMs} ms`, extra));
 
-  const cls = status >= 500 ? "500" : status >= 400 ? "404" : "200";
-  const labelledRoute = cls === "200" ? routeOk : cls === "404" ? routeMiss : routeErr;
-  bump(`http_requests_total${labelsOf({ method: "GET", route: labelledRoute, status_code: cls })}`);
-  for (const le of LE_BOUNDS) {
-    if (le === "+Inf" || durationMs / 1000 <= Number(le)) {
-      bump(`http_request_duration_seconds_bucket${labelsOf({ le, method: "GET", route: routeOk })}`);
-    }
-  }
+  observe(route, status, durationMs);
 }
 
 function eventLine(): void {

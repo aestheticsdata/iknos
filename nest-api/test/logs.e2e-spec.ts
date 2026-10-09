@@ -164,6 +164,19 @@ describe("GET /api/logs", () => {
     expect(rows.map((r) => r.message).sort()).toEqual(["request 4 finished", "request 8 finished"]);
   });
 
+  it("reads a `:param` route as the raw paths it stands for (IKN-23)", async () => {
+    // The metrics view links with prom-client's pattern; the lines carry the URL that was asked.
+    const paths = ["/api/dossiers/41", "/api/dossiers/42", "/api/dossiers/42/files", "/api/dossiers", "/api/x/41"];
+    const service = await track(app, paths.length, { route: (i) => paths[i] });
+
+    const res = await get(
+      `/api/logs?${WIDE}&service=${service}&route=${encodeURIComponent("/api/dossiers/:id")}`,
+    ).expect(200);
+
+    const routes = (res.body.rows as LogRow[]).map((r) => r.route).sort();
+    expect(routes).toEqual(["/api/dossiers/41", "/api/dossiers/42"]);
+  });
+
   it("accepts a level as a name or as a number", async () => {
     const service = await track(app, 9, { level: (i) => [30, 40, 50][i % 3] as number });
 
