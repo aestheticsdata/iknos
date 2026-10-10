@@ -122,7 +122,7 @@ const SERVICES: {
     metricsUrl: null,
     healthUrl: "http://127.0.0.1:7200/api/health",
   },
-  { name: "bots-runner", pm2Name: "bots-runner", metricsUrl: null, healthUrl: "http://127.0.0.1:7201/health" },
+  { name: "bots-runner", pm2Name: "bots-runner", metricsUrl: null, healthUrl: "http://127.0.0.1:7300/health" },
   { name: "conway-gol-api", pm2Name: "conway-gol-api", metricsUrl: null, healthUrl: null },
   /*
    * Folio's two arrive with FOL-18, registered from day one rather than found later by drift. The
