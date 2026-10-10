@@ -29,4 +29,15 @@ export type LogRow = {
   route: string | null;
   statusCode: number | null;
   durationMs: number | null;
+  /**
+   * The caller's address as the *service* reported it — real only where that service trusts its
+   * proxy; an app behind nginx that does not logs every caller as `127.0.0.1`, and Iknos reports
+   * what it was told. Null on most application lines, which carry none: there it means "not
+   * applicable", not "unknown".
+   *
+   * On the row since IKN-72, not only on the detail: a scan is one address across many routes, and
+   * reading that one opened pane at a time is the work a table is supposed to remove. Forty-five
+   * bytes a row at most, against the `attrs` blob the list still leaves behind.
+   */
+  clientIp: string | null;
 };

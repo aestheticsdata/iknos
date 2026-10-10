@@ -52,6 +52,7 @@ describe("session", () => {
     await server.get(`/api/logs?${WIDE}`).expect(401);
     await server.get(`/api/logs/histogram?${WIDE}`).expect(401);
     await server.get(`/api/logs/trace/abc123?${WIDE}`).expect(401);
+    await server.get(`/api/logs/ips?${WIDE}`).expect(401);
     await server.get("/api/services").expect(401);
     // The stream especially: an endpoint that hijacks the response is exactly where a guard gets
     // forgotten, and it would be a permanent unauthenticated firehose of every line on the box.
@@ -519,13 +520,67 @@ describe("GET /api/logs/entry/:id", () => {
     expect(detail).toMatchObject(listed as unknown as Record<string, unknown>);
   });
 
-  it("keeps attrs out of the list payload", async () => {
+  it("keeps attrs out of the list payload, and the client address in it", async () => {
     // The reason this endpoint exists at all: two hundred rows of arbitrary JSON is a cost every
-    // page would pay for a field only ever read one row at a time.
+    // page would pay for a field only ever read one row at a time. The address is the exception
+    // since IKN-72 — it is the column a scan is read off.
     const service = await seedScannerLine();
     const res = await get(`/api/logs?${WIDE}&service=${service}`).expect(200);
 
     expect(res.body.rows[0]).not.toHaveProperty("attrs");
-    expect(res.body.rows[0]).not.toHaveProperty("clientIp");
+    expect(res.body.rows[0].clientIp).toBe("203.0.113.7");
+  });
+});
+
+describe("the client address (IKN-72)", () => {
+  /** Ten lines from a scanner across ten routes, three from a reader on one, two with no address. */
+  const seedTraffic = () =>
+    track(app, 15, {
+      clientIp: (i) => (i < 10 ? "198.51.100.23" : i < 13 ? "203.0.113.7" : null),
+      route: (i) => (i < 10 ? `/probe/${i}` : i < 13 ? "/" : null),
+      statusCode: (i) => (i < 10 ? 404 : i < 13 ? 200 : null),
+    });
+
+  it("filters the list to one address", async () => {
+    const service = await seedTraffic();
+    const res = await get(`/api/logs?${WIDE}&service=${service}&ip=203.0.113.7`).expect(200);
+
+    expect(res.body.rows).toHaveLength(3);
+    expect((res.body.rows as LogRow[]).every((r) => r.clientIp === "203.0.113.7")).toBe(true);
+  });
+
+  it("combines the address with the other filters, not instead of them", async () => {
+    const service = await seedTraffic();
+    const res = await get(`/api/logs?${WIDE}&service=${service}&ip=198.51.100.23&route=/probe/3`).expect(200);
+
+    expect(res.body.rows).toHaveLength(1);
+  });
+
+  it("rejects something that could never be an address", async () => {
+    await get(`/api/logs?${WIDE}&ip=1.2.3.4';--`).expect(400);
+    await get(`/api/logs?${WIDE}&ip=${"a".repeat(46)}`).expect(400);
+  });
+
+  it("counts hits and distinct routes per address, busiest first", async () => {
+    const service = await seedTraffic();
+    const res = await get(`/api/logs/ips?${WIDE}&service=${service}`).expect(200);
+
+    expect(res.body.groups).toEqual([
+      { ip: "198.51.100.23", hits: 10, routes: 10, lastSeen: expect.any(String) },
+      { ip: "203.0.113.7", hits: 3, routes: 1, lastSeen: expect.any(String) },
+    ]);
+    expect(res.body.truncated).toBe(false);
+    expect(typeof res.body.meta.tookMs).toBe("number");
+  });
+
+  it("groups under the same filters as the list", async () => {
+    const service = await seedTraffic();
+    const res = await get(`/api/logs/ips?${WIDE}&service=${service}&status=200`).expect(200);
+
+    expect(res.body.groups.map((g: { ip: string }) => g.ip)).toEqual(["203.0.113.7"]);
+  });
+
+  it("requires a window like every other route", async () => {
+    await get("/api/logs/ips").expect(400);
   });
 });

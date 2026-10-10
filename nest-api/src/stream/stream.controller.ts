@@ -107,6 +107,7 @@ function toRow(r: LogRecord): LogRow {
     route: r.route,
     statusCode: r.statusCode,
     durationMs: r.durationMs,
+    clientIp: r.clientIp,
   };
 }
 
@@ -123,6 +124,9 @@ function matches(r: LogRecord, f: LogFilters): boolean {
   if (f.route !== undefined && !routeMatches(f.route, r.route)) return false;
   if (f.statusCode !== undefined && r.statusCode !== f.statusCode) return false;
   if (f.q !== undefined && !r.message.toLowerCase().includes(f.q.toLowerCase())) return false;
+  // Case-folded for the same collation reason as `q`: `client_ip = ?` matches `2001:DB8::1`
+  // against a stored `2001:db8::1`, and the tail has to agree with the list.
+  if (f.ip !== undefined && r.clientIp?.toLowerCase() !== f.ip.toLowerCase()) return false;
 
   return withinWindow(r, f);
 }

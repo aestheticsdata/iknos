@@ -54,7 +54,7 @@ export class LogsService {
   }
 
   /**
-   * One row, in full — the four columns the list deliberately leaves behind (IKN-58).
+   * One row, in full — the three columns the list deliberately leaves behind (IKN-58).
    *
    * **Bounded like everything else, and here it is the primary key that needs it.** `log_entry` is
    * partitioned by day and keyed on `(id, ts)`; `WHERE id = ?` alone names no partition, so MySQL

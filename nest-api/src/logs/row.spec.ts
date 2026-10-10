@@ -15,6 +15,7 @@ const raw = (over: Partial<RawLogRow> = {}): RawLogRow => ({
   route: null,
   statusCode: null,
   durationMs: null,
+  clientIp: null,
   ...over,
 });
 
@@ -37,11 +38,17 @@ describe("toLogRow", () => {
   it("emits the timestamp as ISO-8601 in UTC", () => {
     expect(toLogRow(raw()).ts).toBe("2026-08-09T10:11:12.345Z");
   });
+
+  it("carries the client address, and its absence as null", () => {
+    // On the row since IKN-72 — the column a scan is read off. Null is the common case, not an
+    // error: most application lines have no caller to report.
+    expect(toLogRow(raw({ clientIp: "203.0.113.7" })).clientIp).toBe("203.0.113.7");
+    expect(toLogRow(raw()).clientIp).toBeNull();
+  });
 });
 
 const rawDetail = (over: Partial<RawLogDetail> = {}): RawLogDetail => ({
-  ...raw(),
-  clientIp: "203.0.113.7",
+  ...raw({ clientIp: "203.0.113.7" }),
   userId: null,
   hostname: "ks-b",
   attrs: null,
@@ -53,10 +60,10 @@ describe("toLogDetail", () => {
     const detail = toLogDetail(rawDetail({ id: 9_007_199_254_740_993n }));
 
     // The pane and the line above it must never describe the same event differently.
-    expect(detail).toMatchObject(toLogRow(raw({ id: 9_007_199_254_740_993n })));
+    expect(detail).toMatchObject(toLogRow(raw({ id: 9_007_199_254_740_993n, clientIp: "203.0.113.7" })));
   });
 
-  it("carries the four columns the list leaves behind", () => {
+  it("carries the three columns the list leaves behind", () => {
     const detail = toLogDetail(rawDetail({ userId: "42" }));
 
     expect(detail.clientIp).toBe("203.0.113.7");

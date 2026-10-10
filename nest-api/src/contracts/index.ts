@@ -22,6 +22,7 @@ export type {
   StorageTable,
 } from "./collector";
 export type { Bucket, Histogram } from "./histogram";
+export type { IpGroup, IpGroups } from "./ip-groups";
 export type { IssueDetail } from "./issue-detail";
 export type { IssueCounts, IssuePage } from "./issue-page";
 export type { IssueRow, IssueStatus } from "./issue-row";

@@ -1,7 +1,27 @@
 import { BadRequestException } from "@nestjs/common";
 import { describe, expect, it } from "vitest";
 import { encodeCursor } from "./cursor";
-import { parseAt, parseDir, parseRowId, resolveCursor } from "./log-query";
+import { parseAt, parseDir, parseFilters, parseRowId, resolveCursor } from "./log-query";
+
+describe("parseFilters — ip (IKN-72)", () => {
+  const window = { from: "2026-08-24T00:00:00Z", to: "2026-08-25T00:00:00Z" };
+
+  it("accepts IPv4, IPv6 and the IPv4-mapped form, trimmed", () => {
+    expect(parseFilters({ ...window, ip: " 203.0.113.7 " }).ip).toBe("203.0.113.7");
+    expect(parseFilters({ ...window, ip: "2001:db8::1" }).ip).toBe("2001:db8::1");
+    expect(parseFilters({ ...window, ip: "::ffff:192.0.2.128" }).ip).toBe("::ffff:192.0.2.128");
+  });
+
+  it("treats an empty parameter as no filter, like every other key", () => {
+    expect(parseFilters({ ...window, ip: "" }).ip).toBeUndefined();
+  });
+
+  it("refuses what could never be an address", () => {
+    expect(() => parseFilters({ ...window, ip: "localhost" })).toThrow(BadRequestException);
+    expect(() => parseFilters({ ...window, ip: "1.2.3.4/24" })).toThrow(BadRequestException);
+    expect(() => parseFilters({ ...window, ip: "1".repeat(46) })).toThrow(BadRequestException);
+  });
+});
 
 describe("parseDir", () => {
   it("reads the one other value as after", () => {

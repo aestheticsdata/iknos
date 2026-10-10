@@ -1,18 +1,20 @@
 import { Controller, Get, NotFoundException, Param, Query } from "@nestjs/common";
 import { encodeCursor } from "./cursor";
 import { HistogramService } from "./histogram.service";
+import { IpGroupsService } from "./ip-groups.service";
 import { LogQueryDto, parseDir, parseFilters, parseLimit, parseRowId, parseWindow, resolveCursor } from "./log-query";
 import { LogsService } from "./logs.service";
 import { toLogDetail, toLogRow } from "./row";
 import { TraceService } from "./trace.service";
 
 import type { Histogram } from "@contracts/histogram";
+import type { IpGroups } from "@contracts/ip-groups";
 import type { LogDetail } from "@contracts/log-detail";
 import type { LogPage } from "@contracts/log-page";
 import type { Trace } from "@contracts/trace";
 
 /**
- * The four read routes the Logs view needs. All behind the global session guard — none of them
+ * The read routes the Logs view needs. All behind the global session guard — none of them
  * carries `@Public()`, which is the whole point of the guard being deny-by-default.
  *
  * Every one of them requires `from` and `to`. That is not validation politeness: `log_entry` is
@@ -26,6 +28,7 @@ export class LogsController {
     private readonly logs: LogsService,
     private readonly histograms: HistogramService,
     private readonly traces: TraceService,
+    private readonly ipGroups: IpGroupsService,
   ) {}
 
   @Get()
@@ -72,6 +75,23 @@ export class LogsController {
     const { bucketMs, buckets } = await this.histograms.histogram(filters);
 
     return { bucketMs, buckets, meta: { tookMs: Math.round(performance.now() - startedAt) } };
+  }
+
+  /**
+   * Hits per client address under the panel's filters — IKN-72's grouping.
+   *
+   * A static segment, so it cannot collide with `stream` or `entry/:id` whatever order the
+   * controllers register in. Takes the whole filter set rather than the window alone: the counts
+   * are of the rows the list would show, and an `ip` token narrows this to the one address.
+   */
+  @Get("ips")
+  async ips(@Query() p: LogQueryDto): Promise<IpGroups> {
+    const filters = parseFilters(p);
+
+    const startedAt = performance.now();
+    const { groups, truncated } = await this.ipGroups.groups(filters);
+
+    return { groups, truncated, meta: { tookMs: Math.round(performance.now() - startedAt) } };
   }
 
   /**

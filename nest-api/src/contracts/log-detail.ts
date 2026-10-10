@@ -6,7 +6,7 @@ import type { LogRow } from "./log-row";
  *
  * This is the other half of the decision argued in `log-row.ts`. The list payload stops at
  * `LogRow` because two hundred rows of arbitrary JSON is a cost every page pays for a field that
- * is only ever read one row at a time; so the four columns the list leaves behind are fetched for
+ * is only ever read one row at a time; so the three columns the list leaves behind are fetched for
  * the one row that was opened, and for no other.
  *
  * Not a separate shape but a widening of `LogRow`, deliberately: the detail of a row must be that
@@ -14,12 +14,6 @@ import type { LogRow } from "./log-row";
  * above it could disagree about what happened.
  */
 export type LogDetail = LogRow & {
-  /**
-   * The caller's address as the *service* reported it — which is real only where that service
-   * trusts its proxy. An app behind nginx that does not sets every caller to `127.0.0.1`, and
-   * that is a fact about the app's logger, not about the caller. Iknos reports what it was told.
-   */
-  clientIp: string | null;
   userId: string | null;
   hostname: string | null;
   /**

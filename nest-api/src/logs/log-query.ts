@@ -31,6 +31,8 @@ export class LogQueryDto {
   @IsOptional() @IsString() status?: string;
   /** Substring of `message`. */
   @IsOptional() @IsString() q?: string;
+  /** One caller's address, exactly — `client_ip` (IKN-72). */
+  @IsOptional() @IsString() ip?: string;
   @IsOptional() @IsString() cursor?: string;
   @IsOptional() @IsString() limit?: string;
   /** Which way a cursor (or `at`) walks. Anything but `"after"` means `"before"` — the existing,
@@ -50,6 +52,7 @@ export type LogFilters = {
   route?: string;
   statusCode?: number;
   q?: string;
+  ip?: string;
 };
 
 /**
@@ -57,6 +60,20 @@ export type LogFilters = {
  * stays a scan of the already-reduced set rather than a pathological one.
  */
 const MAX_Q_LENGTH = 200;
+
+/**
+ * What an address may look like before it reaches the `WHERE`: hex digits, dots and colons, no
+ * longer than the column (`VarChar(45)`, the IPv4-mapped IPv6 form). Not a full parser — `999.1.1.1`
+ * passes and simply matches nothing — but anything that could never *be* an address is a 400 that
+ * names the parameter rather than an empty list that looks like an answer.
+ */
+const IP_SHAPE = /^[0-9a-f.:]{1,45}$/i;
+
+function toIp(raw: string): string {
+  const ip = raw.trim();
+  if (!IP_SHAPE.test(ip)) throw new BadRequestException("'ip' must be an IPv4 or IPv6 address");
+  return ip;
+}
 
 export const MAX_LIMIT = 200;
 export const DEFAULT_LIMIT = 100;
@@ -119,6 +136,7 @@ export function parseFilters(p: LogQueryDto): LogFilters {
     route: p.route || undefined,
     statusCode: p.status ? toInt("status", p.status) : undefined,
     q: q || undefined,
+    ip: p.ip ? toIp(p.ip) : undefined,
   };
 }
 
@@ -224,6 +242,8 @@ export function whereClause(
   // spelling it out in a template literal means writing a backslash that has to survive both
   // JavaScript and SQL string parsing — which it does not.
   if (f.q !== undefined) parts.push(Prisma.sql`message LIKE ${`%${escapeLike(f.q)}%`}`);
+  // Exact, not a prefix: the token names one caller. `(client_ip, ts)` serves it — see the schema.
+  if (f.ip !== undefined) parts.push(Prisma.sql`client_ip = ${f.ip}`);
 
   if (cursor !== undefined) {
     // A row-value comparison rather than `ts < ? OR (ts = ? AND id < ?)`: rows sharing a

@@ -2,6 +2,7 @@ import { IngestModule } from "@ingest/ingest.module";
 import { Module } from "@nestjs/common";
 import { StreamController } from "@stream/stream.controller";
 import { HistogramService } from "./histogram.service";
+import { IpGroupsService } from "./ip-groups.service";
 import { LogsController } from "./logs.controller";
 import { LogsService } from "./logs.service";
 import { SearchController } from "./search.controller";
@@ -26,7 +27,7 @@ import { TraceService } from "./trace.service";
 @Module({
   imports: [IngestModule],
   controllers: [LogsController, ServicesController, SearchController, StreamController],
-  providers: [LogsService, HistogramService, TraceService, SearchService],
+  providers: [LogsService, HistogramService, TraceService, SearchService, IpGroupsService],
   // `LogsService` alone, for `IssuesModule` — `GET /api/issues/for-log/:id` reads the line it was
   // given through the same bounded point read the log detail uses, rather than a second copy of it.
   exports: [LogsService],

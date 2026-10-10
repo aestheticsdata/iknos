@@ -180,6 +180,25 @@ describe("GET /api/logs/stream", () => {
     }
   });
 
+  it("filters on the client address, carrying it on the row (IKN-72)", async () => {
+    const service = uniqueService();
+    const stream = await openStream(`/api/logs/stream?${WIDE}&service=${service}&ip=2001:DB8::1`);
+    try {
+      bus.emit(record({ service, message: "from the scanner", clientIp: "2001:db8::1" }));
+      bus.emit(record({ service, message: "from someone else", clientIp: "203.0.113.7" }));
+      bus.emit(record({ service, message: "an app line", clientIp: null }));
+      await sleep(200);
+
+      expect(stream.frames).toHaveLength(1);
+      const row = JSON.parse(stream.frames[0]?.data ?? "{}");
+      expect(row.message).toBe("from the scanner");
+      // Matched across case, as `client_ip = ?` is under the column's collation.
+      expect(row.clientIp).toBe("2001:db8::1");
+    } finally {
+      stream.close();
+    }
+  });
+
   it("unsubscribes from the bus when the client disconnects", async () => {
     await waitForListeners(0);
 

@@ -26,6 +26,7 @@ export type RawLogRow = {
   route: string | null;
   statusCode: number | null;
   durationMs: number | null;
+  clientIp: string | null;
 };
 
 /**
@@ -34,7 +35,8 @@ export type RawLogRow = {
  */
 export const ROW_COLUMNS = Prisma.sql`
   id, ts, service, level, level_name AS levelName, message, trace_id AS traceId,
-  http_method AS httpMethod, route, status_code AS statusCode, duration_ms AS durationMs`;
+  http_method AS httpMethod, route, status_code AS statusCode, duration_ms AS durationMs,
+  client_ip AS clientIp`;
 
 export function toLogRow(r: RawLogRow): LogRow {
   return {
@@ -47,17 +49,16 @@ export function toLogRow(r: RawLogRow): LogRow {
 }
 
 /**
- * The same row, plus the four columns the list leaves in the table — `GET /api/logs/entry/:id`.
+ * The same row, plus the three columns the list leaves in the table — `GET /api/logs/entry/:id`.
  *
  * Deliberately expressed as `ROW_COLUMNS` widened rather than as a second hand-written list. The
  * contract says a `LogDetail` *is* a `LogRow` with more on it, and two independent lists would let
  * the expanded pane and the line above it drift into disagreeing about the same event.
  */
 export const DETAIL_COLUMNS = Prisma.sql`
-  ${ROW_COLUMNS}, client_ip AS clientIp, user_id AS userId, hostname, attrs`;
+  ${ROW_COLUMNS}, user_id AS userId, hostname, attrs`;
 
 export type RawLogDetail = RawLogRow & {
-  clientIp: string | null;
   userId: string | null;
   hostname: string | null;
   /** Whatever the driver made of the JSON column — see `readJsonColumn`. */
@@ -67,7 +68,6 @@ export type RawLogDetail = RawLogRow & {
 export function toLogDetail(r: RawLogDetail): LogDetail {
   return {
     ...toLogRow(r),
-    clientIp: r.clientIp,
     userId: r.userId,
     hostname: r.hostname,
     // A blob that will not parse is a line with no extra attributes, not a 500: the row itself is
