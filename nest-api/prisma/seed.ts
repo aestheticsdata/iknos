@@ -99,6 +99,30 @@ const SERVICES: {
   { name: "1991chat-front", pm2Name: "1991chat-front", metricsUrl: null, healthUrl: null },
   { name: "bkmk-front", pm2Name: "bkmk-front", metricsUrl: null, healthUrl: null },
   { name: "bkmk-server", pm2Name: "bkmk-server", metricsUrl: null, healthUrl: null },
+  /*
+   * PFA's bot back-office arrives with PFA-127 (`bots.1991computer.com`): a Next front, a Nest API
+   * and the runner that drives the synthetic users, all three on loopback behind the front.
+   *
+   * The access log sits on the front's row, like folio's: `bots.conf` routes only the front and
+   * writes its own file. Neither the API nor the runner exposes `/metrics`, so those stay null;
+   * their health routes answer without a session or a token. The runner's `/health` is the one
+   * route of its control API that needs no token — everything else there answers 401.
+   */
+  {
+    name: "bots-front",
+    pm2Name: "bots-front",
+    metricsUrl: null,
+    // Root, like `folio-front`: it answers 307 to /signin, and anything under 500 is up.
+    healthUrl: "http://127.0.0.1:3014/",
+    logGlob: "/var/log/nginx/bots.access.log",
+  },
+  {
+    name: "bots-nest-api",
+    pm2Name: "bots-nest-api",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:7200/api/health",
+  },
+  { name: "bots-runner", pm2Name: "bots-runner", metricsUrl: null, healthUrl: "http://127.0.0.1:7201/health" },
   { name: "conway-gol-api", pm2Name: "conway-gol-api", metricsUrl: null, healthUrl: null },
   /*
    * Folio's two arrive with FOL-18, registered from day one rather than found later by drift. The
