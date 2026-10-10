@@ -27,9 +27,19 @@ import type { Bounds, RangeKey } from "@lib/timeRange";
  * second one: picking a service in the rail *is* setting this filter, and two keys meaning the same
  * thing would drift the moment one of them was set from the other place.
  */
-export const LOG_FILTER_KEYS = ["service", "level", "route", "status", "q"] as const;
+export const LOG_FILTER = {
+  service: "service",
+  level: "level",
+  route: "route",
+  status: "status",
+  q: "q",
+  ip: "ip",
+} as const;
 
-export type LogFilterKey = (typeof LOG_FILTER_KEYS)[number];
+export type LogFilterKey = (typeof LOG_FILTER)[keyof typeof LOG_FILTER];
+
+/** The keys in chip order — the order the bar draws them and the query string lists them. */
+export const LOG_FILTER_KEYS: readonly LogFilterKey[] = Object.values(LOG_FILTER);
 
 export type LogFilterValues = Record<LogFilterKey, string | null>;
 
@@ -64,6 +74,7 @@ const valueParsers = {
   route: parseAsString,
   status: parseAsString,
   q: parseAsString,
+  ip: parseAsString,
 };
 
 /**
@@ -143,6 +154,9 @@ export const logSearchUrl = (
 };
 
 export const logHistogramUrl = (state: LogQueryState): string => `/logs/histogram?${buildLogQuery(state)}`;
+
+/** Hits per client address under the same filters — the grouping panel (IKN-72). */
+export const logIpGroupsUrl = (state: LogQueryState): string => `/logs/ips?${buildLogQuery(state)}`;
 
 /**
  * The tail's URL, built from the same state as the list above it.

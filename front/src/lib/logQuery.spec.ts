@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { logDetailUrl, logSearchUrl } from "./logQuery";
+import { LOG_FILTER, logDetailUrl, logHistogramUrl, logIpGroupsUrl, logSearchUrl, logStreamUrl } from "./logQuery";
 
 import type { LogQueryState } from "./logQuery";
 
 const stateAt = (anchor: string | null): LogQueryState => ({
-  values: { service: null, level: null, route: null, status: null, q: null },
+  values: { service: null, level: null, route: null, status: null, q: null, ip: null },
   off: [],
   bounds: { from: "2026-08-09T00:00:00.000Z", to: "2026-08-10T00:00:00.000Z" },
   pinned: anchor !== null,
@@ -37,6 +37,42 @@ describe("logSearchUrl", () => {
 
     expect(found.get("cursor")).toBe("abc123");
     expect(found.has("at")).toBe(false);
+  });
+});
+
+describe("the ip token (IKN-72)", () => {
+  const withIp = (off: LogQueryState["off"] = []): LogQueryState => ({
+    ...stateAt(null),
+    values: { ...stateAt(null).values, status: "404", ip: "198.51.100.23" },
+    off,
+  });
+  const params = (url: string) => new URL(url, "http://x").searchParams;
+
+  it("travels to the list, the histogram, the tail and the grouping alike, beside the other filters", () => {
+    for (const url of [
+      logSearchUrl(withIp()),
+      logHistogramUrl(withIp()),
+      logStreamUrl(withIp()),
+      logIpGroupsUrl(withIp()),
+    ]) {
+      expect(params(url).get("ip")).toBe("198.51.100.23");
+      expect(params(url).get("status")).toBe("404");
+    }
+  });
+
+  it("contributes nothing while switched off, and keeps the others", () => {
+    const found = params(logSearchUrl(withIp([LOG_FILTER.ip])));
+
+    expect(found.has("ip")).toBe(false);
+    expect(found.get("status")).toBe("404");
+  });
+
+  it("points the grouping at its own route, bounded like every other", () => {
+    const url = logIpGroupsUrl(withIp());
+
+    expect(url.startsWith("/logs/ips?")).toBe(true);
+    expect(params(url).get("from")).toBe("2026-08-09T00:00:00.000Z");
+    expect(params(url).get("to")).toBe("2026-08-10T00:00:00.000Z");
   });
 });
 

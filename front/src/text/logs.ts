@@ -30,6 +30,7 @@ export const LOGS_TEXT = {
     route: "route",
     status: "status",
     q: "text",
+    ip: "ip",
   },
 
   /* Window */
@@ -77,6 +78,7 @@ export const LOGS_TEXT = {
     time: timeLabel,
     level: "lvl",
     service: "service",
+    ip: "ip",
     route: "route",
     status: "st",
     message: "message",
@@ -135,6 +137,22 @@ export const LOGS_TEXT = {
      has four values in it a reader might have meant. */
   copy: "copy",
   copyIp: "copy the client address",
+  /*
+   * The IP column's heading tooltip (IKN-72). Its cells are blank on most lines, and blank is the
+   * right ink for "not applicable" — but a column that is mostly empty needs one sentence saying
+   * that this is its normal state rather than a column that failed to load.
+   */
+  ipColumnHint: "The caller's address — only lines that report one, nginx's above all",
+
+  /* Grouping by address (IKN-72) */
+  ipGroups: "by ip",
+  ipGroupsHint: "Hits per client address over the range, under the same filters",
+  ipGroupsLabel: "Hits per client address",
+  ipGroupsColumns: { ip: "ip", hits: "hits", routes: "routes", lastSeen: "last" },
+  /* Said when the cap cut the list, so the bottom row is not read as the quietest address there is. */
+  ipGroupsTruncated: (n: number) => `busiest ${n} — quieter addresses not shown`,
+  ipGroupsEmpty: "No line in this range carries a client address.",
+  filterIp: "show only this address",
 
   /* Trace */
   traceTitle: "trace",
@@ -164,6 +182,7 @@ export const LOGS_TEXT = {
   /* Failures */
   searchFailed: "Could not load logs.",
   histogramFailed: "Could not load the volume chart.",
+  ipGroupsFailed: "Could not load the addresses.",
   traceFailed: "Could not load this trace.",
   /* Said inside the pane and not over the stream: the line is still on screen and still readable,
      and only the half that had to be fetched is missing. */

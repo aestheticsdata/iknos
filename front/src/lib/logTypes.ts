@@ -38,22 +38,23 @@ export type LogRow = {
   route: string | null;
   statusCode: number | null;
   durationMs: number | null;
+  /**
+   * The caller's address **as the service reported it**. An app behind nginx that does not trust
+   * its proxy logs every caller as `127.0.0.1`; that is a fact about that app's logger, and Iknos
+   * shows what it was told rather than guessing. `null` on most application lines, where it means
+   * "not applicable" — on the row since IKN-72, for the column a scan is read off.
+   */
+  clientIp: string | null;
 };
 
 /**
  * Mirrors `contracts/log-detail.ts`.
  *
  * One row in full — what `GET /api/logs/entry/:id` answers for the line that was expanded. The
- * four fields below are exactly the ones the list payload leaves in the table, and the reason
+ * three fields below are exactly the ones the list payload leaves in the table, and the reason
  * they are fetched one row at a time rather than shipped with two hundred of them.
  */
 export type LogDetail = LogRow & {
-  /**
-   * The caller's address **as the service reported it**. An app behind nginx that does not trust
-   * its proxy logs every caller as `127.0.0.1`; that is a fact about that app's logger, and Iknos
-   * shows what it was told rather than guessing.
-   */
-  clientIp: string | null;
   userId: string | null;
   hostname: string | null;
   /** Everything the columns do not claim, under the keys the service used. */

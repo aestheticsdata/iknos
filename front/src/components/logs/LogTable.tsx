@@ -39,8 +39,8 @@ import type { LogFeedItem, LogRow } from "@lib/logTypes";
  * between the two, which is one of the reasons this is not a `DenseTable`.
  */
 
-/** The eight columns, and therefore the `colSpan` of every full-width row below the header. */
-const COLUMN_COUNT = 8;
+/** The nine columns, and therefore the `colSpan` of every full-width row below the header. */
+const COLUMN_COUNT = 9;
 
 /**
  * Which tone a row is drawn in, from the same `severityOf` the histogram splits on.
@@ -97,6 +97,7 @@ type RowActions = {
   select: (key: string) => void;
   open: (key: string) => void;
   openTrace: (traceId: string) => void;
+  copy: (text: string) => void;
 };
 
 export const LogTable = ({
@@ -105,6 +106,7 @@ export const LogTable = ({
   onSelect,
   onOpen,
   onOpenTrace,
+  onCopyText,
   loading,
   hasMore,
   loadingMore,
@@ -117,6 +119,8 @@ export const LogTable = ({
   /** Opens the row's detail — IKN-60. The panel owns the modal; this only reports which row. */
   onOpen: (key: string) => void;
   onOpenTrace: (traceId: string) => void;
+  /** One value to the clipboard — the IP cell's one-click copy (IKN-72). The panel owns the toast. */
+  onCopyText: (text: string) => void;
   /** The first page is in flight. Distinct from `loadingMore`, which appends to a list already up. */
   loading: boolean;
   /** More pages exist below. No control hangs off it — the panel's scroller fetches them as the
@@ -141,9 +145,9 @@ export const LogTable = ({
    */
   const { tz, abbrev } = useZone();
 
-  const latest = useRef({ onSelect, onOpen, onOpenTrace });
+  const latest = useRef({ onSelect, onOpen, onOpenTrace, onCopyText });
   useEffect(() => {
-    latest.current = { onSelect, onOpen, onOpenTrace };
+    latest.current = { onSelect, onOpen, onOpenTrace, onCopyText };
   });
 
   const actions = useMemo<RowActions>(
@@ -151,6 +155,7 @@ export const LogTable = ({
       select: (key) => latest.current.onSelect(key),
       open: (key) => latest.current.onOpen(key),
       openTrace: (traceId) => latest.current.onOpenTrace(traceId),
+      copy: (text) => latest.current.onCopyText(text),
     }),
     [],
   );
@@ -196,10 +201,11 @@ export const LogTable = ({
             </HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.level}</HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.service}</HeaderCell>
+            <HeaderCell title={LOGS_TEXT.ipColumnHint}>{LOGS_TEXT.columns.ip}</HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.route}</HeaderCell>
             <HeaderCell numeric>{LOGS_TEXT.columns.status}</HeaderCell>
             {/* The only cell with a width: `w-full` in an auto-layout table hands the message every
-                pixel the other seven do not claim, which is the whole shape of the row. */}
+                pixel the other eight do not claim, which is the whole shape of the row. */}
             <HeaderCell className="w-full">{LOGS_TEXT.columns.message}</HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.trace}</HeaderCell>
             <HeaderCell numeric>{LOGS_TEXT.columns.duration}</HeaderCell>
@@ -255,14 +261,17 @@ export const LogTable = ({
 const HeaderCell = ({
   numeric,
   className,
+  title,
   children,
 }: {
   numeric?: boolean;
   className?: string;
+  title?: string;
   children: React.ReactNode;
 }) => (
   <th
     scope="col"
+    title={title}
     className={cn(
       // Sticky, for `DenseTable`'s reason and more so: scrolling ten thousand rows and losing which
       // column is which is the failure this header exists to prevent. It needs an opaque background
@@ -341,6 +350,7 @@ const LogTableRow = memo(
     // property back to `string | null` inside a closure, since nothing stops the object changing
     // between the check and the call.
     const traceId = row.traceId;
+    const clientIp = row.clientIp;
 
     const openRow = () => {
       actions.select(rowKey);
@@ -442,6 +452,32 @@ const LogTableRow = memo(
           </td>
 
           <td className={cn(CELL, "whitespace-nowrap", SURFACE_TEXT.chassis)}>{row.service}</td>
+
+          {/*
+           * Blank, not a dash, when the line has no address — IKN-72. The dash elsewhere in this row
+           * marks a field the line *could* have carried and did not; most lines here are application
+           * lines with no caller at all, so the IP column is empty as its normal state, and a column
+           * of dashes would read as data that failed to arrive. The heading's title says so.
+           */}
+          <td className={cn(CELL, "whitespace-nowrap", SURFACE_TEXT_MUTED.chassis)}>
+            {clientIp !== null && (
+              <button
+                type="button"
+                // Copies and stops there: the row's own click would open the detail modal on top of
+                // the toast. One click, no pane — the ticket's whole ask of this cell.
+                onClick={(event) => {
+                  event.stopPropagation();
+                  actions.copy(clientIp);
+                }}
+                title={LOGS_TEXT.copyIp}
+                aria-label={`${LOGS_TEXT.copyIp} ${clientIp}`}
+                data-testid="log-ip"
+                className="transition-colors duration-150 ease-out hover:text-chassis-text"
+              >
+                {clientIp}
+              </button>
+            )}
+          </td>
 
           <td className={cn(CELL, "whitespace-nowrap", SURFACE_TEXT_MUTED.chassis)}>{row.route ?? <NoValue />}</td>
 

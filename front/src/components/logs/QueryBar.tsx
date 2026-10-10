@@ -55,6 +55,8 @@ export const QueryBar = ({
   onUnpinWindow,
   onRefresh,
   onJumpToTime,
+  ipGroupsOpen,
+  onToggleIpGroups,
 }: {
   state: LogQueryState;
   services: string[];
@@ -71,6 +73,9 @@ export const QueryBar = ({
   onRefresh: () => void;
   /** Pin the window around an instant — the same mechanism a histogram bucket click drives. */
   onJumpToTime: (at: Date) => void;
+  /** The hits-per-address panel under the histogram (IKN-72). */
+  ipGroupsOpen: boolean;
+  onToggleIpGroups: () => void;
 }) => {
   const labelId = useId();
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -241,6 +246,22 @@ export const QueryBar = ({
             </span>
           )}
 
+          {/* A toggle with a stable name and `aria-pressed`, like LIVE beside it: the panel it opens is
+              a state of the view, and the name should not rewrite itself to say which. */}
+          <Button
+            variant="quiet"
+            onClick={onToggleIpGroups}
+            aria-pressed={ipGroupsOpen}
+            title={LOGS_TEXT.ipGroupsHint}
+            data-testid="ip-groups-toggle"
+            className={cn(
+              "h-6 px-2 transition-[color,border-color,filter,background-color] duration-150 ease-out",
+              ipGroupsOpen && "border-chassis-accent text-chassis-accent hover:text-chassis-accent",
+            )}
+          >
+            {LOGS_TEXT.ipGroups}
+          </Button>
+
           <Button
             variant="quiet"
             onClick={onRefresh}
@@ -333,7 +354,7 @@ const FilterChip = ({
     <span className="text-chassis-text-dim">{name}:</span>
     <span className="text-chassis-text">{value}</span>
     {/*
-     * The names carry `name:value`, not just the verb. Five chips otherwise produce ten buttons
+     * The names carry `name:value`, not just the verb. Six chips otherwise produce twelve buttons
      * with two names between them, and `aria-label` suppresses the very text beside it that would
      * have told them apart. The toggle's name stays *stable* across states — `aria-pressed` is
      * what changes — because a name that rewrites itself reads as two different controls.
@@ -374,7 +395,7 @@ const FilterChip = ({
  *
  * Focus is handed to the key select on open and back to whatever opened it on close, because the
  * chassis is keyboard-first (§U5) and a drawer that dumps focus on `<body>` when it closes sends
- * the next Tab to the top of the document. The fallback matters at the far edge: with all five
+ * the next Tab to the top of the document. The fallback matters at the far edge: with all six
  * filters set there is nothing left to add, so the trigger is gone by the time focus comes back and
  * the chip list takes it instead.
  */

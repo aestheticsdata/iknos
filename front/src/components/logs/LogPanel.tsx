@@ -1,5 +1,6 @@
 "use client";
 
+import { IpGroupsPanel } from "@components/logs/IpGroupsPanel";
 import { LogTable } from "@components/logs/LogTable";
 import { QueryBar } from "@components/logs/QueryBar";
 import { RowDetail } from "@components/logs/RowDetail";
@@ -8,9 +9,10 @@ import { VolumeHistogram } from "@components/logs/VolumeHistogram";
 import { Pending } from "@components/ui/Pending";
 import { useToast } from "@components/ui/Toast";
 import { useCommand } from "@lib/commandState";
-import { useLogQueryState } from "@lib/logQuery";
+import { isFilterActive, LOG_FILTER, useLogQueryState } from "@lib/logQuery";
 import { useTraceParam } from "@lib/traceState";
 import { useHistogram } from "@lib/useHistogram";
+import { useIpGroups, useIpGroupsOpen } from "@lib/useIpGroups";
 import { useOpenIssueForLog } from "@lib/useIssues";
 import { useLiveTail } from "@lib/useLiveTail";
 import { useLogDetail } from "@lib/useLogDetail";
@@ -103,6 +105,9 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
   const histogram = useHistogram(state, range, live);
   const tail = useLiveTail(state, live);
   const trace = useTrace(openTraceId, state);
+  /* Hits per address (IKN-72) — the same query again, so its counts are of the rows below. */
+  const [ipGroupsOpen, setIpGroupsOpen] = useIpGroupsOpen();
+  const ipGroups = useIpGroups(state, ipGroupsOpen);
   const toast = useToast();
 
   /*
@@ -492,7 +497,10 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
           // Not `newer.reload()`: the newer chain fetches nothing except when the reader scrolls
           // up for it, and a reload cannot un-ask a question that was never asked.
           histogram.reload();
+          ipGroups.reload();
         }}
+        ipGroupsOpen={ipGroupsOpen}
+        onToggleIpGroups={() => void setIpGroupsOpen(!ipGroupsOpen)}
       />
 
       <VolumeHistogram
@@ -501,6 +509,17 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
         error={histogram.error}
         onSelectBucket={setWindow}
         onRetry={histogram.reload}
+      />
+
+      <IpGroupsPanel
+        open={ipGroupsOpen}
+        groups={ipGroups.data}
+        loading={ipGroups.loading}
+        error={ipGroups.error}
+        activeIp={isFilterActive(state, LOG_FILTER.ip) ? state.values.ip : null}
+        onFilter={(ip) => setValue(LOG_FILTER.ip, ip)}
+        onCopy={copyText}
+        onRetry={ipGroups.reload}
       />
 
       {/* The text carries the live count (`3 new lines · back to top`), so the name is the handle. */}
@@ -550,6 +569,7 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
             onSelect={setSelectedKey}
             onOpen={setExpandedKey}
             onOpenTrace={setOpenTraceId}
+            onCopyText={copyText}
             loading={older.loading}
             hasMore={older.hasMore}
             loadingMore={older.loadingMore}
