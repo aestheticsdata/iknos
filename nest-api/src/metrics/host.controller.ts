@@ -1,8 +1,8 @@
 import { availableParallelism } from "node:os";
-import { HOST } from "@alerts/rules/disk-space";
 import { DISK_CRITICAL_PCT, DISK_WARN_PCT } from "@alerts/thresholds";
+import { HOST_LABEL } from "@config/host-label";
 import { parseWindow } from "@logs/log-query";
-import { Controller, Get, Query } from "@nestjs/common";
+import { Controller, Get, Inject, Query } from "@nestjs/common";
 import { HostService } from "./host.service";
 import { overallLevel } from "./host-series";
 import { SignalsQueryDto } from "./service-view.controller";
@@ -13,7 +13,7 @@ import type { HostNow, HostSeries, HostThresholds } from "@contracts/host";
 const DISK_THRESHOLDS: HostThresholds = { warnPct: DISK_WARN_PCT, criticalPct: DISK_CRITICAL_PCT };
 
 /**
- * The machine behind the `ks-b` badge (IKN-25).
+ * The machine behind the host badge (IKN-25), under the name the badge shows (IKN-65).
  *
  * Behind the global session guard like every route but `/health` — no `@Public()` here. How full
  * the disk is and how loaded the box is are a map of where it would hurt, and nobody's business
@@ -21,7 +21,10 @@ const DISK_THRESHOLDS: HostThresholds = { warnPct: DISK_WARN_PCT, criticalPct: D
  */
 @Controller("api/host")
 export class HostController {
-  constructor(private readonly host: HostService) {}
+  constructor(
+    private readonly host: HostService,
+    @Inject(HOST_LABEL) private readonly label: string,
+  ) {}
 
   /** The badge's poll: the newest sample and its level. One indexed row. */
   @Get("now")
@@ -30,7 +33,7 @@ export class HostController {
     const reading = await this.host.now(availableParallelism());
 
     return {
-      host: HOST,
+      host: this.label,
       reading,
       level: overallLevel(reading),
       thresholds: DISK_THRESHOLDS,
@@ -47,7 +50,7 @@ export class HostController {
     const points = await this.host.series({ from, to });
 
     return {
-      host: HOST,
+      host: this.label,
       from: from.toISOString(),
       to: to.toISOString(),
       ...points,

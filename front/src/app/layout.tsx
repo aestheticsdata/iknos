@@ -29,7 +29,7 @@ const ibmPlexSans = IBM_Plex_Sans({
 
 export const metadata: Metadata = {
   title: "Iknos",
-  description: "A self-hosted monitor for the apps on ks-b",
+  description: "A self-hosted monitor for the apps on one machine",
   // A single-admin monitor for one VPS has no business in an index.
   robots: { index: false, follow: false },
   /*

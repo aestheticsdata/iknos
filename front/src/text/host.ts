@@ -6,6 +6,8 @@
  */
 export const HOST_TEXT = {
   tag: "host",
+  /* The badge before the first poll answers — the word for what it is, not a guessed name (IKN-65). */
+  pendingLabel: "host",
   title: "Machine",
   open: "CPU, memory and disk",
   disk: "disk",

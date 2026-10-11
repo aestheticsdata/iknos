@@ -11,13 +11,18 @@
  */
 export const AUTH_TEXT = {
   chrome: {
-    host: "KS-B.INTERNAL",
+    /*
+     * Not the machine's name (IKN-65). This page is the one in the product a stranger can load, and
+     * the API keeps the host's identity behind the session like everything else about the box —
+     * so the chrome names what the tool is instead of where it runs.
+     */
+    host: "SELF-HOSTED",
     crumb: "AUTH",
     crumbAbout: "ABOUT",
   },
 
   tagline:
-    "a self-hosted monitor for the apps on ks-b — ECS logs, Prometheus metrics, grouped errors and alerts. no SaaS, no agent, no lock-in.",
+    "a self-hosted monitor for the apps on one machine — ECS logs, Prometheus metrics, grouped errors and alerts. no SaaS, no agent, no lock-in.",
 
   /**
    * The mockup says `bcrypt`. Iknos hashes with **scrypt** — `node:crypto`, no dependency — so the

@@ -31,7 +31,7 @@ export const TopBar = () => {
     >
       <span className="text-ui font-bold tracking-chrome text-chassis-text">IKNOS</span>
 
-      <HostBadge label={process.env.NEXT_PUBLIC_IKNOS_HOST_LABEL ?? CHASSIS_TEXT.host} />
+      <HostBadge />
 
       <nav
         aria-label={CHASSIS_TEXT.breadcrumbLabel}

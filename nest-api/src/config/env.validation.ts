@@ -1,3 +1,4 @@
+import { hostname } from "node:os";
 import { plainToInstance } from "class-transformer";
 import { IsIn, IsInt, IsOptional, IsString, Max, Min, MinLength, validateSync } from "class-validator";
 
@@ -132,6 +133,19 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   IKNOS_INGEST_ORIGINS?: string;
+
+  /**
+   * The name the host badge shows, and the scope a host-wide alert opens under (IKN-65).
+   *
+   * **Optional, and `os.hostname()` when unset** — so a laptop with nothing configured says its own
+   * name, which is true, instead of a server's, which was not. Set it where the machine's hostname
+   * is not the name people use for it (`ks-b`), and in the mock world, where the corpus stamps
+   * `web01` on every line and the badge has to tell the same story. No branch on the environment
+   * anywhere: the configuration says which machine this is, and the code does not guess.
+   */
+  @IsOptional()
+  @IsString()
+  IKNOS_HOST_LABEL?: string;
 }
 
 /** What the rest of the application injects. Nothing outside this file reads `process.env`. */
@@ -152,6 +166,8 @@ export type Config = {
   ingestToken: string | null;
   /** Empty means no origin restriction. */
   ingestOrigins: string[];
+  /** IKN-65. `IKNOS_HOST_LABEL`, else the machine's own hostname — never empty. */
+  hostLabel: string;
 };
 
 /**
@@ -200,6 +216,8 @@ export function parseEnv(source: Record<string, unknown>): Config {
       .split(",")
       .map((origin) => origin.trim())
       .filter((origin) => origin !== ""),
+    // `||`, not `??`: a label set to blank is a mistake in a config file, not a request for no name.
+    hostLabel: parsed.IKNOS_HOST_LABEL?.trim() || hostname(),
   };
 }
 

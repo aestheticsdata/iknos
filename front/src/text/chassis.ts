@@ -5,7 +5,6 @@
  * thinking happens, the product is what one person reads at 3am.
  */
 export const CHASSIS_TEXT = {
-  host: "ks-b",
   services: "services",
   allServices: "all",
   /* The collapsed rail's monograms. Service names are abbreviated mechanically; these two are copy,

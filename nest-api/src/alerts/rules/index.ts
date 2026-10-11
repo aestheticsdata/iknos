@@ -7,7 +7,8 @@ import { processRestart } from "./process-restart";
 import type { Rule } from "../rule";
 
 /**
- * The six rules, in the order a pass evaluates them (IKN-10).
+ * The six rules, in the order a pass evaluates them (IKN-10). A function of the host's label
+ * because the disk rule opens its alert under that name (IKN-65).
  *
  * Critical first, which is only cosmetic here — each rule is isolated and the order of evaluation
  * changes no outcome — but it means the log line a failing pass writes reads in the same order as
@@ -18,4 +19,11 @@ import type { Rule } from "../rule";
  * during the database outage the rule exists to catch; `new_issue` because it would raise an info
  * alert directly above the issues panel already listing that error.
  */
-export const RULES: Rule[] = [healthDown, processRestart, diskSpace, errorRate, latencyP95, noLogs];
+export const rulesFor = (host: string): Rule[] => [
+  healthDown,
+  processRestart,
+  diskSpace(host),
+  errorRate,
+  latencyP95,
+  noLogs,
+];

@@ -1,4 +1,5 @@
 import { DISK_CRITICAL_PCT, DISK_WARN_PCT } from "@alerts/thresholds";
+import { parseEnv } from "@config/env.validation";
 import { HOST_LEVEL } from "@contracts/host";
 import { PrismaService } from "@db/prisma.service";
 import request from "supertest";
@@ -108,7 +109,8 @@ describe("GET /api/host/now", () => {
   it("reads the newest sample and carries the disk rule's own lines", async () => {
     const body = (await get("/api/host/now").expect(200)).body as HostNow;
 
-    expect(body.host).toBe("ks-b");
+    // The label the configuration names — the same one the disk rule opens its alert under.
+    expect(body.host).toBe(parseEnv({ ...process.env }).hostLabel);
     expect(body.reading).not.toBeNull();
     expect(body.reading?.cores).toBeGreaterThan(0);
     expect(body.reading?.memory.totalBytes).toBeGreaterThan(0);

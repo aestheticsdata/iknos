@@ -1,4 +1,5 @@
 import { parseEnv } from "@config/env.validation";
+import { hostLabelProvider } from "@config/host-label";
 import { PrismaService } from "@db/prisma.service";
 import { Module } from "@nestjs/common";
 import { HostController } from "./host.controller";
@@ -28,6 +29,7 @@ import { SignalsService } from "./signals.service";
   providers: [
     RuntimeService,
     HostService,
+    hostLabelProvider,
     {
       provide: SignalsService,
       useFactory: (prisma: PrismaService) => {

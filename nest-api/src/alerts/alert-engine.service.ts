@@ -4,7 +4,6 @@ import { SignalsService } from "@metrics/signals.service";
 import { Injectable, type OnApplicationBootstrap, type OnApplicationShutdown } from "@nestjs/common";
 import { NoopSink } from "./alert-sink";
 import { reconcile } from "./reconcile";
-import { RULES } from "./rules";
 import { METRIC_WINDOW_MS } from "./thresholds";
 
 import type { SignalsResult } from "@metrics/signals.service";
@@ -45,7 +44,7 @@ export class AlertEngine implements OnApplicationBootstrap, OnApplicationShutdow
     private readonly prisma: PrismaService,
     private readonly signals: SignalsService,
     private readonly sink: AlertSink = new NoopSink(),
-    private readonly rules: Rule[] = RULES,
+    private readonly rules: Rule[],
   ) {}
 
   onApplicationBootstrap(): void {

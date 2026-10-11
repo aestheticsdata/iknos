@@ -33,20 +33,21 @@ Spira repo, and Zeus's `e2e/demo/README.md` carries the traps that console found
 `preflight.ts` refuses to launch a browser until the first three are true, and names whichever one
 is not. The rest it cannot check.
 
-1. **The front on `localhost:3006`, and it must be the production build**, built with the two
-   variables below — `pnpm dev` floats overlays over the page that `hideDevChrome()` does not know
-   about, and a build without the variables cannot reach the API from a laptop at all:
+1. **The front on `localhost:3006`, and it must be the production build**, built with the
+   variable below — `pnpm dev` floats overlays over the page that `hideDevChrome()` does not know
+   about, and a build without it cannot reach the API from a laptop at all:
 
    ```bash
-   cd front && NEXT_PUBLIC_IKNOS_HOST_LABEL=web01 IKNOS_API_ORIGIN=http://127.0.0.1:4310 pnpm build
+   cd front && IKNOS_API_ORIGIN=http://127.0.0.1:4310 pnpm build
    IKNOS_API_ORIGIN=http://127.0.0.1:4310 pnpm start
    ```
 
    `IKNOS_API_ORIGIN` turns on the `/api/*` rewrite in a production build (`next.config.js`) —
-   on ks-b nginx does that routing and the rewrite must stay off. `NEXT_PUBLIC_IKNOS_HOST_LABEL`
-   is the name in the top bar: the production copy says `ks-b`, and a film of the invented fleet
-   must not. Both are read at build time, so **rebuild after changing either** — and rebuild
-   before filming anyway: `pnpm start` serves whatever `.next` already holds.
+   on ks-b nginx does that routing and the rewrite must stay off. It is read at build time, so
+   **rebuild after changing it** — and rebuild before filming anyway: `pnpm start` serves whatever
+   `.next` already holds. The name in the top bar is not the front's business since IKN-65: the
+   API serves it, from `IKNOS_HOST_LABEL` in `nest-api/.env` — `web01`, as `.env.example` ships
+   it. A film of the invented fleet must never show a real machine's name.
 2. **The Nest API on `127.0.0.1:4310`** — `cd nest-api && pnpm dev`. Its `/health` lives outside
    `/api`, which is what preflight probes.
 3. **`DEMO_USERNAME` / `DEMO_PASSWORD` in `front/.env.test.local`** — the house dev account,

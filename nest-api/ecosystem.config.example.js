@@ -78,6 +78,11 @@ const prodConfig = {
   // Checked only against requests that carried an Origin, so an empty value still admits curl
   // and server-side senders.
   IKNOS_INGEST_ORIGINS: "",
+
+  // The name the host badge shows, and the scope the disk alert opens under (IKN-65). Optional —
+  // the machine's own hostname when unset — and set here because the box is called ks-b by the
+  // people reading the badge, whatever `hostname` happens to print.
+  IKNOS_HOST_LABEL: "ks-b",
 };
 
 module.exports = {

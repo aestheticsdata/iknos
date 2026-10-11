@@ -1,3 +1,4 @@
+import { hostname } from "node:os";
 import { describe, expect, it } from "vitest";
 import { parseEnv } from "./env.validation";
 
@@ -50,6 +51,13 @@ describe("parseEnv", () => {
   it("refuses a scrape interval past the charts' one-minute grid, or absurdly short", () => {
     expect(() => parseEnv({ ...full, IKNOS_SCRAPE_INTERVAL_SECONDS: "90" })).toThrow(/IKNOS_SCRAPE_INTERVAL_SECONDS/);
     expect(() => parseEnv({ ...full, IKNOS_SCRAPE_INTERVAL_SECONDS: "1" })).toThrow(/IKNOS_SCRAPE_INTERVAL_SECONDS/);
+  });
+
+  it("names the host after IKNOS_HOST_LABEL, else after the machine itself (IKN-65)", () => {
+    expect(parseEnv({ ...full, IKNOS_HOST_LABEL: "web01" }).hostLabel).toBe("web01");
+    expect(parseEnv(full).hostLabel).toBe(hostname());
+    // Blank is a slip in a config file, not a request for a nameless badge.
+    expect(parseEnv({ ...full, IKNOS_HOST_LABEL: "  " }).hostLabel).toBe(hostname());
   });
 
   it("rejects an unknown log level", () => {

@@ -17,7 +17,7 @@ const reading = (diskPct: number | null): HostReading => ({
 });
 
 const now = (over: Partial<HostNow>): HostNow => ({
-  host: "ks-b",
+  host: "web01",
   reading: reading(87.25),
   level: HOST_LEVEL.warning,
   thresholds: { warnPct: 85, criticalPct: 95 },
@@ -62,13 +62,13 @@ describe("formatLoad", () => {
 
 describe("badgeHint", () => {
   it("says the level in words, with the disk figure behind it", () => {
-    expect(badgeHint(now({}), "ks-b")).toBe("ks-b · past the warning line · disk 87.3% — open the machine panel");
+    expect(badgeHint(now({}), "web01")).toBe("web01 · past the warning line · disk 87.3% — open the machine panel");
   });
 
   it("says when nothing recent was sampled", () => {
-    expect(badgeHint(now({ reading: null, level: HOST_LEVEL.unknown }), "ks-b")).toBe(
-      "ks-b · no recent sample — open the machine panel",
+    expect(badgeHint(now({ reading: null, level: HOST_LEVEL.unknown }), "web01")).toBe(
+      "web01 · no recent sample — open the machine panel",
     );
-    expect(badgeHint(null, "ks-b")).toBe("ks-b · no recent sample — open the machine panel");
+    expect(badgeHint(null, "web01")).toBe("web01 · no recent sample — open the machine panel");
   });
 });

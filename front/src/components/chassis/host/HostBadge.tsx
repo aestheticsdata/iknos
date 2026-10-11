@@ -24,12 +24,14 @@ const BADGE_CLASS: Record<Tone, string> = {
   neutral: "border-chassis-border-strong text-chassis-text-muted hover:text-chassis-text",
 };
 
-type HostBadgeProps = {
-  label: string;
-};
-
 /**
- * The `ks-b` badge, and the door to the machine panel (IKN-25).
+ * The host badge, and the door to the machine panel (IKN-25).
+ *
+ * **The name comes from the API, in the poll the badge already makes** (IKN-65) — `IKNOS_HOST_LABEL`
+ * on the server, else its hostname. It was a `ks-b` constant in the front, which was true on ks-b
+ * by coincidence and confidently false everywhere else. Until the first answer lands the badge says
+ * `host`, in the same box: a blank chip would be a badge that had nothing to say, and a guessed
+ * name would be the old lie for one poll.
  *
  * The badge was inert until this ticket, and an inert badge is never opened — so it now carries
  * the machine's state: its border turns amber or red the moment the disk crosses the alert rule's
@@ -39,13 +41,14 @@ type HostBadgeProps = {
  * `esc` puts you back on exactly the view you left — the range, the selection and the scroll are
  * all untouched, because nothing underneath was navigated away from.
  */
-export const HostBadge = ({ label }: HostBadgeProps) => {
+export const HostBadge = () => {
   const [open, setOpen] = useState(false);
   const [range] = useTimeRange();
   const { tz } = useZone();
   const now = useHostNow();
   const series = useHostSeries(range, open);
 
+  const label = now.data?.host ?? HOST_TEXT.pendingLabel;
   const level = now.data?.level ?? HOST_LEVEL.unknown;
   const sampledAt = now.data?.reading?.sampledAt ?? null;
 

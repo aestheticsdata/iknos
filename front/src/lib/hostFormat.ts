@@ -5,7 +5,7 @@ import type { Tone } from "@components/ui/surface";
 import type { HostLevel, HostNow } from "@lib/interfaces/hostTypes";
 
 /**
- * What the machine panel and the `ks-b` badge paint a level in (IKN-25).
+ * What the machine panel and the host badge paint a level in (IKN-25).
  *
  * The levels arrive from the API, decided there by the alert rule's own comparison — nothing here
  * compares a percentage to a threshold. This file only says which colour each verdict wears.

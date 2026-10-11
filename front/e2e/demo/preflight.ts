@@ -39,7 +39,7 @@ export default async function preflight(): Promise<void> {
       `Nothing is listening on ${BASE_URL}.\n` +
         "    The demo films the monitor; it does not start it. In two shells:\n" +
         "      cd nest-api && pnpm dev\n" +
-        "      cd front && NEXT_PUBLIC_IKNOS_HOST_LABEL=web01 IKNOS_API_ORIGIN=http://127.0.0.1:4310 pnpm build && IKNOS_API_ORIGIN=http://127.0.0.1:4310 pnpm start\n" +
+        "      cd front && IKNOS_API_ORIGIN=http://127.0.0.1:4310 pnpm build && IKNOS_API_ORIGIN=http://127.0.0.1:4310 pnpm start\n" +
         "    Shoot against the built front, not `pnpm dev` — a dev build floats\n" +
         "    its own overlays over the app.",
     );

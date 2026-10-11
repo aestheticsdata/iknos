@@ -1,3 +1,4 @@
+import { HOST_LABEL, hostLabelProvider } from "@config/host-label";
 import { PrismaService } from "@db/prisma.service";
 import { MetricsModule } from "@metrics/metrics.module";
 import { SignalsService } from "@metrics/signals.service";
@@ -6,6 +7,7 @@ import { AlertEngine } from "./alert-engine.service";
 import { NoopSink } from "./alert-sink";
 import { AlertsController } from "./alerts.controller";
 import { AlertsService } from "./alerts.service";
+import { rulesFor } from "./rules";
 
 /**
  * The alert engine (IKN-10) and the routes that serve what it writes (IKN-15).
@@ -27,10 +29,12 @@ import { AlertsService } from "./alerts.service";
   controllers: [AlertsController],
   providers: [
     AlertsService,
+    hostLabelProvider,
     {
       provide: AlertEngine,
-      useFactory: (prisma: PrismaService, signals: SignalsService) => new AlertEngine(prisma, signals, new NoopSink()),
-      inject: [PrismaService, SignalsService],
+      useFactory: (prisma: PrismaService, signals: SignalsService, host: string) =>
+        new AlertEngine(prisma, signals, new NoopSink(), rulesFor(host)),
+      inject: [PrismaService, SignalsService, HOST_LABEL],
     },
   ],
   exports: [AlertEngine, AlertsService],

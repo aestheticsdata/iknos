@@ -8,7 +8,7 @@ import type { HostNow, HostSeries } from "@lib/interfaces/hostTypes";
 import type { RangeKey } from "@lib/timeRange";
 
 /**
- * The two reads behind the `ks-b` badge (IKN-25), on the two clocks the collector's pair uses.
+ * The two reads behind the host badge (IKN-25), on the two clocks the collector's pair uses.
  *
  * The current reading is permanent chrome — the badge's colour — so it polls, always, at the
  * sampler's own cadence: asking faster than a row is written only re-reads the same row. The
