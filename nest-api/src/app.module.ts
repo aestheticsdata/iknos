@@ -16,6 +16,7 @@ import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { RedisModule } from "@redis/redis.module";
 import { ScrapeModule } from "@src/scrape/scrape.module";
+import { WhoisModule } from "@src/whois/whois.module";
 import { LoggerModule } from "nestjs-pino";
 import { HealthController } from "./health.controller";
 
@@ -26,7 +27,7 @@ import { HealthController } from "./health.controller";
  * Auth (IKN-6, IKN-21), the collector (IKN-7), the log routes (IKN-19), the partition window
  * (IKN-11), the collector's own status (IKN-24), the service view's metrics (IKN-13) and grouped
  * errors with the routes that serve them (IKN-9, IKN-14) and the alert engine with its own
- * (IKN-10, IKN-15) are in. M3 is complete.
+ * (IKN-10, IKN-15) are in. M3 is complete; on-demand whois for client addresses (IKN-73) is M4.
  */
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { HealthController } from "./health.controller";
     CollectorModule,
     IssuesModule,
     AlertsModule,
+    WhoisModule,
   ],
   controllers: [HealthController],
   providers: [

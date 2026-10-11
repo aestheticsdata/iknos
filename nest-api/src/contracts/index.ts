@@ -52,3 +52,4 @@ export type {
 } from "./service-runtime";
 export type { MetricSource, ServiceSignals, Signal, SignalPoint } from "./service-signals";
 export type { Trace } from "./trace";
+export type { IpWhois, WhoisReason, WhoisStatus } from "./whois";
