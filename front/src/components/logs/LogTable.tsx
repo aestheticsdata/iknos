@@ -15,6 +15,7 @@ import {
   TONE_TEXT,
 } from "@components/ui/surface";
 import { durationSegments } from "@lib/duration";
+import { dayStarts } from "@lib/logDays";
 import { severityOf } from "@lib/logTypes";
 import { cn } from "@lib/utils";
 import { fullInstant, timeOfDay } from "@lib/zone";
@@ -146,6 +147,8 @@ export const LogTable = ({
    * between commit and the passive effect, and nothing in it can be clicked.
    */
   const { tz, abbrev } = useZone();
+  // Which rows open a new day on the reader's clock, and the separator each one gets (IKN-39).
+  const days = dayStarts(items, tz);
 
   const latest = useRef({ onSelect, onOpen, onOpenTrace, onCopyText });
   // The root the one bubble listens on — every hinted cell below carries `data-hint`, not a `title`.
@@ -225,14 +228,16 @@ export const LogTable = ({
                 dropped={item.dropped}
               />
             ) : (
-              <LogTableRow
-                key={item.key}
-                rowKey={item.key}
-                row={item.row}
-                selected={item.key === selectedKey}
-                actions={actions}
-                tz={tz}
-              />
+              <Fragment key={item.key}>
+                {days.has(item.key) && <DayRow label={days.get(item.key) ?? ""} />}
+                <LogTableRow
+                  rowKey={item.key}
+                  row={item.row}
+                  selected={item.key === selectedKey}
+                  actions={actions}
+                  tz={tz}
+                />
+              </Fragment>
             ),
           )}
           {/*
@@ -607,6 +612,37 @@ const GapRow = ({ dropped }: { dropped: number }) => (
         <span
           aria-hidden="true"
           className={cn("h-0 flex-1 border-t border-dashed", SURFACE_BORDER.chassis)}
+        />
+      </div>
+    </td>
+  </tr>
+);
+
+/**
+ * The day the rows beneath it belong to, on the reader's clock (IKN-39).
+ *
+ * The time column says `14:03:22.481` and nothing more, and the default range is a week — so the
+ * date is said once per day, here, rather than on ten thousand rows that would all repeat it.
+ * Solid rules where the gap row's are dashed: this is a boundary in the data, that one is a hole in
+ * it. It wears the zone flash like every other timestamp, because a zone change is exactly what
+ * moves rows across it.
+ */
+type DayRowProps = {
+  /** `Sun 2026-10-11` — see `calendarDay`. */
+  label: string;
+};
+
+const DayRow = ({ label }: DayRowProps) => (
+  <tr data-testid="day-row">
+    <td
+      colSpan={COLUMN_COUNT}
+      className="px-2 pt-2 pb-1"
+    >
+      <div className={cn("flex items-center gap-2 text-micro tabular-nums", SURFACE_TEXT_DIM.chassis)}>
+        <span className="ik-zone-flash ik-zone-lift">{label}</span>
+        <span
+          aria-hidden="true"
+          className={cn("h-0 flex-1 border-t", SURFACE_BORDER.chassis)}
         />
       </div>
     </td>
