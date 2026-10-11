@@ -122,7 +122,7 @@ export const QueryBar = ({
     if (key) setDraft({ key, value: seedFor(key) });
   });
 
-  const commit = (event: React.FormEvent<HTMLFormElement>) => {
+  const commit = (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!draft) return;
     const value = draft.value.trim();
@@ -428,7 +428,7 @@ const Drawer = ({
   services: string[];
   onChange: (draft: Draft) => void;
   onSeed: (key: LogFilterKey) => string;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
   onCancel: () => void;
   returnFocusTo: React.RefObject<HTMLButtonElement | null>;
   fallbackFocusTo: React.RefObject<HTMLUListElement | null>;
@@ -569,7 +569,7 @@ const TimeJumpDrawer = ({
     };
   }, [returnFocusTo]);
 
-  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+  const submit = (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const at = parseZonedInstant(value, tz);
     if (at) onSubmit(at);
