@@ -1,14 +1,18 @@
 "use client";
 
+import { WhoisAnswer } from "@components/logs/whois/WhoisAnswer";
+import { WhoisButton } from "@components/logs/whois/WhoisButton";
 import { Button } from "@components/ui/Button";
 import { Pending } from "@components/ui/Pending";
 import { SURFACE_BORDER, SURFACE_TEXT, SURFACE_TEXT_DIM, SURFACE_TEXT_MUTED, TONE_TEXT } from "@components/ui/surface";
+import { useWhois } from "@lib/useWhois";
 import { cn } from "@lib/utils";
 import { fullInstant, timeOfDay } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
 import { LOGS_TEXT } from "@text/logs";
 
 import type { IpGroup, IpGroups } from "@lib/interfaces/ipGroupTypes";
+import type { WhoisLookup } from "@lib/interfaces/whoisTypes";
 
 /**
  * Hits per client address over the range — IKN-72's grouping, folded in between the histogram and
@@ -34,6 +38,9 @@ type IpGroupsPanelProps = {
   onCopy: (ip: string) => void;
   onRetry: () => void;
 };
+
+/** The table's columns, and therefore the `colSpan` of a row's whois answer under it. */
+const COLUMN_COUNT = 4;
 
 /** The cell padding the stream uses, so the two tables read as one surface. */
 const CELL = "px-2 py-1 transition-colors duration-150 ease-out group-hover:bg-chassis-raised/40";
@@ -159,7 +166,43 @@ type IpGroupRowProps = {
   onCopy: (ip: string) => void;
 };
 
-const IpGroupRow = ({ group, share, active, tz, onFilter, onCopy }: IpGroupRowProps) => (
+const IpGroupRow = ({ group, share, active, tz, onFilter, onCopy }: IpGroupRowProps) => {
+  // Per row and on click only — IKN-73. Fifty addresses on screen are fifty buttons, not fifty calls.
+  const whois = useWhois(group.ip);
+
+  return (
+    <>
+      <IpGroupLine
+        group={group}
+        share={share}
+        active={active}
+        tz={tz}
+        onFilter={onFilter}
+        onCopy={onCopy}
+        whois={whois}
+      />
+      {/* Under its row rather than in a column: most rows are never asked, and a column of blanks
+          would take width from the bar for an answer that is not there. */}
+      {whois.requested && (
+        <tr
+          className={cn("border-b", SURFACE_BORDER.chassis)}
+          data-testid="ip-group-whois"
+        >
+          <td
+            colSpan={COLUMN_COUNT}
+            className="px-2 pb-1.5"
+          >
+            <WhoisAnswer whois={whois} />
+          </td>
+        </tr>
+      )}
+    </>
+  );
+};
+
+type IpGroupLineProps = IpGroupRowProps & { whois: WhoisLookup };
+
+const IpGroupLine = ({ group, share, active, tz, onFilter, onCopy, whois }: IpGroupLineProps) => (
   /* The whole row narrows the stream, like a stream row opens its detail; the keyboard path is the
      address button below, whose activation bubbles here as a click. */
   <tr
@@ -201,6 +244,10 @@ const IpGroupRow = ({ group, share, active, tz, onFilter, onCopy }: IpGroupRowPr
         >
           {LOGS_TEXT.copy}
         </button>
+        <WhoisButton
+          ip={group.ip}
+          whois={whois}
+        />
       </span>
     </td>
 

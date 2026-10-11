@@ -1,5 +1,7 @@
 "use client";
 
+import { WhoisAnswer } from "@components/logs/whois/WhoisAnswer";
+import { WhoisButton } from "@components/logs/whois/WhoisButton";
 import { Button } from "@components/ui/Button";
 import { Modal } from "@components/ui/Modal";
 import { Pending } from "@components/ui/Pending";
@@ -13,6 +15,7 @@ import {
 } from "@components/ui/surface";
 import { Tooltip } from "@components/ui/Tooltip";
 import { severityOf, userAgentOf } from "@lib/logTypes";
+import { useWhois } from "@lib/useWhois";
 import { cn } from "@lib/utils";
 import { fullInstant } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
@@ -86,6 +89,9 @@ export const RowDetail = ({
   // Lifted for the same reason as `traceId`: TypeScript widens a property back to `string | null`
   // inside a closure, and the copy handler below is exactly such a closure.
   const clientIp = detail?.clientIp ?? null;
+  // Asked only from the button beside the address — IKN-73. Re-keyed when the row changes, so the
+  // last line's answer never sits under this line's address.
+  const whois = useWhois(clientIp);
   // `user_agent.original` is a key and not a path — see `userAgentOf`, which is where that is
   // spelled out and tested, because reaching for it as a path finds `undefined` every time.
   const agent = userAgentOf(detail?.attrs);
@@ -317,7 +323,15 @@ export const RowDetail = ({
                           <CopyGlyph />
                         </button>
                       </Tooltip>
+                      <WhoisButton
+                        ip={clientIp}
+                        whois={whois}
+                      />
                     </span>
+                    <WhoisAnswer
+                      whois={whois}
+                      className="mt-1"
+                    />
                   </DetailField>
                 )}
                 {detail?.userId != null && (

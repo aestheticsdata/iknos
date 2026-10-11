@@ -158,6 +158,9 @@ export const logHistogramUrl = (state: LogQueryState): string => `/logs/histogra
 /** Hits per client address under the same filters — the grouping panel (IKN-72). */
 export const logIpGroupsUrl = (state: LogQueryState): string => `/logs/ips?${buildLogQuery(state)}`;
 
+/** One address's whois (IKN-73). No range: who an address belongs to does not depend on the view's. */
+export const whoisUrl = (ip: string): string => `/whois/${encodeURIComponent(ip)}`;
+
 /**
  * The tail's URL, built from the same state as the list above it.
  *

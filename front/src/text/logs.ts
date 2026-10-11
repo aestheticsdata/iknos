@@ -154,6 +154,25 @@ export const LOGS_TEXT = {
   ipGroupsEmpty: "No line in this range carries a client address.",
   filterIp: "show only this address",
 
+  /*
+   * Whois on demand (IKN-73). The control is a word and not a glyph: it is the one action in the
+   * row that leaves the box, and a reader should know what pressing it asks before pressing it.
+   */
+  whois: "whois",
+  whoisHint: "Look up who this address belongs to and where it is",
+  whoisLabel: (ip: string) => `whois for ${ip}`,
+  /* Stem only; `<Pending>` draws the dots. */
+  whoisLoading: "looking up",
+  /* Tooltip on the answer — the second click on an address is the cache's, and that is worth knowing. */
+  whoisCached: "cached answer — no external call was made",
+  whoisFresh: "asked the provider just now",
+  /* Every `unknown` says why, never a blank — the ticket's rule for a provider that let us down. */
+  whoisUnknown: {
+    private: "unknown — a private or loopback address, nobody registers it",
+    refused: "unknown — the provider has nothing on this address",
+    unavailable: "unknown — the provider did not answer, try again later",
+  },
+
   /* Trace */
   traceTitle: "trace",
   traceTotal: (ms: number) => `${ms} ms total`,
@@ -183,6 +202,7 @@ export const LOGS_TEXT = {
   searchFailed: "Could not load logs.",
   histogramFailed: "Could not load the volume chart.",
   ipGroupsFailed: "Could not load the addresses.",
+  whoisFailed: "unknown — the lookup did not reach the API",
   traceFailed: "Could not load this trace.",
   /* Said inside the pane and not over the stream: the line is still on screen and still readable,
      and only the half that had to be fetched is missing. */
