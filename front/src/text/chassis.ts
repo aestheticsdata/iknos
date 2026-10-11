@@ -93,7 +93,7 @@ export const CHASSIS_TEXT = {
   tailOn: "tail on",
   tailOff: "tail off",
   events: (count: string, range: string) => `${count} ev / ${range}`,
-  queryTime: (ms: number) => `q ${ms}ms`,
+  queryTime: (duration: string) => `q ${duration}`,
   /* The permanent legend. Every entry here is a shortcut that works — which is why `⌘I` was absent
      until IKN-14 gave it something to open. A legend advertising a dead key is worse than a short
      legend. */

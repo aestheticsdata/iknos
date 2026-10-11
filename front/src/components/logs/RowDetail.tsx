@@ -14,6 +14,7 @@ import {
   TONE_TEXT,
 } from "@components/ui/surface";
 import { Tooltip } from "@components/ui/Tooltip";
+import { formatDuration } from "@lib/duration";
 import { severityOf, userAgentOf } from "@lib/logTypes";
 import { useWhois } from "@lib/useWhois";
 import { cn } from "@lib/utils";
@@ -267,7 +268,7 @@ export const RowDetail = ({
                     field="duration"
                     label={LOGS_TEXT.detailFields.duration}
                   >
-                    {row.durationMs} ms
+                    {formatDuration(row.durationMs)}
                   </DetailField>
                 )}
                 {traceId !== null && (

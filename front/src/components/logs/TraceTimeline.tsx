@@ -6,6 +6,7 @@ import { Modal } from "@components/ui/Modal";
 import { Pending } from "@components/ui/Pending";
 import { SURFACE_TEXT, SURFACE_TEXT_DIM, SURFACE_TEXT_MUTED, TONE_FILL, TONE_TEXT } from "@components/ui/surface";
 import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
+import { formatDuration } from "@lib/duration";
 import { severityOf } from "@lib/logTypes";
 import { cn } from "@lib/utils";
 import { timeOfDay } from "@lib/zone";
@@ -173,7 +174,7 @@ const TraceBody = ({ trace, loading, error }: { trace: Trace | null; loading: bo
         data-testid="trace-total"
         className={cn("text-dense tabular-nums", SURFACE_TEXT_MUTED.chassis)}
       >
-        {LOGS_TEXT.traceTotal(Math.round(trace.totalMs))}
+        {LOGS_TEXT.traceTotal(formatDuration(trace.totalMs))}
       </p>
 
       {/*
@@ -231,11 +232,11 @@ const TraceBody = ({ trace, loading, error }: { trace: Trace | null; loading: bo
                     subject={timeOfDay(lane.row.ts, tz)}
                     context={`${lane.row.service} · ${lane.row.levelName}`}
                     rows={[
-                      { label: LOGS_TEXT.traceRows.offset, value: `+${roundMs(lane.offsetMs)} ms` },
+                      { label: LOGS_TEXT.traceRows.offset, value: `+${formatDuration(lane.offsetMs)}` },
                       {
                         label: LOGS_TEXT.traceRows.took,
                         value:
-                          lane.durationMs === null ? LOGS_TEXT.traceRows.unmeasured : `${roundMs(lane.durationMs)} ms`,
+                          lane.durationMs === null ? LOGS_TEXT.traceRows.unmeasured : formatDuration(lane.durationMs),
                       },
                     ]}
                   />
@@ -252,10 +253,12 @@ const TraceBody = ({ trace, loading, error }: { trace: Trace | null; loading: bo
                 />
                 <span className={cn("shrink-0", SURFACE_TEXT_DIM.chassis)}>{lane.row.service}</span>
                 <span className={cn("min-w-0 flex-1 truncate", SURFACE_TEXT.chassis)}>{lane.row.message}</span>
-                <span className={cn("shrink-0 tabular-nums", SURFACE_TEXT_DIM.chassis)}>+{roundMs(lane.offsetMs)}</span>
+                <span className={cn("shrink-0 tabular-nums", SURFACE_TEXT_DIM.chassis)}>
+                  +{formatDuration(lane.offsetMs)}
+                </span>
                 {lane.durationMs !== null && (
                   <span className={cn("shrink-0 tabular-nums", SURFACE_TEXT_MUTED.chassis)}>
-                    {roundMs(lane.durationMs)} ms
+                    {formatDuration(lane.durationMs)}
                   </span>
                 )}
               </div>
@@ -370,11 +373,3 @@ const lanesFor = (trace: Trace): Lane[] => {
     };
   });
 };
-
-/**
- * Durations arrive as floats — pino-http writes `12.4183`, and four decimal places in a column read
- * down at 10.5px is noise wearing the costume of precision. Below 10ms the first decimal still
- * separates two numbers someone might act on; above it, it is under the resolution of anything you
- * would change code over.
- */
-const roundMs = (ms: number): number => (ms < 10 ? Math.round(ms * 10) / 10 : Math.round(ms));

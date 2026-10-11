@@ -14,12 +14,13 @@ import {
   TONE_FILL,
   TONE_TEXT,
 } from "@components/ui/surface";
+import { durationSegments } from "@lib/duration";
 import { severityOf } from "@lib/logTypes";
 import { cn } from "@lib/utils";
 import { fullInstant, timeOfDay } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
 import { LOGS_TEXT } from "@text/logs";
-import { memo, useEffect, useMemo, useRef } from "react";
+import { Fragment, memo, useEffect, useMemo, useRef } from "react";
 
 import type { Tone } from "@components/ui/surface";
 import type { LogFeedItem, LogRow } from "@lib/logTypes";
@@ -538,14 +539,22 @@ const LogTableRow = memo(
             )}
           </td>
 
-          <td className={cn(CELL, "text-right whitespace-nowrap", SURFACE_TEXT_MUTED.chassis)}>
+          {/* The unit its size calls for, each unit dimmed apart from its number — `15min 13s` has two
+              of each (IKN-40). The exact millisecond count is in the bubble, so rounding loses nothing. */}
+          <td
+            className={cn(CELL, "text-right whitespace-nowrap", SURFACE_TEXT_MUTED.chassis)}
+            data-hint={row.durationMs === null ? undefined : LOGS_TEXT.exactMs(row.durationMs)}
+          >
             {row.durationMs === null ? (
               <NoValue />
             ) : (
-              <>
-                {row.durationMs}
-                <span className={cn("ml-0.5", SURFACE_TEXT_DIM.chassis)}>ms</span>
-              </>
+              durationSegments(row.durationMs).map((segment, index) => (
+                <Fragment key={segment.unit}>
+                  {index > 0 && " "}
+                  {segment.value}
+                  <span className={cn("ml-0.5", SURFACE_TEXT_DIM.chassis)}>{segment.unit}</span>
+                </Fragment>
+              ))
             )}
           </td>
         </tr>

@@ -3,6 +3,7 @@
 import { Tooltip } from "@components/ui/Tooltip";
 import { useSelectedService, useTimeRange } from "@lib/chassisState";
 import { useChromeMode } from "@lib/commandState";
+import { formatDuration } from "@lib/duration";
 import { formatCount } from "@lib/format";
 import { ROUTES } from "@lib/routes";
 import { useAlertCounts } from "@lib/useAlertCounts";
@@ -103,7 +104,7 @@ export const StatusBar = () => {
             data-testid="status-cell"
             data-cell="query"
           >
-            {CHASSIS_TEXT.queryTime(tookMs)}
+            {CHASSIS_TEXT.queryTime(formatDuration(tookMs))}
           </span>
         </>
       )}

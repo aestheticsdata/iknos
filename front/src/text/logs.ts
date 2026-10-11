@@ -175,7 +175,9 @@ export const LOGS_TEXT = {
 
   /* Trace */
   traceTitle: "trace",
-  traceTotal: (ms: number) => `${ms} ms total`,
+  traceTotal: (duration: string) => `${duration} total`,
+  /* The `dur` cell's bubble: the wire's integer, for whoever needs more than the rounded form (IKN-40). */
+  exactMs: (ms: number) => `${ms} ms`,
   traceTruncated: "This trace logged more lines than are shown — the total covers only these.",
   /*
    * The lane's rows. `offset` is where the line sits in the trace, `took` is what it measured —

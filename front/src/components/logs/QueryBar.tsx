@@ -6,6 +6,7 @@ import { Field } from "@components/ui/Field";
 import { Select } from "@components/ui/Select";
 import { Tooltip } from "@components/ui/Tooltip";
 import { useCommand } from "@lib/commandState";
+import { formatDuration } from "@lib/duration";
 import { isFilterActive, LOG_FILTER_KEYS } from "@lib/logQuery";
 import { FILTERABLE_LEVELS } from "@lib/logTypes";
 import { cn } from "@lib/utils";
@@ -243,7 +244,7 @@ export const QueryBar = ({
               data-testid="query-took"
               className="text-kicker tracking-control text-chassis-text-dim"
             >
-              q {tookMs}ms
+              q {formatDuration(tookMs)}
             </span>
           )}
 
