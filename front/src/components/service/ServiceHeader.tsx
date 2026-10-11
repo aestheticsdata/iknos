@@ -1,5 +1,6 @@
 "use client";
 
+import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
 import { logsHref } from "@lib/logsHref";
 import { ABSENT, formatUptime } from "@lib/serviceFormat";
 import { cn } from "@lib/utils";
@@ -9,6 +10,7 @@ import { useEffect, useState } from "react";
 
 import type { ProbeCheck, ProbeSummary, ProcessFacts, ServiceRuntime } from "@lib/serviceTypes";
 import type { RangeKey } from "@lib/timeRange";
+import type { ReactNode } from "react";
 
 /**
  * The service view's header — design doc §5.2, first paragraph.
@@ -86,7 +88,7 @@ export const ServiceHeader = ({
           chip="release"
           label={SERVICE_TEXT.chipRelease}
           value={runtime.release ?? ABSENT}
-          title={runtime.release === null ? SERVICE_TEXT.releaseHint : undefined}
+          hint={runtime.release === null ? SERVICE_TEXT.releaseHint : null}
         />
         <Uptime process={facts} />
         <Chip
@@ -94,7 +96,7 @@ export const ServiceHeader = ({
           label={SERVICE_TEXT.chipRestarts}
           value={facts === null ? ABSENT : String(facts.restarts)}
           tone={facts !== null && facts.restarts > 0 ? "error" : "neutral"}
-          title={facts === null ? SERVICE_TEXT.processAbsent : SERVICE_TEXT.restartsHint(facts.restarts)}
+          hint={facts === null ? SERVICE_TEXT.processAbsent : SERVICE_TEXT.restartsHint(facts.restarts)}
         />
       </ul>
 
@@ -129,16 +131,21 @@ export const ServiceHeader = ({
  * both at once.
  */
 export const SignalsToggle = ({ open, onToggle }: { open: boolean; onToggle: () => void }) => (
-  <button
-    type="button"
-    onClick={onToggle}
-    aria-expanded={open}
-    title={SERVICE_TEXT.signalsHint}
-    data-testid="signals-toggle"
-    className="flex-none rounded-chip border border-work-border-strong bg-work-inset px-1.75 py-0.5 text-row whitespace-nowrap text-work-text-muted transition-colors duration-150 ease-out hover:border-work-text-dim hover:text-work-text"
+  <Tooltip
+    mode="hover"
+    content={SERVICE_TEXT.signalsHint}
+    className="flex-none"
   >
-    {open ? SERVICE_TEXT.hideSignals : SERVICE_TEXT.showSignals}
-  </button>
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      data-testid="signals-toggle"
+      className="rounded-chip border border-work-border-strong bg-work-inset px-1.75 py-0.5 text-row whitespace-nowrap text-work-text-muted transition-colors duration-150 ease-out hover:border-work-text-dim hover:text-work-text"
+    >
+      {open ? SERVICE_TEXT.hideSignals : SERVICE_TEXT.showSignals}
+    </button>
+  </Tooltip>
 );
 
 /**
@@ -171,7 +178,7 @@ const Uptime = ({ process: facts }: { process: ProcessFacts | null | undefined }
       label={SERVICE_TEXT.chipUptime}
       value={stopped ? facts.status : formatUptime(facts?.startedAt ?? null, now)}
       tone={stopped ? "error" : "neutral"}
-      title={stopped ? SERVICE_TEXT.stoppedHint(facts.status) : undefined}
+      hint={stopped ? SERVICE_TEXT.stoppedHint(facts.status) : null}
       /* The one figure on the row that changes by itself — a minute later, or the word `stopped` —
          so the storyboard gets the value alone under a name of its own, beside the chip's. */
       valueTestId="uptime"
@@ -183,28 +190,36 @@ const Uptime = ({ process: facts }: { process: ProcessFacts | null | undefined }
  * One identity chip — a dimmed key and an undimmed value, the same shape the log query bar's tokens
  * use so that a row of them scans as a list of values with their fields attached.
  */
-const Chip = ({
-  chip,
-  label,
-  value,
-  tone = "neutral",
-  title,
-  suppressHydrationWarning,
-  valueTestId,
-}: {
+type ChipProps = {
   /** Which fact this is — `pm2`, `node`, `release`, `uptime`, `restarts` — as `data-chip`, so a
    *  storyboard names the member by its key and never by a label or a value (ZEU-78). */
   chip: string;
   label: string;
   value: string;
   tone?: "neutral" | "error";
-  title?: string;
+  /** What the chip means beyond its value, or `null` when the value says it all. */
+  hint?: ReactNode;
   suppressHydrationWarning?: boolean;
   /** A name for the value span alone, for the one chip whose figure ticks — see `Uptime`. */
   valueTestId?: string;
-}) => (
+};
+
+/*
+ * The bubble wraps the chip's text rather than the `<li>`: a `<span>` around a list item is not a
+ * list any more. `tabIndex` because a chip is otherwise inert, and a hint only the mouse can read is
+ * the defect IKN-62 exists to remove — set only when there is a hint, so the row does not grow five
+ * tab stops that say nothing.
+ */
+const Chip = ({
+  chip,
+  label,
+  value,
+  tone = "neutral",
+  hint = null,
+  suppressHydrationWarning,
+  valueTestId,
+}: ChipProps) => (
   <li
-    title={title}
     data-testid="service-chip"
     data-chip={chip}
     className={cn(
@@ -222,14 +237,21 @@ const Chip = ({
         : "border-work-border-strong bg-work-inset text-work-text-muted",
     )}
   >
-    <span className="text-work-text-dim">{label} </span>
-    <span
-      className="text-work-text"
-      suppressHydrationWarning={suppressHydrationWarning}
-      data-testid={valueTestId}
+    <Tooltip
+      mode="hover"
+      content={hint}
+      className="inline rounded-chip"
+      tabIndex={0}
     >
-      {value}
-    </span>
+      <span className="text-work-text-dim">{label} </span>
+      <span
+        className="text-work-text"
+        suppressHydrationWarning={suppressHydrationWarning}
+        data-testid={valueTestId}
+      >
+        {value}
+      </span>
+    </Tooltip>
   </li>
 );
 
@@ -244,7 +266,7 @@ const Chip = ({
  * Order is stable regardless of state, so a pill never moves under the pointer; colour carries the
  * change. §5.2 wants a failing pill to open the matching alert — alerts arrive with IKN-15, so
  * until then it opens the service's error logs around the moment the probe failed, which is where
- * the answer actually is today. A healthy pill leads nowhere and carries its detail in a title:
+ * the answer actually is today. A healthy pill leads nowhere and carries its detail in a bubble:
  * the probe detail view it would open does not exist in any milestone.
  */
 const HealthPills = ({
@@ -294,26 +316,40 @@ const HealthPills = ({
           check={check.name}
           tone={check.status === "ok" ? "ok" : "error"}
           label={`${check.name} ${checkLabel(check)}`}
-          title={SERVICE_TEXT.checkHint(
-            check.name,
-            check.status,
-            check.latencyMs === null ? "" : ` in ${check.latencyMs}ms`,
-          )}
+          hint={
+            <TooltipBlock
+              subject={check.name}
+              rows={[
+                { label: SERVICE_TEXT.hintRows.status, value: check.status },
+                ...(check.latencyMs === null
+                  ? []
+                  : [{ label: SERVICE_TEXT.hintRows.latency, value: `${check.latencyMs}ms` }]),
+              ]}
+            />
+          }
           /* A dependency that failed is exactly as worth chasing as the endpoint that reported it,
              and it leads to the same place: this service's error lines around the probe. */
           href={check.status === "ok" ? null : href}
-          hrefTitle={SERVICE_TEXT.toProbeLogs}
+          hrefHint={SERVICE_TEXT.toProbeLogs}
         />
       ))}
       <Pill
         check="endpoint"
         tone={probe.status}
         label={`${SERVICE_TEXT.endpoint} ${probe.httpStatus ?? SERVICE_TEXT.noAnswer}`}
-        title={
-          probe.error ?? SERVICE_TEXT.probeHint(SERVICE_TEXT.probeStatus[probe.status] ?? probe.status, probe.checkedAt)
+        hint={
+          <TooltipBlock
+            subject={SERVICE_TEXT.endpoint}
+            context={probe.error ?? undefined}
+            rows={[
+              { label: SERVICE_TEXT.hintRows.probe, value: SERVICE_TEXT.probeStatus[probe.status] ?? probe.status },
+              { label: SERVICE_TEXT.hintRows.checked, value: probe.checkedAt },
+              { label: SERVICE_TEXT.hintRows.cadence, value: SERVICE_TEXT.probeCadence },
+            ]}
+          />
         }
         href={href}
-        hrefTitle={SERVICE_TEXT.toProbeLogs}
+        hrefHint={SERVICE_TEXT.toProbeLogs}
       />
     </div>
   );
@@ -325,7 +361,7 @@ const HealthPills = ({
  * A failing dependency that still answered quickly would otherwise read `db 3ms` in a red pill —
  * the number says everything is fine and only the colour says otherwise, which is the one
  * combination a reader who cannot separate red from green gets nothing from. The latency is in the
- * title, where it is context rather than the headline.
+ * bubble, where it is context rather than the headline.
  */
 const checkLabel = (check: ProbeCheck): string =>
   check.status !== "ok" ? check.status : check.latencyMs === null ? check.status : `${check.latencyMs}ms`;
@@ -333,16 +369,9 @@ const checkLabel = (check: ProbeCheck): string =>
 /**
  * A dot and a word. Never the dot alone: colour is the whole of what a state pill conveys and
  * roughly one man in twelve cannot separate the red from the green, which is why `Dot` takes a
- * label and why the title below spells the state out in words as well.
+ * label and why the bubble below spells the state out in words as well.
  */
-const Pill = ({
-  check,
-  tone,
-  label,
-  title,
-  href,
-  hrefTitle,
-}: {
+type PillProps = {
   /**
    * The check's own name — `db`, `redis` — verbatim, or `endpoint` for the probe itself, as
    * `data-check`. The label is `db 4ms` while it is well and `db error` once it is not, so the
@@ -351,10 +380,14 @@ const Pill = ({
   check: string;
   tone: "ok" | "error" | "stale";
   label: string;
-  title: string;
+  /** What the pill stands for, as `TooltipBlock` rows — a pill is several facts, not a sentence. */
+  hint: ReactNode;
   href?: string | null;
-  hrefTitle?: string;
-}) => {
+  /** Where the link goes — said under the facts, and only when the pill is a link. */
+  hrefHint?: string;
+};
+
+const Pill = ({ check, tone, label, hint, href, hrefHint }: PillProps) => {
   const skin = cn(
     "inline-flex flex-none items-center gap-1.5 rounded-control border px-2 py-[3px] text-row font-medium whitespace-nowrap transition-colors duration-150 ease-out",
     tone === "ok" && "border-work-border-strong bg-work-ok-bg text-work-text",
@@ -377,31 +410,44 @@ const Pill = ({
   );
 
   if (!href) {
+    // Focusable for the same reason as a chip: the latency and the probe's timing live only here.
     return (
-      <span
-        title={title}
+      <Tooltip
+        mode="hover"
+        content={hint}
         className={skin}
+        tabIndex={0}
         data-testid="health-pill"
         data-check={check}
       >
         {dot}
         {label}
-      </span>
+      </Tooltip>
     );
   }
 
   /* Same family as the inert pill above — a member turns into an `<a>` the moment it fails, and the
      storyboard finds it under the same name either way. It navigates; it posts nothing. */
   return (
-    <Link
-      href={href}
-      title={`${title} · ${hrefTitle}`}
-      className={cn(skin, "transition-[filter] duration-150 ease-out hover:brightness-[1.06]")}
-      data-testid="health-pill"
-      data-check={check}
+    <Tooltip
+      mode="hover"
+      content={
+        <>
+          {hint}
+          <div className="mt-1 text-chassis-text-dim">{hrefHint}</div>
+        </>
+      }
+      className="flex-none"
     >
-      {dot}
-      {label}
-    </Link>
+      <Link
+        href={href}
+        className={cn(skin, "transition-[filter] duration-150 ease-out hover:brightness-[1.06]")}
+        data-testid="health-pill"
+        data-check={check}
+      >
+        {dot}
+        {label}
+      </Link>
+    </Tooltip>
   );
 };

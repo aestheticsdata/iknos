@@ -1,5 +1,6 @@
 "use client";
 
+import { Tooltip } from "@components/ui/Tooltip";
 import { useSelectedService, useTimeRange } from "@lib/chassisState";
 import { useChromeMode } from "@lib/commandState";
 import { formatCount } from "@lib/format";
@@ -110,14 +111,18 @@ export const StatusBar = () => {
       {firing !== null && firing > 0 && (
         <>
           <Divider />
-          <Link
-            href={ROUTES.alerts}
-            data-testid="status-alerts-link"
-            title={CHASSIS_TEXT.alertsCounterHint}
-            className="text-chassis-error tabular-nums transition-[filter] duration-150 ease-out hover:brightness-125"
+          <Tooltip
+            mode="hover"
+            content={CHASSIS_TEXT.alertsCounterHint}
           >
-            {CHASSIS_TEXT.alertsCounter(firing)}
-          </Link>
+            <Link
+              href={ROUTES.alerts}
+              data-testid="status-alerts-link"
+              className="text-chassis-error tabular-nums transition-[filter] duration-150 ease-out hover:brightness-125"
+            >
+              {CHASSIS_TEXT.alertsCounter(firing)}
+            </Link>
+          </Tooltip>
         </>
       )}
 

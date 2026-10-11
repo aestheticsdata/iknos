@@ -1,4 +1,5 @@
 import { MeterBar } from "@components/ui/MeterBar";
+import { Tooltip } from "@components/ui/Tooltip";
 import { formatCount } from "@lib/format";
 import { bucketLabel, bucketShares, bucketTone, formatShare } from "@lib/metricsFormat";
 import { METRICS_TEXT } from "@text/metrics";
@@ -27,18 +28,22 @@ export const LatencyDistribution = ({ buckets, thresholdMs }: LatencyDistributio
       ) : (
         <ul className="flex flex-col gap-1">
           {buckets.map((bucket, index) => (
-            <li
-              key={`${bucket.fromMs}-${bucket.toMs}`}
-              className="flex items-center gap-2 text-row text-work-text-muted"
-              title={METRICS_TEXT.bucketHint(bucketLabel(bucket), formatCount(bucket.count))}
-            >
-              <span className="w-20 flex-none tabular-nums">{bucketLabel(bucket)}</span>
-              <MeterBar
-                share={shares[index] ?? 0}
-                tone={bucketTone(bucket, thresholdMs)}
-                className="flex-1"
-              />
-              <span className="w-9 flex-none text-right tabular-nums text-work-text">{formatShare(shares[index])}</span>
+            <li key={`${bucket.fromMs}-${bucket.toMs}`}>
+              <Tooltip
+                mode="hover"
+                content={METRICS_TEXT.bucketHint(bucketLabel(bucket), formatCount(bucket.count))}
+                className="flex items-center gap-2 text-row text-work-text-muted"
+              >
+                <span className="w-20 flex-none tabular-nums">{bucketLabel(bucket)}</span>
+                <MeterBar
+                  share={shares[index] ?? 0}
+                  tone={bucketTone(bucket, thresholdMs)}
+                  className="flex-1"
+                />
+                <span className="w-9 flex-none text-right tabular-nums text-work-text">
+                  {formatShare(shares[index])}
+                </span>
+              </Tooltip>
             </li>
           ))}
         </ul>

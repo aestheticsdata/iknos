@@ -5,6 +5,7 @@ import { WhoisButton } from "@components/logs/whois/WhoisButton";
 import { Button } from "@components/ui/Button";
 import { Pending } from "@components/ui/Pending";
 import { SURFACE_BORDER, SURFACE_TEXT, SURFACE_TEXT_DIM, SURFACE_TEXT_MUTED, TONE_TEXT } from "@components/ui/surface";
+import { Tooltip } from "@components/ui/Tooltip";
 import { useWhois } from "@lib/useWhois";
 import { cn } from "@lib/utils";
 import { fullInstant, timeOfDay } from "@lib/zone";
@@ -218,32 +219,40 @@ const IpGroupLine = ({ group, share, active, tz, onFilter, onCopy, whois }: IpGr
   >
     <td className={cn(CELL, "whitespace-nowrap")}>
       <span className="inline-flex items-center gap-2">
-        <button
-          type="button"
-          title={LOGS_TEXT.filterIp}
-          aria-label={`${LOGS_TEXT.filterIp} — ${group.ip}`}
-          data-testid="ip-group-filter"
-          className="text-left"
+        <Tooltip
+          mode="hover"
+          content={LOGS_TEXT.filterIp}
         >
-          {group.ip}
-        </button>
-        <button
-          type="button"
-          // Stops here: the row's own click would narrow the stream as well as copy.
-          onClick={(event) => {
-            event.stopPropagation();
-            onCopy(group.ip);
-          }}
-          title={LOGS_TEXT.copyIp}
-          aria-label={`${LOGS_TEXT.copyIp} — ${group.ip}`}
-          data-testid="ip-group-copy"
-          className={cn(
-            "text-kicker transition-colors duration-150 ease-out hover:text-chassis-text",
-            SURFACE_TEXT_DIM.chassis,
-          )}
+          <button
+            type="button"
+            aria-label={`${LOGS_TEXT.filterIp} — ${group.ip}`}
+            data-testid="ip-group-filter"
+            className="text-left"
+          >
+            {group.ip}
+          </button>
+        </Tooltip>
+        <Tooltip
+          mode="hover"
+          content={LOGS_TEXT.copyIp}
         >
-          {LOGS_TEXT.copy}
-        </button>
+          <button
+            type="button"
+            // Stops here: the row's own click would narrow the stream as well as copy.
+            onClick={(event) => {
+              event.stopPropagation();
+              onCopy(group.ip);
+            }}
+            aria-label={`${LOGS_TEXT.copyIp} — ${group.ip}`}
+            data-testid="ip-group-copy"
+            className={cn(
+              "text-kicker transition-colors duration-150 ease-out hover:text-chassis-text",
+              SURFACE_TEXT_DIM.chassis,
+            )}
+          >
+            {LOGS_TEXT.copy}
+          </button>
+        </Tooltip>
         <WhoisButton
           ip={group.ip}
           whois={whois}
@@ -271,12 +280,14 @@ const IpGroupLine = ({ group, share, active, tz, onFilter, onCopy, whois }: IpGr
 
     <td className={cn(CELL, "text-right whitespace-nowrap", SURFACE_TEXT_MUTED.chassis)}>{group.routes}</td>
 
-    <td
-      className={cn(CELL, "whitespace-nowrap", SURFACE_TEXT_MUTED.chassis)}
-      title={fullInstant(group.lastSeen, tz)}
-    >
-      {/* Lifted out of the zone dim like every other timestamp on the panel — IKN-47/49. */}
-      <span className="ik-zone-flash ik-zone-lift">{timeOfDay(group.lastSeen, tz)}</span>
+    <td className={cn(CELL, "whitespace-nowrap", SURFACE_TEXT_MUTED.chassis)}>
+      <Tooltip
+        mode="hover"
+        content={fullInstant(group.lastSeen, tz)}
+      >
+        {/* Lifted out of the zone dim like every other timestamp on the panel — IKN-47/49. */}
+        <span className="ik-zone-flash ik-zone-lift">{timeOfDay(group.lastSeen, tz)}</span>
+      </Tooltip>
     </td>
   </tr>
 );

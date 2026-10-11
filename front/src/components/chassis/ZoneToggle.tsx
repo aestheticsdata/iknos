@@ -1,5 +1,6 @@
 "use client";
 
+import { Tooltip } from "@components/ui/Tooltip";
 import { cn } from "@lib/utils";
 import { useZone } from "@lib/zoneState";
 import { CHASSIS_TEXT } from "@text/chassis";
@@ -89,122 +90,128 @@ export const ZoneToggle = () => {
    */
 
   return (
-    <fieldset
-      key={known ? "zone" : "pending"}
-      aria-hidden={!known || undefined}
-      aria-label={CHASSIS_TEXT.zoneLabel}
-      disabled={!known}
-      data-testid="zone-group"
-      className={cn(
-        /*
-         * `grid-cols-2` is what keeps the press from moving the bar, and it is doing more work
-         * than it looks: two `1fr` columns in a box that sizes to its content come out *equal*,
-         * both as wide as the wider of the two labels. So the box measures the same whichever
-         * zone is in force — there is nothing left that a press could change — and the block below
-         * can be a flat 50% rather than something that has to measure a string.
-         */
-        /*
-         * `ik-zone-lift` is what keeps the control lit while the screen behind it goes dark —
-         * IKN-49. It is the same `z-40` every timestamp wears, against the scrim's `z-30`, and
-         * nothing between here and the chassis opens a stacking context (`header` and the frame
-         * are both unpositioned flex boxes), so it is spent in the root context against that one.
-         *
-         * The utility rather than the two classes written out, because this is the same exemption
-         * the flash sites take and there should be one way to ask for it. It carries the `relative`
-         * this box needed anyway. The stacking context it opens is free — the block and the labels
-         * below already sort themselves by document order inside it, exactly as before.
-         */
-        "ik-zone-lift grid h-6 grid-cols-2 select-none overflow-hidden rounded-control",
-        "border border-chassis-border-strong bg-chassis-inset",
-        !known && "invisible",
-      )}
+    // One bubble for the control rather than one per half: both halves would say the same sentence,
+    // and a sweep across the pair would close and reopen it at the seam.
+    <Tooltip
+      mode="hover"
+      content={known ? CHASSIS_TEXT.zoneHint : null}
     >
-      {/*
-       * The lit side is one block that travels, not two halves that repaint. A repaint has nothing
-       * to interpolate — the colour would leave one side and arrive on the other in the same
-       * frame, which reads as a blink rather than as a switch.
-       *
-       * This is the fifth moving thing in Iknos and the rule in `animations.css` is why it is only
-       * the fifth: it is one half of a box 24px tall, it is inside the control the reader just
-       * pressed, and it reports that press and nothing else. It is a `transition` rather than one
-       * of the four `--animate-*` gestures, which also means the global `prefers-reduced-motion`
-       * rule already collapses it — the block arrives on the other half without crossing the gap,
-       * and the colours are correct either way.
-       *
-       * `overflow-hidden` on the track above is what rounds its outer corners against the border
-       * and leaves the inner ones square, and `translate-x-0` is written out rather than left off
-       * so both ends of the travel are a transform.
-       */}
-      <span
-        aria-hidden="true"
+      <fieldset
+        key={known ? "zone" : "pending"}
+        aria-hidden={!known || undefined}
+        aria-label={CHASSIS_TEXT.zoneLabel}
+        disabled={!known}
+        data-testid="zone-group"
         className={cn(
-          "absolute inset-y-0 left-0 w-1/2 bg-chassis-accent",
-          "transition-transform duration-150 ease-out",
-          zone === "local" ? "translate-x-full" : "translate-x-0",
-        )}
-      />
-
-      {HALVES.map((half) => (
-        <button
-          key={half}
-          type="button"
-          onClick={() => setZone(half)}
-          aria-pressed={known ? zone === half : undefined}
-          // The half's own name is the handle, never its label: the label is empty until the zone
-          // is known, and the local one changes its three letters twice a year.
-          data-testid="zone-toggle"
-          data-zone={half}
-          title={CHASSIS_TEXT.zoneHint}
-          className={cn(
-            /*
-             * `relative` puts the labels above the block: both are positioned at `z-index: auto`,
-             * and the block is the earlier one in the DOM. No `z-10` is needed and none is used —
-             * a stacking context here would be a thing to reason about later for no gain.
-             *
-             * The outline is pulled *inside* the button. `overflow-hidden` on the track clips a
-             * descendant's outline along with everything else, so the base layer's 2px accent ring
-             * at `+2` offset would be shaved to nothing on the two outer edges — a focus ring that
-             * is invisible exactly where a keyboard is the only way in. At `-2` it is drawn just
-             * within the half's own edge and says which half has focus.
-             *
-             * And on the lit half it changes colour, which is the second thing the accent costs
-             * here: the base ring *is* `chassis-accent`, so on a half the accent has just filled
-             * it is green on green and there is no ring at all. `chassis-deep` is the ink already
-             * carrying the label on that ground, and it reads there at 8.22:1.
-             */
-            "relative flex min-w-[5ch] items-center justify-center px-1.5",
-            "text-kicker tracking-control focus-visible:-outline-offset-2",
-            /*
-             * The block says which zone is in force and the ink says it a second time: the
-             * covered label drops to the chassis's own dark so the accent can carry it, the
-             * uncovered one sits back at `text-muted` and comes forward under the pointer. 8.22:1
-             * on the block and 7.50:1 on the track — both measured, both clear of AA at 9px, which
-             * `text-dim` (3.81:1 here) would not be.
-             *
-             * Faster than the block on purpose: `ease-out` front-loads the travel, so matching the
-             * ink to the block's *perceived* arrival is what stops the bright label from sitting
-             * on the bare track mid-flight.
-             */
-            "transition-colors duration-100 ease-out",
-            zone === half
-              ? "text-chassis-deep focus-visible:outline-chassis-deep"
-              : "text-chassis-text-muted hover:text-chassis-text",
-          )}
-        >
-          {/*
-           * Empty until the zone is known — see above, and the reason the box needs a floor at all.
+          /*
+           * `grid-cols-2` is what keeps the press from moving the bar, and it is doing more work
+           * than it looks: two `1fr` columns in a box that sizes to its content come out *equal*,
+           * both as wide as the wider of the two labels. So the box measures the same whichever
+           * zone is in force — there is nothing left that a press could change — and the block below
+           * can be a flat 50% rather than something that has to measure a string.
+           */
+          /*
+           * `ik-zone-lift` is what keeps the control lit while the screen behind it goes dark —
+           * IKN-49. It is the same `z-40` every timestamp wears, against the scrim's `z-30`, and
+           * nothing between here and the chassis opens a stacking context (`header` and the frame
+           * are both unpositioned flex boxes), so it is spent in the root context against that one.
            *
-           * The measuring is still done by the two real strings: the columns size to them, and
-           * they are what a zone abbreviated `GMT+10` widens. `5ch` only holds the box open across
-           * the frame before either string exists, and it is deliberately loose — `ch` counts the
-           * font's advance and not `tracking-control`'s letter-spacing on top of it, so it is a
-           * floor rather than a measurement. Wide enough for every lettered abbreviation there is;
-           * a numeric one costs a character per half at mount, which is the same trade the single
-           * button made and the last one left.
-           */}
-          {abbrevs?.[half] ?? ""}
-        </button>
-      ))}
-    </fieldset>
+           * The utility rather than the two classes written out, because this is the same exemption
+           * the flash sites take and there should be one way to ask for it. It carries the `relative`
+           * this box needed anyway. The stacking context it opens is free — the block and the labels
+           * below already sort themselves by document order inside it, exactly as before.
+           */
+          "ik-zone-lift grid h-6 grid-cols-2 select-none overflow-hidden rounded-control",
+          "border border-chassis-border-strong bg-chassis-inset",
+          !known && "invisible",
+        )}
+      >
+        {/*
+         * The lit side is one block that travels, not two halves that repaint. A repaint has nothing
+         * to interpolate — the colour would leave one side and arrive on the other in the same
+         * frame, which reads as a blink rather than as a switch.
+         *
+         * This is the fifth moving thing in Iknos and the rule in `animations.css` is why it is only
+         * the fifth: it is one half of a box 24px tall, it is inside the control the reader just
+         * pressed, and it reports that press and nothing else. It is a `transition` rather than one
+         * of the four `--animate-*` gestures, which also means the global `prefers-reduced-motion`
+         * rule already collapses it — the block arrives on the other half without crossing the gap,
+         * and the colours are correct either way.
+         *
+         * `overflow-hidden` on the track above is what rounds its outer corners against the border
+         * and leaves the inner ones square, and `translate-x-0` is written out rather than left off
+         * so both ends of the travel are a transform.
+         */}
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute inset-y-0 left-0 w-1/2 bg-chassis-accent",
+            "transition-transform duration-150 ease-out",
+            zone === "local" ? "translate-x-full" : "translate-x-0",
+          )}
+        />
+
+        {HALVES.map((half) => (
+          <button
+            key={half}
+            type="button"
+            onClick={() => setZone(half)}
+            aria-pressed={known ? zone === half : undefined}
+            // The half's own name is the handle, never its label: the label is empty until the zone
+            // is known, and the local one changes its three letters twice a year.
+            data-testid="zone-toggle"
+            data-zone={half}
+            className={cn(
+              /*
+               * `relative` puts the labels above the block: both are positioned at `z-index: auto`,
+               * and the block is the earlier one in the DOM. No `z-10` is needed and none is used —
+               * a stacking context here would be a thing to reason about later for no gain.
+               *
+               * The outline is pulled *inside* the button. `overflow-hidden` on the track clips a
+               * descendant's outline along with everything else, so the base layer's 2px accent ring
+               * at `+2` offset would be shaved to nothing on the two outer edges — a focus ring that
+               * is invisible exactly where a keyboard is the only way in. At `-2` it is drawn just
+               * within the half's own edge and says which half has focus.
+               *
+               * And on the lit half it changes colour, which is the second thing the accent costs
+               * here: the base ring *is* `chassis-accent`, so on a half the accent has just filled
+               * it is green on green and there is no ring at all. `chassis-deep` is the ink already
+               * carrying the label on that ground, and it reads there at 8.22:1.
+               */
+              "relative flex min-w-[5ch] items-center justify-center px-1.5",
+              "text-kicker tracking-control focus-visible:-outline-offset-2",
+              /*
+               * The block says which zone is in force and the ink says it a second time: the
+               * covered label drops to the chassis's own dark so the accent can carry it, the
+               * uncovered one sits back at `text-muted` and comes forward under the pointer. 8.22:1
+               * on the block and 7.50:1 on the track — both measured, both clear of AA at 9px, which
+               * `text-dim` (3.81:1 here) would not be.
+               *
+               * Faster than the block on purpose: `ease-out` front-loads the travel, so matching the
+               * ink to the block's *perceived* arrival is what stops the bright label from sitting
+               * on the bare track mid-flight.
+               */
+              "transition-colors duration-100 ease-out",
+              zone === half
+                ? "text-chassis-deep focus-visible:outline-chassis-deep"
+                : "text-chassis-text-muted hover:text-chassis-text",
+            )}
+          >
+            {/*
+             * Empty until the zone is known — see above, and the reason the box needs a floor at all.
+             *
+             * The measuring is still done by the two real strings: the columns size to them, and
+             * they are what a zone abbreviated `GMT+10` widens. `5ch` only holds the box open across
+             * the frame before either string exists, and it is deliberately loose — `ch` counts the
+             * font's advance and not `tracking-control`'s letter-spacing on top of it, so it is a
+             * floor rather than a measurement. Wide enough for every lettered abbreviation there is;
+             * a numeric one costs a character per half at mount, which is the same trade the single
+             * button made and the last one left.
+             */}
+            {abbrevs?.[half] ?? ""}
+          </button>
+        ))}
+      </fieldset>
+    </Tooltip>
   );
 };

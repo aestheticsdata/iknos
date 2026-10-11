@@ -7,6 +7,7 @@ import { Button } from "@components/ui/Button";
 import { Modal } from "@components/ui/Modal";
 import { Pending } from "@components/ui/Pending";
 import { TONE_TEXT } from "@components/ui/surface";
+import { Tooltip } from "@components/ui/Tooltip";
 import { useTimeRange } from "@lib/chassisState";
 import { formatCount } from "@lib/format";
 import { formatAgo, issueTitle, recencyTone } from "@lib/issueFormat";
@@ -214,14 +215,14 @@ const Body = ({
         </Tile>
         <Tile
           label={ISSUES_TEXT.tileLastSeen}
-          title={fullInstant(issue.lastSeen, tz)}
+          hint={fullInstant(issue.lastSeen, tz)}
           tile="last-seen"
         >
           {formatAgo(issue.lastSeen, now)}
         </Tile>
         <Tile
           label={ISSUES_TEXT.tileFirstSeen}
-          title={fullInstant(issue.firstSeen, tz)}
+          hint={fullInstant(issue.firstSeen, tz)}
           tile="first-seen"
         >
           {formatAgo(issue.firstSeen, now)}
@@ -313,12 +314,13 @@ const Body = ({
  */
 const Tile = ({
   label,
-  title,
+  hint = null,
   tile,
   children,
 }: {
   label: string;
-  title?: string;
+  /** The exact instant behind a relative figure. Focusable when set: the tile is otherwise inert. */
+  hint?: string | null;
   tile?: string;
   children: React.ReactNode;
 }) => (
@@ -328,11 +330,17 @@ const Tile = ({
     data-tile={tile}
   >
     <dt className="text-kicker tracking-kicker text-chassis-text-dim uppercase">{label}</dt>
-    <dd
-      title={title}
-      className="truncate text-row text-chassis-text-bright"
-    >
-      {children}
+    <dd className="truncate text-row text-chassis-text-bright">
+      {/* `inline`, not the wrapper's `inline-flex`: a flex box will not ellipsize, and `truncate` above is
+          what keeps a long value inside its tile. */}
+      <Tooltip
+        mode="hover"
+        content={hint}
+        className="inline"
+        tabIndex={0}
+      >
+        {children}
+      </Tooltip>
     </dd>
   </div>
 );

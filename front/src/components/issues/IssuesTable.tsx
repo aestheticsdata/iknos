@@ -5,6 +5,7 @@ import { BarSpark } from "@components/ui/BarSpark";
 import { DenseTable } from "@components/ui/DenseTable";
 import { Dot } from "@components/ui/Dot";
 import { TONE_TEXT } from "@components/ui/surface";
+import { Tooltip } from "@components/ui/Tooltip";
 import { formatCount } from "@lib/format";
 import {
   formatAgo,
@@ -64,12 +65,14 @@ export const IssuesTable = ({
             tone={recencyTone(row.lastSeen, now)}
             label={ISSUES_TEXT.recency[recencyTone(row.lastSeen, now)] ?? ""}
           />
-          <span
-            title={row.fingerprint}
-            className="rounded-chip border border-work-border-strong bg-work-inset px-1.25 text-work-text-muted"
+          <Tooltip
+            mode="hover"
+            content={row.fingerprint}
           >
-            {shortFingerprint(row.fingerprint)}
-          </span>
+            <span className="rounded-chip border border-work-border-strong bg-work-inset px-1.25 text-work-text-muted">
+              {shortFingerprint(row.fingerprint)}
+            </span>
+          </Tooltip>
         </span>
       ),
     },
@@ -126,13 +129,27 @@ export const IssuesTable = ({
       key: "first",
       header: ISSUES_TEXT.colFirstSeen,
       numeric: true,
-      render: (row) => <span title={fullInstant(row.firstSeen, tz)}>{formatAgo(row.firstSeen, now)}</span>,
+      render: (row) => (
+        <Tooltip
+          mode="hover"
+          content={fullInstant(row.firstSeen, tz)}
+        >
+          {formatAgo(row.firstSeen, now)}
+        </Tooltip>
+      ),
     },
     {
       key: "last",
       header: ISSUES_TEXT.colLastSeen,
       numeric: true,
-      render: (row) => <span title={fullInstant(row.lastSeen, tz)}>{formatAgo(row.lastSeen, now)}</span>,
+      render: (row) => (
+        <Tooltip
+          mode="hover"
+          content={fullInstant(row.lastSeen, tz)}
+        >
+          {formatAgo(row.lastSeen, now)}
+        </Tooltip>
+      ),
     },
     {
       key: "release",

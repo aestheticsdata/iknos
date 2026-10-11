@@ -2,6 +2,7 @@
 
 import { Badge } from "@components/ui/Badge";
 import { Button } from "@components/ui/Button";
+import { DelegatedTooltip } from "@components/ui/DelegatedTooltip";
 import { Pending } from "@components/ui/Pending";
 import {
   SURFACE_BG,
@@ -146,6 +147,8 @@ export const LogTable = ({
   const { tz, abbrev } = useZone();
 
   const latest = useRef({ onSelect, onOpen, onOpenTrace, onCopyText });
+  // The root the one bubble listens on — every hinted cell below carries `data-hint`, not a `title`.
+  const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
     latest.current = { onSelect, onOpen, onOpenTrace, onCopyText };
   });
@@ -184,9 +187,11 @@ export const LogTable = ({
      * Modals are native `<dialog>`s in the top layer and are unaffected either way.
      */
     <div
+      ref={root}
       className={cn(SURFACE_INSET_BG.chassis, SURFACE_TEXT.chassis)}
       data-testid="log-table"
     >
+      <DelegatedTooltip root={root} />
       <table className="w-full border-collapse text-row tabular-nums">
         <thead>
           <tr>
@@ -201,7 +206,7 @@ export const LogTable = ({
             </HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.level}</HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.service}</HeaderCell>
-            <HeaderCell title={LOGS_TEXT.ipColumnHint}>{LOGS_TEXT.columns.ip}</HeaderCell>
+            <HeaderCell hint={LOGS_TEXT.ipColumnHint}>{LOGS_TEXT.columns.ip}</HeaderCell>
             <HeaderCell>{LOGS_TEXT.columns.route}</HeaderCell>
             <HeaderCell numeric>{LOGS_TEXT.columns.status}</HeaderCell>
             {/* The only cell with a width: `w-full` in an auto-layout table hands the message every
@@ -261,17 +266,18 @@ export const LogTable = ({
 const HeaderCell = ({
   numeric,
   className,
-  title,
+  hint,
   children,
 }: {
   numeric?: boolean;
   className?: string;
-  title?: string;
+  /** Read by the table's one bubble — see `DelegatedTooltip`. */
+  hint?: string;
   children: React.ReactNode;
 }) => (
   <th
     scope="col"
-    title={title}
+    data-hint={hint}
     className={cn(
       // Sticky, for `DenseTable`'s reason and more so: scrolling ten thousand rows and losing which
       // column is which is the failure this header exists to prevent. It needs an opaque background
@@ -418,7 +424,7 @@ const LogTableRow = memo(
              * elsewhere in the tree instead. The accessible name still carries what pressing it
              * does, same as before.
              *
-             * `title` is where the full instant lives, since the column shows a time of day with no
+             * the bubble (`data-hint`) is where the full instant lives, since the column shows a time of day with no
              * date on it. The accessible name is that same full instant plus what pressing this
              * does, which the column alone cannot say; the visible text is a substring of it in
              * either zone — `14:03:22.481` of `2026-08-21 14:03:22.481 CEST` as much as of the raw
@@ -433,7 +439,7 @@ const LogTableRow = memo(
              */}
             <button
               type="button"
-              title={fullInstant(row.ts, tz)}
+              data-hint={fullInstant(row.ts, tz)}
               aria-label={`${fullInstant(row.ts, tz)} · ${LOGS_TEXT.openRow}`}
               data-testid="log-time"
               className="ik-zone-flash ik-zone-lift text-left"
@@ -457,7 +463,7 @@ const LogTableRow = memo(
            * Blank, not a dash, when the line has no address — IKN-72. The dash elsewhere in this row
            * marks a field the line *could* have carried and did not; most lines here are application
            * lines with no caller at all, so the IP column is empty as its normal state, and a column
-           * of dashes would read as data that failed to arrive. The heading's title says so.
+           * of dashes would read as data that failed to arrive. The heading's bubble says so.
            */}
           <td className={cn(CELL, "whitespace-nowrap", SURFACE_TEXT_MUTED.chassis)}>
             {clientIp !== null && (
@@ -469,7 +475,7 @@ const LogTableRow = memo(
                   event.stopPropagation();
                   actions.copy(clientIp);
                 }}
-                title={LOGS_TEXT.copyIp}
+                data-hint={LOGS_TEXT.copyIp}
                 aria-label={`${LOGS_TEXT.copyIp} ${clientIp}`}
                 data-testid="log-ip"
                 className="transition-colors duration-150 ease-out hover:text-chassis-text"
@@ -493,10 +499,10 @@ const LogTableRow = memo(
             {/*
              * `max-w-[72ch]` is structural, not decorative: without a definite width `truncate` can
              * never engage in an auto-layout table, and one 4KB line would then set the width of
-             * every row under it. The full text is in the title and, unclipped, in the detail pane.
+             * every row under it. The full text is in the bubble and, unclipped, in the detail pane.
              */}
             <span
-              title={row.message}
+              data-hint={row.message}
               className="block max-w-[72ch] truncate"
             >
               {row.message}
@@ -516,7 +522,7 @@ const LogTableRow = memo(
                   event.stopPropagation();
                   actions.openTrace(traceId);
                 }}
-                title={traceId}
+                data-hint={traceId}
                 aria-label={`${LOGS_TEXT.openTrace} ${traceId}`}
                 data-testid="log-trace"
                 data-trace={traceId}
@@ -526,7 +532,7 @@ const LogTableRow = memo(
                 )}
               >
                 {/* Eight characters is enough to recognise a trace across a screenful and to spot
-                    two rows sharing one; the full id is on the title and on the accessible name. */}
+                    two rows sharing one; the full id is in the bubble and on the accessible name. */}
                 {traceId.slice(0, 8)}
               </button>
             )}

@@ -1,4 +1,5 @@
 import { TONE_TEXT } from "@components/ui/surface";
+import { Tooltip } from "@components/ui/Tooltip";
 import { formatCount } from "@lib/format";
 import { formatLatency, PERCENTILE, p95Tone } from "@lib/metricsFormat";
 import { ABSENT, formatPercent, formatRate } from "@lib/serviceFormat";
@@ -44,10 +45,18 @@ export const RouteSummaryCard = ({ summary, thresholdMs, scrapeIntervalMs }: Rou
       </dl>
       <p
         className="mt-auto border-t border-work-border-strong pt-1.75 text-micro text-work-text-dim"
-        title={METRICS_TEXT.provenanceHint}
         data-testid="route-provenance"
       >
-        {METRICS_TEXT.provenance(Math.round(scrapeIntervalMs / 1000))}
+        {/* Inside the paragraph rather than around it: the bubble's wrapper is a `<span>`. Focusable,
+            because the line is inert and its hint is the only place the provenance is explained. */}
+        <Tooltip
+          mode="hover"
+          content={METRICS_TEXT.provenanceHint}
+          className="inline"
+          tabIndex={0}
+        >
+          {METRICS_TEXT.provenance(Math.round(scrapeIntervalMs / 1000))}
+        </Tooltip>
       </p>
     </DetailCard>
   );

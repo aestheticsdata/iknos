@@ -4,6 +4,7 @@ import { Badge } from "@components/ui/Badge";
 import { Button } from "@components/ui/Button";
 import { Field } from "@components/ui/Field";
 import { Select } from "@components/ui/Select";
+import { Tooltip } from "@components/ui/Tooltip";
 import { useCommand } from "@lib/commandState";
 import { isFilterActive, LOG_FILTER_KEYS } from "@lib/logQuery";
 import { FILTERABLE_LEVELS } from "@lib/logTypes";
@@ -248,19 +249,23 @@ export const QueryBar = ({
 
           {/* A toggle with a stable name and `aria-pressed`, like LIVE beside it: the panel it opens is
               a state of the view, and the name should not rewrite itself to say which. */}
-          <Button
-            variant="quiet"
-            onClick={onToggleIpGroups}
-            aria-pressed={ipGroupsOpen}
-            title={LOGS_TEXT.ipGroupsHint}
-            data-testid="ip-groups-toggle"
-            className={cn(
-              "h-6 px-2 transition-[color,border-color,filter,background-color] duration-150 ease-out",
-              ipGroupsOpen && "border-chassis-accent text-chassis-accent hover:text-chassis-accent",
-            )}
+          <Tooltip
+            mode="hover"
+            content={LOGS_TEXT.ipGroupsHint}
           >
-            {LOGS_TEXT.ipGroups}
-          </Button>
+            <Button
+              variant="quiet"
+              onClick={onToggleIpGroups}
+              aria-pressed={ipGroupsOpen}
+              data-testid="ip-groups-toggle"
+              className={cn(
+                "h-6 px-2 transition-[color,border-color,filter,background-color] duration-150 ease-out",
+                ipGroupsOpen && "border-chassis-accent text-chassis-accent hover:text-chassis-accent",
+              )}
+            >
+              {LOGS_TEXT.ipGroups}
+            </Button>
+          </Tooltip>
 
           <Button
             variant="quiet"
@@ -359,29 +364,37 @@ const FilterChip = ({
      * have told them apart. The toggle's name stays *stable* across states — `aria-pressed` is
      * what changes — because a name that rewrites itself reads as two different controls.
      */}
-    {/* The glyph and the title both flip with `active`; the name below does not. */}
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-pressed={active}
-      aria-label={`${name}:${value}`}
-      title={active ? LOGS_TEXT.filterOn : LOGS_TEXT.filterOff}
-      data-testid="filter-toggle"
-      className="ml-0.5 px-0.5 leading-none text-chassis-text-dim transition-colors duration-150 ease-out hover:text-chassis-text"
+    {/* The glyph and the bubble both flip with `active`; the name below does not. */}
+    <Tooltip
+      mode="hover"
+      content={active ? LOGS_TEXT.filterOn : LOGS_TEXT.filterOff}
     >
-      {active ? "×" : "+"}
-    </button>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-pressed={active}
+        aria-label={`${name}:${value}`}
+        data-testid="filter-toggle"
+        className="ml-0.5 px-0.5 leading-none text-chassis-text-dim transition-colors duration-150 ease-out hover:text-chassis-text"
+      >
+        {active ? "×" : "+"}
+      </button>
+    </Tooltip>
     {/* ⚠️ One glyph from the toggle, and this one drops the filter. Its own name, never a fuzzy match. */}
-    <button
-      type="button"
-      onClick={onRemove}
-      aria-label={`${LOGS_TEXT.removeFilter} — ${name}:${value}`}
-      title={LOGS_TEXT.removeFilter}
-      data-testid="filter-remove"
-      className="px-0.5 text-kicker leading-none text-chassis-text-dim transition-colors duration-150 ease-out hover:text-chassis-text"
+    <Tooltip
+      mode="hover"
+      content={LOGS_TEXT.removeFilter}
     >
-      rm
-    </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`${LOGS_TEXT.removeFilter} — ${name}:${value}`}
+        data-testid="filter-remove"
+        className="px-0.5 text-kicker leading-none text-chassis-text-dim transition-colors duration-150 ease-out hover:text-chassis-text"
+      >
+        rm
+      </button>
+    </Tooltip>
   </span>
 );
 
@@ -628,29 +641,33 @@ const TimeJumpDrawer = ({
  * here would claim a reason that is often untrue.
  */
 const LiveToggle = ({ live, onToggle }: { live: boolean; onToggle: () => void }) => (
-  <Button
-    variant="quiet"
-    onClick={onToggle}
-    aria-pressed={live}
-    title={LOGS_TEXT.liveHint}
-    /* The text reads LIVE or PAUSED by state; `aria-pressed` says which, this says where. */
-    data-testid="live-toggle"
-    /* The four properties written out rather than `transition-colors`: `Button` already sets
-       `transition-[filter,background-color,color]`, and tailwind-merge keeps only the last transition
-       utility — a bare `transition-colors` here would silently delete the hover brightness. */
-    className={cn(
-      "h-6 gap-1.5 px-2 transition-[color,border-color,filter,background-color] duration-150 ease-out",
-      live && "border-chassis-accent text-chassis-accent hover:text-chassis-accent",
-    )}
+  <Tooltip
+    mode="hover"
+    content={LOGS_TEXT.liveHint}
   >
-    {live ? (
-      <span
-        aria-hidden
-        className="size-1.5 shrink-0 animate-pulse-live rounded-full bg-chassis-accent"
-      />
-    ) : (
-      <span aria-hidden>❙❙</span>
-    )}
-    {live ? LOGS_TEXT.live : LOGS_TEXT.paused}
-  </Button>
+    <Button
+      variant="quiet"
+      onClick={onToggle}
+      aria-pressed={live}
+      /* The text reads LIVE or PAUSED by state; `aria-pressed` says which, this says where. */
+      data-testid="live-toggle"
+      /* The four properties written out rather than `transition-colors`: `Button` already sets
+         `transition-[filter,background-color,color]`, and tailwind-merge keeps only the last transition
+         utility — a bare `transition-colors` here would silently delete the hover brightness. */
+      className={cn(
+        "h-6 gap-1.5 px-2 transition-[color,border-color,filter,background-color] duration-150 ease-out",
+        live && "border-chassis-accent text-chassis-accent hover:text-chassis-accent",
+      )}
+    >
+      {live ? (
+        <span
+          aria-hidden
+          className="size-1.5 shrink-0 animate-pulse-live rounded-full bg-chassis-accent"
+        />
+      ) : (
+        <span aria-hidden>❙❙</span>
+      )}
+      {live ? LOGS_TEXT.live : LOGS_TEXT.paused}
+    </Button>
+  </Tooltip>
 );

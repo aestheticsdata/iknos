@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@components/ui/Modal";
+import { Tooltip } from "@components/ui/Tooltip";
 import { useTimeRange } from "@lib/chassisState";
 import { BADGE_TONE, badgeHint } from "@lib/hostFormat";
 import { HOST_LEVEL } from "@lib/interfaces/hostTypes";
@@ -50,21 +51,25 @@ export const HostBadge = ({ label }: HostBadgeProps) => {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        title={badgeHint(now.data, label)}
-        className={cn(
-          "rounded-chip border px-1.5 py-0.5 text-kicker tracking-kicker transition-colors duration-150 ease-out",
-          BADGE_CLASS[BADGE_TONE[level]],
-        )}
-        data-testid="host-badge"
-        data-level={level}
+      <Tooltip
+        mode="hover"
+        content={badgeHint(now.data, label)}
       >
-        {label}
-        {/* The colour in words, for whoever cannot see it — the title is not announced on focus everywhere. */}
-        <span className="sr-only">{` — ${HOST_TEXT.levelWord[level]}`}</span>
-      </button>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={cn(
+            "rounded-chip border px-1.5 py-0.5 text-kicker tracking-kicker transition-colors duration-150 ease-out",
+            BADGE_CLASS[BADGE_TONE[level]],
+          )}
+          data-testid="host-badge"
+          data-level={level}
+        >
+          {label}
+          {/* The colour in words, for whoever cannot see it — the bubble is not announced to every reader. */}
+          <span className="sr-only">{` — ${HOST_TEXT.levelWord[level]}`}</span>
+        </button>
+      </Tooltip>
 
       <Modal
         open={open}

@@ -296,13 +296,15 @@ export const VolumeHistogram = ({
       <div className="relative h-[40px]">
         {error ? (
           <div className="absolute inset-0 flex items-center justify-center gap-2">
-            {/* The raw message is worth keeping, but on the `title` — the user gets the sentence. */}
-            <span
+            {/* The raw message is worth keeping, but in the bubble — the user gets the sentence. */}
+            <Tooltip
+              mode="hover"
+              content={error}
               className="text-micro text-chassis-error"
-              title={error}
+              tabIndex={0}
             >
               {LOGS_TEXT.histogramFailed}
-            </span>
+            </Tooltip>
             <Button
               variant="quiet"
               onClick={onRetry}

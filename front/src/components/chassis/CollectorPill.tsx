@@ -1,6 +1,7 @@
 "use client";
 
 import { Dot } from "@components/ui/Dot";
+import { Tooltip } from "@components/ui/Tooltip";
 import { ageOfPoll, HEALTH_TONE, healthOf } from "@lib/collectorTypes";
 import { formatLag } from "@lib/format";
 import { useCollectorStatus } from "@lib/useCollector";
@@ -29,17 +30,20 @@ export const CollectorPill = () => {
    * This is the whole degradation rule of the ticket in one branch. A cold start has written
    * nothing and measured nothing, and a zero there reads as "keeping up perfectly" at exactly the
    * moment nothing is being collected. The absence of a figure is the honest report, and the
-   * title says which of the two silences this is.
+   * bubble says which of the two silences this is.
    */
   const lag = health === "unknown" || status?.lagMs === null ? null : formatLag(status?.lagMs ?? 0);
   const age = status === null ? null : ageOfPoll(status, receivedAt, now);
 
   return (
-    // Named, because its text *is* the state — `starting`, then `lag 0.4s` — and the title moves with it.
-    <span
-      className="flex items-center gap-1.5 text-kicker tracking-control text-chassis-text-dim"
+    // Named, because its text *is* the state — `starting`, then `lag 0.4s` — and the bubble moves with it.
+    <Tooltip
+      mode="hover"
+      content={hint(health, age)}
+      className="items-center gap-1.5 text-kicker tracking-control text-chassis-text-dim"
+      // Inert text whose only explanation is the bubble — a keyboard has to be able to reach it.
+      tabIndex={0}
       data-testid="collector-pill"
-      title={hint(health, age)}
     >
       <Dot
         surface="chassis"
@@ -57,7 +61,7 @@ export const CollectorPill = () => {
       ) : (
         <span>{CHASSIS_TEXT.collectorState[health]}</span>
       )}
-    </span>
+    </Tooltip>
   );
 };
 

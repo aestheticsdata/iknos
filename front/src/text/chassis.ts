@@ -22,7 +22,8 @@ export const CHASSIS_TEXT = {
   viewAlerts: "alerts",
   paused: "paused",
   pausedHint: "Collection is disabled for this service",
-  healthHint: (status: string, latency: string) => `Last health probe: ${status}${latency}`,
+  /* The left column of a rail row's bubble — table labels, read down rather than across. */
+  railHintRows: { probe: "last probe", latency: "latency" },
   healthWord: { ok: "healthy", error: "failing", stale: "stale" } as Record<string, string>,
   sparklineLabel: (name: string) => `${name} log volume, last hour`,
   noServices: "No services — the API is unreachable or the registry is empty.",

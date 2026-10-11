@@ -1,4 +1,5 @@
 import { TONE_FILL } from "@components/ui/surface";
+import { Tooltip } from "@components/ui/Tooltip";
 import { formatCount } from "@lib/format";
 import { formatShare, STATUS_TONE, statusParts } from "@lib/metricsFormat";
 import { cn } from "@lib/utils";
@@ -40,13 +41,15 @@ export const StatusCodes = ({ split }: StatusCodesProps) => {
           </div>
           <ul className="flex flex-wrap gap-x-3 gap-y-1">
             {parts.map((part) => (
-              <li
-                key={part.key}
-                className="flex items-center gap-1.25 text-row text-work-text-muted"
-                title={formatCount(part.count)}
-              >
-                <span className={cn("size-1.5 rounded-xs", TONE_FILL.work[STATUS_TONE[part.key]])} />
-                {part.key} <span className="tabular-nums text-work-text">{formatShare(part.share)}</span>
+              <li key={part.key}>
+                <Tooltip
+                  mode="hover"
+                  content={formatCount(part.count)}
+                  className="items-center gap-1.25 text-row text-work-text-muted"
+                >
+                  <span className={cn("size-1.5 rounded-xs", TONE_FILL.work[STATUS_TONE[part.key]])} />
+                  {part.key} <span className="tabular-nums text-work-text">{formatShare(part.share)}</span>
+                </Tooltip>
               </li>
             ))}
           </ul>

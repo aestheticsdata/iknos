@@ -3,6 +3,7 @@
 import { Modal } from "@components/ui/Modal";
 import { Pending } from "@components/ui/Pending";
 import { Sparkline } from "@components/ui/Sparkline";
+import { Tooltip } from "@components/ui/Tooltip";
 import { formatBytes, formatCount } from "@lib/format";
 import { useCollectorStatus, useCollectorStorage } from "@lib/useCollector";
 import { CHASSIS_TEXT } from "@text/chassis";
@@ -33,57 +34,62 @@ export const IngestCard = () => {
       className="mx-1 rounded-card border border-chassis-border bg-chassis-inset px-2.5 py-2 max-rail:mx-0 max-rail:px-1"
       data-testid="ingest-card"
     >
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex w-full flex-col gap-1.5 text-left"
-        data-testid="ingest-open"
-        title={CHASSIS_TEXT.ingestOpen}
+      <Tooltip
+        mode="hover"
+        content={CHASSIS_TEXT.ingestOpen}
+        className="flex w-full"
       >
-        <span className="flex items-baseline gap-1 text-kicker tracking-kicker text-chassis-text-dim uppercase">
-          <span>{CHASSIS_TEXT.ingest}</span>
-          <span aria-hidden>·</span>
-          <span>{CHASSIS_TEXT.ingestWindow}</span>
-        </span>
-
-        {rate === null ? (
-          /* No reading yet. `Sparkline` already refuses to draw an empty series; this says why, so
-             the gap reads as a state rather than as a component that failed to render. */
-          <span className="text-micro text-chassis-text-dim max-rail:sr-only">{CHASSIS_TEXT.ingestNothingYet}</span>
-        ) : (
-          <>
-            <Sparkline
-              surface="chassis"
-              tone="ok"
-              values={rate.perMinute}
-              width={128}
-              height={24}
-              label={CHASSIS_TEXT.ingestEvents(formatCount(rate.lines))}
-              className="w-full max-rail:hidden"
-            />
-            {/* Here only once the collector has a reading — what a take waits for before it films the rail. */}
-            <span
-              className="flex w-full justify-between text-micro tabular-nums text-chassis-text-dim max-rail:flex-col max-rail:items-center max-rail:gap-0.5"
-              data-testid="ingest-reading"
-            >
-              <span>{CHASSIS_TEXT.ingestEvents(formatCount(rate.lines))}</span>
-              <span>{formatBytes(rate.bytes)}</span>
-            </span>
-          </>
-        )}
-
-        {/*
-         * Drops are the one counter here that is an actual fault — lines that existed and are now
-         * gone — so they are shown whenever they are non-zero, and never otherwise. They do not
-         * colour the pastille (see `healthOf`), because the count is cumulative from process start
-         * and would leave permanent chrome amber for days after a single burst.
-         */}
-        {status !== null && status.dropped > 0 && (
-          <span className="text-micro text-chassis-error max-rail:sr-only">
-            {CHASSIS_TEXT.ingestDropped(formatCount(status.dropped))}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex w-full flex-col gap-1.5 text-left"
+          data-testid="ingest-open"
+        >
+          <span className="flex items-baseline gap-1 text-kicker tracking-kicker text-chassis-text-dim uppercase">
+            <span>{CHASSIS_TEXT.ingest}</span>
+            <span aria-hidden>·</span>
+            <span>{CHASSIS_TEXT.ingestWindow}</span>
           </span>
-        )}
-      </button>
+
+          {rate === null ? (
+            /* No reading yet. `Sparkline` already refuses to draw an empty series; this says why, so
+               the gap reads as a state rather than as a component that failed to render. */
+            <span className="text-micro text-chassis-text-dim max-rail:sr-only">{CHASSIS_TEXT.ingestNothingYet}</span>
+          ) : (
+            <>
+              <Sparkline
+                surface="chassis"
+                tone="ok"
+                values={rate.perMinute}
+                width={128}
+                height={24}
+                label={CHASSIS_TEXT.ingestEvents(formatCount(rate.lines))}
+                className="w-full max-rail:hidden"
+              />
+              {/* Here only once the collector has a reading — what a take waits for before it films the rail. */}
+              <span
+                className="flex w-full justify-between text-micro tabular-nums text-chassis-text-dim max-rail:flex-col max-rail:items-center max-rail:gap-0.5"
+                data-testid="ingest-reading"
+              >
+                <span>{CHASSIS_TEXT.ingestEvents(formatCount(rate.lines))}</span>
+                <span>{formatBytes(rate.bytes)}</span>
+              </span>
+            </>
+          )}
+
+          {/*
+           * Drops are the one counter here that is an actual fault — lines that existed and are now
+           * gone — so they are shown whenever they are non-zero, and never otherwise. They do not
+           * colour the pastille (see `healthOf`), because the count is cumulative from process start
+           * and would leave permanent chrome amber for days after a single burst.
+           */}
+          {status !== null && status.dropped > 0 && (
+            <span className="text-micro text-chassis-error max-rail:sr-only">
+              {CHASSIS_TEXT.ingestDropped(formatCount(status.dropped))}
+            </span>
+          )}
+        </button>
+      </Tooltip>
 
       <Modal
         open={open}

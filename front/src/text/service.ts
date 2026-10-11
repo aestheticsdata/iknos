@@ -34,9 +34,10 @@ export const SERVICE_TEXT = {
   endpoint: "/health",
   /* Nothing answered at all — a transport failure, not a status to render. */
   noAnswer: "no answer",
-  probeHint: (status: string, when: string) => `Probe ${status} · ${when} · probed every 30s`,
   probeStatus: { ok: "answered", error: "failed", stale: "went quiet" } as Record<string, string>,
-  checkHint: (name: string, status: string, latency: string) => `${name} reported ${status}${latency}`,
+  probeCadence: "every 30s",
+  /* The left column of a pill's bubble — table labels, lowercase, read down rather than across. */
+  hintRows: { status: "status", latency: "latency", probe: "probe", checked: "checked", cadence: "probed" },
   probedNever: "A health endpoint is registered, but no probe has answered yet.",
   probedNot: "No health endpoint is registered for this service.",
 

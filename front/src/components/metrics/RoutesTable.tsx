@@ -3,6 +3,7 @@
 import { DenseTable } from "@components/ui/DenseTable";
 import { MeterBar } from "@components/ui/MeterBar";
 import { TONE_TEXT } from "@components/ui/surface";
+import { Tooltip } from "@components/ui/Tooltip";
 import { costlyRoute, formatLatency, formatShare, hasSamples, p95Tone } from "@lib/metricsFormat";
 import { sameRoute } from "@lib/metricsState";
 import { ABSENT, formatPercent, formatRate } from "@lib/serviceFormat";
@@ -67,16 +68,17 @@ export const RoutesTable = ({ rows, thresholdMs, selected, onSelect }: RoutesTab
       header: METRICS_TEXT.colShare,
       numeric: true,
       render: (row) => (
-        <span
+        <Tooltip
+          mode="hover"
+          content={METRICS_TEXT.shareLabel(formatShare(row.share))}
           className="flex h-full w-18 items-center"
-          title={METRICS_TEXT.shareLabel(formatShare(row.share))}
         >
           <MeterBar
             share={row.share ?? 0}
             tone={p95Tone(row.p95, thresholdMs) === "error" ? "error" : "info"}
             className="w-full"
           />
-        </span>
+        </Tooltip>
       ),
     },
   ];
@@ -126,20 +128,25 @@ const RouteCell = ({ row, selected, onSelect }: RouteCellProps) => {
         )}
       />
       {hasSamples(row) ? (
-        <button
-          type="button"
-          onClick={(event) => {
-            // The row's own handler would select it a second time on the way up.
-            event.stopPropagation();
-            onSelect(row);
-          }}
-          aria-pressed={selected}
-          title={METRICS_TEXT.selectHint(`${row.method} ${row.route}`)}
-          className="flex min-w-0 items-center gap-1 text-left transition-colors duration-150 ease-out hover:text-work-accent"
-          data-testid="route-select"
+        <Tooltip
+          mode="hover"
+          content={METRICS_TEXT.selectHint(`${row.method} ${row.route}`)}
+          className="min-w-0"
         >
-          {label}
-        </button>
+          <button
+            type="button"
+            onClick={(event) => {
+              // The row's own handler would select it a second time on the way up.
+              event.stopPropagation();
+              onSelect(row);
+            }}
+            aria-pressed={selected}
+            className="flex min-w-0 items-center gap-1 text-left transition-colors duration-150 ease-out hover:text-work-accent"
+            data-testid="route-select"
+          >
+            {label}
+          </button>
+        </Tooltip>
       ) : (
         <span className="flex min-w-0 items-center gap-1">
           {label}

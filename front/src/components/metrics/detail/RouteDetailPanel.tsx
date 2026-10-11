@@ -1,6 +1,7 @@
 "use client";
 
 import { Pending } from "@components/ui/Pending";
+import { Tooltip } from "@components/ui/Tooltip";
 import { logsHref } from "@lib/logsHref";
 import { linksToLogs } from "@lib/metricsFormat";
 import { METRICS_TEXT } from "@text/metrics";
@@ -57,14 +58,19 @@ export const RouteDetailPanel = ({ service, route, range, detail }: RouteDetailP
           </span>
           <PercentileLegend />
           {data !== null && linksToLogs(data.summary) && (
-            <Link
-              href={logsHref({ range, values: { service, route: route.route } })}
-              title={METRICS_TEXT.toLogsHint}
-              className="flex-none text-micro text-work-text-muted transition-colors duration-150 ease-out hover:text-work-accent"
-              data-testid="route-logs-link"
+            <Tooltip
+              mode="hover"
+              content={METRICS_TEXT.toLogsHint}
+              className="flex-none"
             >
-              {METRICS_TEXT.toLogs}
-            </Link>
+              <Link
+                href={logsHref({ range, values: { service, route: route.route } })}
+                className="flex-none text-micro text-work-text-muted transition-colors duration-150 ease-out hover:text-work-accent"
+                data-testid="route-logs-link"
+              >
+                {METRICS_TEXT.toLogs}
+              </Link>
+            </Tooltip>
           )}
         </header>
         <div className="flex min-h-0 flex-1 flex-col px-3 py-2.5">

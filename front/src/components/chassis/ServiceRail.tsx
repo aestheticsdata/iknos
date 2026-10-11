@@ -3,6 +3,7 @@
 import { Pending } from "@components/ui/Pending";
 import { Sparkline } from "@components/ui/Sparkline";
 import { TONE_FILL, TONE_TEXT } from "@components/ui/surface";
+import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
 import { useSelectedService } from "@lib/chassisState";
 import { ROUTES } from "@lib/routes";
 import { useAlertCounts } from "@lib/useAlertCounts";
@@ -57,7 +58,7 @@ const VIEWS = [
  *
  * A single-part name (`zeus`, `bkmk`) has no second initial to take, so it falls back to its first
  * two characters. Two collide only for services sharing both an app and a first letter of the part
- * — `pfa-api` against a future `pfa-admin` — and those keep their full name in the title and in the
+ * — `pfa-api` against a future `pfa-admin` — and those keep their full name in the bubble and in the
  * accessibility tree, which is the answer for the collapsed rail generally: it is a scanning aid,
  * not an identifier.
  */
@@ -159,7 +160,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
                     label={CHASSIS_TEXT.sparklineLabel(service.name)}
                   />
                 }
-                title={railTitle(service)}
+                hint={railHint(service)}
               >
                 {service.name}
                 {service.health && (
@@ -280,16 +281,31 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
 };
 
 /**
- * The hover title: pm2 name (or the paused hint), then the last probe when one exists — the
+ * The row's bubble: pm2 name (or the paused hint), then the last probe when one exists — the
  * words behind the dot, for whoever wants the number rather than the colour.
+ *
+ * Collapsed to `max-rail`, the row is a monogram and this is the only place the name, the health
+ * and the latency exist at all — which is why it is rows rather than one run-on line (IKN-62).
  */
-const railTitle = (service: Service): string => {
-  const base = service.enabled ? service.pm2Name : `${service.name} · ${CHASSIS_TEXT.pausedHint}`;
-  if (!service.health) return base;
+const railHint = (service: Service) => {
+  const health = service.health;
+  const rows =
+    health === null
+      ? []
+      : [
+          { label: CHASSIS_TEXT.railHintRows.probe, value: CHASSIS_TEXT.healthWord[health.status] ?? health.status },
+          ...(health.latencyMs === null
+            ? []
+            : [{ label: CHASSIS_TEXT.railHintRows.latency, value: `${health.latencyMs}ms` }]),
+        ];
 
-  const word = CHASSIS_TEXT.healthWord[service.health.status] ?? service.health.status;
-  const latency = service.health.latencyMs === null ? "" : ` · ${service.health.latencyMs}ms`;
-  return `${base} · ${CHASSIS_TEXT.healthHint(word, latency)}`;
+  return (
+    <TooltipBlock
+      subject={service.enabled ? service.pm2Name : service.name}
+      context={service.enabled ? undefined : CHASSIS_TEXT.pausedHint}
+      rows={rows}
+    />
+  );
 };
 
 // Two of these, `sr-only` collapsed — so the sections are named apart (`rail-services`,
@@ -308,7 +324,7 @@ const RailRow = ({
   service,
   selected,
   muted,
-  title,
+  hint,
   monogram: collapsed,
   dot,
   trailing,
@@ -324,7 +340,8 @@ const RailRow = ({
   service: string;
   selected: boolean;
   muted?: boolean;
-  title?: string;
+  /** The row's bubble — the only place a collapsed row says what it is. */
+  hint?: React.ReactNode;
   monogram: string;
   /** Health tone for the leading dot; null draws nothing — a dot must be earned (IKN-8). */
   dot?: Tone | null;
@@ -332,34 +349,39 @@ const RailRow = ({
   trailing?: React.ReactNode;
   onClick: () => void;
 }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    title={title}
-    aria-pressed={selected}
-    data-testid="rail-row"
-    data-service={service}
-    className={`flex w-full items-center rounded-chip px-2 py-1.5 text-left text-label transition-colors duration-150 ease-out max-rail:justify-center max-rail:px-0 ${
-      selected
-        ? "bg-chassis-raised text-chassis-text-bright"
-        : "text-chassis-text-muted hover:bg-chassis-raised/60 hover:text-chassis-text"
-    } ${muted ? "opacity-60" : ""}`}
+  <Tooltip
+    mode="hover"
+    content={hint}
+    className="flex w-full"
   >
-    {dot != null && (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      data-testid="rail-row"
+      data-service={service}
+      className={`flex w-full items-center rounded-chip px-2 py-1.5 text-left text-label transition-colors duration-150 ease-out max-rail:justify-center max-rail:px-0 ${
+        selected
+          ? "bg-chassis-raised text-chassis-text-bright"
+          : "text-chassis-text-muted hover:bg-chassis-raised/60 hover:text-chassis-text"
+      } ${muted ? "opacity-60" : ""}`}
+    >
+      {dot != null && (
+        <span
+          aria-hidden="true"
+          className={`mr-1.5 inline-block size-1.5 flex-none rounded-full ${TONE_FILL.chassis[dot]} max-rail:hidden`}
+        />
+      )}
+      <span className="min-w-0 flex-1 truncate max-rail:sr-only">{children}</span>
+      {trailing != null && <span className="ml-1.5 flex-none max-rail:hidden">{trailing}</span>}
       <span
         aria-hidden="true"
-        className={`mr-1.5 inline-block size-1.5 flex-none rounded-full ${TONE_FILL.chassis[dot]} max-rail:hidden`}
-      />
-    )}
-    <span className="min-w-0 flex-1 truncate max-rail:sr-only">{children}</span>
-    {trailing != null && <span className="ml-1.5 flex-none max-rail:hidden">{trailing}</span>}
-    <span
-      aria-hidden="true"
-      className="hidden max-rail:block"
-    >
-      {collapsed}
-    </span>
-  </button>
+        className="hidden max-rail:block"
+      >
+        {collapsed}
+      </span>
+    </button>
+  </Tooltip>
 );
 
 /**

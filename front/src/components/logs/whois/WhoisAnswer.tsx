@@ -2,6 +2,7 @@
 
 import { Pending } from "@components/ui/Pending";
 import { SURFACE_TEXT, SURFACE_TEXT_DIM, SURFACE_TEXT_MUTED, TONE_TEXT } from "@components/ui/surface";
+import { Tooltip } from "@components/ui/Tooltip";
 import { WHOIS_STATUS } from "@lib/interfaces/whoisTypes";
 import { cn } from "@lib/utils";
 import { whoisNetwork, whoisPlace, whoisUnknown } from "@lib/whoisFormat";
@@ -72,10 +73,11 @@ const WhoisFacts = ({ answer }: WhoisFactsProps) => {
   const network = whoisNetwork(answer);
 
   return (
-    <span
+    <Tooltip
+      mode="hover"
+      content={answer.cached ? LOGS_TEXT.whoisCached : LOGS_TEXT.whoisFresh}
       data-whois-status={answer.status}
       data-whois-cached={answer.cached}
-      title={answer.cached ? LOGS_TEXT.whoisCached : LOGS_TEXT.whoisFresh}
       className="flex flex-col"
     >
       {place !== null && <span className={SURFACE_TEXT.chassis}>{place}</span>}
@@ -83,6 +85,6 @@ const WhoisFacts = ({ answer }: WhoisFactsProps) => {
       {place === null && network === null && (
         <span className={SURFACE_TEXT_DIM.chassis}>{whoisUnknown(answer.reason)}</span>
       )}
-    </span>
+    </Tooltip>
   );
 };
