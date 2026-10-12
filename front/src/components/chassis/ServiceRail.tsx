@@ -122,15 +122,23 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
   const { total: firing } = useAlertCounts();
 
   return (
-    // The nav is its own scroller — there is no inner box — so a wheel aimed at the rail lands here.
+    // The nav does not scroll: views and the ingest card stay put, and only the service list —
+    // the one part that grows with the fleet — scrolls under its heading.
     <nav
       aria-label={CHASSIS_TEXT.railLabel}
-      className="ik-scroll flex w-[188px] flex-none flex-col gap-4 overflow-y-auto border-r border-chassis-border bg-chassis-surface px-2 py-3 max-rail:w-[52px] max-rail:px-1"
+      className="flex w-[188px] flex-none flex-col gap-4 border-r border-chassis-border bg-chassis-surface px-2 py-3 max-rail:w-[52px] max-rail:px-1"
       data-testid="service-rail"
     >
-      <section data-testid="rail-services">
+      {/* `min-h-0` lets the section shrink below its content so the list overflows instead of the
+          nav; not `flex-1`, so a short fleet keeps the views right under it. */}
+      <section
+        className="flex min-h-0 flex-col"
+        data-testid="rail-services"
+      >
         <RailHeading>{CHASSIS_TEXT.services}</RailHeading>
-        <ul className="flex flex-col">
+        {/* Pulled out to the nav's edge by its own padding, so the bar sits where the nav's did
+            rather than over the sparklines. */}
+        <ul className="ik-scroll -mx-2 flex min-h-0 flex-col overflow-y-auto px-2 max-rail:-mx-1 max-rail:px-1">
           <li>
             <RailRow
               service="all"
@@ -190,7 +198,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
 
       {/* Collapsed, the headings are gone, so the groups need the rule the words were providing. */}
       <section
-        className="max-rail:border-t max-rail:border-chassis-border max-rail:pt-2"
+        className="flex-none max-rail:border-t max-rail:border-chassis-border max-rail:pt-2"
         data-testid="rail-views"
       >
         <RailHeading>{CHASSIS_TEXT.views}</RailHeading>
@@ -272,7 +280,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
 
       {/* `mt-auto` here rather than on the user menu: the mockup puts the ingest card and the user
           together at the foot of the rail, and the gap has to open above both of them. */}
-      <div className="mt-auto flex flex-col gap-2">
+      <div className="mt-auto flex flex-none flex-col gap-2">
         <IngestCard />
         <UserMenu />
       </div>

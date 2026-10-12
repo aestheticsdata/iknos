@@ -10,6 +10,20 @@
   }
 
   /**
+   * ⚠️ …except on boxes that clip without scrolling. `overflow: hidden` still makes a scroll
+   * container, and `none` on a scroll container stops the wheel chaining *out* of it — so a wheel
+   * over a `truncate` label went nowhere instead of scrolling the list it sits in (the rail's
+   * service names). These boxes cannot scroll themselves, so there is no bounce to suppress: `auto`
+   * hands the gesture to the real scroller above, which keeps its own `none`.
+   */
+  .truncate,
+  .overflow-hidden,
+  .overflow-y-hidden,
+  [class*="line-clamp-"] {
+    overscroll-behavior-y: auto;
+  }
+
+  /**
    * The document is chassis-dark. Every screen shipped so far — the four auth pages — is chassis,
    * and the work surface arrives as light *cards on top of it*, never as a light page. Painting
    * the root anything else would mean every screen starting by covering it up.
