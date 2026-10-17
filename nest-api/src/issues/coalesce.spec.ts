@@ -141,6 +141,23 @@ describe("errorFieldsOf", () => {
     );
   });
 
+  it("reads a stack the tailer folded into the head row (IKN-75)", () => {
+    const folded = [
+      "Error: The Server Reference ID did not match the expected format.",
+      "Read more: https://nextjs.org/docs/messages/failed-to-find-server-action",
+      "    at async p (.next/server/chunks/ssr/b.js:2:4598)",
+    ].join("\n");
+    const [ex] = coalesce([row({ message: folded })]);
+    const fields = errorFieldsOf(ex);
+
+    expect(fields.type).toBe("Error");
+    expect(fields.message).toBe(
+      "The Server Reference ID did not match the expected format.\nRead more: https://nextjs.org/docs/messages/failed-to-find-server-action",
+    );
+    expect(fields.stack).toBe(folded);
+    expect(isGroupable(ex, fields)).toBe(true);
+  });
+
   it("leaves a message with no type prefix whole", () => {
     const [ex] = coalesce([row({ message: "everything is on fire" })]);
     expect(errorFieldsOf(ex)).toEqual({ type: null, message: "everything is on fire", stack: null });

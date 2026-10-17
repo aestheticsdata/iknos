@@ -2,6 +2,7 @@ import { open, stat } from "node:fs/promises";
 import { logger } from "@common/logger";
 import { LineBuffer } from "./line-buffer";
 import { decide } from "./rotation";
+import { foldStackLines } from "./stack-fold";
 
 import type { LogRecord } from "./log-record";
 import type { StoredOffset } from "./rotation";
@@ -145,8 +146,11 @@ export class Tailer {
         // this module exists to prevent, so the two facts move together or not at all.
         entry.offset = { dev: now.dev, inode: now.inode, byteOffset: pos };
 
+        const lines: string[] = [];
+        for (let line = entry.buffer.nextLine(); line !== null; line = entry.buffer.nextLine()) lines.push(line);
+        // A stack printed to stderr becomes one row, not one per frame (IKN-75).
         const records: LogRecord[] = [];
-        for (let line = entry.buffer.nextLine(); line !== null; line = entry.buffer.nextLine()) {
+        for (const line of stream === "err" ? foldStackLines(lines) : lines) {
           const record = source.parse(line, service, stream);
           if (record) records.push(record);
         }

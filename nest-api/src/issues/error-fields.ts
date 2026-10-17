@@ -31,7 +31,7 @@ export type ErrorFields = {
 };
 
 /** `TypeError: cannot read …` → the type and the rest. Anything else has no type. */
-const HEADER = /^([A-Za-z_$][\w$]*(?:Error|Exception|Warning))\s*:\s*([\s\S]*)$/;
+const HEADER = /^((?:[A-Za-z_$][\w$]*)?(?:Error|Exception|Warning))\s*:\s*([\s\S]*)$/;
 
 const asString = (value: unknown): string | null => (typeof value === "string" && value.length > 0 ? value : null);
 
@@ -62,18 +62,31 @@ export function errorFieldsOf(exception: Exception): ErrorFields {
     }
   }
 
-  // Plain text. The header line is the message and possibly the type; `coalesce` collected the
-  // frames, and they are re-joined into the V8 text form `normaliseFrames` already reads, so the
-  // two paths converge on one parser rather than two.
-  const match = HEADER.exec(head.message);
+  // Plain text. The header is the message and possibly the type. The frames are either folded into
+  // the head row by the tailer (IKN-75) or collected by `coalesce` from rows ingested before that,
+  // and are re-joined into the V8 text form `normaliseFrames` already reads, so the two paths
+  // converge on one parser rather than two.
+  const { header, folded } = splitFolded(head.message);
+  const allFrames = [...folded, ...frames];
+  const match = HEADER.exec(header);
   const type = match ? match[1] : null;
-  const message = match ? match[2] : head.message;
+  const message = match ? match[2] : header;
 
   return {
     type,
     message,
-    stack: frames.length > 0 ? [head.message, ...frames].join("\n") : null,
+    stack: allFrames.length > 0 ? [header, ...allFrames].join("\n") : null,
   };
+}
+
+type FoldedMessage = { header: string; folded: string[] };
+
+/** A folded row's message → the header lines and the frames that follow the first of them. */
+function splitFolded(message: string): FoldedMessage {
+  const lines = message.split("\n");
+  const first = lines.findIndex(isContinuation);
+  if (first === -1) return { header: message, folded: [] };
+  return { header: lines.slice(0, first).join("\n"), folded: lines.slice(first) };
 }
 
 /**
