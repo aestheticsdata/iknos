@@ -1,4 +1,4 @@
-import { isForgedAction } from "@lib/proxy/forgedAction";
+import { isServerActionRequest } from "@lib/proxy/serverAction";
 import { NextResponse } from "next/server";
 
 import type { NextRequest } from "next/server";
@@ -22,8 +22,9 @@ const SESSION_COOKIE = "iknos.sid";
 const PUBLIC_PATHS = ["/login", "/register", "/recover", "/about"];
 
 export function proxy(request: NextRequest) {
-  // Ahead of everything else: a forged Server Action probe gets a bare 400 and no log (IKN-76).
-  if (isForgedAction(request.headers)) return new NextResponse(null, { status: 400 });
+  // Ahead of everything else: the front has no Server Actions, so any Next-Action request is a
+  // scanner probe and gets a bare 400 and no log (IKN-76, IKN-77).
+  if (isServerActionRequest(request.headers)) return new NextResponse(null, { status: 400 });
 
   // `trailingSlash: true`, so compare with the slash stripped — otherwise `/login/` is not
   // `/login` and the sign-in page redirects to itself, forever.
