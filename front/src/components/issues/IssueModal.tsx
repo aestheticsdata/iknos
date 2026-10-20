@@ -5,6 +5,7 @@ import { Badge } from "@components/ui/Badge";
 import { BarSpark } from "@components/ui/BarSpark";
 import { Button } from "@components/ui/Button";
 import { Modal } from "@components/ui/Modal";
+import { MODAL_SIZE } from "@components/ui/modalSize";
 import { Pending } from "@components/ui/Pending";
 import { TONE_TEXT } from "@components/ui/surface";
 import { Tooltip } from "@components/ui/Tooltip";
@@ -79,7 +80,7 @@ export const IssueModal = ({ fingerprint, onClose }: { fingerprint: string | nul
       open={fingerprint !== null}
       onClose={onClose}
       // A stack trace needs the width — the same reason `RowDetail` sets it.
-      wide
+      size={MODAL_SIZE.wide}
       tag={issue?.service ?? ""}
       title={issue === null ? ISSUES_TEXT.title : issueTitle(issue)}
       hint={issue === null ? undefined : issue.fingerprint}

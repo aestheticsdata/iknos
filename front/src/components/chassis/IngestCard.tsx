@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@components/ui/Modal";
+import { MODAL_SIZE } from "@components/ui/modalSize";
 import { Pending } from "@components/ui/Pending";
 import { Sparkline } from "@components/ui/Sparkline";
 import { Tooltip } from "@components/ui/Tooltip";
@@ -96,6 +97,8 @@ export const IngestCard = () => {
         onClose={() => setOpen(false)}
         // Six dialogs sit closed in the DOM at once; this is how the film tells this one apart.
         testId="storage-modal"
+        // A table name is the row's identity; at the narrow chassis the longest ones were cut.
+        size={MODAL_SIZE.roomy}
         tag={CHASSIS_TEXT.storageTag}
         title={CHASSIS_TEXT.storageTitle}
         hint={status === null ? undefined : CHASSIS_TEXT.storageFiles(status.files.length)}

@@ -4,6 +4,7 @@ import { WhoisAnswer } from "@components/logs/whois/WhoisAnswer";
 import { WhoisButton } from "@components/logs/whois/WhoisButton";
 import { Button } from "@components/ui/Button";
 import { Modal } from "@components/ui/Modal";
+import { MODAL_SIZE } from "@components/ui/modalSize";
 import { Pending } from "@components/ui/Pending";
 import {
   SURFACE_BORDER,
@@ -104,8 +105,8 @@ export const RowDetail = ({
       // This panel has nothing a stray click could cost — see `Modal`'s own doc for the default
       // this opts out of, and why it is an opt-in rather than the other way round.
       closeOnBackdropClick
-      // Two panes of JSON side by side need more than 560px — see `wide` in `Modal`'s own doc.
-      wide
+      // Two panes of JSON side by side need more than 560px — see `size` in `Modal`'s own doc.
+      size={MODAL_SIZE.wide}
       testId="row-detail"
       tag={row?.service ?? ""}
       title={row !== null ? fullInstant(row.ts, tz) : ""}

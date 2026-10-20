@@ -1,0 +1,17 @@
+/**
+ * Widths of the overlays. Each one is relative to the viewport below its cap, keeping a 1rem gutter
+ * on either side, so a phone gets the whole screen and a desk gets a card that stops growing.
+ *
+ * Exposed as `--container-*`, which is what Tailwind's `w-*` reads: `w-modal`, `w-modal-roomy`,
+ * `w-modal-wide`.
+ */
+@theme {
+  /* The default chassis: one column of short lines — palette, issue, alert, trace. */
+  --container-modal: min(560px, 100vw - 2rem);
+
+  /* A table whose names should not be cut — storage & retention. */
+  --container-modal-roomy: min(52rem, 100vw - 2rem);
+
+  /* Two panes of JSON side by side — the log row detail (IKN-60). */
+  --container-modal-wide: min(1120px, 100vw - 2rem);
+}

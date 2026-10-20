@@ -3,6 +3,9 @@
 import { useModalOpen } from "@lib/commandState";
 import { cn } from "@lib/utils";
 import { useEffect, useRef } from "react";
+import { MODAL_SIZE } from "./modalSize";
+
+import type { ModalSize } from "./interfaces/modalTypes";
 
 /**
  * Whether a click landed on `::backdrop` rather than on the card — IKN-60.
@@ -41,16 +44,18 @@ export const isBackdropClick = (event: { target: EventTarget | null }, dialog: E
  * real action is the ordinary caller here and the unsafe choice should never be the one nobody had
  * to ask for.
  *
- * `wide` is the same shape of opt-in, for the same ticket, for a different reason: two panes of JSON
- * side by side lose to 560px long before either pane's text does, where the palette's one line and
- * the trace's single lane never notice the width. Off by default so a caller that already fits the
- * narrow chassis does not silently grow the day this file changes for someone else's reason.
+ * `size` is the same shape of opt-in, for a different reason: two panes of JSON side by side lose to
+ * 560px long before either pane's text does (`wide`: IKN-60's log detail, and the issue's stack trace), and the storage table cut its own
+ * table names at that width (`roomy`), where the palette's one line and the trace's single lane
+ * never notice. `narrow` by default so a caller that already fits the chassis does not silently
+ * grow the day this file changes for someone else's reason. Every width is relative to the
+ * viewport under its cap — see `styles/tokens/layout.css`.
  */
 export const Modal = ({
   open,
   onClose,
   closeOnBackdropClick,
-  wide,
+  size = MODAL_SIZE.narrow,
   tag,
   title,
   hint,
@@ -62,8 +67,8 @@ export const Modal = ({
   onClose: () => void;
   /** See `closeOnBackdropClick` in the class doc above. Only IKN-60's log detail sets this. */
   closeOnBackdropClick?: boolean;
-  /** See `wide` in the class doc above. Only IKN-60's log detail sets this. */
-  wide?: boolean;
+  /** See `size` in the class doc above. */
+  size?: ModalSize;
   tag?: string;
   title: string;
   hint?: string;
@@ -149,7 +154,9 @@ export const Modal = ({
       }}
       className={cn(
         "ik-modal m-auto rounded-overlay border border-chassis-border-strong",
-        wide ? "w-[min(1120px,calc(100vw-2rem))]" : "w-[min(560px,calc(100vw-2rem))]",
+        size === MODAL_SIZE.wide && "w-modal-wide",
+        size === MODAL_SIZE.roomy && "w-modal-roomy",
+        size === MODAL_SIZE.narrow && "w-modal",
         "bg-chassis-surface p-0 font-mono text-chassis-text shadow-overlay backdrop:bg-chassis-inset/70",
       )}
       data-testid={testId}

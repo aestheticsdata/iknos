@@ -36,7 +36,12 @@ export const StoragePanel = ({ storage }: { storage: CollectorStorage }) => {
       className="flex flex-col gap-2.5"
       data-testid="storage-panel"
     >
-      <ul className="flex flex-col gap-1.5">
+      {/*
+       * One grid for the whole table, each row a subgrid of it: the name column is as wide as the
+       * longest name rather than a fixed width that cut `alert_state_change`, and the bar takes
+       * what is left — which is also what lets the panel narrow on a phone without losing a name.
+       */}
+      <ul className="grid grid-cols-[auto_1fr_auto_auto] gap-x-3 gap-y-1.5">
         {storage.tables.map((table) => (
           <Row
             key={table.name}
@@ -91,11 +96,11 @@ const Sep = () => (
 
 const Row = ({ table, share }: { table: StorageTable; share: number }) => (
   <li
-    className="flex items-center gap-2 text-row text-chassis-text-muted"
+    className="col-span-full grid grid-cols-subgrid items-center text-row text-chassis-text-muted"
     data-testid="storage-row"
     data-table={table.name}
   >
-    <span className="w-[104px] shrink-0 truncate text-chassis-text">{table.name}</span>
+    <span className="text-chassis-text">{table.name}</span>
     {/*
      * `aria-hidden`, because the bar is a second rendering of the number sitting next to it. A
      * screen reader announcing "72 percent" and then "4.2 GB" reports one fact twice, in two units,
@@ -103,7 +108,7 @@ const Row = ({ table, share }: { table: StorageTable; share: number }) => (
      */}
     <span
       aria-hidden
-      className="h-1 flex-1 overflow-hidden rounded-full bg-chassis-inset"
+      className="h-1 overflow-hidden rounded-full bg-chassis-inset"
     >
       <span
         className="block h-full bg-chassis-accent transition-[width] duration-150 ease-out"
@@ -112,8 +117,8 @@ const Row = ({ table, share }: { table: StorageTable; share: number }) => (
         style={{ width: `${Math.max(share * 100, 1)}%` }}
       />
     </span>
-    <span className="w-[62px] shrink-0 text-right tabular-nums">{formatBytes(table.bytes)}</span>
-    <span className="w-[30px] shrink-0 text-right tabular-nums text-chassis-text-dim">
+    <span className="text-right tabular-nums">{formatBytes(table.bytes)}</span>
+    <span className="text-right tabular-nums text-chassis-text-dim">
       {table.retentionDays === null ? CHASSIS_TEXT.storageForever : `${table.retentionDays}d`}
     </span>
   </li>
