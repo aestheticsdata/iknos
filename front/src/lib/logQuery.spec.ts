@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { LOG_FILTER, logDetailUrl, logHistogramUrl, logIpGroupsUrl, logSearchUrl, logStreamUrl } from "./logQuery";
+import {
+  LOG_FILTER,
+  logDetailUrl,
+  logHistogramUrl,
+  logIpGroupsUrl,
+  logSearchUrl,
+  logStreamUrl,
+  logTraceUrl,
+} from "./logQuery";
 
 import type { LogQueryState } from "./logQuery";
 
@@ -123,5 +131,23 @@ describe("the trace token", () => {
       expect(params(url).get("traceId")).toBe("bb7d4a69-695f-46b9-a7a9-83a70e86c54a");
       expect(params(url).has("q")).toBe(false);
     }
+  });
+});
+
+describe("logTraceUrl", () => {
+  const params = (url: string) => new URL(url, "http://x").searchParams;
+  const later = new Date("2026-08-10T00:00:05.000Z");
+
+  it("ends an unpinned window at now — the tail's newest rows are past the snapshot", () => {
+    const found = params(logTraceUrl("abc", stateAt(null), later));
+
+    expect(found.get("from")).toBe("2026-08-09T00:00:00.000Z");
+    expect(found.get("to")).toBe("2026-08-10T00:00:05.000Z");
+  });
+
+  it("keeps a pinned window exactly as it was pinned", () => {
+    const found = params(logTraceUrl("abc", stateAt("2026-08-09T10:00:00.000Z"), later));
+
+    expect(found.get("to")).toBe("2026-08-10T00:00:00.000Z");
   });
 });

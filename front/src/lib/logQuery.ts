@@ -199,9 +199,18 @@ export const logDetailUrl = (row: { id: string; ts: string }): string => {
   return `/logs/entry/${encodeURIComponent(row.id)}?${params}`;
 };
 
-/** The trace endpoint takes only the window — it is keyed by id, not by the filter set. */
-export const logTraceUrl = (traceId: string, state: LogQueryState): string => {
-  const params = new URLSearchParams({ from: state.bounds.from, to: state.bounds.to });
+/**
+ * The trace endpoint takes only the window — it is keyed by id, not by the filter set.
+ *
+ * **An unpinned window ends at `now`, not at the snapshot.** A relative range's `to` is taken when
+ * the page loaded or was last refreshed, and the live tail keeps prepending rows newer than it — so
+ * the rows at the top, the ones anyone clicks, carried trace ids the snapshot window could never
+ * find, and every trace opened from the tail came back empty. A pinned window is a choice and is
+ * kept as it is.
+ */
+export const logTraceUrl = (traceId: string, state: LogQueryState, now: Date = new Date()): string => {
+  const to = state.pinned ? state.bounds.to : now.toISOString();
+  const params = new URLSearchParams({ from: state.bounds.from, to });
   return `/logs/trace/${encodeURIComponent(traceId)}?${params}`;
 };
 

@@ -401,9 +401,12 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
   const openInLogs = useCallback(
     (traceId: string) => {
       setValue(LOG_FILTER.traceId, traceId);
+      // Re-take `now` with it: a trace opened from the live tail is newer than the snapshot window,
+      // and the list would otherwise search a range that ends before the trace began.
+      refresh();
       setOpenTraceId(null);
     },
-    [setValue],
+    [setValue, refresh],
   );
 
   /*
