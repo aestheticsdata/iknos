@@ -113,8 +113,14 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => (
        * The chassis keeps the selected service and the time range in the query string, and nuqs
        * needs its adapter above every hook that reads them. Mounted at the root rather than in the
        * app group so that a future auth screen with URL state does not have to remember it.
+       *
+       * `history: "push"` app-wide. nuqs defaults to "replace", which quietly broke the promise
+       * every state module makes — that the back button walks what was being looked at: a filter,
+       * a range or a service change rewrote the current entry instead, so Back left Iknos for
+       * whatever page came before it. The hooks that genuinely want "replace" (the trace, issue,
+       * alert and endpoint drawers, so stepping through rows leaves no trail) still say so.
        */}
-      <NuqsAdapter>{children}</NuqsAdapter>
+      <NuqsAdapter defaultOptions={{ history: "push" }}>{children}</NuqsAdapter>
     </body>
   </html>
 );
