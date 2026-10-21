@@ -380,7 +380,7 @@ describe("GET /api/logs/trace/:traceId", () => {
     expect((res.body.rows as LogRow[]).every((r) => r.traceId === uuid)).toBe(true);
   });
 
-  it("filters the list to one trace — what \"open in logs\" asks for", async () => {
+  it('filters the list to one trace — what "open in logs" asks for', async () => {
     // The ids live in `trace_id`, never in the message, so a text search could not find them.
     const uuid = randomUUID();
     const service = await track(app, 4, { traceId: (i) => (i < 3 ? uuid : null) });
