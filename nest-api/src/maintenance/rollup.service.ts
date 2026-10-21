@@ -4,6 +4,7 @@ import { Prisma } from "@generated/prisma/client";
 import { Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { dayChunks, type HourRange, pendingHours } from "./rollup-plan";
+
 import type { BeforeApplicationShutdown } from "@nestjs/common";
 
 /**
