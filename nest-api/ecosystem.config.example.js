@@ -93,6 +93,10 @@ module.exports = {
       script: "dist/src/main.js",
       instances: 1,
       exec_mode: "fork",
+      // A reload lets the requests in flight finish (IKN-80): the live tails end, Nest drains on
+      // SIGINT, the ingest writer flushes, then Redis and Prisma close. PM2 waits up to this long
+      // before SIGKILL (default 1.6 s).
+      kill_timeout: 15000,
       env_production: {
         NODE_ENV: "production",
         ...prodConfig,

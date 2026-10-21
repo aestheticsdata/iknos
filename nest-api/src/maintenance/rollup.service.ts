@@ -4,6 +4,7 @@ import { Prisma } from "@generated/prisma/client";
 import { Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { dayChunks, type HourRange, pendingHours } from "./rollup-plan";
+import type { BeforeApplicationShutdown } from "@nestjs/common";
 
 /**
  * Hourly aggregates of `metric_sample` into `metric_rollup` (IKN-20).
@@ -50,9 +51,12 @@ export type RollupScope = {
 };
 
 @Injectable()
-export class RollupService {
+export class RollupService implements BeforeApplicationShutdown {
   /** One pass at a time: the boot pass, the hourly cron and the 3 a.m. purge can all ask at once. */
   private running: Promise<RollupReport> | null = null;
+
+  /** Set as the process shuts down: a pass stops at the next day boundary (IKN-80). */
+  private stopping = false;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -69,6 +73,16 @@ export class RollupService {
    */
   catchUpInBackground(): void {
     void this.safeCatchUp();
+  }
+
+  /**
+   * A pass in progress stops after its current day (IKN-80). Prisma now disconnects after the HTTP
+   * drain, and `$disconnect` waits for the queries in flight: left running, a multi-day catch-up
+   * would hold every reload until PM2's SIGKILL. The days it leaves are the next boot's catch-up —
+   * `pendingHours` starts from what `metric_rollup` already holds.
+   */
+  beforeApplicationShutdown(): void {
+    this.stopping = true;
   }
 
   /** `:07`, the minute the storage panel already announces (`hourly rollup +00:07`). */
@@ -108,11 +122,16 @@ export class RollupService {
     }
 
     let rows = 0;
-    for (const chunk of dayChunks(range)) rows += await this.roll(chunk);
+    let through = range.from;
+    for (const chunk of dayChunks(range)) {
+      if (this.stopping) break;
+      rows += await this.roll(chunk);
+      through = chunk.to;
+    }
 
     const report = {
-      through: range.to,
-      hours: (+range.to - +range.from) / 3_600_000,
+      through,
+      hours: (+through - +range.from) / 3_600_000,
       rows,
       durationMs: Date.now() - startedAt,
     };

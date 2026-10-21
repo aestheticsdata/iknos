@@ -11,6 +11,7 @@ import { Test } from "@nestjs/testing";
 import { RedisService } from "@redis/redis.service";
 import { AppModule } from "@src/app.module";
 import request from "supertest";
+import { ROUTING_OPTIONS } from "@config/routing";
 
 import type { LogRecord } from "@ingest/log-record";
 import type { INestApplication } from "@nestjs/common";
@@ -50,7 +51,7 @@ export async function buildTestApp(): Promise<INestApplication> {
     .overrideProvider(RollupService)
     .useValue({ catchUp: async () => ({ through: null }), catchUpInBackground: () => undefined })
     .compile();
-  const app = moduleRef.createNestApplication<NestExpressApplication>();
+  const app = moduleRef.createNestApplication<NestExpressApplication>(ROUTING_OPTIONS);
 
   // So `X-Forwarded-For` reaches `req.ip` and the rate-limit tests can pose as distinct clients.
   (app.getHttpAdapter().getInstance() as Application).set("trust proxy", 1);

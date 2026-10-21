@@ -32,7 +32,7 @@ describe("RedisService", () => {
 
   afterAll(async () => {
     if (written.length > 0) await service.getClient().del(written);
-    await service.onModuleDestroy();
+    await service.onApplicationShutdown();
   });
 
   it("connects", () => {

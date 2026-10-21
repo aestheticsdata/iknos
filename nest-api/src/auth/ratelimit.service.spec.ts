@@ -24,7 +24,7 @@ describe("RateLimitService", () => {
 
   afterAll(async () => {
     if (keys.length > 0) await redis.getClient().del(keys);
-    await redis.onModuleDestroy();
+    await redis.onApplicationShutdown();
   });
 
   it("allows exactly the budget, then stops", async () => {

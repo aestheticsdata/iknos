@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { createClient } from "redis";
 
-import type { OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import type { OnApplicationShutdown, OnModuleInit } from "@nestjs/common";
 import type { RedisClientType } from "redis";
 
 /**
@@ -20,7 +20,7 @@ export const SESSION_PREFIX = "iknos:sess:";
  * Redis on ks-b is shared by every app on the box, so every key Iknos writes is namespaced.
  */
 @Injectable()
-export class RedisService implements OnModuleInit, OnModuleDestroy {
+export class RedisService implements OnModuleInit, OnApplicationShutdown {
   private readonly logger = new Logger(RedisService.name);
   private readonly client: RedisClientType;
   private connection: Promise<void> = Promise.resolve();
@@ -63,7 +63,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
-  async onModuleDestroy(): Promise<void> {
+  /**
+   * After the HTTP server has drained (IKN-80): `onModuleDestroy` runs before it, and a request
+   * still in flight — or the ingest writer's last flush, which runs in its own
+   * `onApplicationShutdown` — would find this closed under it. This module is global, so Nest calls
+   * its shutdown hook after every feature module's.
+   */
+  async onApplicationShutdown(): Promise<void> {
     if (this.client.isOpen) {
       await this.client.quit();
     }

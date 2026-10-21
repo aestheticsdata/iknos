@@ -6,6 +6,7 @@ import { LogBus } from "./log-bus";
 import type { LogRow } from "@contracts/log-row";
 import type { LogRecord } from "@ingest/log-record";
 import type { LogFilters } from "@logs/log-query";
+import type { BeforeApplicationShutdown } from "@nestjs/common";
 import type { Request, Response } from "express";
 
 /**
@@ -34,8 +35,21 @@ const MAX_PENDING_BYTES = 256 * 1024;
 const HEARTBEAT_MS = 15_000;
 
 @Controller("api/logs")
-export class StreamController {
+export class StreamController implements BeforeApplicationShutdown {
+  /** The tails still open, so a shutdown can end them (IKN-80). */
+  private readonly open = new Set<Response>();
+
   constructor(private readonly bus: LogBus) {}
+
+  /**
+   * Before the HTTP drain (IKN-80). `app.close()` waits for every connection to finish, and a tail
+   * never finishes on its own — one open tab would hold each `pm2 reload` until PM2's SIGKILL.
+   * Ended here, the browser's `EventSource` reconnects on its own, to the new process.
+   */
+  beforeApplicationShutdown(): void {
+    for (const res of this.open) res.end();
+    this.open.clear();
+  }
 
   @Get("stream")
   stream(@Query() p: LogQueryDto, @Req() req: Request, @Res() res: Response): void {
@@ -56,6 +70,7 @@ export class StreamController {
       "X-Accel-Buffering": "no",
     });
     res.write(": connected\n\n");
+    this.open.add(res);
 
     let dropped = 0;
 
@@ -81,6 +96,7 @@ export class StreamController {
     heartbeat.unref();
 
     req.on("close", () => {
+      this.open.delete(res);
       clearInterval(heartbeat);
       unsubscribe();
     });

@@ -4,7 +4,7 @@ import { PrismaClient } from "@generated/prisma/client";
 import { Injectable, Logger } from "@nestjs/common";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-import type { OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import type { OnApplicationShutdown, OnModuleInit } from "@nestjs/common";
 
 const CONNECT_TIMEOUT_MS = 10_000;
 const CONNECTION_LIMIT = 10;
@@ -17,7 +17,7 @@ const CONNECTION_LIMIT = 10;
  * the pool gauge the Service view draws would be measuring one of two without saying which.
  */
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService extends PrismaClient implements OnModuleInit, OnApplicationShutdown {
   private static readonly logger = new Logger(PrismaService.name);
 
   constructor() {
@@ -65,7 +65,13 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     PrismaService.logger.log("connected");
   }
 
-  async onModuleDestroy(): Promise<void> {
+  /**
+   * After the HTTP server has drained (IKN-80): `onModuleDestroy` runs before it, and a request
+   * still in flight — or the ingest writer's last flush, which runs in its own
+   * `onApplicationShutdown` — would find this closed under it. This module is global, so Nest calls
+   * its shutdown hook after every feature module's.
+   */
+  async onApplicationShutdown(): Promise<void> {
     await this.$disconnect();
   }
 }

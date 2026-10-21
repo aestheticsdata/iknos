@@ -5,6 +5,7 @@ import "reflect-metadata";
 import { buildSessionMiddleware } from "@auth/session.middleware";
 import { JSON_BODY_LIMIT } from "@config/body-limit";
 import { parseEnv } from "@config/env.validation";
+import { ROUTING_OPTIONS } from "@config/routing";
 import { buildIngestCors } from "@ingest/ingest-cors";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
@@ -18,11 +19,12 @@ import type { Application } from "express";
 async function bootstrap() {
   // bufferLogs holds Nest's startup lines until the pino logger is attached, so the first thing
   // written to stdout is already ECS rather than Nest's coloured console format.
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true, ...ROUTING_OPTIONS });
   app.useLogger(app.get(Logger));
 
   // PM2 sends SIGTERM before SIGKILL. Without hooks a `pm2 reload` cuts requests in flight and
-  // leaves the Prisma pool open.
+  // leaves the Prisma pool open. With them (IKN-80): the live tails end, the requests in flight
+  // finish, the ingest writer flushes, then Redis and Prisma close. PM2's `kill_timeout` bounds it.
   app.enableShutdownHooks();
 
   // Already validated by ConfigModule at module load; parsed again here only to get the typed
