@@ -368,6 +368,18 @@ describe("GET /api/logs/trace/:traceId", () => {
     expect(res.body.truncated).toBe(false);
   });
 
+  it("finds a trace keyed by a dashed UUID, stored and looked up whole", async () => {
+    // What the apps actually log: 36 characters. The column, the writer's clamp and the route's
+    // shape check once all stopped at 32, so this id was cut on the way in and refused on the way out.
+    const uuid = randomUUID();
+    await track(app, 2, { traceId: () => uuid });
+
+    const res = await get(`/api/logs/trace/${uuid}?${HOUR}`).expect(200);
+
+    expect(res.body.rows).toHaveLength(2);
+    expect((res.body.rows as LogRow[]).every((r) => r.traceId === uuid)).toBe(true);
+  });
+
   it("says so when a trace is longer than it will return", async () => {
     const long = randomUUID().replace(/-/g, "").slice(0, 12);
     await track(app, 501, {

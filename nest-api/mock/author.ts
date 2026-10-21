@@ -72,7 +72,7 @@ function gauss(): number {
 
 const lognormal = (median: number, sigma: number): number => median * Math.exp(sigma * gauss());
 
-/** 32 lowercase hex characters — the shape `trace_id CHAR(32)` and the trace route both accept. */
+/** 32 lowercase hex characters — a W3C trace id, the common shape among the ones `trace_id` holds. */
 function traceId(): string {
   let out = "";
   for (let i = 0; i < 32; i++) out += "0123456789abcdef"[Math.floor(rand() * 16)];

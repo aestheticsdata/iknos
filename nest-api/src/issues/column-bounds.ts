@@ -27,8 +27,8 @@ export const MAX_CULPRIT = 255;
 /** `issue.service` and `issue.level_name`, mirroring `log_entry`'s own widths. */
 export const MAX_SERVICE = 64;
 export const MAX_LEVEL_NAME = 16;
-/** `issue_event.trace_id` is CHAR(32); `release_tag` is VARCHAR(64). */
-export const MAX_TRACE_ID = 32;
+/** `issue_event.trace_id` and `release_tag` are both VARCHAR(64). */
+export const MAX_TRACE_ID = 64;
 export const MAX_RELEASE_TAG = 64;
 
 /** Character clamp, for the VARCHARs. */

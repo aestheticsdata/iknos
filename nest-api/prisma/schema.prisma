@@ -104,7 +104,7 @@ model LogEntry {
   logger    String? @db.VarChar(128)
   message   String  @db.Text
 
-  traceId String? @map("trace_id") @db.Char(32)
+  traceId String? @map("trace_id") @db.VarChar(64)
 
   httpMethod String? @map("http_method") @db.VarChar(10)
   route      String? @db.VarChar(255)
@@ -332,7 +332,7 @@ model IssueEvent {
   issueId Int    @map("issue_id")
   service String @db.VarChar(64)
 
-  traceId String? @map("trace_id") @db.Char(32)
+  traceId String? @map("trace_id") @db.VarChar(64)
 
   /// `release_tag`, never `release` — RELEASE is reserved in MySQL 8.0, and every hand-written
   /// statement in this codebase writes bare, unquoted column names. Same rule as `byte_offset`.

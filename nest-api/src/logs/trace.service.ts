@@ -20,7 +20,7 @@ import type { RawLogRow } from "./row";
  * The check is a shape check, not a security one: the value is a bound parameter either way. It
  * buys a 400 on obvious rubbish instead of an index walk that was always going to find nothing.
  */
-const TRACE_ID = /^[0-9A-Za-z_-]{1,32}$/;
+const TRACE_ID = /^[0-9A-Za-z_-]{1,64}$/;
 
 /** A request that logged more than this is not a timeline anyone reads; it is a loop. */
 const MAX_TRACE_ROWS = 500;

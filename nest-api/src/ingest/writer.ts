@@ -64,7 +64,7 @@ function toRow(r: LogRecord) {
     levelName: clamp(r.levelName, 16) as string,
     logger: clamp(r.logger, 128),
     message: clampMessage(r.message),
-    traceId: clamp(r.traceId, 32),
+    traceId: clamp(r.traceId, 64),
     httpMethod: clamp(r.httpMethod, 10),
     route: clamp(r.route, 255),
     statusCode: inSmallInt(r.statusCode),
