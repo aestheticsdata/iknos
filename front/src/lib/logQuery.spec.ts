@@ -4,7 +4,7 @@ import { LOG_FILTER, logDetailUrl, logHistogramUrl, logIpGroupsUrl, logSearchUrl
 import type { LogQueryState } from "./logQuery";
 
 const stateAt = (anchor: string | null): LogQueryState => ({
-  values: { service: null, level: null, route: null, status: null, q: null, ip: null },
+  values: { service: null, level: null, route: null, status: null, q: null, ip: null, traceId: null },
   off: [],
   bounds: { from: "2026-08-09T00:00:00.000Z", to: "2026-08-10T00:00:00.000Z" },
   pinned: anchor !== null,
@@ -107,5 +107,18 @@ describe("logDetailUrl", () => {
     expect(logDetailUrl({ id: "9007199254740993", ts: "2026-08-09T10:11:12.345Z" })).toContain(
       "/logs/entry/9007199254740993?",
     );
+  });
+});
+
+describe("the trace token", () => {
+  const params = (url: string) => new URL(url, "http://x").searchParams;
+
+  it("sends the trace id under its own key, not as text — `q` only searches the message", () => {
+    const state = { ...stateAt(null), values: { ...stateAt(null).values, traceId: "bb7d4a69-695f-46b9-a7a9-83a70e86c54a" } };
+
+    for (const url of [logSearchUrl(state), logHistogramUrl(state), logStreamUrl(state)]) {
+      expect(params(url).get("traceId")).toBe("bb7d4a69-695f-46b9-a7a9-83a70e86c54a");
+      expect(params(url).has("q")).toBe(false);
+    }
   });
 });

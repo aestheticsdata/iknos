@@ -33,6 +33,8 @@ export class LogQueryDto {
   @IsOptional() @IsString() q?: string;
   /** One caller's address, exactly — `client_ip` (IKN-72). */
   @IsOptional() @IsString() ip?: string;
+  /** Every line of one request, exactly — `trace_id`. The filter form of `/logs/trace/:traceId`. */
+  @IsOptional() @IsString() traceId?: string;
   @IsOptional() @IsString() cursor?: string;
   @IsOptional() @IsString() limit?: string;
   /** Which way a cursor (or `at`) walks. Anything but `"after"` means `"before"` — the existing,
@@ -53,6 +55,7 @@ export type LogFilters = {
   statusCode?: number;
   q?: string;
   ip?: string;
+  traceId?: string;
 };
 
 /**
@@ -73,6 +76,22 @@ function toIp(raw: string): string {
   const ip = raw.trim();
   if (!IP_SHAPE.test(ip)) throw new BadRequestException("'ip' must be an IPv4 or IPv6 address");
   return ip;
+}
+
+/**
+ * What `trace_id` can hold: a hex span id, a UUID with its dashes, a slug some logger invented.
+ * Wider than hex-only on purpose — the ingestion parser stores whatever the line carried, up to the
+ * column's 64.
+ *
+ * The check is a shape check, not a security one: the value is a bound parameter either way. It
+ * buys a 400 on obvious rubbish instead of an index walk that was always going to find nothing.
+ */
+export const TRACE_ID = /^[0-9A-Za-z_-]{1,64}$/;
+
+function toTraceId(raw: string): string {
+  const id = raw.trim();
+  if (!TRACE_ID.test(id)) throw new BadRequestException("'traceId' is not a trace id");
+  return id;
 }
 
 export const MAX_LIMIT = 200;
@@ -137,6 +156,7 @@ export function parseFilters(p: LogQueryDto): LogFilters {
     statusCode: p.status ? toInt("status", p.status) : undefined,
     q: q || undefined,
     ip: p.ip ? toIp(p.ip) : undefined,
+    traceId: p.traceId ? toTraceId(p.traceId) : undefined,
   };
 }
 
@@ -244,6 +264,8 @@ export function whereClause(
   if (f.q !== undefined) parts.push(Prisma.sql`message LIKE ${`%${escapeLike(f.q)}%`}`);
   // Exact, not a prefix: the token names one caller. `(client_ip, ts)` serves it — see the schema.
   if (f.ip !== undefined) parts.push(Prisma.sql`client_ip = ${f.ip}`);
+  // Exact as well, and `(trace_id, ts)` serves it the same way.
+  if (f.traceId !== undefined) parts.push(Prisma.sql`trace_id = ${f.traceId}`);
 
   if (cursor !== undefined) {
     // A row-value comparison rather than `ts < ? OR (ts = ? AND id < ?)`: rows sharing a

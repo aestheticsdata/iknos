@@ -31,6 +31,7 @@ export const LOGS_TEXT = {
     status: "status",
     q: "text",
     ip: "ip",
+    traceId: "trace",
   },
 
   /* Window */

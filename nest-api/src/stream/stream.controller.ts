@@ -127,6 +127,8 @@ function matches(r: LogRecord, f: LogFilters): boolean {
   // Case-folded for the same collation reason as `q`: `client_ip = ?` matches `2001:DB8::1`
   // against a stored `2001:db8::1`, and the tail has to agree with the list.
   if (f.ip !== undefined && r.clientIp?.toLowerCase() !== f.ip.toLowerCase()) return false;
+  // Folded for the same reason: `trace_id = ?` compares under the column's `_ci` collation.
+  if (f.traceId !== undefined && r.traceId?.toLowerCase() !== f.traceId.toLowerCase()) return false;
 
   return withinWindow(r, f);
 }

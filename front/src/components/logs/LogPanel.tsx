@@ -400,7 +400,7 @@ export const LogPanel = ({ services }: { services: Service[] }) => {
 
   const openInLogs = useCallback(
     (traceId: string) => {
-      setValue("q", traceId);
+      setValue(LOG_FILTER.traceId, traceId);
       setOpenTraceId(null);
     },
     [setValue],

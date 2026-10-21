@@ -380,6 +380,18 @@ describe("GET /api/logs/trace/:traceId", () => {
     expect((res.body.rows as LogRow[]).every((r) => r.traceId === uuid)).toBe(true);
   });
 
+  it("filters the list to one trace — what \"open in logs\" asks for", async () => {
+    // The ids live in `trace_id`, never in the message, so a text search could not find them.
+    const uuid = randomUUID();
+    const service = await track(app, 4, { traceId: (i) => (i < 3 ? uuid : null) });
+
+    const res = await get(`/api/logs?${HOUR}&service=${service}&traceId=${uuid}`).expect(200);
+
+    expect(res.body.rows).toHaveLength(3);
+    expect((res.body.rows as LogRow[]).every((r) => r.traceId === uuid)).toBe(true);
+    await get(`/api/logs?${HOUR}&traceId=not%20a%20trace`).expect(400);
+  });
+
   it("says so when a trace is longer than it will return", async () => {
     const long = randomUUID().replace(/-/g, "").slice(0, 12);
     await track(app, 501, {

@@ -34,6 +34,7 @@ export const LOG_FILTER = {
   status: "status",
   q: "q",
   ip: "ip",
+  traceId: "traceId",
 } as const;
 
 export type LogFilterKey = (typeof LOG_FILTER)[keyof typeof LOG_FILTER];
@@ -75,6 +76,7 @@ const valueParsers = {
   status: parseAsString,
   q: parseAsString,
   ip: parseAsString,
+  traceId: parseAsString,
 };
 
 /**

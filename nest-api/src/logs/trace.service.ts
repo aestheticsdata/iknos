@@ -1,5 +1,6 @@
 import { PrismaService } from "@db/prisma.service";
 import { BadRequestException, Injectable } from "@nestjs/common";
+import { TRACE_ID } from "./log-query";
 import { ROW_COLUMNS, toLogRow } from "./row";
 
 import type { LogRow } from "@contracts/log-row";
@@ -12,15 +13,6 @@ import type { RawLogRow } from "./row";
  * spec §11). There are no spans and no parent links — only the lines the services happened to
  * log, which is a weaker claim and an honest one.
  */
-
-/**
- * What `trace_id` can hold: a hex span id, a UUID with its dashes, a slug some logger invented.
- * Wider than hex-only on purpose — the ingestion parser stores whatever the line carried.
- *
- * The check is a shape check, not a security one: the value is a bound parameter either way. It
- * buys a 400 on obvious rubbish instead of an index walk that was always going to find nothing.
- */
-const TRACE_ID = /^[0-9A-Za-z_-]{1,64}$/;
 
 /** A request that logged more than this is not a timeline anyone reads; it is a loop. */
 const MAX_TRACE_ROWS = 500;
