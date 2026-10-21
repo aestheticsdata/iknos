@@ -204,14 +204,16 @@ const SERVICES: {
     metricsUrl: "http://127.0.0.1:6500/api/metrics",
     healthUrl: "http://127.0.0.1:6500/api/health",
   },
-  // Root, like `iknos-front`: a Next front has no health route, and the page it renders is the
-  // only honest answer to "is it up". Set this back to null if rendering `/` every 15 s ever
-  // shows up in the front's own numbers.
+  // Its own `/healthz`, not root (IKN-79, WEA-96). Root redirects an anonymous caller to /login,
+  // `fetch` follows the redirect, and that page's render asked WorldWeathr's API for its config:
+  // one API request every 30 s, from nobody. The trailing slash is the front's `trailingSlash:
+  // true`, so the probe lands without a 308 first. `update: {}` below leaves an existing row alone,
+  // so ks-b's row was changed by hand at the same time.
   {
     name: "worldweathr-front",
     pm2Name: "worldweathr-front",
     metricsUrl: null,
-    healthUrl: "http://127.0.0.1:3002/",
+    healthUrl: "http://127.0.0.1:3002/healthz/",
   },
   { name: "zeus-front", pm2Name: "zeus-front", metricsUrl: null, healthUrl: null },
   { name: "zeus-nest-api", pm2Name: "zeus-nest-api", metricsUrl: null, healthUrl: null },

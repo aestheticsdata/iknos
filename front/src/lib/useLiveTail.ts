@@ -1,6 +1,7 @@
 "use client";
 
 import { logStreamUrl } from "@lib/logQuery";
+import { reconnectDelay } from "@lib/reconnectDelay";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { LogQueryState } from "@lib/logQuery";
@@ -123,7 +124,9 @@ export const useLiveTail = (state: LogQueryState, enabled: boolean): LiveTail =>
   useEffect(() => {
     if (!enabled) return;
 
-    const source = new EventSource(url);
+    let source: EventSource;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let failures = 0;
 
     /*
      * Optimistic: the stream counts as up from the moment it is opened, before the handshake
@@ -152,7 +155,10 @@ export const useLiveTail = (state: LogQueryState, enabled: boolean): LiveTail =>
         };
       });
 
-    const onOpen = () => setOpenUrl(url);
+    const onOpen = () => {
+      failures = 0;
+      setOpenUrl(url);
+    };
 
     const onLog = (event: Event) => {
       const row = parseRow(frameData(event));
@@ -176,19 +182,25 @@ export const useLiveTail = (state: LogQueryState, enabled: boolean): LiveTail =>
     };
 
     /*
-     * Reported, not acted on. `EventSource` is already retrying with its own backoff by the time
-     * this fires, and a reconnect loop written on top of it would produce two clients racing to
-     * subscribe to the same filter. What the browser will not do is *say* anything, which is the
-     * whole of this handler's job.
+     * A dropped connection is the browser's to retry: `EventSource` is already reconnecting with
+     * its own backoff by the time this fires, and a second loop on top of it would produce two
+     * clients racing to subscribe to the same filter.
+     *
+     * A *refused* one is not (IKN-79). A non-200 answer — nginx's 503 when the connection cap is
+     * full — makes the browser close the source for good (`readyState` CLOSED) and never ask again,
+     * so the tail sat dead under a page that still looked live until somebody reloaded. That case,
+     * and only that one, is reopened here, on a backoff, because the cap frees itself.
      */
-    const onError = () => setOpenUrl(null);
+    const onError = () => {
+      setOpenUrl(null);
+      if (source.readyState !== EventSource.CLOSED) return;
 
-    source.addEventListener("open", onOpen);
-    source.addEventListener("log", onLog);
-    source.addEventListener("lagged", onLagged);
-    source.addEventListener("error", onError);
+      detach();
+      retry = setTimeout(connect, reconnectDelay(failures));
+      failures += 1;
+    };
 
-    return () => {
+    const detach = () => {
       source.removeEventListener("open", onOpen);
       source.removeEventListener("log", onLog);
       source.removeEventListener("lagged", onLagged);
@@ -196,6 +208,21 @@ export const useLiveTail = (state: LogQueryState, enabled: boolean): LiveTail =>
       // A stream left open goes on reconnecting for the lifetime of the tab, against a filter
       // nobody is looking at, and the server holds a subscription per one of them.
       source.close();
+    };
+
+    function connect() {
+      source = new EventSource(url);
+      source.addEventListener("open", onOpen);
+      source.addEventListener("log", onLog);
+      source.addEventListener("lagged", onLagged);
+      source.addEventListener("error", onError);
+    }
+
+    connect();
+
+    return () => {
+      clearTimeout(retry);
+      detach();
     };
     // No state is set from the teardown: `connected` is derived from `enabled` and the URL, so
     // disabling, changing the query and unmounting each answer correctly without a write.
