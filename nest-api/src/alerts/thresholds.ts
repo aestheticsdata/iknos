@@ -59,6 +59,17 @@ export const BUSY_WINDOW_MS = 60 * 60_000;
 /** A line a minute across that hour. Below this, silence is not evidence of anything. */
 export const BUSY_MIN_LINES = 60;
 
+/**
+ * How long an open `no_logs` alert waits for its service to come back before it closes anyway
+ * (IKN-81).
+ *
+ * Longer than any gap measured above — 19 h for `iknos-front`, 10 h overnight for the busiest — so
+ * a night's quiet never closes one. A whole day of nothing means the silence is old news: whoever
+ * reads the alerts page has seen it, and an alert that would otherwise fire for weeks stops being
+ * read at all.
+ */
+export const SILENCE_GIVE_UP_MS = 24 * 60 * 60_000;
+
 /* ── disk_space ─────────────────────────────────────────────────────────────────────────────── */
 
 /**

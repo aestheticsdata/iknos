@@ -1,4 +1,4 @@
-import { BUSY_MIN_LINES, BUSY_WINDOW_MS, SILENCE_AFTER_MS } from "../thresholds";
+import { BUSY_MIN_LINES, BUSY_WINDOW_MS, SILENCE_AFTER_MS, SILENCE_GIVE_UP_MS } from "../thresholds";
 
 import type { Observation, Rule } from "../rule";
 
@@ -30,21 +30,29 @@ export const noLogs: Rule = {
   async evaluate(ctx): Promise<Observation[]> {
     const quietFrom = new Date(ctx.now - SILENCE_AFTER_MS);
     const busyFrom = new Date(ctx.now - SILENCE_AFTER_MS - BUSY_WINDOW_MS);
+    const giveUpFrom = new Date(ctx.now - SILENCE_GIVE_UP_MS);
 
+    // Scans the give-up window rather than the busy one: a service absent from the result has
+    // logged nothing for a whole day, which is the one answer the scan has to be wide to give.
     const rows = await ctx.prisma.$queryRaw<{ service: string; busy: bigint | number; quiet: bigint | number }[]>`
       SELECT service,
-             CAST(SUM(ts <  ${quietFrom}) AS SIGNED) AS busy,
+             CAST(SUM(ts >= ${busyFrom} AND ts < ${quietFrom}) AS SIGNED) AS busy,
              CAST(SUM(ts >= ${quietFrom}) AS SIGNED) AS quiet
         FROM log_entry
-       WHERE ts >= ${busyFrom}
+       WHERE ts >= ${giveUpFrom}
        GROUP BY service`;
 
     const seen = new Map(rows.map((row) => [row.service, row]));
 
     return ctx.targets.map((target): Observation => {
       const row = seen.get(target.name);
-      const busy = row === undefined ? 0 : Number(row.busy);
-      const quiet = row === undefined ? 0 : Number(row.quiet);
+
+      // Not one line in the give-up window: an open alert has said what it had to say. A clean
+      // reading resolves it; with nothing open, a clean reading opens nothing.
+      if (row === undefined) return { service: target.name, value: 0, breached: false };
+
+      const busy = Number(row.busy);
+      const quiet = Number(row.quiet);
 
       // A line since the cut-off is the one reading that settles it: the service is talking, so an
       // open alert resolves — however quiet the hour before was.

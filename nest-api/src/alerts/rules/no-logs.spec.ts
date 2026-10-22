@@ -18,8 +18,10 @@ const T0 = Date.UTC(2026, 9, 22, 18, 0, 0);
 
 const firing: OpenAlert = { id: 1, state: "firing", pendingSince: null, severity: "warning" };
 
-async function observe(counts: Counts) {
-  const prisma = { $queryRaw: async () => [{ service: "svc", ...counts }] } as unknown as PrismaService;
+/** `null` is a service with no line at all in the give-up window — absent from the result. */
+async function observe(counts: Counts | null) {
+  const rows = counts === null ? [] : [{ service: "svc", ...counts }];
+  const prisma = { $queryRaw: async () => rows } as unknown as PrismaService;
   const ctx: RuleContext = {
     prisma,
     now: T0,
@@ -51,6 +53,16 @@ describe("no_logs", () => {
     const observation = await observe({ busy: 0, quiet: 1 });
     expect(observation).toEqual({ service: "svc", value: 0, breached: false });
     expect(reconcile(noLogs, observation, firing, T0).kind).toBe("resolve");
+  });
+
+  it("closes the alert after a whole day of silence", async () => {
+    const observation = await observe(null);
+    expect(observation).toEqual({ service: "svc", value: 0, breached: false });
+    expect(reconcile(noLogs, observation, firing, T0).kind).toBe("resolve");
+  });
+
+  it("opens nothing for a service silent all day", async () => {
+    expect(reconcile(noLogs, await observe(null), null, T0).kind).toBe("none");
   });
 
   it("resolves a busy service that is still talking", async () => {
