@@ -46,11 +46,18 @@ export const noLogs: Rule = {
       const busy = row === undefined ? 0 : Number(row.busy);
       const quiet = row === undefined ? 0 : Number(row.quiet);
 
-      // Not busy enough for silence to mean anything. `null` rather than `false`: there is no
-      // reading to show in the modal, and a `0` would suggest a measured rate of nothing.
+      // A line since the cut-off is the one reading that settles it: the service is talking, so an
+      // open alert resolves — however quiet the hour before was.
+      if (quiet > 0) return { service: target.name, value: busy, breached: false };
+
+      // Silent, but not busy enough beforehand for silence to mean anything. `null`, not `false`:
+      // an alert opened while the service was busy must survive the hour that slides out of the
+      // busy window, or every silence would close itself seventy-five minutes in. Before IKN-81,
+      // a service that came back quietly never cleared the busy bar again and its alert stayed
+      // firing for days.
       if (busy < BUSY_MIN_LINES) return { service: target.name, value: null, breached: false };
 
-      return { service: target.name, value: busy, breached: quiet === 0 };
+      return { service: target.name, value: busy, breached: true };
     });
   },
 };
