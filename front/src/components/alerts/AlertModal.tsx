@@ -14,6 +14,7 @@ import Link from "next/link";
 import { StateBand } from "./StateBand";
 
 import type { AlertRow } from "@lib/alertTypes";
+import type { AlertAction } from "@lib/useAlerts";
 
 /**
  * One alert in full (IKN-15 §2).
@@ -43,6 +44,14 @@ export const AlertModal = ({
 
   const alert = detail.data;
 
+  // Close first, then act (IKN-82). The detail is not polled, so a modal left open still shows the alert as
+  // firing with its three buttons live, and every further click posts again and stacks another
+  // toast. The claim already takes the row out of the list; a refusal puts it back with an error.
+  const run = (target: AlertRow, action: AlertAction) => {
+    onClose();
+    act(target.id, action);
+  };
+
   return (
     <Modal
       open={id !== null}
@@ -62,20 +71,20 @@ export const AlertModal = ({
           <>
             <Button
               variant="quiet"
-              onClick={() => act(alert.id, "silence")}
+              onClick={() => run(alert, "silence")}
               data-testid="alert-silence"
             >
               {ALERTS_TEXT.silence}
             </Button>
             <Button
               variant="quiet"
-              onClick={() => act(alert.id, "ack")}
+              onClick={() => run(alert, "ack")}
               data-testid="alert-acknowledge"
             >
               {ALERTS_TEXT.ack}
             </Button>
             <Button
-              onClick={() => act(alert.id, "resolve")}
+              onClick={() => run(alert, "resolve")}
               data-testid="alert-resolve"
             >
               {ALERTS_TEXT.resolve}
