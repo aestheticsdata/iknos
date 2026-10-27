@@ -1,3 +1,7 @@
 allowBuilds:
   sharp: true
   unrs-resolver: true
+overrides:
+  # Patched for advisories in transitive deps: source-map-js (next > postcss) and follow-redirects (axios).
+  source-map-js: ">=1.2.2"
+  follow-redirects: ">=1.16.1"
