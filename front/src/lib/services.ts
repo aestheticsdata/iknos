@@ -26,6 +26,8 @@ export type Service = {
   name: string;
   pm2Name: string;
   enabled: boolean;
+  /** A site nginx writes an access log for — what the traffic view can read (IKN-83). */
+  site: boolean;
   /** Null for a service never probed — the rail draws no dot rather than a reassuring one (IKN-8). */
   health: ServiceHealth | null;
   /** Log lines per minute, last hour, oldest first. Sixty zeros is a true fact about an idle service. */
@@ -70,6 +72,8 @@ const fetchServices = async (): Promise<Service[] | null> => {
           name: row.name,
           pm2Name: typeof row.pm2Name === "string" ? row.pm2Name : row.name,
           enabled: row.enabled !== false,
+          // An API older than IKN-83 sends no flag: no site, so the traffic view says so rather than 422ing.
+          site: row.site === true,
           health: typeof row.health === "object" ? (row.health ?? null) : null,
           sparkline: Array.isArray(row.sparkline)
             ? row.sparkline.filter((n): n is number => typeof n === "number")

@@ -427,7 +427,7 @@ describe("GET /api/services", () => {
     expect(Array.isArray(res.body.services)).toBe(true);
     expect(res.body.meta.tookMs).toBeGreaterThanOrEqual(0);
     for (const service of res.body.services) {
-      expect(Object.keys(service).sort()).toEqual(["enabled", "health", "name", "pm2Name", "sparkline"]);
+      expect(Object.keys(service).sort()).toEqual(["enabled", "health", "name", "pm2Name", "site", "sparkline"]);
       expect(service.sparkline).toHaveLength(60);
       // A dot is earned by a probe row; a never-probed service is told null, not a zeroed object.
       if (service.health !== null) {

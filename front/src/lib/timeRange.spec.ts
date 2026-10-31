@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boundsFor } from "./timeRange";
+import { boundsFor, rangeMinutes } from "./timeRange";
 
 const NOW = new Date("2026-08-24T10:00:00.000Z");
 
@@ -13,5 +13,13 @@ describe("boundsFor", () => {
     expect(boundsFor("1h", NOW).from).toBe("2026-08-24T09:00:00.000Z");
     expect(boundsFor("24h", NOW).from).toBe("2026-08-23T10:00:00.000Z");
     expect(boundsFor("7d", NOW).from).toBe("2026-08-17T10:00:00.000Z");
+    expect(boundsFor("14d", NOW).from).toBe("2026-08-10T10:00:00.000Z");
+  });
+});
+
+describe("rangeMinutes", () => {
+  it("says how long a range is", () => {
+    expect(rangeMinutes("1h")).toBe(60);
+    expect(rangeMinutes("14d")).toBe(14 * 24 * 60);
   });
 });

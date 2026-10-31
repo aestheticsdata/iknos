@@ -37,6 +37,11 @@ export type Service = {
   /** What PM2 calls it — the two are allowed to differ. */
   pm2Name: string;
   enabled: boolean;
+  /**
+   * True for a site nginx writes an access log for (`logGlob` is set) — the services the traffic
+   * view can read (IKN-83). The path itself stays server-side.
+   */
+  site: boolean;
   health: ServiceHealth | null;
   sparkline: number[];
 };

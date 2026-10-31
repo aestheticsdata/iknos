@@ -9,7 +9,7 @@
  * would quietly stop meaning "the last hour" the moment the tab was left open.
  */
 
-export const RANGE_KEYS = ["15m", "1h", "24h", "7d"] as const;
+export const RANGE_KEYS = ["15m", "1h", "24h", "7d", "14d"] as const;
 
 export type RangeKey = (typeof RANGE_KEYS)[number];
 
@@ -34,7 +34,12 @@ const MINUTES: Record<RangeKey, number> = {
   "1h": 60,
   "24h": 24 * 60,
   "7d": 7 * 24 * 60,
+  /* The production log retention (IKN-83): the traffic view's longest useful question. */
+  "14d": 14 * 24 * 60,
 };
+
+/** How many minutes a range covers. */
+export const rangeMinutes = (key: RangeKey): number => MINUTES[key];
 
 export const isRangeKey = (value: string | null | undefined): value is RangeKey =>
   value !== null && value !== undefined && (RANGE_KEYS as readonly string[]).includes(value);

@@ -35,7 +35,7 @@ export class ServicesController {
       // The rail is a fixed vertical list; alphabetical is the only order that does not move
       // under the cursor between page loads.
       orderBy: { name: "asc" },
-      select: { name: true, pm2Name: true, enabled: true },
+      select: { name: true, pm2Name: true, enabled: true, logGlob: true },
     });
 
     const names = services.map((s) => s.name);
@@ -69,8 +69,9 @@ export class ServicesController {
     );
 
     return {
-      services: services.map((s) => ({
+      services: services.map(({ logGlob, ...s }) => ({
         ...s,
+        site: logGlob !== null,
         health: health.get(s.name) ?? null,
         sparkline: sparklines.get(s.name) ?? Array<number>(SPARKLINE_SLOTS).fill(0),
       })),

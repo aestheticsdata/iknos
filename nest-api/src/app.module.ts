@@ -16,6 +16,7 @@ import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { RedisModule } from "@redis/redis.module";
 import { ScrapeModule } from "@src/scrape/scrape.module";
+import { TrafficModule } from "@src/traffic/traffic.module";
 import { WhoisModule } from "@src/whois/whois.module";
 import { LoggerModule } from "nestjs-pino";
 import { HealthController } from "./health.controller";
@@ -64,6 +65,7 @@ import { HealthController } from "./health.controller";
     IssuesModule,
     AlertsModule,
     WhoisModule,
+    TrafficModule,
   ],
   controllers: [HealthController],
   providers: [

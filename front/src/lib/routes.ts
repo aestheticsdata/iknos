@@ -15,6 +15,8 @@ export const ROUTES = {
   issues: "/issues",
   /** Which route costs the selected service its p95 (IKN-23). */
   metrics: "/metrics",
+  /** Visitors per site, read from the nginx access logs (IKN-83). */
+  traffic: "/traffic",
   /** What the collector's rule engine is saying about the fleet (IKN-15). */
   alerts: "/alerts",
   /**

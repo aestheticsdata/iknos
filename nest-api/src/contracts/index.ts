@@ -52,4 +52,23 @@ export type {
 } from "./service-runtime";
 export type { MetricSource, ServiceSignals, Signal, SignalPoint } from "./service-signals";
 export type { Trace } from "./trace";
+export type {
+  BotRow,
+  BrokenLink,
+  CampaignRow,
+  CodeRow,
+  EntryRow,
+  PageRow,
+  ScannerCount,
+  ShareRow,
+  SiteSummary,
+  SiteTraffic,
+  SourceRow,
+  StatusClass,
+  StatusRow,
+  TrafficBucket,
+  TrafficOverview,
+  TrafficPoint,
+  TrafficTotals,
+} from "./traffic";
 export type { IpWhois, WhoisReason, WhoisStatus } from "./whois";
