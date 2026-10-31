@@ -60,6 +60,12 @@ describe("parseEnv", () => {
     expect(parseEnv({ ...full, IKNOS_HOST_LABEL: "  " }).hostLabel).toBe(hostname());
   });
 
+  it("reads nginx's shared access log where ks-b keeps it, and none when set blank (IKN-84)", () => {
+    expect(parseEnv(full).nginxSharedLog).toBe("/var/log/nginx/access.log");
+    expect(parseEnv({ ...full, IKNOS_NGINX_SHARED_LOG: "/tmp/a.log" }).nginxSharedLog).toBe("/tmp/a.log");
+    expect(parseEnv({ ...full, IKNOS_NGINX_SHARED_LOG: "" }).nginxSharedLog).toBeNull();
+  });
+
   it("rejects an unknown log level", () => {
     expect(() => parseEnv({ ...full, IKNOS_LOG_LEVEL: "verbose" })).toThrow(/IKNOS_LOG_LEVEL/);
   });

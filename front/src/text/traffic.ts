@@ -12,9 +12,9 @@ export const TRAFFIC_TEXT = {
   rawLines: "raw lines in logs",
 
   /* ── Whole-view states ────────────────────────────────────────────────────────────────────── */
-  notASite: "This service has no nginx access log, so there is no traffic to show.",
+  notASite: "This service is not a website nginx serves, so there is no traffic to show.",
   sitesHeading: "sites with traffic",
-  noSites: "No service has an nginx access log yet.",
+  noSites: "No website is registered yet.",
   noRequests: "no requests in this range",
   /* Stem only; `<Pending>` draws the dots — see `SERVICE_TEXT.loading` (IKN-57). */
   loading: "reading",

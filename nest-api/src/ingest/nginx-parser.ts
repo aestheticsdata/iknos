@@ -182,9 +182,37 @@ export function parseCombined(line: string, service: string): LogRecord | null {
     durationMs: null,
     clientIp: m[1],
     userId: dashless(m[3]),
-    // No $host in combined, which is exactly why each vhost writes its own file and the service
-    // comes from the registry row rather than from the line.
+    // The machine, not the site: `$host` is read by `trailingHost` and decides the service instead.
     hostname: null,
     attrs: Object.keys(attrs).length > 0 ? attrs : null,
   };
+}
+
+/** What a site name may be once read: letters, digits, dots and dashes, and nothing else. */
+const HOST = /^[a-z0-9.-]+$/;
+
+/**
+ * The site a line of the shared `access.log` was for (IKN-84).
+ *
+ * ks-b's global `main` format is combined, then `"$http_x_forwarded_for"`, then `"$host"` — the
+ * last quoted field. The pattern above is anchored at the start only, so the extra fields leave
+ * `parseCombined` reading the same line it always read.
+ *
+ * String search rather than a regex over the line: it runs on every line of the busiest file on
+ * the box. A line written before the host was appended ends on `"-"`, which is no site — `null`,
+ * like a line that is not an access line at all.
+ */
+export function trailingHost(line: string): string | null {
+  const clean = line.trimEnd();
+  if (clean.length < 2 || !clean.endsWith('"')) return null;
+
+  const open = clean.lastIndexOf('"', clean.length - 2);
+  if (open === -1) return null;
+
+  // `$host` is already lower-case and port-free; a hand-written format might not be.
+  const host = clean
+    .slice(open + 1, -1)
+    .toLowerCase()
+    .replace(/:\d+$/, "");
+  return HOST.test(host) && host !== "-" ? host : null;
 }

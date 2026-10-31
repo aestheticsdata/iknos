@@ -36,14 +36,16 @@ import { Pm2Source } from "./pm2-source";
     HttpIngestService,
     {
       provide: IngestService,
-      useFactory: (bus: LogBus, prisma: PrismaService) =>
-        new IngestService(
+      useFactory: (bus: LogBus, prisma: PrismaService) => {
+        const env = parseEnv({ ...process.env });
+        return new IngestService(
           // PM2 first, so on a tick where the database is unreachable the source that does not
           // need it has already run.
-          [new Pm2Source(parseEnv({ ...process.env }).pm2LogGlob), new NginxSource(prisma)],
+          [new Pm2Source(env.pm2LogGlob), new NginxSource(prisma, env.nginxSharedLog)],
           bus,
           prisma,
-        ),
+        );
+      },
       inject: [LogBus, PrismaService],
     },
   ],

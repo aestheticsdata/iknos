@@ -11,6 +11,7 @@ import {
 } from "@nestjs/common";
 import { IsOptional, IsString, MaxLength } from "class-validator";
 import { safeTimeZone } from "./buckets";
+import { isSite } from "./sites";
 import { TrafficService } from "./traffic.service";
 
 import type { SiteTraffic, TrafficOverview } from "@contracts/traffic";
@@ -59,10 +60,10 @@ export class TrafficController {
 
     const service = await this.prisma.service.findFirst({
       where: { name, enabled: true },
-      select: { name: true, logGlob: true },
+      select: { name: true, logGlob: true, hosts: true },
     });
     if (!service) throw new NotFoundException(`unknown service '${name}'`);
-    if (service.logGlob === null) throw new UnprocessableEntityException(`'${name}' has no nginx access log`);
+    if (!isSite(service)) throw new UnprocessableEntityException(`'${name}' has no nginx access log`);
 
     const traffic = await this.traffic.site(service.name, window);
 

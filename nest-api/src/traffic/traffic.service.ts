@@ -2,6 +2,7 @@ import { PrismaService } from "@db/prisma.service";
 import { Injectable } from "@nestjs/common";
 import { aggregate, summarize } from "./aggregate";
 import { bucketFor } from "./buckets";
+import { SITE_WHERE } from "./sites";
 
 import type { SiteSummary, SiteTraffic, TrafficOverview } from "@contracts/traffic";
 import type { AccessRow, TrafficQuery } from "./interfaces/traffic-types";
@@ -45,7 +46,7 @@ export class TrafficService {
   /** One card per enabled site, busiest first. */
   async overview(query: TrafficQuery): Promise<Omit<TrafficOverview, "meta">> {
     const sites = await this.prisma.service.findMany({
-      where: { enabled: true, logGlob: { not: null } },
+      where: { enabled: true, ...SITE_WHERE },
       orderBy: { name: "asc" },
       select: { name: true },
     });

@@ -1,7 +1,7 @@
 # Iknos — Traffic: who visits the sites, read from nginx
 
 **Date:** 2026-10-31
-**Status:** approved 2026-10-31, implemented (uncommitted)
+**Status:** approved 2026-10-31, shipped (IKN-83); every site reaches it since IKN-84 (§13)
 **Ticket:** IKN-83, under epic IKN-28 (M4)
 **Builds on:** `2026-09-16-iknos-m4-nginx-ingestion-design.md` (IKN-16 — the `NginxSource`, the
 combined-format parser, one service per site through `Service.logGlob`)
@@ -347,3 +347,24 @@ committed: the work is left in the tree for the user's review.
 | D7 | Link previews counted as "shared links" | They are the one trace a share leaves in an access log (*my call*) |
 | D8 | Countries deferred | Needs a GeoIP database. Fine under §3 at country level, but its own ticket |
 | D9 | Hand-written UA classifier, no dependency | Major families only. `ua-parser-js` v2 is AGPL (*my call*) |
+
+---
+
+## 13. Every site, with no change to its project (IKN-84)
+
+As first shipped, a site reached Traffic only if its vhost wrote its own access log, a change in
+each project. Most vhosts on ks-b write to the shared `/var/log/nginx/access.log` instead, whose
+format carried no host.
+
+- **nginx:** the global `main` format gains a last field, `"$host"`. The start of the line is
+  unchanged, so `parseCombined` reads it as before; `trailingHost` reads the new field.
+- **Registry:** `service.hosts`, the vhost's `server_name` list. A service is a site when it has a
+  `logGlob` or `hosts` (`SITE_WHERE`, shared by the collector, the Traffic routes and
+  `/api/services`).
+- **Collector:** `NginxSource` also tails the shared file once a row names a host, and files each
+  line under the row that claims its host. Lines no row claims, lines written before the field
+  existed, and lines the pattern cannot read are dropped.
+- **No double counting:** a vhost with its own `access_log` is not written to the shared file.
+- Counting starts at the switch-over. Static sites with no PM2 process (fighter, halcyon,
+  loamkeep, wanderer) get rows like `landing-page`'s.
+

@@ -92,12 +92,24 @@ const SERVICES: {
   pm2Name: string;
   metricsUrl: string | null;
   healthUrl: string | null;
-  /** Set only on the rows nginx writes an access log for — `NginxSource` reads exactly these. */
+  /** Set only on the rows whose vhost writes an access log of its own — `NginxSource` reads them. */
   logGlob?: string;
+  /**
+   * The vhost's `server_name`, space-separated (IKN-84). Every vhost without a file of its own
+   * writes to the shared access log, whose lines end on `$host`, and this is what files them
+   * under the row. A new site reaches Traffic with this one field and nothing in its own project.
+   */
+  hosts?: string;
 }[] = [
   { name: "1991chat-backend", pm2Name: "1991chat-backend", metricsUrl: null, healthUrl: null },
-  { name: "1991chat-front", pm2Name: "1991chat-front", metricsUrl: null, healthUrl: null },
-  { name: "bkmk-front", pm2Name: "bkmk-front", metricsUrl: null, healthUrl: null },
+  {
+    name: "1991chat-front",
+    pm2Name: "1991chat-front",
+    metricsUrl: null,
+    healthUrl: null,
+    hosts: "chat.1991computer.com",
+  },
+  { name: "bkmk-front", pm2Name: "bkmk-front", metricsUrl: null, healthUrl: null, hosts: "bkmk.1991computer.com" },
   { name: "bkmk-server", pm2Name: "bkmk-server", metricsUrl: null, healthUrl: null },
   /*
    * PFA's bot back-office arrives with PFA-127 (`bots.1991computer.com`): a Next front, a Nest API
@@ -123,7 +135,38 @@ const SERVICES: {
     healthUrl: "http://127.0.0.1:7200/api/health",
   },
   { name: "bots-runner", pm2Name: "bots-runner", metricsUrl: null, healthUrl: "http://127.0.0.1:7300/health" },
-  { name: "conway-gol-api", pm2Name: "conway-gol-api", metricsUrl: null, healthUrl: null },
+  // life.1991computer.com is Conway's front, served from disk, and this API behind its `/api/`.
+  {
+    name: "conway-gol-api",
+    pm2Name: "conway-gol-api",
+    metricsUrl: null,
+    healthUrl: null,
+    hosts: "life.1991computer.com",
+  },
+  /*
+   * Fiducia's two join with FID-46, and they had been running since the site launched. The access
+   * log sits on the front's row, like folio's: `fiducia.conf` writes its own file, and that file
+   * also carries the `/api/` requests nginx proxied to the API.
+   */
+  {
+    name: "fiducia-front",
+    pm2Name: "fiducia-front",
+    metricsUrl: null,
+    // Root, like `folio-front`: a Next front has no health route.
+    healthUrl: "http://127.0.0.1:3016/",
+    logGlob: "/var/log/nginx/fiducia.access.log",
+  },
+  {
+    name: "fiducia-nest-api",
+    pm2Name: "fiducia-nest-api",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:7400/api/health",
+  },
+  /*
+   * Static sites with no PM2 process, like `landing-page` (IKN-84): files on disk behind a vhost,
+   * and nothing but their visitors to show. Their domain is their only door into Iknos.
+   */
+  { name: "fighter", pm2Name: "fighter", metricsUrl: null, healthUrl: null, hosts: "fighter.1991computer.com" },
   /*
    * Folio's two arrive with FOL-18, registered from day one rather than found later by drift. The
    * API is instrumented in the same ticket (ECS logs, `/api/metrics`, a health that probes MySQL
@@ -151,6 +194,7 @@ const SERVICES: {
   },
   // Stopped in PM2 today, and still enabled here: `enabled` says whether Iknos collects, not
   // whether the process is up. Its files are on disk and its history stays readable.
+  { name: "halcyon", pm2Name: "halcyon", metricsUrl: null, healthUrl: null, hosts: "halcyon.1991computer.com" },
   { name: "hiwaysim", pm2Name: "hiwaysim", metricsUrl: null, healthUrl: null },
   {
     name: "iknos-api",
@@ -160,37 +204,59 @@ const SERVICES: {
     // is the URL Zeus's registry probes too.
     healthUrl: "http://127.0.0.1:6900/health",
   },
-  { name: "iknos-front", pm2Name: "iknos-front", metricsUrl: null, healthUrl: "http://127.0.0.1:3006/" },
+  {
+    name: "iknos-front",
+    pm2Name: "iknos-front",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:3006/",
+    // `deploy/nginx/iknos.conf` writes its own file, so it never reaches the shared one.
+    logGlob: "/var/log/nginx/iknos.access.log",
+  },
   /*
    * The portfolio at 1991computer.com, and the first row in this table that names no process at
    * all: a Next `output: "export"` build rsynced to a document root, with no PM2 entry, no port
    * and no stdout. `pm2Name` repeats `name` because there is nothing else to put there — the
    * consumers that read it look for a `process_sample` and correctly find none.
    *
-   * It reaches this table by two doors, and both are named here. `logGlob` is the access log
-   * nginx writes for its vhost, which IKN-16's source reads; the browser reporter posts JavaScript
-   * errors under this same name, which is what makes one rail entry hold both. Neither works
-   * until ks-b has the `access_log` line and the origin — see DEPLOY.md.
+   * It reaches this table by two doors, and both are named here. `hosts` files its lines of the
+   * shared access log under it (IKN-84) — its vhost never got a file of its own, so the
+   * `logGlob` it was first given named a file that does not exist. The browser reporter posts
+   * JavaScript errors under this same name, which is what makes one rail entry hold both.
    */
   {
     name: "landing-page",
     pm2Name: "landing-page",
     metricsUrl: null,
     healthUrl: null,
-    logGlob: "/var/log/nginx/1991computer.access.log",
+    hosts: "1991computer.com",
   },
-  { name: "pfa-front", pm2Name: "pfa-front", metricsUrl: null, healthUrl: null },
+  { name: "loamkeep", pm2Name: "loamkeep", metricsUrl: null, healthUrl: null, hosts: "loamkeep.1991computer.com" },
+  { name: "pfa-front", pm2Name: "pfa-front", metricsUrl: null, healthUrl: null, hosts: "pfa.1991computer.com" },
   {
     name: "pfa-nest-api",
     pm2Name: "pfa-nest-api",
     metricsUrl: "http://127.0.0.1:6100/api/metrics",
     healthUrl: "http://127.0.0.1:6100/api/health",
   },
-  { name: "shatter-api", pm2Name: "shatter-api", metricsUrl: null, healthUrl: null },
-  { name: "spira-front", pm2Name: "spira-front", metricsUrl: null, healthUrl: null },
+  // shatter.1991computer.com is the game, served from disk, and this API behind its `/api/`.
+  {
+    name: "shatter-api",
+    pm2Name: "shatter-api",
+    metricsUrl: null,
+    healthUrl: null,
+    hosts: "shatter.1991computer.com",
+  },
+  { name: "spira-front", pm2Name: "spira-front", metricsUrl: null, healthUrl: null, hosts: "spira.1991computer.com" },
   { name: "spira-nest-api", pm2Name: "spira-nest-api", metricsUrl: null, healthUrl: null },
   { name: "trekker-api", pm2Name: "trekker-api", metricsUrl: null, healthUrl: null },
-  { name: "trekker-front", pm2Name: "trekker-front", metricsUrl: null, healthUrl: null },
+  {
+    name: "trekker-front",
+    pm2Name: "trekker-front",
+    metricsUrl: null,
+    healthUrl: null,
+    hosts: "trekker.1991computer.com",
+  },
+  { name: "wanderer", pm2Name: "wanderer", metricsUrl: null, healthUrl: null, hosts: "wanderer.1991computer.com" },
   // The two that arrive with IKN-52. Their lines were already being tailed — the glob does not
   // consult this table — so what these rows unlock is reaching them: the rail is the only way in.
   //
@@ -214,8 +280,16 @@ const SERVICES: {
     pm2Name: "worldweathr-front",
     metricsUrl: null,
     healthUrl: "http://127.0.0.1:3002/healthz/",
+    hosts: "worldweathr.com www.worldweathr.com",
   },
-  { name: "zeus-front", pm2Name: "zeus-front", metricsUrl: null, healthUrl: null },
+  {
+    name: "zeus-front",
+    pm2Name: "zeus-front",
+    metricsUrl: null,
+    healthUrl: null,
+    // `zeus.conf` writes its own file, like iknos'.
+    logGlob: "/var/log/nginx/zeus.access.log",
+  },
   { name: "zeus-nest-api", pm2Name: "zeus-nest-api", metricsUrl: null, healthUrl: null },
 ];
 

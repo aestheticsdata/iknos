@@ -30,7 +30,8 @@
       "@metrics/*": ["./src/metrics/*"],
       "@redis/*": ["./src/redis/*"],
       "@src/*": ["./src/*"],
-      "@stream/*": ["./src/stream/*"]
+      "@stream/*": ["./src/stream/*"],
+      "@traffic/*": ["./src/traffic/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

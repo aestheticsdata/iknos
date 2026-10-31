@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseCombined } from "./nginx-parser";
+import { parseCombined, trailingHost } from "./nginx-parser";
 
 /**
  * Every line here is nginx's `combined` format, which is what every vhost on ks-b is configured
@@ -126,5 +126,34 @@ describe("parseCombined", () => {
     const line = LINE.replace("/Sep/", "/Foo/");
     // Not a crash, and not a silently wrong date either: it degrades.
     expect(parseCombined(line, "landing-page")?.degraded).toBe(true);
+  });
+});
+
+/**
+ * ks-b's global `main` format: combined, then `$http_x_forwarded_for`, then `$host` (IKN-84). The
+ * host is what attributes a line of the shared `access.log` to a site.
+ */
+describe("trailingHost", () => {
+  const MAIN = `${LINE} "-"`;
+
+  it("reads the host nginx appends as the last quoted field", () => {
+    expect(trailingHost(`${MAIN} "pfa.1991computer.com"`)).toBe("pfa.1991computer.com");
+  });
+
+  it("lower-cases it and drops a port", () => {
+    expect(trailingHost(`${MAIN} "PFA.1991computer.com:443"`)).toBe("pfa.1991computer.com");
+  });
+
+  it("has nothing to say about a line written before the host was added", () => {
+    // The last field is then `$http_x_forwarded_for`, which is `-` — never a site.
+    expect(trailingHost(MAIN)).toBeNull();
+    expect(trailingHost("")).toBeNull();
+    expect(trailingHost("not an access line")).toBeNull();
+  });
+
+  it("leaves the combined fields where they were, so the rest of the line parses as before", () => {
+    const r = parseCombined(`${MAIN} "pfa.1991computer.com"`, "pfa-front");
+    expect(r?.route).toBe("/shots/iknos/logs-960.avif");
+    expect(r?.attrs).toMatchObject({ userAgent: "Mozilla/5.0 (Macintosh)" });
   });
 });

@@ -35,6 +35,11 @@ model Service {
   healthUrl  String? @map("health_url") @db.VarChar(255)
   logGlob    String? @map("log_glob") @db.VarChar(512)
 
+  /// The domains nginx serves this site under, space-separated as in `server_name` (IKN-84). A
+  /// line of the shared `access.log` belongs to the row whose list holds the line's `$host`, which
+  /// is how a site without an access log of its own still reaches Traffic.
+  hosts String? @db.VarChar(255)
+
   enabled   Boolean  @default(true)
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
 

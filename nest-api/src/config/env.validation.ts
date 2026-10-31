@@ -146,6 +146,14 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   IKNOS_HOST_LABEL?: string;
+
+  /**
+   * nginx's shared access log, which every vhost without a file of its own writes to (IKN-84).
+   * Unset means ks-b's path; blank means there is none to read.
+   */
+  @IsOptional()
+  @IsString()
+  IKNOS_NGINX_SHARED_LOG?: string;
 }
 
 /** What the rest of the application injects. Nothing outside this file reads `process.env`. */
@@ -168,6 +176,8 @@ export type Config = {
   ingestOrigins: string[];
   /** IKN-65. `IKNOS_HOST_LABEL`, else the machine's own hostname — never empty. */
   hostLabel: string;
+  /** IKN-84. `null` when set blank — no shared access log on this machine. */
+  nginxSharedLog: string | null;
 };
 
 /**
@@ -218,6 +228,7 @@ export function parseEnv(source: Record<string, unknown>): Config {
       .filter((origin) => origin !== ""),
     // `||`, not `??`: a label set to blank is a mistake in a config file, not a request for no name.
     hostLabel: parsed.IKNOS_HOST_LABEL?.trim() || hostname(),
+    nginxSharedLog: sharedLog(parsed.IKNOS_NGINX_SHARED_LOG),
   };
 }
 
@@ -226,3 +237,9 @@ export function validate(source: Record<string, unknown>): Record<string, unknow
   parseEnv(source);
   return source;
 }
+
+/** ks-b's, unless the configuration names another file or none. */
+const sharedLog = (raw: string | undefined) => {
+  if (raw === undefined) return "/var/log/nginx/access.log";
+  return raw.trim() === "" ? null : raw.trim();
+};

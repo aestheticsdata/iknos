@@ -1,4 +1,5 @@
-import { parseCombined } from "./nginx-parser";
+import { SITE_WHERE } from "@traffic/sites";
+import { parseCombined, trailingHost } from "./nginx-parser";
 
 import type { PrismaService } from "@db/prisma.service";
 import type { LogRecord } from "./log-record";
@@ -15,17 +16,29 @@ import type { Source, SourceFile } from "./source";
  * and the reason `Service.logGlob` was reserved. Adding a site stays what the registry has always
  * promised: one row, no code change, no redeploy.
  *
- * Each vhost must write its own access log — `combined` carries no `$host` field, so lines in the
- * shared `/var/log/nginx/access.log` cannot be attributed to a site at all. That is a one-line
- * change per vhost on ks-b, documented in DEPLOY.md, and the same one Zeus made for itself.
+ * A site reaches it by one of two doors. A vhost that writes its own file names it in `logGlob`,
+ * and every line of that file is the site's. Every other vhost writes to the shared
+ * `/var/log/nginx/access.log`, whose global format ends on `"$host"` (IKN-84): the site's row lists
+ * its domains in `hosts`, and each shared line goes to the row that claims its host. That second
+ * door is what makes a new site a registry row and nothing in its own project.
  *
  * No `@Injectable()`: like `Pm2Source`, this is constructed by hand in the module's factory, which
  * is where the Prisma client it needs is already in scope.
  */
+/** The service the shared file is listed under. Never stored: `parse` replaces it per line. */
+export const SHARED_SERVICE = "nginx-shared";
+
 export class NginxSource implements Source {
   readonly name = "nginx";
 
-  constructor(private readonly prisma: PrismaService) {}
+  /** Host to service, rebuilt with the file list on every tick so a new row is read at once. */
+  private sites = new Map<string, string>();
+
+  /** `sharedLog` is `null` where there is no shared file to read — a laptop, the test suite. */
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sharedLog: string | null,
+  ) {}
 
   /**
    * `enabled` is honoured for the reason the scraper honours it (`scrape.service.ts:119`): a
@@ -38,13 +51,29 @@ export class NginxSource implements Source {
    */
   async files(): Promise<SourceFile[]> {
     const rows = await this.prisma.service.findMany({
-      where: { enabled: true, logGlob: { not: null } },
-      select: { name: true, logGlob: true },
+      where: { enabled: true, ...SITE_WHERE },
+      orderBy: { name: "asc" },
+      select: { name: true, logGlob: true, hosts: true },
     });
 
-    return rows.flatMap((row) =>
+    const sites = new Map<string, string>();
+    for (const row of rows) {
+      for (const host of (row.hosts ?? "").toLowerCase().split(/\s+/)) {
+        // First row wins a host two rows claim, so a typo cannot move a site's traffic silently.
+        if (host !== "" && !sites.has(host)) sites.set(host, row.name);
+      }
+    }
+    this.sites = sites;
+
+    const own = rows.flatMap((row) =>
       row.logGlob === null ? [] : [{ file: row.logGlob, service: row.name, stream: "out" as const }],
     );
+    // Only once a row claims a host: before that, every line of the shared file would be dropped.
+    const shared =
+      this.sharedLog !== null && sites.size > 0
+        ? [{ file: this.sharedLog, service: SHARED_SERVICE, stream: "out" as const }]
+        : [];
+    return [...own, ...shared];
   }
 
   /**
@@ -56,6 +85,16 @@ export class NginxSource implements Source {
    * would be a lie about every 200 in an access log.
    */
   parse(line: string, service: string): LogRecord | null {
-    return parseCombined(line, service);
+    if (service !== SHARED_SERVICE) return parseCombined(line, service);
+
+    // Every vhost without a file of its own writes here, sites Iknos does not know included. A
+    // line no row claims is not this instance's to keep, and one the pattern cannot read has no
+    // site to be filed under — both dropped rather than stored as noise.
+    const host = trailingHost(line);
+    const site = host === null ? undefined : this.sites.get(host);
+    if (site === undefined) return null;
+
+    const record = parseCombined(line, site);
+    return record === null || record.degraded ? null : record;
   }
 }

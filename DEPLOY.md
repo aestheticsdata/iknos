@@ -122,24 +122,38 @@ Three things on the box, none of them in this repository, and all three failing 
 missed: the reporter swallows its own failures by design, and a tailer whose file does not exist
 simply has nothing to say.
 
-### 1. The site's vhost writes its own access log
+### 1. nginx says which site each line is for (IKN-84)
 
-In `/etc/nginx/sites-available/1991computer`, inside the `server` block:
+A site reaches Iknos by one of two doors.
+
+**The shared log, the default.** Every vhost without an `access_log` of its own writes to
+`/var/log/nginx/access.log` in the global `main` format. That format ends on `"$host"`, so each
+line names its site. In `/etc/nginx/nginx.conf`, inside `http`:
 
 ```
-access_log /var/log/nginx/1991computer.access.log combined;
+log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                  '$status $body_bytes_sent "$http_referer" '
+                  '"$http_user_agent" "$http_x_forwarded_for" "$host"';
 ```
 
-Without it the site's requests go to the shared `/var/log/nginx/access.log` along with everything
-else, and `combined` carries **no `$host` field** — so there is no way to tell which lines are the
-landing page's. Iknos' own vhost already has the equivalent at `deploy/nginx/iknos.conf`.
+Only the last field is new. The start of the line is still `combined`, so nothing that already read
+the file has to change. Iknos files each line under the service whose `hosts` lists that domain
+(space-separated, as in `server_name`) and drops lines no row claims. **A new site is one
+`hosts` value on its row** — nothing in its own repository, nothing in its vhost. The collector
+reads the file from `IKNOS_NGINX_SHARED_LOG`, which defaults to that path.
 
-The path must match the `logGlob` value on that service's row in `nest-api/prisma/seed.ts`,
-character for character. Then:
+**A file of its own.** A vhost that declares `access_log` (bots, fiducia, folio, iknos, zeus)
+writes there and never to the shared file, so nothing is counted twice. Its row names the file in
+`logGlob`, character for character.
+
+Either way, check and reload:
 
 ```bash
 ssh debian@ks-b 'sudo nginx -t && sudo systemctl reload nginx'
 ```
+
+`nginx.conf` is not in this repository. If the box is rebuilt, the `"$host"` field is the one line to
+put back.
 
 ### 2. The API's user reads it through the `adm` group
 
@@ -174,9 +188,13 @@ ssh debian@ks-b 'cd /var/www/iknos && pm2 reload ecosystem.config.js --update-en
 
 ### Order matters
 
-Seed the registry row **after** the vhost is writing its file. Seeded first, the collector spends
-the gap stat-ing a path that does not exist — the same ordering trap `seed.ts` already warns about
-for worldweathr's two rows.
+For a `logGlob` row: seed it **after** the vhost is writing its file. Seeded first, the collector
+spends the gap stat-ing a path that does not exist — the same ordering trap `seed.ts` already warns
+about for worldweathr's two rows. A `hosts` row has no such order: a domain that sends no lines yet
+simply has none.
+
+The seed's upsert leaves existing rows alone, so on ks-b a new `hosts` or `logGlob` value is an
+`UPDATE service SET …` by hand, as worldweathr's health URL was.
 
 ### What this can and cannot see
 

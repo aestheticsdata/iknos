@@ -42,7 +42,7 @@ describe("nginx tail roundtrip", () => {
       data: { name: service, pm2Name: service, logGlob: file, enabled: true },
     });
 
-    const ingest = new IngestService([new NginxSource(prisma)], new LogBus(), prisma);
+    const ingest = new IngestService([new NginxSource(prisma, null)], new LogBus(), prisma);
     await ingest.onApplicationBootstrap();
 
     // Appended after startup, proving new bytes are picked up rather than only what was present
@@ -73,5 +73,40 @@ describe("nginx tail roundtrip", () => {
     expect(rows.map((r) => r.levelName)).toEqual(["info", "warn", "error"]);
     expect(rows.every((r) => r.logger === "nginx.access")).toBe(true);
     expect(rows.every((r) => r.httpMethod === "GET")).toBe(true);
+  }, 20_000);
+
+  it("files each line of the shared log under the site whose host it ends on (IKN-84)", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "iknos-nginx-shared-"));
+    const service = `h${randomUUID().replace(/-/g, "").slice(0, 8)}`;
+    services.push(service);
+    const host = `${service}.example.test`;
+    const shared = path.join(dir, "access.log");
+
+    // ks-b's `main` format: combined, then `$http_x_forwarded_for`, then `$host`.
+    const hosted = (route: string, to: string) => `${line("203.0.113.5", route, 200).trimEnd()} "-" "${to}"\n`;
+    await writeFile(
+      shared,
+      [
+        hosted("/mine", host),
+        hosted("/someone-elses", "unclaimed.example.test"),
+        // Written before the host was appended to the format: no site to file it under.
+        `${line("203.0.113.5", "/before", 200).trimEnd()} "-"\n`,
+        hosted("/mine-too", host.toUpperCase()),
+      ].join(""),
+    );
+    await prisma.service.create({ data: { name: service, pm2Name: service, hosts: `${host} www.${host}` } });
+
+    const ingest = new IngestService([new NginxSource(prisma, shared)], new LogBus(), prisma);
+    await ingest.onApplicationBootstrap();
+    await sleep(2500);
+    await ingest.onApplicationShutdown();
+
+    const rows = await prisma.logEntry.findMany({
+      where: { service },
+      orderBy: { id: "asc" },
+      select: { route: true },
+    });
+    expect(rows.map((r) => r.route)).toEqual(["/mine", "/mine-too"]);
+    expect(await prisma.logEntry.count({ where: { route: "/someone-elses" } })).toBe(0);
   }, 20_000);
 });

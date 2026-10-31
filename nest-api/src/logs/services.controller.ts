@@ -1,6 +1,7 @@
 import { PrismaService } from "@db/prisma.service";
 import { Prisma } from "@generated/prisma/client";
 import { Controller, Get } from "@nestjs/common";
+import { isSite } from "@traffic/sites";
 import { HEALTH_WINDOW_MS, latestHealthByService, SPARKLINE_SLOTS, sparklinesByService } from "./service-rail";
 
 import type { ServiceList } from "@contracts/service";
@@ -35,7 +36,7 @@ export class ServicesController {
       // The rail is a fixed vertical list; alphabetical is the only order that does not move
       // under the cursor between page loads.
       orderBy: { name: "asc" },
-      select: { name: true, pm2Name: true, enabled: true, logGlob: true },
+      select: { name: true, pm2Name: true, enabled: true, logGlob: true, hosts: true },
     });
 
     const names = services.map((s) => s.name);
@@ -69,9 +70,9 @@ export class ServicesController {
     );
 
     return {
-      services: services.map(({ logGlob, ...s }) => ({
+      services: services.map(({ logGlob, hosts, ...s }) => ({
         ...s,
-        site: logGlob !== null,
+        site: isSite({ logGlob, hosts }),
         health: health.get(s.name) ?? null,
         sparkline: sparklines.get(s.name) ?? Array<number>(SPARKLINE_SLOTS).fill(0),
       })),

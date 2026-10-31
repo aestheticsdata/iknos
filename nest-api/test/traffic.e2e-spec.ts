@@ -21,6 +21,8 @@ let cookie: string;
 const suffix = randomUUID().replace(/-/g, "").slice(0, 8);
 const SITE = `traffic-site-${suffix}`;
 const NOT_A_SITE = `traffic-app-${suffix}`;
+// A site with no access log of its own: only a domain the shared log names (IKN-84).
+const HOSTED = `traffic-hosted-${suffix}`;
 
 const CHROME =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
@@ -64,6 +66,7 @@ beforeAll(async () => {
     data: [
       { name: SITE, pm2Name: SITE, logGlob: `/var/log/nginx/${SITE}.access.log` },
       { name: NOT_A_SITE, pm2Name: NOT_A_SITE },
+      { name: HOSTED, pm2Name: HOSTED, hosts: `${suffix}.example.test` },
     ],
   });
 
@@ -84,7 +87,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await prisma.logEntry.deleteMany({ where: { service: SITE } });
-  await prisma.service.deleteMany({ where: { name: { in: [SITE, NOT_A_SITE] } } });
+  await prisma.service.deleteMany({ where: { name: { in: [SITE, NOT_A_SITE, HOSTED] } } });
   await app.close();
 });
 
@@ -141,5 +144,11 @@ describe("GET /api/services", () => {
 
     expect(rows.find((s) => s.name === SITE)?.site).toBe(true);
     expect(rows.find((s) => s.name === NOT_A_SITE)?.site).toBe(false);
+    expect(rows.find((s) => s.name === HOSTED)?.site).toBe(true);
+  });
+
+  it("serves the traffic of a site known only by its domain", async () => {
+    const res = await get(`/api/services/${HOSTED}/traffic?${WINDOW}`).expect(200);
+    expect((res.body as SiteTraffic).totals.requests).toBe(0);
   });
 });
