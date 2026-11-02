@@ -248,6 +248,27 @@ const SERVICES: {
   },
   { name: "spira-front", pm2Name: "spira-front", metricsUrl: null, healthUrl: null, hosts: "spira.1991computer.com" },
   { name: "spira-nest-api", pm2Name: "spira-nest-api", metricsUrl: null, healthUrl: null },
+  /*
+   * Tessera's two arrive with TES-24, seeded after Demo 1's first deploy (2026-11-01) for the reason
+   * folio's were: the routes exist before the collector looks for them. The API is instrumented the
+   * way folio's is (ECS logs, `/api/metrics` on loopback only, a health that probes PostgreSQL and
+   * the tiles folder), so both of its URLs are filled. The access log sits on the front's row:
+   * `tessera.conf` writes its own file, which also carries the `/api/` and `/tiles/` requests.
+   */
+  {
+    name: "tessera-front",
+    pm2Name: "tessera-front",
+    metricsUrl: null,
+    // Root, like `folio-front`: a Next front has no health route.
+    healthUrl: "http://127.0.0.1:3018/",
+    logGlob: "/var/log/nginx/tessera.access.log",
+  },
+  {
+    name: "tessera-nest-api",
+    pm2Name: "tessera-nest-api",
+    metricsUrl: "http://127.0.0.1:7600/api/metrics",
+    healthUrl: "http://127.0.0.1:7600/api/health",
+  },
   { name: "trekker-api", pm2Name: "trekker-api", metricsUrl: null, healthUrl: null },
   {
     name: "trekker-front",
