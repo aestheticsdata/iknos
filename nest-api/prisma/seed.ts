@@ -277,6 +277,22 @@ const SERVICES: {
     healthUrl: null,
     hosts: "trekker.1991computer.com",
   },
+  // Vigilia (its VIG-31): ECS logs on stdout, `/api/metrics` in Prometheus text, and a health that
+  // answers 503 when the map has no regions. The front's traffic is nginx's own file.
+  {
+    name: "vigilia-front",
+    pm2Name: "vigilia-front",
+    metricsUrl: null,
+    // Root, like the other Next fronts: no health route of its own.
+    healthUrl: "http://127.0.0.1:3017/",
+    logGlob: "/var/log/nginx/vigilia.access.log",
+  },
+  {
+    name: "vigilia-nest-api",
+    pm2Name: "vigilia-nest-api",
+    metricsUrl: "http://127.0.0.1:7500/api/metrics",
+    healthUrl: "http://127.0.0.1:7500/api/health",
+  },
   { name: "wanderer", pm2Name: "wanderer", metricsUrl: null, healthUrl: null, hosts: "wanderer.1991computer.com" },
   // The two that arrive with IKN-52. Their lines were already being tailed — the glob does not
   // consult this table — so what these rows unlock is reaching them: the rail is the only way in.
