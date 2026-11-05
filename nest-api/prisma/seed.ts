@@ -316,6 +316,24 @@ const SERVICES: {
     metricsUrl: null,
     healthUrl: "http://127.0.0.1:7701/health",
   },
+  // Anamnesis (its ANA-29): ECS logs on stdout (no resource body, no query string ever logged),
+  // `/api/metrics` in Prometheus text on loopback only, a health that counts the store's resources and
+  // answers 503 when PostgreSQL is down. The front's traffic — and the API's, both behind one vhost — is
+  // nginx's own file, written without query strings (a patient search carries a name).
+  {
+    name: "anamnesis-front",
+    pm2Name: "anamnesis-front",
+    metricsUrl: null,
+    // Root, like the other Next fronts: no health route of its own.
+    healthUrl: "http://127.0.0.1:3021/",
+    logGlob: "/var/log/nginx/anamnesis.access.log",
+  },
+  {
+    name: "anamnesis-nest-api",
+    pm2Name: "anamnesis-nest-api",
+    metricsUrl: "http://127.0.0.1:7900/api/metrics",
+    healthUrl: "http://127.0.0.1:7900/api/health",
+  },
   { name: "wanderer", pm2Name: "wanderer", metricsUrl: null, healthUrl: null, hosts: "wanderer.1991computer.com" },
   // The two that arrive with IKN-52. Their lines were already being tailed — the glob does not
   // consult this table — so what these rows unlock is reaching them: the rail is the only way in.
