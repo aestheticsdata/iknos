@@ -293,6 +293,29 @@ const SERVICES: {
     metricsUrl: "http://127.0.0.1:7500/api/metrics",
     healthUrl: "http://127.0.0.1:7500/api/health",
   },
+  // Excubia (its EXC-80): ECS logs on stdout from all three processes, `/api/metrics` in Prometheus
+  // text on the API, a health that answers 503 when the simulator's feed is lost or the database is
+  // down. The simulator is loopback only and never proxied: its own `/health` says whether its
+  // producer runs. The front's traffic is nginx's own file.
+  {
+    name: "excubia-front",
+    pm2Name: "excubia-front",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:3019/",
+    logGlob: "/var/log/nginx/excubia.access.log",
+  },
+  {
+    name: "excubia-nest-api",
+    pm2Name: "excubia-nest-api",
+    metricsUrl: "http://127.0.0.1:7700/api/metrics",
+    healthUrl: "http://127.0.0.1:7700/api/health",
+  },
+  {
+    name: "excubia-simulator",
+    pm2Name: "excubia-simulator",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:7701/health",
+  },
   { name: "wanderer", pm2Name: "wanderer", metricsUrl: null, healthUrl: null, hosts: "wanderer.1991computer.com" },
   // The two that arrive with IKN-52. Their lines were already being tailed — the glob does not
   // consult this table — so what these rows unlock is reaching them: the rail is the only way in.
