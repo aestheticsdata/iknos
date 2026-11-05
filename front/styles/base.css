@@ -1,26 +1,18 @@
 @layer base {
   /**
-   * No rubber band, anywhere. `none` rather than `contain`: `contain` only stops the chaining and
-   * keeps the local bounce, which is the part that reads as broken in an app shell. On `*` so the
-   * next scroller is covered without anyone remembering. Vertical only — the horizontal axis is the
-   * browser's back gesture.
+   * No rubber band on the page and on the boxes that really scroll vertically. `none` rather than
+   * `contain`: `contain` only stops the chaining and keeps the local bounce, which is the part that
+   * reads as broken in an app shell. Vertical only — the horizontal axis is the browser's back
+   * gesture. A new vertical scroller is covered as long as it says so with `overflow-y-auto` /
+   * `-scroll`; the `ik-scroll*` utilities set their own (utilities.css).
+   *
+   * ⚠️ Not on `*`: every element whose overflow is not `visible` — a `truncate` label, an
+   * `overflow-hidden` card, an `overflow-x-auto` table — is a scroll container, and `none` on it
+   * stops the wheel chaining *out* of it, so the wheel went nowhere instead of scrolling the list
+   * or pane it sits in.
    */
-  * {
+  :is(html, body, .overflow-y-auto, .overflow-y-scroll) {
     overscroll-behavior-y: none;
-  }
-
-  /**
-   * ⚠️ …except on boxes that clip without scrolling. `overflow: hidden` still makes a scroll
-   * container, and `none` on a scroll container stops the wheel chaining *out* of it — so a wheel
-   * over a `truncate` label went nowhere instead of scrolling the list it sits in (the rail's
-   * service names). These boxes cannot scroll themselves, so there is no bounce to suppress: `auto`
-   * hands the gesture to the real scroller above, which keeps its own `none`.
-   */
-  .truncate,
-  .overflow-hidden,
-  .overflow-y-hidden,
-  [class*="line-clamp-"] {
-    overscroll-behavior-y: auto;
   }
 
   /**
