@@ -334,6 +334,23 @@ const SERVICES: {
     metricsUrl: "http://127.0.0.1:7900/api/metrics",
     healthUrl: "http://127.0.0.1:7900/api/health",
   },
+  // Tomos (its TOM-23): ECS logs on stdout through nestjs-pino with patient name, ID and birth date
+  // redacted, `/api/metrics` in Prometheus text on loopback only (403 through nginx), a health that
+  // answers 503 when PostgreSQL or the DICOM store is down. The front's and the API's traffic, and the
+  // DICOM instances nginx serves from disk, are in the vhost's own file.
+  {
+    name: "tomos-front",
+    pm2Name: "tomos-front",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:3020/",
+    logGlob: "/var/log/nginx/tomos.access.log",
+  },
+  {
+    name: "tomos-nest-api",
+    pm2Name: "tomos-nest-api",
+    metricsUrl: "http://127.0.0.1:7800/api/metrics",
+    healthUrl: "http://127.0.0.1:7800/api/health",
+  },
   { name: "wanderer", pm2Name: "wanderer", metricsUrl: null, healthUrl: null, hosts: "wanderer.1991computer.com" },
   // The two that arrive with IKN-52. Their lines were already being tailed — the glob does not
   // consult this table — so what these rows unlock is reaching them: the rail is the only way in.
