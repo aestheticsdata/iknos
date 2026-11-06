@@ -231,6 +231,9 @@ const SERVICES: {
     hosts: "1991computer.com",
   },
   { name: "loamkeep", pm2Name: "loamkeep", metricsUrl: null, healthUrl: null, hosts: "loamkeep.1991computer.com" },
+  // Opifex (its OPI-14): a static Vite build, nothing runs on ks-b. Its vhost declares no access_log, so
+  // its lines land in the shared file and this `hosts` value is what files them here.
+  { name: "opifex", pm2Name: "opifex", metricsUrl: null, healthUrl: null, hosts: "opifex.1991computer.com" },
   { name: "pfa-front", pm2Name: "pfa-front", metricsUrl: null, healthUrl: null, hosts: "pfa.1991computer.com" },
   {
     name: "pfa-nest-api",
