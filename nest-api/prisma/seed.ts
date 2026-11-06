@@ -381,6 +381,24 @@ const SERVICES: {
     metricsUrl: null,
     healthUrl: "http://127.0.0.1:8002/health",
   },
+  // Affinis (its AFF-19): an assay & SAR workbench. ECS logs on stdout, `/api/metrics` in Prometheus
+  // text on loopback only, a health that counts the compounds, raw wells and curves in the store and
+  // answers 503 when PostgreSQL is down. Front and API share one vhost, logged without query strings
+  // (a compound search carries a structure).
+  {
+    name: "affinis-front",
+    pm2Name: "affinis-front",
+    metricsUrl: null,
+    // `/` redirects to the run's hero plate; /regulatory is a static 200.
+    healthUrl: "http://127.0.0.1:3023/regulatory",
+    logGlob: "/var/log/nginx/affinis.access.log",
+  },
+  {
+    name: "affinis-nest-api",
+    pm2Name: "affinis-nest-api",
+    metricsUrl: "http://127.0.0.1:8100/api/metrics",
+    healthUrl: "http://127.0.0.1:8100/api/health",
+  },
   { name: "wanderer", pm2Name: "wanderer", metricsUrl: null, healthUrl: null, hosts: "wanderer.1991computer.com" },
   // The two that arrive with IKN-52. Their lines were already being tailed — the glob does not
   // consult this table — so what these rows unlock is reaching them: the rail is the only way in.
