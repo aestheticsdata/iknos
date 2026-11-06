@@ -351,6 +351,26 @@ const SERVICES: {
     metricsUrl: "http://127.0.0.1:7800/api/metrics",
     healthUrl: "http://127.0.0.1:7800/api/health",
   },
+  // Probatio (its PRB-29): a lab validation console. ECS logs on stdout, `/api/metrics` in Prometheus
+  // text on loopback only, a health that counts today's files and connected analyzers and answers
+  // 503 when PostgreSQL is down. The two simulators (analyzers over ASTM, the HIS over MLLP) are pm2
+  // apps of their own with a loopback `/health`; none is proxied. Front and API share one vhost,
+  // logged without query strings.
+  {
+    name: "probatio-front",
+    pm2Name: "probatio-front",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:3022/",
+    logGlob: "/var/log/nginx/probatio.access.log",
+  },
+  {
+    name: "probatio-nest-api",
+    pm2Name: "probatio-nest-api",
+    metricsUrl: "http://127.0.0.1:8000/api/metrics",
+    healthUrl: "http://127.0.0.1:8000/api/health",
+  },
+  { name: "probatio-analyzer-sim", pm2Name: "probatio-analyzer-sim", metricsUrl: null, healthUrl: "http://127.0.0.1:8001/health" },
+  { name: "probatio-his-sim", pm2Name: "probatio-his-sim", metricsUrl: null, healthUrl: "http://127.0.0.1:8002/health" },
   { name: "wanderer", pm2Name: "wanderer", metricsUrl: null, healthUrl: null, hosts: "wanderer.1991computer.com" },
   // The two that arrive with IKN-52. Their lines were already being tailed — the glob does not
   // consult this table — so what these rows unlock is reaching them: the rail is the only way in.
