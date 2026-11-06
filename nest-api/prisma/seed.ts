@@ -360,7 +360,7 @@ const SERVICES: {
     name: "probatio-front",
     pm2Name: "probatio-front",
     metricsUrl: null,
-    healthUrl: "http://127.0.0.1:3022/",
+    healthUrl: "http://127.0.0.1:3022/design-system",
     logGlob: "/var/log/nginx/probatio.access.log",
   },
   {
