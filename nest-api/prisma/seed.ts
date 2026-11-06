@@ -369,8 +369,18 @@ const SERVICES: {
     metricsUrl: "http://127.0.0.1:8000/api/metrics",
     healthUrl: "http://127.0.0.1:8000/api/health",
   },
-  { name: "probatio-analyzer-sim", pm2Name: "probatio-analyzer-sim", metricsUrl: null, healthUrl: "http://127.0.0.1:8001/health" },
-  { name: "probatio-his-sim", pm2Name: "probatio-his-sim", metricsUrl: null, healthUrl: "http://127.0.0.1:8002/health" },
+  {
+    name: "probatio-analyzer-sim",
+    pm2Name: "probatio-analyzer-sim",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:8001/health",
+  },
+  {
+    name: "probatio-his-sim",
+    pm2Name: "probatio-his-sim",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:8002/health",
+  },
   { name: "wanderer", pm2Name: "wanderer", metricsUrl: null, healthUrl: null, hosts: "wanderer.1991computer.com" },
   // The two that arrive with IKN-52. Their lines were already being tailed — the glob does not
   // consult this table — so what these rows unlock is reaching them: the rail is the only way in.
