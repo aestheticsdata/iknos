@@ -231,9 +231,17 @@ const SERVICES: {
     hosts: "1991computer.com",
   },
   { name: "loamkeep", pm2Name: "loamkeep", metricsUrl: null, healthUrl: null, hosts: "loamkeep.1991computer.com" },
-  // Opifex (its OPI-14): a static Vite build, nothing runs on ks-b. Its vhost declares no access_log, so
-  // its lines land in the shared file and this `hosts` value is what files them here.
-  { name: "opifex", pm2Name: "opifex", metricsUrl: null, healthUrl: null, hosts: "opifex.1991computer.com" },
+  // Opifex (its OPI-14): first a static Vite build, a Next front under pm2 since 2026-11-07, run like
+  // Vidar's below. Its vhost now writes its own file, so the row tails it instead of filing the shared
+  // log by `hosts`; renamed to its pm2 name, which is what the tailer files its logs under.
+  {
+    name: "opifex-front",
+    pm2Name: "opifex-front",
+    metricsUrl: null,
+    // Root, like the other Next fronts: no health route of its own.
+    healthUrl: "http://127.0.0.1:3024/",
+    logGlob: "/var/log/nginx/opifex.access.log",
+  },
   { name: "pfa-front", pm2Name: "pfa-front", metricsUrl: null, healthUrl: null, hosts: "pfa.1991computer.com" },
   {
     name: "pfa-nest-api",
