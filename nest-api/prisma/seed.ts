@@ -354,6 +354,17 @@ const SERVICES: {
     metricsUrl: "http://127.0.0.1:7800/api/metrics",
     healthUrl: "http://127.0.0.1:7800/api/health",
   },
+  // Vidar (its VID-16): the second app on Opifex's engine, an intelligence-fusion workbench whose models run
+  // in the visitor's browser. A Next front under pm2 and nothing else: no API, no database. Its vhost
+  // writes its own file, seeded after the first deploy made nginx write it.
+  {
+    name: "vidar-front",
+    pm2Name: "vidar-front",
+    metricsUrl: null,
+    // Root, like the other Next fronts: no health route of its own.
+    healthUrl: "http://127.0.0.1:3025/",
+    logGlob: "/var/log/nginx/vidar.access.log",
+  },
   // Probatio (its PRB-29): a lab validation console. ECS logs on stdout, `/api/metrics` in Prometheus
   // text on loopback only, a health that counts today's files and connected analyzers and answers
   // 503 when PostgreSQL is down. The two simulators (analyzers over ASTM, the HIS over MLLP) are pm2
