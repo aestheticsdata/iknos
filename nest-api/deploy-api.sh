@@ -137,49 +137,15 @@ require_clean_tree() {
 
 # Everything red before the first byte is uploaded. A check that ran after the atomic switch
 # would be a rollback trigger rather than a gate.
+#
+# The fast checks only, lint and types (the owner's call, 2026-11-08, for every project: no slow
+# verification gate before a deploy). The suite, which boots the app against real MySQL and Redis
+# for a minute, is run before pushing, not here; the build is not run here either, because the
+# server builds the release itself and a failed build there never reaches the switch.
 run_preflight_checks() {
-  local names=("lint" "typecheck" "tests" "build")
-
-  # The suite's entry carries two settings the other three do not need, both about what the
-  # streamed step actually shows (IKN-43).
-  #
-  # `--reporter=verbose`: once its output is a pipe rather than a terminal — and this one is
-  # piped through `tee` — vitest's default reporter prints the closing summary and nothing else,
-  # no test names at all. Streaming a step that says nothing until it is over defeats the reason
-  # it is streamed.
-  #
-  # **The bare `--` in front of it is load-bearing, and was not always there.** pnpm 12 has a
-  # `--reporter` of its own — default|append-only|ndjson|silent — and takes the flag for itself
-  # rather than forwarding it, so the run dies on `invalid value 'verbose'` before vitest is
-  # reached. The flag arrived with IKN-43 and worked; `f0fa7c0` pinned pnpm 12 under it and every
-  # api deploy has failed its own test gate since, on an error that names vitest's reporter and
-  # blames nothing. Same family as `a7df298`, where `--no-prod` was the spelling pnpm still
-  # accepted. Anything after `--` is the script's, not pnpm's.
-  #
-  # `IKNOS_LOG_LEVEL=error`: the e2e suites boot the real application, `.env` sets `debug` on this
-  # machine, and every request and every maintenance tick then writes its ECS line — hundreds of
-  # them, with the test names lost somewhere in between. `error` and not `silent` because
-  # env.validation accepts trace|debug|info|warn|error and nothing else, so `silent` would fail
-  # the app's own boot in every e2e: a red suite rather than a quiet one. It beats the `.env`
-  # because `process.loadEnvFile()` leaves a variable that is already in the environment alone.
-  #
-  # Set here rather than exported around the loop so that the hint printed on failure — "re-run
-  # it on its own with: ${commands[$index]}" — reproduces exactly the run that failed.
-  local commands=("pnpm check" "pnpm typecheck" "IKNOS_LOG_LEVEL=error pnpm test -- --reporter=verbose" "pnpm build")
+  local names=("lint" "typecheck")
+  local commands=("pnpm check" "pnpm typecheck")
   local index output
-
-  # `IKNOS_SKIP_TESTS=1 ./deploy-api.sh` ships without running the suite.
-  #
-  # An escape hatch rather than a deleted gate, and deliberately noisy: the suite currently fails
-  # on the development machine for reasons that have nothing to do with what is being shipped, and
-  # a gate that cannot be satisfied stops being a gate and becomes a thing people work around
-  # permanently. This way the bypass is one variable, visible in the log of every deploy that used
-  # it, and the default is still "everything green or nothing moves".
-  if [ -n "${IKNOS_SKIP_TESTS:-}" ]; then
-    names=("lint" "typecheck" "build")
-    commands=("pnpm check" "pnpm typecheck" "pnpm build")
-    log "⚠️  IKNOS_SKIP_TESTS set — shipping WITHOUT running the test suite"
-  fi
 
   for index in "${!names[@]}"; do
     log "➡️  Pre-deploy: ${names[$index]}"
@@ -187,16 +153,7 @@ run_preflight_checks() {
 
     # Not left to errexit: the ERR trap installed by deploy() would report a failed deploy
     # upstream before this has said which check failed and why.
-    #
-    # The suite is streamed where the other checks stay buffered: it runs a minute against real
-    # MySQL and Redis, and a silent minute reads as a hang. `tee` keeps the capture, so the
-    # failure path below stays identical for every check.
-    if [ "${names[$index]}" = "tests" ]; then
-      # `pipefail` is set at the top of the script, so the pipeline's status is the suite's, not tee's.
-      if ( cd "$SCRIPT_DIR" && eval "${commands[$index]}" ) 2>&1 | tee "$output"; then ok=1; else ok=0; fi
-    else
-      if ( cd "$SCRIPT_DIR" && eval "${commands[$index]}" ) > "$output" 2>&1; then ok=1; else ok=0; fi
-    fi
+    if ( cd "$SCRIPT_DIR" && eval "${commands[$index]}" ) > "$output" 2>&1; then ok=1; else ok=0; fi
     if [ "$ok" != 1 ]; then
       echo "--- ${commands[$index]} ---" >&2
       tail -40 "$output" >&2
