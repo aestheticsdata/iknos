@@ -373,6 +373,16 @@ const SERVICES: {
     healthUrl: "http://127.0.0.1:3025/",
     logGlob: "/var/log/nginx/vidar.access.log",
   },
+  // Auscult (its AUS-13): the third app on Officina, a clinical-documentation assistant whose models run
+  // in the visitor's browser. A Next front under pm2 on 3026, no API, no database; its vhost writes its
+  // own access log, seeded after the first deploy made nginx write it.
+  {
+    name: "auscult-front",
+    pm2Name: "auscult-front",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:3026/",
+    logGlob: "/var/log/nginx/auscult.access.log",
+  },
   // Probatio (its PRB-29): a lab validation console. ECS logs on stdout, `/api/metrics` in Prometheus
   // text on loopback only, a health that counts today's files and connected analyzers and answers
   // 503 when PostgreSQL is down. The two simulators (analyzers over ASTM, the HIS over MLLP) are pm2
