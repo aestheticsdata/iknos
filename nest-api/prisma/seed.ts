@@ -383,6 +383,16 @@ const SERVICES: {
     healthUrl: "http://127.0.0.1:3026/",
     logGlob: "/var/log/nginx/auscult.access.log",
   },
+  // Groma (its GRO-32): the fourth app on Officina, a planning-rules studio on a real Paris plot whose
+  // models run in the visitor's browser. A Next front under pm2 on 3027, no API, no database; its vhost
+  // writes its own access log, seeded after the first deploy made nginx write it.
+  {
+    name: "groma-front",
+    pm2Name: "groma-front",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:3027/",
+    logGlob: "/var/log/nginx/groma.access.log",
+  },
   // Probatio (its PRB-29): a lab validation console. ECS logs on stdout, `/api/metrics` in Prometheus
   // text on loopback only, a health that counts today's files and connected analyzers and answers
   // 503 when PostgreSQL is down. The two simulators (analyzers over ASTM, the HIS over MLLP) are pm2
