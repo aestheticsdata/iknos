@@ -393,6 +393,16 @@ const SERVICES: {
     healthUrl: "http://127.0.0.1:3027/",
     logGlob: "/var/log/nginx/groma.access.log",
   },
+  // Auspex (its ASP-42): the fifth app on Officina, the airside NOTAM picture for Paris-Charles de Gaulle
+  // whose models run in the visitor's browser. A Next front under pm2 on 3028, no API, no database; its
+  // vhost writes its own access log, seeded after the first deploy made nginx write it.
+  {
+    name: "auspex-front",
+    pm2Name: "auspex-front",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:3028/",
+    logGlob: "/var/log/nginx/auspex.access.log",
+  },
   // Probatio (its PRB-29): a lab validation console. ECS logs on stdout, `/api/metrics` in Prometheus
   // text on loopback only, a health that counts today's files and connected analyzers and answers
   // 503 when PostgreSQL is down. The two simulators (analyzers over ASTM, the HIS over MLLP) are pm2
