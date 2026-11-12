@@ -76,7 +76,9 @@ const BOT_PATTERNS: readonly (BotIdentity & { pattern: RegExp })[] = [
   { pattern: /^Wget\//i, name: "Wget", preview: false },
   { pattern: /python-requests|python-urllib|aiohttp|httpx/i, name: "Python client", preview: false },
   { pattern: /Go-http-client/i, name: "Go client", preview: false },
-  { pattern: /axios|node-fetch|undici/i, name: "Node client", preview: false },
+  /* `node` alone is what Node's built-in fetch sends — Zeus's 30 s health checks read as a person
+     without it, and outnumbered every real page view on landing-page. */
+  { pattern: /^node$|axios|node-fetch|undici/i, name: "Node client", preview: false },
   { pattern: /HeadlessChrome|PhantomJS|Puppeteer|Playwright/i, name: "Headless browser", preview: false },
   { pattern: /UptimeRobot|Pingdom|StatusCake|Better Uptime/i, name: "Uptime monitor", preview: false },
   { pattern: /bot|crawl|spider|slurp|scan|fetch|preview|scrap/i, name: "Other bots", preview: false },

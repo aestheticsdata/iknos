@@ -61,6 +61,11 @@ describe("botName", () => {
     expect(botName("curl/8.4.0")).toEqual({ name: "curl", preview: false });
   });
 
+  it("names Node's built-in fetch, which sends a bare `node`", () => {
+    expect(botName("node")).toEqual({ name: "Node client", preview: false });
+    expect(botName("axios/1.7.2")).toEqual({ name: "Node client", preview: false });
+  });
+
   it("files an unknown crawler under other bots", () => {
     expect(botName("SomethingBot/1.0")).toEqual({ name: "Other bots", preview: false });
   });
