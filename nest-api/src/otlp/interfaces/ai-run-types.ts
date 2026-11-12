@@ -95,7 +95,7 @@ export type QualityFrame = {
 };
 
 /** The quality report before the controller adds the service and the timing. */
-export type QualityBody = Omit<QualityReport, "service" | "meta">;
+export type QualityBody = Omit<QualityReport, "service" | "meta" | "ticketing">;
 
 /** The version report before the controller adds the service, the step and the timing. */
 export type VersionBody = Pick<VersionReport, "steps" | "columns">;

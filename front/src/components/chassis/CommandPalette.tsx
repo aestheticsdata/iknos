@@ -42,6 +42,7 @@ const VIEWS: { label: string; href: string }[] = [
   { label: CHASSIS_TEXT.viewTraces, href: ROUTES.traces },
   { label: CHASSIS_TEXT.viewQuality, href: ROUTES.tracesQuality },
   { label: CHASSIS_TEXT.viewVersions, href: ROUTES.tracesVersions },
+  { label: CHASSIS_TEXT.viewSets, href: ROUTES.tracesSets },
   { label: CHASSIS_TEXT.viewIssues, href: ROUTES.issues },
   { label: CHASSIS_TEXT.viewAlerts, href: ROUTES.alerts },
 ];

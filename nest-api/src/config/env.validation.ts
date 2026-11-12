@@ -16,6 +16,9 @@ export const DEFAULT_OTLP_TOKEN_RATE_PER_MINUTE = 120;
 /** IKN-87 — see `IKNOS_OTLP_IP_RATE_PER_MINUTE` below. */
 export const DEFAULT_OTLP_IP_RATE_PER_MINUTE = 240;
 
+/** IKN-96 — see `IKNOS_SPIRA_URL` below. */
+export const DEFAULT_SPIRA_URL = "https://spira.1991computer.com";
+
 /** IKN-87 v2 — see `IKNOS_CONTENT_MAX_RETENTION_DAYS` below. */
 export const DEFAULT_CONTENT_MAX_RETENTION_DAYS = 30;
 
@@ -221,6 +224,23 @@ class EnvironmentVariables {
   @Min(0, { message: "IKNOS_CONTENT_MAX_RETENTION_DAYS must be 0 or more" })
   @Max(3650, { message: "IKNOS_CONTENT_MAX_RETENTION_DAYS must be at most 3650" })
   IKNOS_CONTENT_MAX_RETENTION_DAYS?: number;
+
+  /**
+   * Spira, for the AI failure patterns' tickets (IKN-96) — both optional. Without a token the
+   * quality screen still shows the tickets already linked, and offers no "create the ticket"
+   * (the route answers 503). The URL is the site's root; the API is under `/api`.
+   *
+   * The token is a Spira API token (Settings → API tokens): a bearer credential that can read and
+   * write every issue, so it lives in the ecosystem file and nowhere else.
+   */
+  @IsOptional()
+  @IsString()
+  IKNOS_SPIRA_URL?: string;
+
+  /** Blank is "not configured", like the ecosystem example ships it — so no length rule here. */
+  @IsOptional()
+  @IsString()
+  IKNOS_SPIRA_TOKEN?: string;
 }
 
 /** What the rest of the application injects. Nothing outside this file reads `process.env`. */
@@ -253,6 +273,10 @@ export type Config = {
   otlpIpRatePerMinute: number;
   /** IKN-87 v2. The cap on how many days OTLP content is kept; 0 keeps none. */
   contentMaxRetentionDays: number;
+  /** IKN-96. Spira's site root, no trailing slash. */
+  spiraUrl: string;
+  /** IKN-96. `null` when unset — no ticket can be created. */
+  spiraToken: string | null;
 };
 
 /**
@@ -308,6 +332,9 @@ export function parseEnv(source: Record<string, unknown>): Config {
     otlpTokenRatePerMinute: parsed.IKNOS_OTLP_TOKEN_RATE_PER_MINUTE ?? DEFAULT_OTLP_TOKEN_RATE_PER_MINUTE,
     otlpIpRatePerMinute: parsed.IKNOS_OTLP_IP_RATE_PER_MINUTE ?? DEFAULT_OTLP_IP_RATE_PER_MINUTE,
     contentMaxRetentionDays: parsed.IKNOS_CONTENT_MAX_RETENTION_DAYS ?? DEFAULT_CONTENT_MAX_RETENTION_DAYS,
+    spiraUrl: (parsed.IKNOS_SPIRA_URL?.trim() || DEFAULT_SPIRA_URL).replace(/\/+$/, ""),
+    // `||`: a token set to blank is "not configured", like the SLI token.
+    spiraToken: parsed.IKNOS_SPIRA_TOKEN?.trim() || null,
   };
 }
 

@@ -21,6 +21,15 @@ describe("parseEnv", () => {
     expect(cfg.retentionDays).toBe(14);
   });
 
+  it("reads a blank Spira token as not configured, and defaults the URL (IKN-96)", () => {
+    expect(parseEnv({ ...full, IKNOS_SPIRA_TOKEN: "" }).spiraToken).toBeNull();
+    expect(parseEnv(full).spiraUrl).toBe("https://spira.1991computer.com");
+    expect(parseEnv({ ...full, IKNOS_SPIRA_URL: "https://s.test/", IKNOS_SPIRA_TOKEN: "t" })).toMatchObject({
+      spiraUrl: "https://s.test",
+      spiraToken: "t",
+    });
+  });
+
   it("names the missing variable", () => {
     const { REDIS_URL, ...rest } = full;
     expect(() => parseEnv(rest)).toThrow(/REDIS_URL/);

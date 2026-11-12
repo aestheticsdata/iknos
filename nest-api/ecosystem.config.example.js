@@ -98,6 +98,11 @@ const prodConfig = {
   // IKN-87 v2 — optional. The most days OTLP span content (prompts, answers, notes) is kept, under
   // each batch's own stated retention and never past IKNOS_RETENTION_DAYS. 0 keeps none.
   IKNOS_CONTENT_MAX_RETENTION_DAYS: 30,
+
+  // IKN-96 — optional. A Spira API token (Spira → Settings → API tokens), so the AI quality screen
+  // can file a failure pattern as a ticket. Blank: linked tickets still show, none can be created.
+  // IKNOS_SPIRA_URL defaults to https://spira.1991computer.com.
+  IKNOS_SPIRA_TOKEN: "",
 };
 
 module.exports = {

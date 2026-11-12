@@ -23,6 +23,8 @@ export const ROUTES = {
   tracesQuality: "/traces/quality",
   /** One service's step compared across prompt versions and models (IKN-94). */
   tracesVersions: "/traces/versions",
+  /** Named sets of AI runs kept as regression cases (IKN-95). */
+  tracesSets: "/traces/sets",
   /** What the collector's rule engine is saying about the fleet (IKN-15). */
   alerts: "/alerts",
   /**

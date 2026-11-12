@@ -103,6 +103,34 @@ export type FailurePattern = {
   gateLabel: string;
   failures: number;
   previous: number | null;
+  ticket: FailureTicket | null;
+};
+
+/** A failure pattern's Spira ticket (IKN-96); `state` is `null` when Spira could not be asked. */
+export type FailureTicket = {
+  issue: string;
+  state: string | null;
+  url: string;
+};
+
+export const TICKETING_BLOCK = { notConfigured: "notConfigured", noProject: "noProject" } as const;
+export type TicketingBlock = (typeof TICKETING_BLOCK)[keyof typeof TICKETING_BLOCK];
+
+export type Ticketing = {
+  project: string | null;
+  blocked: TicketingBlock | null;
+};
+
+/** `POST /api/traces/quality/tickets`. */
+export type CreateTicketRequest = {
+  service: string;
+  gate: string;
+  gateLabel: string;
+  step: string | null;
+  failures: number;
+  previous: number | null;
+  from: string;
+  to: string;
 };
 
 export type QualityReport = {
@@ -114,6 +142,7 @@ export type QualityReport = {
   days: QualityDay[];
   markers: QualityMarker[];
   failures: FailurePattern[];
+  ticketing: Ticketing;
   meta: Meta;
 };
 
@@ -237,4 +266,11 @@ export type VersionCell = {
   value: string;
   delta: string | null;
   verdict: Delta | null;
+};
+
+/** Where a failure pattern was read, and what to do once its ticket exists (IKN-96). */
+export type TicketContext = {
+  service: string;
+  range: RangeKey;
+  onCreated: () => void;
 };

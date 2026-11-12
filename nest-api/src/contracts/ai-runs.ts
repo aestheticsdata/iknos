@@ -157,6 +157,43 @@ export type FailurePattern = {
   gateLabel: string;
   failures: number;
   previous: number | null;
+  /** Its Spira ticket (IKN-96), or `null` when none was filed. */
+  ticket: FailureTicket | null;
+};
+
+/** A failure pattern's Spira ticket: its identifier, its state as Spira says it now, and its page. */
+export type FailureTicket = {
+  issue: string;
+  /** `null` when Spira could not be asked (not configured, down, or the issue is gone). */
+  state: string | null;
+  url: string;
+};
+
+/** Why "create the ticket" is not offered — or `null` when it is. */
+export const TICKETING_BLOCK = {
+  notConfigured: "notConfigured",
+  noProject: "noProject",
+} as const;
+
+export type TicketingBlock = (typeof TICKETING_BLOCK)[keyof typeof TICKETING_BLOCK];
+
+/** Whether this service's failure patterns can be filed, and where. */
+export type Ticketing = {
+  project: string | null;
+  blocked: TicketingBlock | null;
+};
+
+/** `POST /api/traces/quality/tickets` — the pattern to file, as the quality screen shows it. */
+export type CreateTicketRequest = {
+  service: string;
+  gate: string;
+  gateLabel: string;
+  step: string | null;
+  failures: number;
+  previous: number | null;
+  /** The window the counts are over, ISO-8601. */
+  from: string;
+  to: string;
 };
 
 /** `GET /api/traces/quality` */
@@ -169,6 +206,7 @@ export type QualityReport = {
   days: QualityDay[];
   markers: QualityMarker[];
   failures: FailurePattern[];
+  ticketing: Ticketing;
   meta: Meta;
 };
 

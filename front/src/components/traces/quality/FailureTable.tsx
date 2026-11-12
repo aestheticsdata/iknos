@@ -3,11 +3,11 @@ import { DenseTable } from "@components/ui/DenseTable";
 import { signed } from "@lib/aiRunFormat";
 import { formatCount } from "@lib/format";
 import { TRACES_TEXT } from "@text/traces";
+import { TicketCell } from "./TicketCell";
 
 import type { Column } from "@components/ui/DenseTable";
 import type { Tone } from "@components/ui/surface";
-import type { FailurePattern } from "@lib/interfaces/aiRunTypes";
-import type { RangeKey } from "@lib/timeRange";
+import type { FailurePattern, TicketContext, Ticketing } from "@lib/interfaces/aiRunTypes";
 
 /** The trend against the window before: more failures is red, fewer green, a new gate failing says so. */
 function trendOf(pattern: FailurePattern) {
@@ -24,9 +24,9 @@ function trendOf(pattern: FailurePattern) {
 
 /**
  * The gates that fail, by volume (IKN-93): the step they loop back to, the gate, its failed verdicts
- * in the window, its share against the worst, and the trend. The Spira ticket column is IKN-96's.
+ * in the window, its share against the worst, the trend, and its Spira ticket (IKN-96).
  */
-export const FailureTable = ({ failures, range }: FailureTableProps) => {
+export const FailureTable = ({ failures, ticketing, context }: FailureTableProps) => {
   const worst = Math.max(1, ...failures.map((pattern) => pattern.failures));
 
   const columns: Column<FailurePattern>[] = [
@@ -58,6 +58,17 @@ export const FailureTable = ({ failures, range }: FailureTableProps) => {
         return <Badge tone={trend.tone}>{trend.text}</Badge>;
       },
     },
+    {
+      key: "ticket",
+      header: TRACES_TEXT.colTicket,
+      render: (pattern) => (
+        <TicketCell
+          pattern={pattern}
+          ticketing={ticketing}
+          context={context}
+        />
+      ),
+    },
   ];
 
   return (
@@ -67,7 +78,7 @@ export const FailureTable = ({ failures, range }: FailureTableProps) => {
     >
       <header className="flex flex-wrap items-center gap-2.5 border-b border-work-border px-3 py-2.5">
         <h2 className="flex-1 font-sans text-ui font-medium text-work-text">{TRACES_TEXT.failuresTitle}</h2>
-        <span className="text-label text-work-text-dim">{TRACES_TEXT.failuresScope(range)}</span>
+        <span className="text-label text-work-text-dim">{TRACES_TEXT.failuresScope(context.range)}</span>
       </header>
       <DenseTable
         columns={columns}
@@ -83,5 +94,6 @@ export const FailureTable = ({ failures, range }: FailureTableProps) => {
 
 type FailureTableProps = {
   failures: FailurePattern[];
-  range: RangeKey;
+  ticketing: Ticketing;
+  context: TicketContext;
 };

@@ -92,6 +92,8 @@ const SERVICES: {
   pm2Name: string;
   metricsUrl: string | null;
   healthUrl: string | null;
+  /** The Spira project its AI failure patterns are filed in (IKN-96); the Officina apps only. */
+  spiraProject?: string;
   /** Set only on the rows whose vhost writes an access log of its own — `NginxSource` reads them. */
   logGlob?: string;
   /**
@@ -237,6 +239,7 @@ const SERVICES: {
   {
     name: "opifex-front",
     pm2Name: "opifex-front",
+    spiraProject: "OPI",
     metricsUrl: null,
     // Root, like the other Next fronts: no health route of its own.
     healthUrl: "http://127.0.0.1:3024/",
@@ -368,6 +371,7 @@ const SERVICES: {
   {
     name: "vidar-front",
     pm2Name: "vidar-front",
+    spiraProject: "VID",
     metricsUrl: null,
     // Root, like the other Next fronts: no health route of its own.
     healthUrl: "http://127.0.0.1:3025/",
@@ -379,6 +383,7 @@ const SERVICES: {
   {
     name: "auscult-front",
     pm2Name: "auscult-front",
+    spiraProject: "AUS",
     metricsUrl: null,
     healthUrl: "http://127.0.0.1:3026/",
     logGlob: "/var/log/nginx/auscult.access.log",
@@ -389,6 +394,7 @@ const SERVICES: {
   {
     name: "groma-front",
     pm2Name: "groma-front",
+    spiraProject: "GRO",
     metricsUrl: null,
     healthUrl: "http://127.0.0.1:3027/",
     logGlob: "/var/log/nginx/groma.access.log",
@@ -399,6 +405,7 @@ const SERVICES: {
   {
     name: "auspex-front",
     pm2Name: "auspex-front",
+    spiraProject: "ASP",
     metricsUrl: null,
     healthUrl: "http://127.0.0.1:3028/",
     logGlob: "/var/log/nginx/auspex.access.log",
@@ -491,6 +498,14 @@ const SERVICES: {
 async function main(): Promise<void> {
   for (const service of SERVICES) {
     await prisma.service.upsert({ where: { name: service.name }, update: {}, create: service });
+  }
+
+  /* Fill-only, like `metricsUrl` in the mock loader: a project set by hand is never overwritten. */
+  for (const service of SERVICES.filter((row) => row.spiraProject !== undefined)) {
+    await prisma.service.updateMany({
+      where: { name: service.name, spiraProject: null },
+      data: { spiraProject: service.spiraProject },
+    });
   }
 
   const stale = await prisma.service.findMany({

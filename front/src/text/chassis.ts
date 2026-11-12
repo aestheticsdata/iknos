@@ -21,6 +21,7 @@ export const CHASSIS_TEXT = {
   viewTraces: "ai runs",
   viewQuality: "ai quality",
   viewVersions: "ai versions",
+  viewSets: "ai test sets",
   viewIssues: "issues",
   viewAlerts: "alerts",
   paused: "paused",

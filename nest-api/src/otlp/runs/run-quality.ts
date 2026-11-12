@@ -143,6 +143,7 @@ function failuresOf(current: RunReading[], previous: RunReading[]): FailurePatte
       gateLabel: tally.gateLabel,
       failures: tally.failures,
       previous: previous.length === 0 ? null : (prior?.failures ?? 0),
+      ticket: null,
     });
   }
   return patterns.sort((a, b) => b.failures - a.failures || a.gate.localeCompare(b.gate));

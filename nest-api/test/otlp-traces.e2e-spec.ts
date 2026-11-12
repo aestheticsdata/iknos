@@ -1,4 +1,5 @@
 import { randomBytes, randomUUID } from "node:crypto";
+import { CSRF_HEADER } from "@auth/session.guard";
 import { CONTENT_STATE } from "@contracts/traces";
 import { PrismaService } from "@db/prisma.service";
 import { ContentPurgeService } from "@maintenance/content-purge.service";
@@ -344,6 +345,55 @@ describe("the read routes", () => {
     expect(res.body.spans.map((s: { name: string }) => s.name)).toEqual(["pipeline.run", "llm.generate"]);
     expect(res.body.spans[1].parentSpanId).toBe(res.body.spans[0].spanId);
     expect(res.body.summary).toMatchObject({ traceId, pipeline: "pipeline.run" });
+  });
+
+  it("keeps a run in a test set, once, and lets it go (IKN-95)", async () => {
+    const server = () => request(app.getHttpServer());
+    const csrf = (await server().get("/api/csrf").set("Cookie", cookie).expect(200)).body.csrfToken as string;
+    const write = (method: "post" | "delete", path: string) =>
+      server()[method](path).set("Cookie", cookie).set(CSRF_HEADER, csrf);
+
+    const set = (
+      await write("post", "/api/test-sets")
+        .send({ service: serviceA, name: `e2e ${traceId}` })
+        .expect(201)
+    ).body;
+    await write("post", "/api/test-sets")
+      .send({ service: serviceA, name: `e2e ${traceId}` })
+      .expect(409);
+
+    const added = (await write("post", `/api/test-sets/${set.id}/runs`).send({ traceId }).expect(201)).body;
+    expect(added.run).toMatchObject({ traceId, service: serviceA });
+    expect(added.calls).toHaveLength(1);
+    const again = (await write("post", `/api/test-sets/${set.id}/runs`).send({ traceId }).expect(201)).body;
+    expect(again.id).toBe(added.id);
+
+    const detail = (await server().get(`/api/test-sets/${set.id}`).set("Cookie", cookie).expect(200)).body;
+    expect(detail.set.runs).toBe(1);
+
+    await write("delete", `/api/test-sets/${set.id}/runs/${added.id}`).expect(200);
+    await write("delete", `/api/test-sets/${set.id}`).expect(200);
+    await server().get(`/api/test-sets/${set.id}`).set("Cookie", cookie).expect(404);
+  });
+
+  it("refuses to file a ticket while Spira is not configured (IKN-96)", async () => {
+    const csrf = (await request(app.getHttpServer()).get("/api/csrf").set("Cookie", cookie).expect(200)).body
+      .csrfToken as string;
+    await request(app.getHttpServer())
+      .post("/api/traces/quality/tickets")
+      .set("Cookie", cookie)
+      .set(CSRF_HEADER, csrf)
+      .send({
+        service: serviceA,
+        gate: "schema",
+        gateLabel: "Schema",
+        step: null,
+        failures: 1,
+        previous: null,
+        from: new Date(Date.now() - 3_600_000).toISOString(),
+        to: new Date().toISOString(),
+      })
+      .expect(503);
   });
 
   it("requires a window, and a service for quality and versions", async () => {

@@ -53,7 +53,8 @@ export const QualityView = () => {
           />
           <FailureTable
             failures={report.failures}
-            range={range}
+            ticketing={report.ticketing}
+            context={{ service, range, onCreated: quality.reload }}
           />
         </>
       )}

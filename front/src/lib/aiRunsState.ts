@@ -32,3 +32,6 @@ export const useVersionView = () =>
     },
     REPLACE,
   );
+
+/** The test sets page: which set is open (IKN-95). */
+export const useOpenSet = () => useQueryStates({ set: parseAsInteger }, REPLACE);

@@ -16,7 +16,9 @@ export type {
   AiRunList,
   AiRunSummary,
   Checks,
+  CreateTicketRequest,
   FailurePattern,
+  FailureTicket,
   MarkerKind,
   Measure,
   QualityBaseline,
@@ -28,6 +30,8 @@ export type {
   Review,
   RunState,
   Telemetry,
+  Ticketing,
+  TicketingBlock,
   VersionColumn,
   VersionReport,
   VersionStep,
@@ -75,6 +79,7 @@ export type {
 } from "./service-runtime";
 export type { MetricSource, ServiceSignals, Signal, SignalPoint } from "./service-signals";
 export type { SliWindow } from "./sli";
+export type { TestCall, TestSetDetail, TestSetList, TestSetRun, TestSetSummary } from "./test-sets";
 export type { Trace } from "./trace";
 export type { ContentState, SpanEventRow, SpanRow, TraceDetail } from "./traces";
 export type {

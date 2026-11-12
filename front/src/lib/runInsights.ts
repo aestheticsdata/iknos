@@ -243,3 +243,7 @@ export function messagesOf(value: unknown): GenAiMessage[] {
 /** The step nodes of the run, for the summary's "n steps". */
 export const stepCount = (spans: SpanRow[]): number =>
   spans.filter((span) => isNode(span) && spanKindOf(span) === SPAN_KIND.step).length;
+
+/** Several conversations as one list — system, then input — numbered afresh so each keeps its identity. */
+export const joinedMessages = (...parts: unknown[]): GenAiMessage[] =>
+  parts.flatMap((part) => messagesOf(part)).map((message, position) => ({ ...message, position }));

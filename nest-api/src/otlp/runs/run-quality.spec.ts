@@ -102,7 +102,7 @@ describe("qualityReport", () => {
 
   it("tallies failed verdicts per gate against the previous window, with the step they loop to", () => {
     expect(qualityReport(readings, frame).failures).toEqual([
-      { step: "spec", gate: "spec-testable", gateLabel: "Testable criteria", failures: 2, previous: 0 },
+      { step: "spec", gate: "spec-testable", gateLabel: "Testable criteria", failures: 2, previous: 0, ticket: null },
     ]);
   });
 });

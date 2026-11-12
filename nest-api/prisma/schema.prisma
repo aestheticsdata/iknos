@@ -43,6 +43,10 @@ model Service {
   enabled   Boolean  @default(true)
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
 
+  /// The Spira project its AI failure patterns are filed in (IKN-96) — `OPI`, `VID`, … `null` for a
+  /// service with no project, which then offers no "create the ticket".
+  spiraProject String? @map("spira_project") @db.VarChar(16)
+
   @@map("service")
 }
 
@@ -629,4 +633,51 @@ model SpanContent {
   /// The purge.
   @@index([expiresAt])
   @@map("span_content")
+}
+
+/// A failure pattern's Spira ticket (IKN-96): one gate of one service, one issue. The issue's state
+/// is read back from Spira on each load, never stored — Spira is where it changes.
+model GateTicket {
+  id        Int      @id @default(autoincrement())
+  service   String   @db.VarChar(64)
+  /// `officina.node.id` of the gate.
+  gate      String   @db.VarChar(128)
+  /// The step its failures loop back to, as it was when the ticket was made.
+  step      String?  @db.VarChar(128)
+  /// `OPI-42`.
+  issue     String   @db.VarChar(32)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  @@unique([service, gate])
+  @@map("gate_ticket")
+}
+
+/// A named regression set of one service's runs (IKN-95). Not partitioned and not pruned: a set
+/// outlives the span retention, which is why each of its runs keeps a copy of what it needs.
+model TestSet {
+  id        Int      @id @default(autoincrement())
+  service   String   @db.VarChar(64)
+  name      String   @db.VarChar(128)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  @@unique([service, name])
+  @@map("test_set")
+}
+
+/// One run in a set: its summary and its model calls' inputs and reference outputs, copied when it
+/// was added — the spans and their content expire, the set does not.
+model TestSetRun {
+  id      Int      @id @default(autoincrement())
+  setId   Int      @map("set_id")
+  traceId String   @map("trace_id") @db.Char(32)
+  addedAt DateTime @default(now()) @map("added_at") @db.DateTime(3)
+  /// The run's `AiRunSummary` at the moment it was added.
+  run     Json
+  /// Its model calls: step, prompt version, model, system instructions, input and reference
+  /// output — the `full` content still retained when it was added. Empty for a metadata run.
+  calls   Json
+
+  @@unique([setId, traceId])
+  @@index([setId])
+  @@map("test_set_run")
 }

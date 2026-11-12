@@ -51,6 +51,7 @@ const VIEWS = [
   { key: "traces", label: CHASSIS_TEXT.viewTraces, href: ROUTES.traces, short: "AR", badge: "none" },
   { key: "quality", label: CHASSIS_TEXT.viewQuality, href: ROUTES.tracesQuality, short: "AQ", badge: "none" },
   { key: "versions", label: CHASSIS_TEXT.viewVersions, href: ROUTES.tracesVersions, short: "AV", badge: "none" },
+  { key: "sets", label: CHASSIS_TEXT.viewSets, href: ROUTES.tracesSets, short: "AS", badge: "none" },
   { key: "issues", label: CHASSIS_TEXT.viewIssues, href: ROUTES.issues, short: "IS", badge: "issues" },
   { key: "alerts", label: CHASSIS_TEXT.viewAlerts, href: ROUTES.alerts, short: "AL", badge: "alerts" },
 ] as const;

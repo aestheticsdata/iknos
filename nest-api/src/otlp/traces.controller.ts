@@ -1,6 +1,6 @@
 import { parseWindow } from "@logs/log-query";
-import { Controller, Get, Param, Query } from "@nestjs/common";
-import { IsOptional, IsString, MaxLength } from "class-validator";
+import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
+import { IsInt, IsISO8601, IsOptional, IsString, MaxLength, Min, MinLength } from "class-validator";
 import { AiRunsService } from "./runs/ai-runs.service";
 import { matchesFilters, runFacets, runKpis } from "./runs/run-list";
 import { DAY_US, qualityReport } from "./runs/run-quality";
@@ -15,10 +15,11 @@ import {
 import { readRun } from "./runs/run-reading";
 import { versionReport } from "./runs/run-versions";
 import { eventsFromRow, factFromRow } from "./runs/span-facts";
+import { GateTicketsService } from "./tickets/gate-tickets.service";
 import { parseTraceId, parseTraceLimit } from "./trace-rows";
 import { TracesService } from "./traces.service";
 
-import type { AiRunList, QualityReport, VersionReport } from "@contracts/ai-runs";
+import type { AiRunList, FailureTicket, QualityReport, VersionReport } from "@contracts/ai-runs";
 import type { TraceDetail } from "@contracts/traces";
 
 /** Strings, parsed by hand — the global pipe runs without `transform` (see `LogQueryDto`). */
@@ -33,6 +34,18 @@ class TraceQueryDto {
   @IsOptional() @IsString() @MaxLength(255) prompt?: string;
   @IsOptional() @IsString() @MaxLength(255) model?: string;
   @IsOptional() @IsString() @MaxLength(128) step?: string;
+}
+
+/** `POST /api/traces/quality/tickets` — validated by the global pipe; numbers arrive as JSON numbers. */
+class CreateTicketDto {
+  @IsString() @MinLength(1) @MaxLength(64) service!: string;
+  @IsString() @MinLength(1) @MaxLength(128) gate!: string;
+  @IsString() @MinLength(1) @MaxLength(255) gateLabel!: string;
+  @IsOptional() @IsString() @MaxLength(128) step!: string | null;
+  @IsInt() @Min(0) failures!: number;
+  @IsOptional() @IsInt() @Min(0) previous!: number | null;
+  @IsISO8601() from!: string;
+  @IsISO8601() to!: string;
 }
 
 const elapsed = (startedAt: number): number => Math.round(performance.now() - startedAt);
@@ -50,6 +63,7 @@ export class TracesController {
   constructor(
     private readonly traces: TracesService,
     private readonly runs: AiRunsService,
+    private readonly tickets: GateTicketsService,
   ) {}
 
   /** The run list: one row per run, newest first, filtered and paged, with the window's headline numbers. */
@@ -88,7 +102,20 @@ export class TracesController {
       toUs: to.getTime() * 1000,
       seriesDays: QUALITY_SERIES_DAYS,
     });
-    return { service, ...body, meta: { tookMs: elapsed(startedAt) } };
+    const [failures, ticketing] = await Promise.all([
+      this.tickets.attach(service, body.failures),
+      this.tickets.ticketing(service),
+    ]);
+    return { service, ...body, failures, ticketing, meta: { tookMs: elapsed(startedAt) } };
+  }
+
+  /**
+   * Files a failure pattern as a Spira ticket in the service's project (IKN-96), or returns the
+   * one it already has. 503 when Spira is not configured or the service has no project.
+   */
+  @Post("quality/tickets")
+  createTicket(@Body() body: CreateTicketDto): Promise<FailureTicket> {
+    return this.tickets.create({ ...body, step: body.step ?? null, previous: body.previous ?? null });
   }
 
   /** One service's step — or whole pipeline — compared across the prompt versions and models it ran with. */

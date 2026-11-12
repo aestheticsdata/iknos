@@ -198,6 +198,52 @@ export const TRACES_TEXT = {
     running: (pipeline: string) => `${pipeline} is still running.`,
   },
 
+  /* ── Test sets (IKN-95) ─────────────────────────────────────────────────────────────────────── */
+  addToSet: "add to test set",
+  addedToSet: (name: string) => `in ${name}`,
+  addTag: "test set",
+  addTitle: "Add this run to a test set",
+  addHint:
+    "Its summary and its model calls' inputs and outputs are copied into the set, which keeps them after the run's spans expire.",
+  pickSet: "set",
+  newSetOption: "a new set…",
+  newSetName: "new set name",
+  add: "add",
+  adding: "adding",
+  cancel: "cancel",
+  addFailed: "Could not add the run.",
+  setsFailed: "Could not read the test sets.",
+  setFailed: "Could not read this test set.",
+  setsTitle: "Test sets",
+  setsScope: (service: string | null) => (service === null ? "every service" : service),
+  noSets: "No test set yet. Add a run to one from its page.",
+  createSet: "create",
+  createSetHint: "Pick a service in the rail to create a set for it.",
+  setRuns: (n: number) => (n === 1 ? "1 run" : `${n} runs`),
+  pickSetHint: "Pick a set to see its runs.",
+  setEmpty: "No run in this set yet. Add one from a run's page.",
+  deleteSet: "delete set",
+  deleteSetConfirm: (name: string, n: number) =>
+    `Delete ${name} and the ${n === 1 ? "copy of its run" : `copies of its ${n} runs`}? This cannot be undone.`,
+  confirmDelete: "delete",
+  removeRun: "remove",
+  colAdded: "added",
+  colInputs: "inputs",
+  inputsKept: "kept",
+  inputsMissing: "metadata only",
+  copiesNote:
+    "Each run is a copy taken when it was added — its summary and, for a run traced at full, its model calls' inputs and outputs — so it outlives the spans. Removing a run removes its copy.",
+  noReplay:
+    "No replay from here: an Officina pipeline runs in its visitor's browser, which Iknos cannot reach. The kept inputs are the cases to run in the app's own test harness.",
+  callsTitle: (n: number) => (n === 1 ? "1 model call" : `${n} model calls`),
+  callHead: (step: string | null, version: number | null, model: string | null) =>
+    [step ?? "call", version === null ? null : `v${version}`, model].filter(Boolean).join(" · "),
+  input: "input",
+  referenceOutput: "reference output",
+  noCallContent: "Not captured: the run was traced at the metadata level, or its content had expired.",
+  showCalls: "show calls",
+  hideCalls: "hide calls",
+
   /* ── Quality (IKN-93) ─────────────────────────────────────────────────────────────────────── */
   qualityTitle: (service: string) => `Quality · ${service}`,
   qualityScope: (pipeline: string | null, steps: number, gates: number, range: string) =>
@@ -230,6 +276,16 @@ export const TRACES_TEXT = {
   trendNew: (n: number) => `+${n} new`,
   trendSame: "= 0",
   noFailures: "No gate failed in this range.",
+  colTicket: "spira ticket",
+  createTicket: "create the ticket",
+  creatingTicket: "creating",
+  ticketStateUnknown: "state unknown",
+  ticketBlocked: {
+    notConfigured: "Spira is not configured on this server.",
+    noProject: "This service has no Spira project.",
+  },
+  ticketFailed: "Could not create the ticket.",
+  openTicket: (issue: string) => `Open ${issue} in Spira`,
   noRunsQuality: "No run of this service in the range.",
 
   /* ── Versions (IKN-94) ────────────────────────────────────────────────────────────────────── */

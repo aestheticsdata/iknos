@@ -9,6 +9,7 @@ import { useZone } from "@lib/zoneState";
 import { TRACES_TEXT } from "@text/traces";
 import { useState } from "react";
 import { ChecksBadge, ReviewBadge, TelemetryBadge } from "../badges/RunBadges";
+import { AddToSet } from "../sets/AddToSet";
 import { Stat } from "../shared/Stat";
 
 import type { AiRunSummary } from "@lib/interfaces/aiRunTypes";
@@ -51,6 +52,7 @@ export const RunHeader = ({ run }: RunHeaderProps) => {
         >
           {copied ? TRACES_TEXT.copied : TRACES_TEXT.copyTraceId}
         </button>
+        <AddToSet run={run} />
       </div>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-x-4.5 gap-y-3 border-t border-work-border pt-2.75">
         <Stat
