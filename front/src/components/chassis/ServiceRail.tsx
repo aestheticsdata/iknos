@@ -142,7 +142,10 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
         <RailHeading>{CHASSIS_TEXT.services}</RailHeading>
         {/* Pulled out to the nav's edge by its own padding, so the bar sits where the nav's did
             rather than over the sparklines. */}
-        <ul className="ik-scroll -mx-2 flex min-h-0 flex-col overflow-y-auto px-2 max-rail:-mx-1 max-rail:px-1">
+        {/* `relative` is load-bearing: each row's health word is `sr-only`, i.e. absolutely
+            positioned, and without a positioned scroller its containing block was the page. The
+            rows below the fold then sat outside every clip and made the whole document scroll. */}
+        <ul className="ik-scroll relative -mx-2 flex min-h-0 flex-col overflow-y-auto px-2 max-rail:-mx-1 max-rail:px-1">
           <li>
             <RailRow
               service="all"

@@ -37,7 +37,13 @@ export const ChassisFrame = ({ children }: { children: React.ReactNode }) => {
   return (
     <div
       className={cn(
-        "flex h-dvh flex-col overflow-hidden bg-chassis-deep font-mono",
+        /*
+         * `relative` so the `overflow-hidden` actually holds. An unpositioned box does not clip an
+         * absolutely positioned descendant whose containing block is above it — an `sr-only` label
+         * in an unpositioned scroller anchored to the page and scrolled the document. Positioned,
+         * this box is the last containing block anything inside can reach, and it clips it.
+         */
+        "relative flex h-dvh flex-col overflow-hidden bg-chassis-deep font-mono",
         /*
          * The scrim that steps the rest of the screen back while the timestamps come forward —
          * IKN-49. Unconditional, because it is not a state: it is a `::after` whose opacity is
