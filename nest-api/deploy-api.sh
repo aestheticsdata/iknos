@@ -513,6 +513,15 @@ check_pnpm_baseline() {
   log "➡️  pnpm baseline — local $local_v / server $remote_v"
 }
 
+# The lint, type and test checks run against local dependencies, which the previous deploy deleted
+# (`clean_local_build`). Reinstalled from the lockfile, exactly, and only when missing.
+ensure_local_deps() {
+  if [ ! -d "$SCRIPT_DIR/node_modules" ]; then
+    log "➡️  Installing local dependencies for the pre-deploy checks"
+    ( cd "$SCRIPT_DIR" && pnpm install --frozen-lockfile > /dev/null ) || die "pnpm install failed. Nothing was uploaded."
+  fi
+}
+
 # The laptop is short on disk: a deploy leaves no build output behind, whether it succeeds or not.
 # The server builds the release; a local `dist` is only ever left over from an earlier build. A
 # `nest start --watch` running from this checkout lives in it, so it is kept while one is.
@@ -522,6 +531,14 @@ clean_local_build() {
   elif [ -d "$SCRIPT_DIR/dist" ]; then
     log "🧹 Local build output removed: $(du -sh "$SCRIPT_DIR/dist" 2>/dev/null | cut -f1) dist"
     rm -rf -- "$SCRIPT_DIR/dist"
+  fi
+  # node_modules too: the next deploy reinstalls it from the lockfile (`ensure_local_deps`). Kept
+  # while a `nest start` runs from here, which loads from it.
+  if pgrep -f "nest start" > /dev/null 2>&1; then
+    log "ℹ️  nest start is running: local node_modules kept"
+  elif [ -d "$SCRIPT_DIR/node_modules" ]; then
+    log "🧹 Removing $(du -sh "$SCRIPT_DIR/node_modules" 2>/dev/null | cut -f1) node_modules"
+    rm -rf -- "$SCRIPT_DIR/node_modules"
   fi
   return 0
 }
@@ -537,6 +554,7 @@ deploy() {
     || die "missing nest-api/ecosystem.config.js — copy ecosystem.config.example.js and fill it in. It is not committed."
 
   require_clean_tree
+  ensure_local_deps
   run_preflight_checks
 
   GIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "no-git")
