@@ -14,6 +14,10 @@ set -Eeuo pipefail
 REMOTE_USER_HOST="debian@ks-b"
 
 WEB_ROOT="/var/www/iknos"
+
+# ZEU-93. The one rollback, as a file on ks-b: this script's own auto-rollback, `./deploy-front.sh rollback`
+# and Zeus's post-deploy verification all run it. Rewritten on every deploy by `install_rollback_script`.
+ROLLBACK_SCRIPT_REMOTE="$WEB_ROOT/rollback-front.sh"
 FRONT_DIR="$WEB_ROOT/front"
 FRONT_BACKUP_DIR="$WEB_ROOT/front.bak"
 FRONT_RELEASES_DIR="$WEB_ROOT/front-releases"
@@ -246,6 +250,10 @@ zeus_report() {
     [ -n "${ZEUS_COMMIT:-}" ] && printf ',"commit":"%s"' "$(json_escape "$ZEUS_COMMIT")"
     [ -n "${ZEUS_BRANCH:-}" ] && printf ',"branch":"%s"' "$(json_escape "$ZEUS_BRANCH")"
     [ -n "$summary" ] && printf ',"summary":"%s"' "$(json_escape "$summary")"
+    # ZEU-93. Only a release that is now live has a rollback, and only the deploy knows whether it
+    # changed the schema — absent, Zeus assumes it may have, and never rolls it back on its own.
+    [[ "${ZEUS_MIGRATIONS_APPLIED:-}" =~ ^[0-9]+$ ]] && printf ',"migrationsApplied":%s' "$ZEUS_MIGRATIONS_APPLIED"
+    [ "$status" = "success" ] && [ -n "${ZEUS_ROLLBACK_SCRIPT:-}" ] && printf ',"rollbackScript":"%s"' "$ZEUS_ROLLBACK_SCRIPT"
     printf ',"commits":%s}' "$commits"
   } > "$payload"
 
@@ -302,19 +310,56 @@ code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 \
 EOF
 }
 
-remote_rollback() {
+# ZEU-93. Writes `rollback-front.sh` on ks-b with this script's paths resolved into it: the restore,
+# then the reload. Written to a temporary name and moved, so Zeus never runs half a file.
+install_rollback_script() {
   ssh "$REMOTE_USER_HOST" \
     FRONT_DIR="$FRONT_DIR" \
     FRONT_BACKUP_DIR="$FRONT_BACKUP_DIR" \
     WEB_ROOT="$WEB_ROOT" \
+    PM2_ECOSYSTEM_FILE="$PM2_ECOSYSTEM_FILE" \
+    REMOTE_PATH="$REMOTE_PATH" \
+    TARGET="$ROLLBACK_SCRIPT_REMOTE" \
     'bash -s' << 'EOF'
 set -Eeuo pipefail
+TMP="$TARGET.tmp.$$"
+{
+  echo '#!/usr/bin/env bash'
+  echo '# Written by deploy-front.sh on every deploy (ZEU-93) - do not edit it here, edit the script.'
+  echo '# Restores the previous front release and reloads it: run by the deploy on failure, by'
+  echo '# ./deploy-front.sh rollback, and by Zeus when a release degrades.'
+  echo 'set -Eeuo pipefail'
+  echo 'export PATH="$HOME/.npm-global/bin:$HOME/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin:$PATH"'
+  printf 'FRONT_DIR=%q\n' "$FRONT_DIR"
+  printf 'FRONT_BACKUP_DIR=%q\n' "$FRONT_BACKUP_DIR"
+  printf 'WEB_ROOT=%q\n' "$WEB_ROOT"
+  printf 'PM2_ECOSYSTEM_FILE=%q\n' "$PM2_ECOSYSTEM_FILE"
+  printf 'REMOTE_PATH=%q\n' "$REMOTE_PATH"
+  cat << 'BODY'
 cd "$WEB_ROOT"
 [ -d "$FRONT_BACKUP_DIR" ] || { echo "❌ ERROR: no backup at $FRONT_BACKUP_DIR" >&2; exit 1; }
 rm -rf "$FRONT_DIR"
 mv "$FRONT_BACKUP_DIR" "$FRONT_DIR"
 echo "✅ Front rollback done (restored from backup)"
+export PATH="$REMOTE_PATH:$PATH"
+cd "$FRONT_DIR"
+command -v pm2 >/dev/null 2>&1 || { echo "❌ ERROR: pm2 not found on the server" >&2; exit 1; }
+
+# No `--env production`: the front's ecosystem declares a plain `env` block, because it has no
+# second environment to switch between and nothing secret to keep out of one.
+pm2 startOrReload "$PM2_ECOSYSTEM_FILE" --update-env
+pm2 save
+echo "previous front release restored and reloaded"
+BODY
+} > "$TMP"
+chmod 700 "$TMP"
+mv "$TMP" "$TARGET"
 EOF
+}
+
+# Restores the previous release and reloads — by running the file above, never steps of its own.
+remote_rollback() {
+  install_rollback_script && ssh "$REMOTE_USER_HOST" "bash '$ROLLBACK_SCRIPT_REMOTE'"
 }
 
 restart_pm2() {
@@ -527,6 +572,10 @@ deploy() {
   ZEUS_BRANCH="$GIT_BRANCH_RAW"
   ZEUS_COMMIT=$(git rev-parse HEAD 2>/dev/null || true)
   ZEUS_BASE_HASH=$(resolve_base_hash)
+  ZEUS_ROLLBACK_SCRIPT="$ROLLBACK_SCRIPT_REMOTE"
+  ZEUS_MIGRATIONS_APPLIED=0
+  # ZEU-93. Only paths in it, so it can go in before anything changes on ks-b.
+  install_rollback_script
 
   on_error() {
     local lineno=$1
