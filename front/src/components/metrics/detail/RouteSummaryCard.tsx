@@ -21,7 +21,9 @@ export const RouteSummaryCard = ({ summary, thresholdMs, scrapeIntervalMs }: Rou
     <DetailCard
       kicker={METRICS_TEXT.summary}
       testId="route-summary"
-      className="min-h-0 flex-1"
+      // `flex-1` without `min-h-0`: it fills a tall column, but in a short one it keeps its content
+      // height and the column scrolls, rather than the card shrinking and its figures spilling out.
+      className="flex-1"
     >
       <dl className="flex flex-col gap-1.5 text-row">
         <Figure label={METRICS_TEXT.throughput}>

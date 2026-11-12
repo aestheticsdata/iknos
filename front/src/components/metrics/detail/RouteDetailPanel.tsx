@@ -1,9 +1,11 @@
 "use client";
 
 import { Pending } from "@components/ui/Pending";
+import { SURFACE_SCROLL } from "@components/ui/surface";
 import { Tooltip } from "@components/ui/Tooltip";
 import { logsHref } from "@lib/logsHref";
 import { linksToLogs } from "@lib/metricsFormat";
+import { cn } from "@lib/utils";
 import { METRICS_TEXT } from "@text/metrics";
 import Link from "next/link";
 import { DetailCard } from "./DetailCard";
@@ -82,7 +84,10 @@ export const RouteDetailPanel = ({ service, route, range, detail }: RouteDetailP
         </div>
       </section>
 
-      <div className="flex w-74 flex-none flex-col gap-2.75">
+      {/* `min-h-0` and its own scroll: on a short viewport the three cards are taller than what the
+          table leaves, and without these the column overflowed into the work pane, which then
+          scrolled the whole page a few pixels for nothing. */}
+      <div className={cn("flex min-h-0 w-74 flex-none flex-col gap-2.75 overflow-y-auto", SURFACE_SCROLL.work)}>
         {data !== null ? (
           <>
             <LatencyDistribution
