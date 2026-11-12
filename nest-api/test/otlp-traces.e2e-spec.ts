@@ -1,6 +1,17 @@
 import { randomBytes, randomUUID } from "node:crypto";
+import { CONTENT_STATE } from "@contracts/traces";
 import { PrismaService } from "@db/prisma.service";
-import { MAX_SPANS_PER_REQUEST, OTLP_TOKEN_HEADER, OTLP_TRACES_PATH, SPAN_STATUS } from "@otlp/otlp-limits";
+import { ContentPurgeService } from "@maintenance/content-purge.service";
+import {
+  CONTENT_RETENTION_ATTR,
+  EVALUATION_ATTR,
+  EVALUATION_LABEL,
+  EVENT_NAME,
+  MAX_SPANS_PER_REQUEST,
+  OTLP_TOKEN_HEADER,
+  OTLP_TRACES_PATH,
+  SPAN_STATUS,
+} from "@otlp/otlp-limits";
 import { issueToken } from "@otlp/token";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -97,6 +108,14 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  const traces = await prisma?.span.findMany({
+    where: { service: { in: services } },
+    select: { traceId: true },
+    distinct: ["traceId"],
+  });
+  const traceIds = (traces ?? []).map((t) => t.traceId);
+  await prisma?.spanContent.deleteMany({ where: { traceId: { in: traceIds } } });
+  await prisma?.spanEvent.deleteMany({ where: { service: { in: services } } });
   await prisma?.span.deleteMany({ where: { service: { in: services } } });
   await prisma?.ingestToken.deleteMany({ where: { service: { in: services } } });
   await prisma?.service.deleteMany({ where: { name: { in: services } } });
@@ -327,6 +346,168 @@ describe("the read routes", () => {
   it("requires a window and a service", async () => {
     await request(app.getHttpServer()).get(`/api/traces?service=${serviceA}`).set("Cookie", cookie).expect(400);
     await request(app.getHttpServer()).get(`/api/traces?${window()}`).set("Cookie", cookie).expect(400);
+  });
+});
+
+describe("events and content (IKN-87 v2)", () => {
+  let cookie: string;
+
+  beforeAll(async () => {
+    cookie = await login(app);
+  });
+
+  const window = () => {
+    const to = new Date(Date.now() + 60_000).toISOString();
+    const from = new Date(Date.now() - 3_600_000).toISOString();
+    return `from=${from}&to=${to}`;
+  };
+
+  const str = (key: string, value: string) => ({ key, value: { stringValue: value } });
+
+  /** The two spans, the child at the `full` level: content, a failed gate and a human edit. */
+  const fullRun = (traceId: string, retentionDays: number) => {
+    const [root, child] = twoSpans(traceId);
+    const at = nanos(Date.now() - 59_500);
+    return {
+      resourceSpans: [
+        {
+          resource: { attributes: [{ key: CONTENT_RETENTION_ATTR, value: { intValue: String(retentionDays) } }] },
+          scopeSpans: [
+            {
+              scope: { name: "officina" },
+              spans: [
+                root,
+                {
+                  ...child,
+                  attributes: [
+                    ...(child.attributes ?? []),
+                    str("gen_ai.input.messages", '[{"role":"user","content":"summarise"}]'),
+                    str("gen_ai.output.messages", '[{"role":"assistant","content":"done"}]'),
+                  ],
+                  status: { code: SPAN_STATUS.error, message: "schema gate failed" },
+                  events: [
+                    {
+                      timeUnixNano: at,
+                      name: EVENT_NAME.evaluation,
+                      attributes: [
+                        str(EVALUATION_ATTR.name, "schema"),
+                        str(EVALUATION_ATTR.label, EVALUATION_LABEL.fail),
+                        { key: EVALUATION_ATTR.value, value: { doubleValue: 0 } },
+                        str("gen_ai.evaluation.explanation", "missing 'title'"),
+                      ],
+                    },
+                    {
+                      timeUnixNano: at,
+                      name: EVENT_NAME.humanFeedback,
+                      attributes: [
+                        str("officina.human.decision", "edit"),
+                        str("officina.node.id", "review"),
+                        str("officina.human.note", "add the title"),
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+  };
+
+  const detail = async (traceId: string) =>
+    (
+      await request(app.getHttpServer()).get(`/api/traces/${traceId}?${window()}`).set("Cookie", cookie).expect(200)
+    ).body.spans.find((s: { name: string }) => s.name === "llm.generate");
+
+  it("stores events as metadata and content apart, once per resend", async () => {
+    const traceId = hex(16);
+    const payload = fullRun(traceId, 3);
+    await post(tokenA).send(payload).expect(200);
+    await post(tokenA).send(payload).expect(200);
+
+    const events = await prisma.spanEvent.findMany({ where: { traceId }, orderBy: { eventIndex: "asc" } });
+    expect(events.map((e) => e.name)).toEqual([EVENT_NAME.evaluation, EVENT_NAME.humanFeedback]);
+    expect(events[0].attrs).not.toHaveProperty("gen_ai.evaluation.explanation");
+    expect(events[1].attrs).not.toHaveProperty("officina.human.note");
+
+    const span = await prisma.span.findFirstOrThrow({ where: { traceId, name: "llm.generate" } });
+    expect(span.attrs).not.toHaveProperty("gen_ai.input.messages");
+    expect(span.statusMessage).toBeNull();
+    expect(span.contentDays).toBe(3);
+
+    const contents = await prisma.spanContent.findMany({ where: { traceId } });
+    expect(contents.map((c) => c.contentKey).sort()).toEqual([
+      "gen_ai.evaluation.explanation",
+      "gen_ai.input.messages",
+      "gen_ai.output.messages",
+      "officina.human.note",
+      "otel.status.message",
+    ]);
+    const days = (contents[0].expiresAt.getTime() - Date.now()) / 86_400_000;
+    expect(days).toBeGreaterThan(2.99);
+    expect(days).toBeLessThanOrEqual(3);
+  });
+
+  it("reads events and retained content back on their span, and counts them in the list", async () => {
+    const traceId = hex(16);
+    await post(tokenA).send(fullRun(traceId, 3)).expect(200);
+
+    const llm = await detail(traceId);
+    expect(llm.contentState).toBe(CONTENT_STATE.retained);
+    expect(llm.contentDays).toBe(3);
+    expect(llm.statusMessage).toBe("schema gate failed");
+    expect(llm.content["gen_ai.input.messages"]).toContain("summarise");
+    expect(llm.events).toHaveLength(2);
+    expect(llm.events[0].attrs[EVALUATION_ATTR.label]).toBe(EVALUATION_LABEL.fail);
+    expect(llm.events[0].content).toEqual({ "gen_ai.evaluation.explanation": "missing 'title'" });
+    expect(llm.events[1].content).toEqual({ "officina.human.note": "add the title" });
+
+    const list = await request(app.getHttpServer())
+      .get(`/api/traces?service=${serviceA}&${window()}`)
+      .set("Cookie", cookie)
+      .expect(200);
+    const row = list.body.traces.find((t: { traceId: string }) => t.traceId === traceId);
+    expect(row).toMatchObject({ spanCount: 2, failedEvaluations: 1, humanFeedback: 1 });
+  });
+
+  it("purges content past its expiry and keeps the span and its events readable", async () => {
+    const traceId = hex(16);
+    await post(tokenA).send(fullRun(traceId, 3)).expect(200);
+    // Three days later, as far as the rows can tell.
+    await prisma.spanContent.updateMany({ where: { traceId }, data: { expiresAt: new Date(Date.now() - 1000) } });
+
+    const report = await app.get(ContentPurgeService).purge();
+
+    expect(report.deleted).toBeGreaterThanOrEqual(5);
+    expect(await prisma.spanContent.count({ where: { traceId } })).toBe(0);
+    expect(await prisma.span.count({ where: { traceId } })).toBe(2);
+    expect(await prisma.spanEvent.count({ where: { traceId } })).toBe(2);
+
+    const llm = await detail(traceId);
+    expect(llm.contentState).toBe(CONTENT_STATE.expired);
+    expect(llm.contentDays).toBe(3);
+    expect(llm.content).toBeNull();
+    expect(llm.statusMessage).toBeNull();
+    expect(llm.events.map((e: { name: string }) => e.name)).toEqual([EVENT_NAME.evaluation, EVENT_NAME.humanFeedback]);
+    expect(llm.events[0].content).toBeNull();
+  });
+
+  it("leaves content that has not expired alone", async () => {
+    const traceId = hex(16);
+    await post(tokenA).send(fullRun(traceId, 3)).expect(200);
+    await app.get(ContentPurgeService).purge();
+    expect(await prisma.spanContent.count({ where: { traceId } })).toBe(5);
+  });
+
+  it("keeps no content from a batch that allows none — metadata only", async () => {
+    const traceId = hex(16);
+    await post(tokenA).send(fullRun(traceId, 0)).expect(200);
+
+    expect(await prisma.spanContent.count({ where: { traceId } })).toBe(0);
+    const llm = await detail(traceId);
+    expect(llm.contentState).toBe(CONTENT_STATE.none);
+    expect(llm.events).toHaveLength(2);
   });
 });
 

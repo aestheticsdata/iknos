@@ -13,6 +13,33 @@ import type { Meta } from "@lib/logTypes";
 export const TRACE_STATUS = { unset: "unset", ok: "ok", error: "error" } as const;
 export type TraceStatus = (typeof TRACE_STATUS)[keyof typeof TRACE_STATUS];
 
+/** Mirrors `contracts/traces.ts` — what became of a span's content (IKN-87 v2). */
+export const CONTENT_STATE = { retained: "retained", expired: "expired", none: "none" } as const;
+export type ContentState = (typeof CONTENT_STATE)[keyof typeof CONTENT_STATE];
+
+/** The span events the view reads, by their OpenTelemetry / Officina names (IKN-87 v2). */
+export const TRACE_EVENT = {
+  evaluation: "gen_ai.evaluation.result",
+  humanFeedback: "officina.human.feedback",
+} as const;
+
+/** The attributes those events carry, metadata and content alike. */
+export const TRACE_EVENT_ATTR = {
+  evaluationName: "gen_ai.evaluation.name",
+  evaluationLabel: "gen_ai.evaluation.score.label",
+  evaluationScore: "gen_ai.evaluation.score.value",
+  evaluationExplanation: "gen_ai.evaluation.explanation",
+  ruleIndex: "officina.gate.rule_index",
+  decision: "officina.human.decision",
+  nodeId: "officina.node.id",
+  note: "officina.human.note",
+  edit: "officina.human.edit",
+} as const;
+
+/** `gen_ai.evaluation.score.label`. Anything else a sender writes reads as `other`. */
+export const EVALUATION_VERDICT = { pass: "pass", fail: "fail", other: "other" } as const;
+export type EvaluationVerdict = (typeof EVALUATION_VERDICT)[keyof typeof EVALUATION_VERDICT];
+
 /** OTLP `Status.code`, as each span carries it. */
 export const SPAN_STATUS_CODE = { unset: 0, ok: 1, error: 2 } as const;
 
@@ -28,6 +55,8 @@ export type TraceSummary = {
   inputTokens: number | null;
   outputTokens: number | null;
   models: string[];
+  failedEvaluations: number;
+  humanFeedback: number;
 };
 
 /** Mirrors `contracts/traces.ts`. */
@@ -53,6 +82,18 @@ export type SpanRow = {
   inputTokens: number | null;
   outputTokens: number | null;
   attrs: Record<string, unknown> | null;
+  events: SpanEventRow[];
+  content: Record<string, unknown> | null;
+  contentState: ContentState;
+  contentDays: number | null;
+};
+
+/** Mirrors `contracts/traces.ts`. */
+export type SpanEventRow = {
+  timeUs: number;
+  name: string;
+  attrs: Record<string, unknown> | null;
+  content: Record<string, unknown> | null;
 };
 
 /** Mirrors `contracts/traces.ts`. */
@@ -93,4 +134,34 @@ export type BarBox = {
 export type AxisTick = {
   pct: number;
   offsetUs: number;
+};
+
+/** One gate evaluation, read off a `gen_ai.evaluation.result` event. */
+export type Evaluation = {
+  timeUs: number;
+  name: string;
+  verdict: EvaluationVerdict;
+  /** The label as sent, for a verdict of `other`. */
+  label: string | null;
+  score: number | null;
+  ruleIndex: number | null;
+  /** Content: present only while the span's content is retained. */
+  explanation: string | null;
+};
+
+/** One human decision, read off an `officina.human.feedback` event. */
+export type HumanFeedback = {
+  timeUs: number;
+  decision: string;
+  nodeId: string | null;
+  /** Content, like the evaluation's explanation. */
+  note: string | null;
+  edit: string | null;
+};
+
+/** What a waterfall row marks: how many gates passed and failed on the span, and how many decisions. */
+export type ReviewMarks = {
+  passed: number;
+  failed: number;
+  feedback: number;
 };

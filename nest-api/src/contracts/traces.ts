@@ -21,6 +21,22 @@ export const TRACE_STATUS = {
 
 export type TraceStatus = (typeof TRACE_STATUS)[keyof typeof TRACE_STATUS];
 
+/**
+ * What became of a span's content — prompts, answers, notes (IKN-87 v2). Content is kept apart
+ * from the metadata, for as many days as its sender allowed, then purged; the span says which:
+ *
+ * - `retained` — `content` holds it, under the attribute keys it was sent with;
+ * - `expired` — some was kept, and its retention (`contentDays`) has run out;
+ * - `none` — none was ever kept: the app sent metadata only, or the server keeps no content.
+ */
+export const CONTENT_STATE = {
+  retained: "retained",
+  expired: "expired",
+  none: "none",
+} as const;
+
+export type ContentState = (typeof CONTENT_STATE)[keyof typeof CONTENT_STATE];
+
 /** One run, one row: what the list needs to choose which one to open. */
 export type TraceSummary = {
   traceId: string;
@@ -36,6 +52,10 @@ export type TraceSummary = {
   outputTokens: number | null;
   /** Distinct `gen_ai.request.model` values, sorted. */
   models: string[];
+  /** `gen_ai.evaluation.result` events labelled `fail` on the trace's spans (IKN-87 v2). */
+  failedEvaluations: number;
+  /** `officina.human.feedback` events on the trace's spans (IKN-87 v2). */
+  humanFeedback: number;
 };
 
 /** `GET /api/traces` — newest first, at most `limit` (default 100, max 500). */
@@ -58,12 +78,29 @@ export type SpanRow = {
   durationUs: number;
   /** OTLP `Status.code`: 0 unset, 1 ok, 2 error. */
   statusCode: number;
+  /** Content since IKN-87 v2: present only while the span's content is retained. */
   statusMessage: string | null;
   genAiOperation: string | null;
   genAiModel: string | null;
   inputTokens: number | null;
   outputTokens: number | null;
   attrs: Record<string, unknown> | null;
+  /** The span's events in time order — gate evaluations, human feedback, anything else sent. */
+  events: SpanEventRow[];
+  /** The span's own content (`gen_ai.input.messages`, …) while retained, else `null`. */
+  content: Record<string, unknown> | null;
+  contentState: ContentState;
+  /** The retention the content was kept for, in days; `null` when none was kept. */
+  contentDays: number | null;
+};
+
+/** One span event: metadata, and its content while retained. Times are Unix microseconds. */
+export type SpanEventRow = {
+  timeUs: number;
+  name: string;
+  attrs: Record<string, unknown> | null;
+  /** The event's content keys (`gen_ai.evaluation.explanation`, `officina.human.note`, …), or `null`. */
+  content: Record<string, unknown> | null;
 };
 
 /** `GET /api/traces/:traceId` — every span of one trace, in start order. */

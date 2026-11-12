@@ -1,3 +1,4 @@
+import type { Span, SpanContent, SpanEvent } from "@generated/prisma/client";
 import type { SPAN_STATUS } from "../otlp-limits";
 
 /**
@@ -32,6 +33,42 @@ export type SpanRecord = {
   inputTokens: number | null;
   outputTokens: number | null;
   attrs: Record<string, AttrValue> | null;
+  /**
+   * When this span's content (prompts, answers, notes — `span_content`) is purged, or `null` when
+   * none was kept. Set at ingest, so the read can tell "expired" from "never captured" after the
+   * purge has removed every trace of the content itself.
+   */
+  contentUntil: Date | null;
+  /** The retention, in days, that `contentUntil` was computed from — what the view says expired. */
+  contentDays: number | null;
+};
+
+/** One span event, metadata only, ready for `span_event`. */
+export type SpanEventRecord = {
+  /** The span's `ts`, not the event's: the event lives and is dropped in its span's partition. */
+  ts: Date;
+  service: string;
+  traceId: string;
+  spanId: string;
+  /** Position in the span's `events` list — with the span's key, what makes a resend harmless. */
+  eventIndex: number;
+  /** Unix microseconds. */
+  timeUs: bigint;
+  name: string;
+  attrs: Record<string, AttrValue> | null;
+};
+
+/** One content value, apart from the metadata, with its own expiry. */
+export type SpanContentRecord = {
+  traceId: string;
+  spanId: string;
+  spanTs: Date;
+  /** The event it came from, or `SPAN_LEVEL_INDEX` for the span's own attributes and status. */
+  eventIndex: number;
+  contentKey: string;
+  /** The decoded attribute value, JSON-encoded, so an array reads back as an array. */
+  value: string;
+  expiresAt: Date;
 };
 
 /** What the parser needs besides the body: whose spans these are, and what "now" is. */
@@ -40,11 +77,22 @@ export type ParseContext = {
   now: Date;
   /** Spans that started longer ago than this would land in a partition retention already dropped. */
   maxAgeDays: number;
+  /**
+   * The most days any content may be kept — `IKNOS_CONTENT_MAX_RETENTION_DAYS`, never more than
+   * `maxAgeDays` (content must not outlive the span it belongs to). 0 keeps no content at all.
+   */
+  contentMaxDays: number;
+};
+
+/** The rows one request writes, in the three tables. */
+export type ParsedBatch = {
+  spans: SpanRecord[];
+  events: SpanEventRecord[];
+  contents: SpanContentRecord[];
 };
 
 /** The spans worth storing, and an account of the ones that were not. */
-export type ParseOutcome = {
-  spans: SpanRecord[];
+export type ParseOutcome = ParsedBatch & {
   rejected: number;
   /** Distinct reasons, in the order first met — the `errorMessage` of an OTLP partial success. */
   reasons: string[];
@@ -85,6 +133,16 @@ export type RawTraceRow = {
   inputTokens: unknown;
   outputTokens: unknown;
   models: string | null;
+  failedEvaluations: unknown;
+  humanFeedback: unknown;
+};
+
+/** One trace's rows from the three tables, as `TracesService.spans` reads them. */
+export type TraceRows = {
+  spans: Span[];
+  events: SpanEvent[];
+  /** Only the rows not yet expired — an expired row the purge has not reached yet is not content. */
+  contents: SpanContent[];
 };
 
 /** The trace list's question: one service, one window, a page size. */

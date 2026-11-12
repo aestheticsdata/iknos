@@ -552,17 +552,81 @@ model Span {
   inputTokens    Int?    @map("input_tokens")
   outputTokens   Int?    @map("output_tokens")
 
-  /// Every other span attribute, plus the resource's under `resource.` and the scope's name.
+  /// Every other span attribute, plus the resource's under `resource.` and the scope's name —
+  /// never a content key, which lives in `span_content` (IKN-87 v2).
   attrs Json?
 
+  /// When this span's content is purged, and the retention that date came from — `null` when none
+  /// was kept. Outlives the content on purpose: it is how the view tells "expired" from "never sent".
+  contentUntil DateTime? @map("content_until") @db.DateTime(3)
+  contentDays  Int?      @map("content_days") @db.SmallInt
+
   @@id([id, ts])
-  /// The trace list: one service, one window.
-  @@index([service, ts])
   /// One trace's spans, by its `trace_id` prefix — and the reason a resent batch is harmless. An
   /// exporter retries a flush whose answer it never saw, and a page's last flush can go out twice
   /// (a `keepalive` fetch, then the beacon); the writer inserts with `skipDuplicates`, so the second
   /// copy of a span is ignored rather than drawn twice in the waterfall. `ts` is in it because MySQL
   /// requires every unique key of a partitioned table to contain the partitioning column.
   @@unique([traceId, spanId, ts])
+  /// The trace list: one service, one window.
+  @@index([service, ts])
   @@map("span")
+}
+
+/// The events of an OTLP span (IKN-87 v2) — gate evaluations, human feedback — metadata only.
+///
+/// Day-partitioned on its **span's** `ts`, not on the event's own time, and in `MANAGED_TABLES` on
+/// the log window: an event is dropped with the partition its span is dropped with, and the trace
+/// read finds both with one window. Hand-written `PARTITION BY` in the migration, as for `span`.
+model SpanEvent {
+  id BigInt   @default(autoincrement()) @db.UnsignedBigInt
+  /// The span's `ts`.
+  ts DateTime @db.DateTime(3)
+
+  service String @db.VarChar(64)
+  traceId String @map("trace_id") @db.Char(32)
+  spanId  String @map("span_id") @db.Char(16)
+
+  /// Position in the span's `events` list as sent.
+  eventIndex Int    @map("event_index") @db.SmallInt
+  /// Unix microseconds.
+  timeUs     BigInt @map("time_us")
+  name       String @db.VarChar(255)
+  /// Non-content attributes; a content key is in `span_content`.
+  attrs      Json?
+
+  @@id([id, ts])
+  /// One trace's events — and a resend stored once, as for `span`.
+  @@unique([traceId, spanId, eventIndex, ts])
+  /// The trace list's per-run counts: one service, one window.
+  @@index([service, ts])
+  @@map("span_event")
+}
+
+/// The content of OTLP spans and events (IKN-87 v2): prompts, answers, explanations, notes — each
+/// value with its own `expires_at`, deleted by `ContentPurgeService` once it passes.
+///
+/// **Not partitioned.** Its lifetime is per batch (the sender states it), not per day of `ts`, so a
+/// day partition would not line up with what has to go; the `expires_at` index makes the bounded
+/// `DELETE … LIMIT` the purge runs a range scan. The volume is the price of the `full` level only.
+model SpanContent {
+  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+
+  traceId    String   @map("trace_id") @db.Char(32)
+  spanId     String   @map("span_id") @db.Char(16)
+  /// The span's `ts`, so the content is read with the same window as its span.
+  spanTs     DateTime @map("span_ts") @db.DateTime(3)
+  /// The event the value came from, or -1 for the span itself (`SPAN_LEVEL_INDEX`) — a sentinel
+  /// rather than NULL, because a UNIQUE key treats every NULL as distinct.
+  eventIndex Int      @map("event_index") @db.SmallInt
+  contentKey String   @map("content_key") @db.VarChar(255)
+  /// The decoded attribute value, JSON-encoded. MEDIUMTEXT: 32 768 characters of utf8mb4 can pass TEXT's 64 KB.
+  value      String   @db.MediumText
+  expiresAt  DateTime @map("expires_at") @db.DateTime(3)
+
+  /// One trace's content — and a resend stored once.
+  @@unique([traceId, spanId, spanTs, eventIndex, contentKey], map: "span_content_owner_key")
+  /// The purge.
+  @@index([expiresAt])
+  @@map("span_content")
 }

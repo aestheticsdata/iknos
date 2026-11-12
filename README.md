@@ -126,6 +126,21 @@ opens one as a nested waterfall — the tree rebuilt from parent ids, every bar 
 clock, a span's attributes on hover or click. It is a different component from the log trace
 view, which stays flat on purpose. Design: `docs/superpowers/specs/2026-11-12-otlp-traces-design.md`.
 
+**Span events, and content kept apart** (IKN-87 v2). A span's `events` are stored in `span_event`
+— day-partitioned on their span's `ts`, so they keep the span's window and go with it: the
+Officina apps send their gate verdicts as `gen_ai.evaluation.result` (name, `pass`/`fail` label,
+score, rule index) and a reviewer's decision as `officina.human.feedback`. **Content** — the GenAI
+messages (`gen_ai.input.messages`, `gen_ai.output.messages`, `gen_ai.system_instructions`), an
+evaluation's explanation, a reviewer's note and edit, and the span's `status.message` — never
+reaches `attrs`: it is taken out at ingest into `span_content`, each value with an `expires_at`
+of now plus the batch's own `officina.content.retention_days` (default 7 when absent or
+malformed), capped by `IKNOS_CONTENT_MAX_RETENTION_DAYS` (30) and by `IKNOS_RETENTION_DAYS`. An
+hourly purge (`:17`, and at boot) deletes the expired rows in bounded batches; the spans and
+events stay. The span itself records when its content goes (`content_until`, `content_days`), so
+the run detail can say "content expired after 3 days" rather than "metadata only" once it has.
+The run list counts failed evaluations and human decisions per run; the waterfall marks them on
+their span (✕ ✓ ◆), and the inspector shows them with the content while it is retained.
+
 ### The read routes
 
 Every one of them sits behind the session guard, which is registered globally and denies by
@@ -140,8 +155,8 @@ default — a route is public only if someone wrote `@Public()` on it.
 | `GET /api/services` | The registry, for the filters and the service rail |
 | `GET /api/services/:service/runtime` | Header chips, health pills and the runtime gauges — the facts that are true now |
 | `GET /api/services/:service/signals` | Throughput, 5xx rate and p95 over a range, from raw samples or their hourly rollups |
-| `GET /api/traces` | One row per OTLP trace of a service over a range: root span, duration, span count, status, tokens, models (IKN-87) |
-| `GET /api/traces/:traceId` | Every span of one trace, in start order, for the waterfall (IKN-87) |
+| `GET /api/traces` | One row per OTLP trace of a service over a range: root span, duration, span count, status, tokens, models, failed evaluations, human decisions (IKN-87) |
+| `GET /api/traces/:traceId` | Every span of one trace, in start order, with its events and its content while retained (IKN-87) |
 | `POST /api/ingest` | The browser's log write route — see above |
 | `POST /api/otlp/v1/traces` | OTLP/HTTP JSON traces, with a per-application write token — see above |
 | `GET /api/sli` | One service's requests, 5xx and p95 over a window, from the nginx lines, plus how far the collector has stored — Zeus's post-deploy verification, bearer token, loopback only (IKN-88) |

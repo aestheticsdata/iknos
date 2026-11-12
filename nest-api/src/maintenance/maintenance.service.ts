@@ -27,6 +27,7 @@ export const MANAGED_TABLES = [
   "alert_state_change",
   "metric_rollup",
   "span",
+  "span_event",
 ] as const;
 
 type ManagedTable = (typeof MANAGED_TABLES)[number];
@@ -58,6 +59,8 @@ const RETENTION_WINDOW: Record<ManagedTable, "logs" | "metrics" | "rollups"> = {
   // OTLP spans (IKN-87) are the AI pipelines' equivalent of log lines — a run of Opifex is read
   // beside the logs of the same afternoon — so they keep the log window, not the metric one.
   span: "logs",
+  // Their events (IKN-87 v2), partitioned on the span's own `ts`, go with them, day for day.
+  span_event: "logs",
 };
 
 /** The one table whose partitions may not go before their hours are rolled up (IKN-20). */

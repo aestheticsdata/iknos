@@ -65,7 +65,7 @@ same allow headers, so a refused page can read its 403.
 Attributes: string, bool, int (string or number; past 2⁵³ kept as its digits), double, and flat
 arrays of those (128 items). Strings cut at 32 768 characters, at most 128 attributes per span and
 per resource, keys ≤ 255. `bytesValue`, `kvlistValue` and non-finite doubles are dropped. Unknown
-fields — `events`, `links`, `flags`, anything newer — are ignored.
+fields — `links`, `flags`, anything newer — are ignored. `events` are read since v2 (§7).
 
 Resource attributes are kept as `resource.<key>` (minus `service.name`), the scope as
 `otel.scope.name` / `otel.scope.version`. The four GenAI fields move out of `attrs` into columns
@@ -125,6 +125,61 @@ Pure helpers with specs: `lib/spanTree.ts`, `lib/spanTimeline.ts`, `lib/traceFor
 ## 6. Not in this ticket
 
 - OTLP logs and metrics, and protobuf.
-- Span events and links (ignored on ingest; GenAI prompt/completion events would land there).
+- Span links. (Events and content landed in v2, §7.)
 - Searching spans by attribute, or listing runs across every service.
 - Any production token — the owner creates them with `pnpm token:create` (DEPLOY.md).
+
+---
+
+## 7. v2 — span events, and content kept apart (IKN-87 v2)
+
+The Officina apps now send three things more: span **events** (gate verdicts and human decisions),
+a **content retention** on every batch, and — at their `full` telemetry level only — **content**:
+the prompts and answers themselves.
+
+### Decisions
+
+| | Decision | Why |
+|---|---|---|
+| D16 | `span_event`, day-partitioned on its **span's** `ts`, in `MANAGED_TABLES` on the log window | An event lives and dies with its span, and the trace read finds both with the same window. The event's own time is a column (`time_us`) |
+| D17 | Resend key `(trace_id, span_id, event_index, ts)`; `event_index` is the position in the span's `events` as sent | A resend is the same list in the same order. Time + name would merge two evaluations of one rule at one instant |
+| D18 | **Content keys are stripped at ingest**, from span and event attributes alike, plus `status.message` | Metadata keeps the log window; content keeps only what its sender allowed. A key that slipped into `attrs` would live 14 days regardless |
+| D19 | `span_content` (trace, span, span `ts`, event index or −1, key, JSON-encoded value MEDIUMTEXT, `expires_at`), **not partitioned** | Lifetime is per batch, not per day, so no partition boundary lines up with it. The `expires_at` index makes the purge a range scan |
+| D20 | `expires_at = ingest + min(stated, IKNOS_CONTENT_MAX_RETENTION_DAYS (30), IKNOS_RETENTION_DAYS)`; absent/malformed → 7; 0 → keep none | The sender decides, the server caps; content never outlives its span. A sender that cannot say how long is not trusted with the longest |
+| D21 | `span.content_until` / `content_days`, set at ingest when content was kept | After the purge nothing of the content is left to infer from. The mark tells "expired after N days" from "metadata only" |
+| D22 | Purge hourly at `:17` and at boot, `DELETE … ORDER BY expires_at LIMIT 5000`, ≤ 100 batches a pass; spans and events untouched | Short statements, no long locks; the fleet is stopped overnight so a 3 a.m. job alone would not run. The read filters `expires_at > now()` so a late purge never shows expired content |
+| D23 | The detail joins the three tables in TypeScript (`assembleSpans`), not SQL | Three bounded reads by `trace_id`; a JOIN would repeat each span once per event |
+
+### Contract additions
+
+Events: `span.events[] = { timeUnixNano, name, attributes }`, at most 64 per span and 4 000 per
+request (extra events dropped, the span kept); an event without a string name or a usable time is
+skipped. Attributes have the span limits. Names read by the view: `gen_ai.evaluation.result`
+(`gen_ai.evaluation.name`, `gen_ai.evaluation.score.label` = `pass`|`fail`,
+`gen_ai.evaluation.score.value`, `officina.gate.rule_index`) and `officina.human.feedback`
+(`officina.human.decision`, `officina.node.id`). Any other event is stored and listed.
+
+Content keys: `gen_ai.input.messages`, `gen_ai.output.messages`, `gen_ai.system_instructions`,
+`gen_ai.evaluation.explanation`, `officina.human.note`, `officina.human.edit` (wherever they
+appear), and `status.message` (stored as `otel.status.message`).
+
+Resource: `officina.content.retention_days` (int ≥ 0). It is also kept as metadata
+(`resource.officina.content.retention_days`).
+
+### Reads
+
+- `GET /api/traces` adds `failedEvaluations` and `humanFeedback` per run — a grouped subquery on
+  `span_event` over the same service and window, `LEFT JOIN`ed by trace.
+- `GET /api/traces/:traceId`: each `SpanRow` adds `events: { timeUs, name, attrs, content }[]` (time
+  order), `content` (the span's own content keys, or `null`), `contentState`
+  (`retained` | `expired` | `none`) and `contentDays`. `statusMessage` is filled from content
+  while retained (or from the column, for spans stored before v2).
+
+### The view
+
+The run list gains a **review** column (failed gates, human decisions). A waterfall row marks its
+span's evaluations and decisions after the name — ✕ n failed, ✓ n passed, ◆ n decisions, the words
+in the title. The inspector adds **evaluations** (verdict chip, name, rule, score, explanation),
+**human feedback** (decision, node, note, edit) and **content** (each key, JSON messages
+re-indented), or a muted "Content expired after N days." / "Metadata only". Helpers in
+`lib/spanEvents.ts` with a spec; the sections in `components/traces/inspector/`.

@@ -16,6 +16,9 @@ export const DEFAULT_OTLP_TOKEN_RATE_PER_MINUTE = 120;
 /** IKN-87 — see `IKNOS_OTLP_IP_RATE_PER_MINUTE` below. */
 export const DEFAULT_OTLP_IP_RATE_PER_MINUTE = 240;
 
+/** IKN-87 v2 — see `IKNOS_CONTENT_MAX_RETENTION_DAYS` below. */
+export const DEFAULT_CONTENT_MAX_RETENTION_DAYS = 30;
+
 /**
  * Boot-time contract. Every variable the API needs is declared here, and a missing or malformed
  * one stops the process at startup instead of surfacing as a confusing failure three hours later
@@ -203,6 +206,21 @@ class EnvironmentVariables {
   @IsInt({ message: "IKNOS_OTLP_IP_RATE_PER_MINUTE must be a whole number" })
   @Min(1, { message: "IKNOS_OTLP_IP_RATE_PER_MINUTE must be at least 1" })
   IKNOS_OTLP_IP_RATE_PER_MINUTE?: number;
+
+  /**
+   * The most days the **content** of an OTLP span — prompts, answers, a reviewer's note — is kept
+   * (IKN-87 v2). Optional — 30.
+   *
+   * Each Officina batch states its own retention (`officina.content.retention_days`); this is the
+   * ceiling on it, and `IKNOS_RETENTION_DAYS` is a second one, since content may not outlive the
+   * span it belongs to. 0 keeps no content at all: spans and events are stored, the text is not.
+   * The purge (`ContentPurgeService`) runs hourly and at boot.
+   */
+  @IsOptional()
+  @IsInt({ message: "IKNOS_CONTENT_MAX_RETENTION_DAYS must be a whole number" })
+  @Min(0, { message: "IKNOS_CONTENT_MAX_RETENTION_DAYS must be 0 or more" })
+  @Max(3650, { message: "IKNOS_CONTENT_MAX_RETENTION_DAYS must be at most 3650" })
+  IKNOS_CONTENT_MAX_RETENTION_DAYS?: number;
 }
 
 /** What the rest of the application injects. Nothing outside this file reads `process.env`. */
@@ -233,6 +251,8 @@ export type Config = {
   otlpTokenRatePerMinute: number;
   /** IKN-87. Requests per minute per client address on the OTLP route. */
   otlpIpRatePerMinute: number;
+  /** IKN-87 v2. The cap on how many days OTLP content is kept; 0 keeps none. */
+  contentMaxRetentionDays: number;
 };
 
 /**
@@ -287,6 +307,7 @@ export function parseEnv(source: Record<string, unknown>): Config {
     nginxSharedLog: sharedLog(parsed.IKNOS_NGINX_SHARED_LOG),
     otlpTokenRatePerMinute: parsed.IKNOS_OTLP_TOKEN_RATE_PER_MINUTE ?? DEFAULT_OTLP_TOKEN_RATE_PER_MINUTE,
     otlpIpRatePerMinute: parsed.IKNOS_OTLP_IP_RATE_PER_MINUTE ?? DEFAULT_OTLP_IP_RATE_PER_MINUTE,
+    contentMaxRetentionDays: parsed.IKNOS_CONTENT_MAX_RETENTION_DAYS ?? DEFAULT_CONTENT_MAX_RETENTION_DAYS,
   };
 }
 

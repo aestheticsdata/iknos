@@ -1,3 +1,4 @@
+import { CONTENT_STATE } from "@lib/interfaces/traceSpanTypes";
 import { describe, expect, it } from "vitest";
 import { buildSpanTree, flattenTree, waterfallLines } from "./spanTree";
 
@@ -18,6 +19,10 @@ const span = (spanId: string, parentSpanId: string | null, startUs: number): Spa
   inputTokens: null,
   outputTokens: null,
   attrs: null,
+  events: [],
+  content: null,
+  contentState: CONTENT_STATE.none,
+  contentDays: null,
 });
 
 const shape = (spans: SpanRow[]) =>

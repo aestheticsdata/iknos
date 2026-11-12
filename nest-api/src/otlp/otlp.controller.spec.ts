@@ -13,7 +13,7 @@ import { SpanWriter } from "./span-writer.service";
 import { TokenRegistry } from "./token-registry.service";
 
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import type { OriginCheck, SpanRecord, TokenGrant } from "./interfaces/otlp-types";
+import type { OriginCheck, ParsedBatch, SpanRecord, TokenGrant } from "./interfaces/otlp-types";
 
 /**
  * The HTTP layer of `POST /api/otlp/v1/traces` (IKN-87) with the database and Redis replaced —
@@ -68,9 +68,9 @@ beforeAll(async () => {
       {
         provide: SpanWriter,
         useValue: {
-          write: async (spans: SpanRecord[]) => {
-            written.push(spans);
-            return spans.length;
+          write: async (batch: ParsedBatch) => {
+            written.push(batch.spans);
+            return batch.spans.length;
           },
         },
       },

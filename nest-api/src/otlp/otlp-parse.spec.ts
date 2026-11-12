@@ -1,11 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { GEN_AI_ATTR, MAX_ATTRIBUTES, MAX_SPANS_PER_REQUEST, MAX_STRING_CHARS, SPAN_STATUS } from "./otlp-limits";
-import { decodeAttributes, OtlpMalformedError, parseTraces } from "./otlp-parse";
+import {
+  CONTENT_RETENTION_ATTR,
+  DEFAULT_CONTENT_RETENTION_DAYS,
+  EVALUATION_ATTR,
+  EVALUATION_LABEL,
+  EVENT_NAME,
+  GEN_AI_ATTR,
+  MAX_ATTRIBUTES,
+  MAX_EVENTS_PER_SPAN,
+  MAX_SPANS_PER_REQUEST,
+  MAX_STRING_CHARS,
+  SPAN_LEVEL_INDEX,
+  SPAN_STATUS,
+  STATUS_MESSAGE_CONTENT_KEY,
+} from "./otlp-limits";
+import { contentRetentionDays, decodeAttributes, OtlpMalformedError, parseTraces, takeContent } from "./otlp-parse";
 
 import type { ParseContext } from "./interfaces/otlp-types";
 
 const NOW = new Date("2026-11-12T12:00:00.000Z");
-const CTX: ParseContext = { service: "opifex-front", now: NOW, maxAgeDays: 14 };
+const CTX: ParseContext = { service: "opifex-front", now: NOW, maxAgeDays: 14, contentMaxDays: 14 };
 
 /** 2026-11-12T11:59:00.000000123Z, in nanoseconds, as proto3 JSON writes a fixed64. */
 const START = "1794484740000000123";
@@ -178,19 +192,18 @@ describe("parseTraces", () => {
     );
 
     expect(spans.map((s) => s.statusCode)).toEqual([SPAN_STATUS.unset, SPAN_STATUS.unset, SPAN_STATUS.error]);
-    expect(spans[2].statusMessage).toBe("model OOM");
   });
 
   it("ignores fields it does not know, at every level", () => {
     const body = {
-      ...request([span({ events: [{ name: "x" }], links: [], droppedAttributesCount: 0, flags: 1 })]),
+      ...request([span({ links: [], droppedAttributesCount: 0, flags: 1 })]),
       somethingNew: true,
     };
     expect(parseTraces(body, CTX).spans).toHaveLength(1);
   });
 
   it("answers an empty request with nothing and no error", () => {
-    expect(parseTraces({}, CTX)).toEqual({ spans: [], rejected: 0, reasons: [] });
+    expect(parseTraces({}, CTX)).toEqual({ spans: [], events: [], contents: [], rejected: 0, reasons: [] });
     expect(parseTraces({ resourceSpans: [] }, CTX).spans).toEqual([]);
   });
 
@@ -205,6 +218,173 @@ describe("parseTraces", () => {
   it("refuses a request over the span ceiling before decoding any of it", () => {
     const spans = Array.from({ length: MAX_SPANS_PER_REQUEST + 1 }, () => ({}));
     expect(() => parseTraces(request(spans), CTX)).toThrow(/at most 1000 spans/);
+  });
+});
+
+const str = (key: string, value: string) => ({ key, value: { stringValue: value } });
+const int = (key: string, value: number) => ({ key, value: { intValue: String(value) } });
+
+const evaluation = (label: string, extra: unknown[] = []) => ({
+  timeUnixNano: "1794484740500000000",
+  name: EVENT_NAME.evaluation,
+  attributes: [
+    str(EVALUATION_ATTR.name, "schema"),
+    str(EVALUATION_ATTR.label, label),
+    { key: EVALUATION_ATTR.value, value: { doubleValue: label === EVALUATION_LABEL.pass ? 1 : 0 } },
+    int("officina.gate.rule_index", 2),
+    ...extra,
+  ],
+});
+
+const feedback = {
+  timeUnixNano: "1794484741000000000",
+  name: EVENT_NAME.humanFeedback,
+  attributes: [
+    str("officina.human.decision", "edit"),
+    str("officina.node.id", "review"),
+    str("officina.human.note", "tighten the summary"),
+    str("officina.human.edit", "A shorter answer."),
+  ],
+};
+
+describe("span events", () => {
+  it("keeps each event's metadata with its span's key, time and position", () => {
+    const { events } = parseTraces(request([span({ events: [evaluation(EVALUATION_LABEL.fail), feedback] })]), CTX);
+
+    expect(events).toHaveLength(2);
+    expect(events[0]).toMatchObject({
+      traceId: TRACE,
+      spanId: ROOT,
+      service: "opifex-front",
+      eventIndex: 0,
+      timeUs: 1794484740500000n,
+      name: EVENT_NAME.evaluation,
+    });
+    // Partitioned with its span: the event's `ts` is the span's, not its own time.
+    expect(events[0].ts.toISOString()).toBe("2026-11-12T11:59:00.000Z");
+    expect(events[0].attrs).toEqual({
+      [EVALUATION_ATTR.name]: "schema",
+      [EVALUATION_ATTR.label]: EVALUATION_LABEL.fail,
+      [EVALUATION_ATTR.value]: 0,
+      "officina.gate.rule_index": 2,
+    });
+    expect(events[1]).toMatchObject({ eventIndex: 1, attrs: { "officina.human.decision": "edit" } });
+  });
+
+  it("skips an event without a name or a time and keeps the span", () => {
+    const { spans, events } = parseTraces(
+      request([span({ events: [{ name: "x" }, { timeUnixNano: "1" }, "junk", feedback] })]),
+      CTX,
+    );
+    expect(spans).toHaveLength(1);
+    // The index is the position as sent, so a resend lands on the same row.
+    expect(events.map((e) => e.eventIndex)).toEqual([3]);
+  });
+
+  it("keeps at most the per-span ceiling of events", () => {
+    const many = Array.from({ length: MAX_EVENTS_PER_SPAN + 10 }, () => evaluation(EVALUATION_LABEL.pass));
+    expect(parseTraces(request([span({ events: many })]), CTX).events).toHaveLength(MAX_EVENTS_PER_SPAN);
+  });
+});
+
+describe("content apart from metadata", () => {
+  const full = () =>
+    request(
+      [
+        span({
+          attributes: [
+            str("gen_ai.input.messages", '[{"role":"user","content":"hi"}]'),
+            str("gen_ai.output.messages", '[{"role":"assistant","content":"hello"}]'),
+            str("gen_ai.system_instructions", "be brief"),
+            str("officina.node.id", "plan"),
+          ],
+          status: { code: SPAN_STATUS.error, message: "model OOM" },
+          events: [
+            evaluation(EVALUATION_LABEL.fail, [str("gen_ai.evaluation.explanation", "missing field")]),
+            feedback,
+          ],
+        }),
+      ],
+      [int(CONTENT_RETENTION_ATTR, 3)],
+    );
+
+  it("takes every content key out of span and event attributes, and the status message", () => {
+    const { spans, events, contents } = parseTraces(full(), CTX);
+
+    expect(spans[0].attrs).toEqual({
+      "officina.node.id": "plan",
+      [`resource.${CONTENT_RETENTION_ATTR}`]: 3,
+      "otel.scope.name": "officina",
+      "otel.scope.version": "1.2.0",
+    });
+    expect(spans[0].statusMessage).toBeNull();
+    expect(events[0].attrs).not.toHaveProperty("gen_ai.evaluation.explanation");
+    expect(events[1].attrs).toEqual({ "officina.human.decision": "edit", "officina.node.id": "review" });
+
+    const keys = contents.map((c) => `${c.eventIndex}:${c.contentKey}`);
+    expect(keys).toEqual([
+      `${SPAN_LEVEL_INDEX}:gen_ai.input.messages`,
+      `${SPAN_LEVEL_INDEX}:gen_ai.output.messages`,
+      `${SPAN_LEVEL_INDEX}:gen_ai.system_instructions`,
+      `${SPAN_LEVEL_INDEX}:${STATUS_MESSAGE_CONTENT_KEY}`,
+      "0:gen_ai.evaluation.explanation",
+      "1:officina.human.note",
+      "1:officina.human.edit",
+    ]);
+    expect(JSON.parse(contents[3].value)).toBe("model OOM");
+  });
+
+  it("dates the content from the batch's own retention and marks the span with it", () => {
+    const { spans, contents } = parseTraces(full(), CTX);
+    const in3Days = new Date(NOW.getTime() + 3 * 86_400_000);
+
+    expect(contents.every((c) => c.expiresAt.getTime() === in3Days.getTime())).toBe(true);
+    expect(spans[0].contentUntil).toEqual(in3Days);
+    expect(spans[0].contentDays).toBe(3);
+  });
+
+  it("caps the retention at the server's ceiling", () => {
+    const { spans } = parseTraces(full(), { ...CTX, contentMaxDays: 1 });
+    expect(spans[0].contentDays).toBe(1);
+  });
+
+  it("keeps no content, and no mark, when the ceiling is zero", () => {
+    const { spans, contents } = parseTraces(full(), { ...CTX, contentMaxDays: 0 });
+    expect(contents).toEqual([]);
+    expect(spans[0].contentUntil).toBeNull();
+    // Still stripped: content never falls back into the metadata.
+    expect(spans[0].attrs).not.toHaveProperty("gen_ai.input.messages");
+  });
+
+  it("leaves a span that sent no content unmarked — metadata only", () => {
+    const { spans, contents } = parseTraces(request([span()]), CTX);
+    expect(contents).toEqual([]);
+    expect(spans[0].contentUntil).toBeNull();
+    expect(spans[0].contentDays).toBeNull();
+  });
+});
+
+describe("contentRetentionDays", () => {
+  it("honours a stated whole number of days, zero included, under the cap", () => {
+    expect(contentRetentionDays(3, 30)).toBe(3);
+    expect(contentRetentionDays(0, 30)).toBe(0);
+    expect(contentRetentionDays(90, 30)).toBe(30);
+  });
+
+  it("reads a missing or malformed retention as the default week, still capped", () => {
+    expect(contentRetentionDays(undefined, 30)).toBe(DEFAULT_CONTENT_RETENTION_DAYS);
+    expect(contentRetentionDays("3", 30)).toBe(DEFAULT_CONTENT_RETENTION_DAYS);
+    expect(contentRetentionDays(-1, 30)).toBe(DEFAULT_CONTENT_RETENTION_DAYS);
+    expect(contentRetentionDays(1.5, 30)).toBe(DEFAULT_CONTENT_RETENTION_DAYS);
+    expect(contentRetentionDays(undefined, 2)).toBe(2);
+  });
+});
+
+describe("takeContent", () => {
+  it("removes the content keys in place and returns them", () => {
+    const attrs = { "gen_ai.input.messages": "x", "officina.node.id": "plan" };
+    expect(takeContent(attrs)).toEqual([["gen_ai.input.messages", "x"]]);
+    expect(attrs).toEqual({ "officina.node.id": "plan" });
   });
 });
 

@@ -7,6 +7,8 @@ import { formatMicros, spanTone } from "@lib/spanTimeline";
 import { attrText, sortedAttrs } from "@lib/traceFormat";
 import { cn } from "@lib/utils";
 import { TRACES_TEXT } from "@text/traces";
+import { SpanContent } from "./inspector/SpanContent";
+import { SpanReview } from "./inspector/SpanReview";
 
 import type { SpanRow, Timeline } from "@lib/interfaces/traceSpanTypes";
 import type { ReactNode } from "react";
@@ -24,6 +26,9 @@ const STATUS_WORD: Record<number, string> = {
  *
  * The promoted GenAI fields come back as their own lines rather than as attributes, because the API
  * moved them out of `attrs` into columns — listing them here keeps the span whole on screen.
+ *
+ * Since IKN-87 v2: the span's gate evaluations and human decisions after its fields, then its
+ * content (or why there is none), then the attributes — what was judged, then what was said.
  */
 export const SpanInspector = ({ span, timeline }: SpanInspectorProps) => (
   <aside
@@ -64,6 +69,12 @@ export const SpanInspector = ({ span, timeline }: SpanInspectorProps) => (
             </Field>
           )}
         </dl>
+
+        <SpanReview
+          span={span}
+          timeline={timeline}
+        />
+        <SpanContent span={span} />
 
         <section className="px-3 py-2">
           <p className="pb-1 text-kicker tracking-kicker text-work-text-dim uppercase">{TRACES_TEXT.attributes}</p>

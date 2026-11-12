@@ -2,6 +2,7 @@ import { parseEnv } from "@config/env.validation";
 import { PrismaService } from "@db/prisma.service";
 import { Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
+import { ContentPurgeService } from "./content-purge.service";
 import { MaintenanceService } from "./maintenance.service";
 import { RollupService } from "./rollup.service";
 
@@ -17,10 +18,14 @@ import { RollupService } from "./rollup.service";
  * parameter is a plain number out of the validated environment, not an injectable.
  *
  * Exported for IKN-24, which serves `window()` over HTTP.
+ *
+ * `ContentPurgeService` (IKN-87 v2) is the one retention here that is not a partition drop: OTLP
+ * span content expires per batch, so it is deleted by `expires_at`, hourly, beside the rest.
  */
 @Module({
   imports: [ScheduleModule.forRoot()],
   providers: [
+    ContentPurgeService,
     {
       provide: RollupService,
       useFactory: (prisma: PrismaService) =>

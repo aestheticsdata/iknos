@@ -243,6 +243,30 @@ IKNOS_OTLP_TOKEN_RATE_PER_MINUTE: 120, // per write token
 IKNOS_OTLP_IP_RATE_PER_MINUTE: 240,    // per client address, whatever token it presents
 ```
 
+### 1b. Events and content (IKN-87 v2)
+
+`20261113120000_otlp_events_content` follows, again additive: `span_event` (day-partitioned like
+`span`, in the same partition pass — the boot line should list it too), `span_content` (not
+partitioned; purged by `expires_at`), and two nullable columns on `span` (`content_until`,
+`content_days`, an instant ALTER). A rolled-back release ignores all three.
+
+Content (prompts, answers, notes, status messages) is kept for the retention each batch states,
+capped by one more optional variable:
+
+```js
+IKNOS_CONTENT_MAX_RETENTION_DAYS: 30, // 0 keeps no content at all; never past IKNOS_RETENTION_DAYS
+```
+
+The purge runs hourly at `:17` and once at boot, deleting expired rows 5 000 at a time (at most
+500 000 a pass). Each pass logs one line:
+
+```bash
+ssh debian@ks-b 'pm2 logs iknos-api --lines 2000 --nostream | grep "span content purge" | tail -3'
+```
+
+`deleted` is the rows removed. Content past its `expires_at` is never served even before the
+purge reaches it.
+
 ### 2. One token per app, with its origin
 
 On ks-b, from the API's directory — the script finds the production `DATABASE_URL` in the

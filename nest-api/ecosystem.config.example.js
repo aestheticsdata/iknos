@@ -95,6 +95,9 @@ const prodConfig = {
   // rows in `ingest_token`, made with `pnpm token:create` — never variables.
   IKNOS_OTLP_TOKEN_RATE_PER_MINUTE: 120,
   IKNOS_OTLP_IP_RATE_PER_MINUTE: 240,
+  // IKN-87 v2 — optional. The most days OTLP span content (prompts, answers, notes) is kept, under
+  // each batch's own stated retention and never past IKNOS_RETENTION_DAYS. 0 keeps none.
+  IKNOS_CONTENT_MAX_RETENTION_DAYS: 30,
 };
 
 module.exports = {

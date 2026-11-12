@@ -2,11 +2,12 @@
 
 import { TONE_FILL } from "@components/ui/surface";
 import { SPAN_STATUS_CODE } from "@lib/interfaces/traceSpanTypes";
+import { reviewMarks } from "@lib/spanEvents";
 import { barBox, formatMicros, spanTone } from "@lib/spanTimeline";
 import { cn } from "@lib/utils";
 import { TRACES_TEXT } from "@text/traces";
 
-import type { Timeline, WaterfallLine } from "@lib/interfaces/traceSpanTypes";
+import type { ReviewMarks, Timeline, WaterfallLine } from "@lib/interfaces/traceSpanTypes";
 
 /**
  * One span: its name indented by depth, its bar on the run's timeline, its duration in a column of
@@ -16,6 +17,9 @@ import type { Timeline, WaterfallLine } from "@lib/interfaces/traceSpanTypes";
  * colour is the span's status — error is the only loud one — and the name of a failed span is
  * red too, so the state never rests on a bar a few pixels wide.
  *
+ * Gate evaluations and human decisions on the span (IKN-87 v2) are marked after its name — a glyph
+ * and a count each, the words in the title — so a failed gate is found by scanning the names.
+ *
  * The duration is a right-aligned column rather than a label riding the bar: a label beside the
  * bar runs off the drawing for the spans that end the run, which are most of the interesting ones.
  */
@@ -24,6 +28,7 @@ export const WaterfallRow = ({ line, timeline, selected, onPick, onHover }: Wate
   const box = barBox(span, timeline);
   const duration = formatMicros(span.durationUs);
   const hint = TRACES_TEXT.spanHint(span.name, duration);
+  const marks = reviewMarks(span);
 
   return (
     <button
@@ -61,6 +66,7 @@ export const WaterfallRow = ({ line, timeline, selected, onPick, onHover }: Wate
         >
           {span.name}
         </span>
+        <ReviewMarksBadge marks={marks} />
       </span>
 
       <span className="relative mx-3 h-full flex-1">
@@ -73,6 +79,46 @@ export const WaterfallRow = ({ line, timeline, selected, onPick, onHover }: Wate
       <span className="w-16 flex-none pr-3 text-right text-micro tabular-nums text-work-text-muted">{duration}</span>
     </button>
   );
+};
+
+/** The span's review marks: failed gates loud, passed ones dim, human decisions in the warn hue. */
+const ReviewMarksBadge = ({ marks }: ReviewMarksBadgeProps) => (
+  <>
+    {marks.failed > 0 && (
+      <span
+        className="flex-none text-micro tabular-nums text-work-error"
+        title={TRACES_TEXT.markFailedHint(marks.failed)}
+        data-testid="mark-failed"
+      >
+        {TRACES_TEXT.markFailed}
+        {marks.failed}
+      </span>
+    )}
+    {marks.passed > 0 && (
+      <span
+        className="flex-none text-micro tabular-nums text-work-text-dim"
+        title={TRACES_TEXT.markPassedHint(marks.passed)}
+        data-testid="mark-passed"
+      >
+        {TRACES_TEXT.markPassed}
+        {marks.passed}
+      </span>
+    )}
+    {marks.feedback > 0 && (
+      <span
+        className="flex-none text-micro tabular-nums text-work-warn"
+        title={TRACES_TEXT.markFeedbackHint(marks.feedback)}
+        data-testid="mark-feedback"
+      >
+        {TRACES_TEXT.markFeedback}
+        {marks.feedback}
+      </span>
+    )}
+  </>
+);
+
+type ReviewMarksBadgeProps = {
+  marks: ReviewMarks;
 };
 
 type WaterfallRowProps = {

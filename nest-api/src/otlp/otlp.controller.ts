@@ -53,6 +53,8 @@ export class OtlpController {
   private readonly tokenRate: number;
   private readonly ipRate: number;
   private readonly retentionDays: number;
+  /** Content may not outlive its span, so the env cap is itself capped by the span retention. */
+  private readonly contentMaxDays: number;
 
   constructor(
     private readonly registry: TokenRegistry,
@@ -63,6 +65,7 @@ export class OtlpController {
     this.tokenRate = config.otlpTokenRatePerMinute;
     this.ipRate = config.otlpIpRatePerMinute;
     this.retentionDays = config.retentionDays;
+    this.contentMaxDays = Math.min(config.contentMaxRetentionDays, config.retentionDays);
   }
 
   @Public()
@@ -89,7 +92,7 @@ export class OtlpController {
     if (!(await this.rateLimit.allowOtlpToken(grant.id, this.tokenRate))) this.throttled(res);
 
     const outcome = this.parse(req.body, grant.service);
-    await this.writer.write(outcome.spans);
+    await this.writer.write(outcome);
     this.registry.touch(grant.id);
 
     return toResponse(outcome);
@@ -113,7 +116,12 @@ export class OtlpController {
     }
 
     try {
-      return parseTraces(json, { service, now: new Date(), maxAgeDays: this.retentionDays });
+      return parseTraces(json, {
+        service,
+        now: new Date(),
+        maxAgeDays: this.retentionDays,
+        contentMaxDays: this.contentMaxDays,
+      });
     } catch (error) {
       if (error instanceof OtlpMalformedError) throw new BadRequestException(error.message);
       throw error;

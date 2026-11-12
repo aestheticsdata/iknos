@@ -1,3 +1,4 @@
+import { CONTENT_STATE } from "@lib/interfaces/traceSpanTypes";
 import { describe, expect, it } from "vitest";
 import { axisTicks, barBox, formatMicros, MIN_BAR_PCT, spanTone, timelineOf, totalTokens } from "./spanTimeline";
 
@@ -18,6 +19,10 @@ const span = (startUs: number, durationUs: number, statusCode = 0): SpanRow => (
   inputTokens: null,
   outputTokens: null,
   attrs: null,
+  events: [],
+  content: null,
+  contentState: CONTENT_STATE.none,
+  contentDays: null,
 });
 
 describe("timelineOf", () => {

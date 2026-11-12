@@ -1,8 +1,14 @@
 import {
+  CONTENT_KEYS,
+  CONTENT_RETENTION_ATTR,
+  DEFAULT_CONTENT_RETENTION_DAYS,
   GEN_AI_ATTR,
   MAX_ARRAY_ITEMS,
   MAX_ATTRIBUTES,
   MAX_CLOCK_SKEW_MS,
+  MAX_EVENT_NAME_CHARS,
+  MAX_EVENTS_PER_REQUEST,
+  MAX_EVENTS_PER_SPAN,
   MAX_KEY_CHARS,
   MAX_MODEL_CHARS,
   MAX_NAME_CHARS,
@@ -15,7 +21,9 @@ import {
   SCOPE_NAME_ATTR,
   SCOPE_VERSION_ATTR,
   SERVICE_NAME_ATTR,
+  SPAN_LEVEL_INDEX,
   SPAN_STATUS,
+  STATUS_MESSAGE_CONTENT_KEY,
 } from "./otlp-limits";
 
 import type {
@@ -23,6 +31,8 @@ import type {
   AttrValue,
   ParseContext,
   ParseOutcome,
+  SpanContentRecord,
+  SpanEventRecord,
   SpanRecord,
   SpanStatusCode,
 } from "./interfaces/otlp-types";
@@ -39,9 +49,15 @@ import type {
  * rule the log collector applies to a bad line.
  *
  * **Unknown fields are ignored, known ones are bounded.** OTLP grows; a newer exporter adding
- * `events`, `links` or `droppedAttributesCount` must keep working. Every value that is kept is cut
+ * `links` or `droppedAttributesCount` must keep working. Every value that is kept is cut
  * to a column's width or a fixed ceiling here, so nothing downstream can fail an INSERT and take
  * the batch with it.
+ *
+ * **Metadata and content part ways here** (IKN-87 v2). The keys in `CONTENT_KEYS` — prompts,
+ * answers, a reviewer's note — and the span's `status.message` never reach `span.attrs` or
+ * `span_event.attrs`: they become `SpanContentRecord`s with an `expiresAt` of their own, from the
+ * retention the batch states (`officina.content.retention_days` on the resource), capped by the
+ * server. Metadata keeps the log window; content keeps what its sender allowed, and never longer.
  */
 
 /** Thrown for an envelope that is not OTLP — a 400, never a partial success. */
@@ -60,10 +76,36 @@ type SpanParent = {
   ctx: ParseContext;
   /** `resource.*` and `otel.scope.*`, already decoded and prefixed. */
   inherited: Record<string, AttrValue>;
+  /** Days this resource's content is kept; 0 keeps none. */
+  contentDays: number;
+  /** Events still allowed in this request — shared by every span of it, so it is an object. */
+  budget: { events: number };
 };
 
-/** One span's verdict: a record, or the reason it was not one. */
-type SpanVerdict = { ok: true; span: SpanRecord } | { ok: false; reason: string };
+/** One span's rows: the span, its events, and the content taken out of both. */
+type ParsedSpan = {
+  span: SpanRecord;
+  events: SpanEventRecord[];
+  contents: SpanContentRecord[];
+};
+
+/** One span's verdict: its rows, or the reason it was not one. */
+type SpanVerdict = ({ ok: true } & ParsedSpan) | { ok: false; reason: string };
+
+/** What a span's events are parsed against: the span, its resource, and where content goes. */
+type EventScope = {
+  span: SpanRecord;
+  parent: SpanParent;
+  owner: ContentOwner | null;
+};
+
+/** Where a span's content is filed: which span, and when it goes. */
+type ContentOwner = {
+  traceId: string;
+  spanId: string;
+  spanTs: Date;
+  expiresAt: Date;
+};
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -147,10 +189,9 @@ export function decodeAttributes(list: unknown): Record<string, AttrValue> {
 }
 
 /** The attributes every span of a resource inherits, minus the service name the token overrides. */
-function inheritedAttrs(resource: unknown, scope: unknown): Record<string, AttrValue> {
+function inheritedAttrs(resourceAttrs: Record<string, AttrValue>, scope: unknown): Record<string, AttrValue> {
   const out: Record<string, AttrValue> = {};
 
-  const resourceAttrs = isObject(resource) ? decodeAttributes(resource.attributes) : {};
   for (const [key, value] of Object.entries(resourceAttrs)) {
     if (key !== SERVICE_NAME_ATTR) out[`${RESOURCE_PREFIX}${key}`] = value;
   }
@@ -210,6 +251,84 @@ function promote(attrs: Record<string, AttrValue>) {
   return { genAiOperation, genAiModel, inputTokens, outputTokens };
 }
 
+/**
+ * The days a batch's content is kept: what its resource states, never more than the server's cap.
+ *
+ * A stated retention must be a whole number of days, zero or more; zero means "keep none" and is
+ * honoured. Absent or anything else — a string, a fraction, a negative — reads as the default
+ * week rather than as the cap: a sender that cannot say how long is not trusted with the longest.
+ */
+export function contentRetentionDays(stated: AttrValue | undefined, cap: number): number {
+  const days =
+    typeof stated === "number" && Number.isInteger(stated) && stated >= 0 ? stated : DEFAULT_CONTENT_RETENTION_DAYS;
+  return Math.max(0, Math.min(days, cap));
+}
+
+const CONTENT_KEY_SET: ReadonlySet<string> = new Set(CONTENT_KEYS);
+
+/** Takes the content keys out of `attrs`, in place, and returns them. */
+export function takeContent(attrs: Record<string, AttrValue>): [string, AttrValue][] {
+  const taken: [string, AttrValue][] = [];
+  for (const key of Object.keys(attrs)) {
+    if (!CONTENT_KEY_SET.has(key)) continue;
+    taken.push([key, attrs[key]]);
+    delete attrs[key];
+  }
+  return taken;
+}
+
+/** Content rows for one owner — none at all when its retention is zero days. */
+function contentRows(owner: ContentOwner | null, eventIndex: number, values: [string, AttrValue][]) {
+  if (owner === null) return [];
+  return values.map(
+    ([contentKey, value]): SpanContentRecord => ({
+      traceId: owner.traceId,
+      spanId: owner.spanId,
+      spanTs: owner.spanTs,
+      eventIndex,
+      contentKey,
+      value: JSON.stringify(value),
+      expiresAt: owner.expiresAt,
+    }),
+  );
+}
+
+/**
+ * A span's events, metadata and content apart. An event without a string name or a usable time is
+ * skipped — the span stays. The index is the event's position in the list as sent, so a resend
+ * of the same span maps every event onto the row it wrote the first time.
+ */
+function parseEvents(raw: unknown, at: EventScope): ParsedSpan {
+  const { span, parent, owner } = at;
+  const events: SpanEventRecord[] = [];
+  const contents: SpanContentRecord[] = [];
+  const out = { span, events, contents };
+  if (!Array.isArray(raw)) return out;
+
+  const list = raw.slice(0, MAX_EVENTS_PER_SPAN);
+  for (const [eventIndex, item] of list.entries()) {
+    if (parent.budget.events <= 0) break;
+    if (!isObject(item) || typeof item.name !== "string" || item.name === "") continue;
+    const timeNs = readNanos(item.timeUnixNano);
+    if (timeNs === null) continue;
+
+    parent.budget.events -= 1;
+    const attrs = decodeAttributes(item.attributes);
+    contents.push(...contentRows(owner, eventIndex, takeContent(attrs)));
+    events.push({
+      ts: span.ts,
+      service: span.service,
+      traceId: span.traceId,
+      spanId: span.spanId,
+      eventIndex,
+      timeUs: timeNs / 1000n,
+      name: cut(item.name, MAX_EVENT_NAME_CHARS),
+      attrs: Object.keys(attrs).length > 0 ? attrs : null,
+    });
+  }
+  return out;
+}
+
 /** One span, or the reason it is not one. */
 function parseSpan(raw: Record<string, unknown>, parent: SpanParent): SpanVerdict {
   const traceId = readId(raw.traceId, TRACE_ID);
@@ -244,28 +363,44 @@ function parseSpan(raw: Record<string, unknown>, parent: SpanParent): SpanVerdic
   const status = isObject(raw.status) ? raw.status : {};
   const attrs = { ...parent.inherited, ...decodeAttributes(raw.attributes) };
   const promoted = promote(attrs);
+  const spanContent = takeContent(attrs);
+  if (typeof status.message === "string" && status.message !== "") {
+    spanContent.push([STATUS_MESSAGE_CONTENT_KEY, cut(status.message, MAX_STATUS_MESSAGE_CHARS)]);
+  }
 
-  return {
-    ok: true,
-    span: {
-      ts: new Date(startMs),
-      service,
-      traceId,
-      spanId,
-      parentSpanId,
-      name: cut(raw.name, MAX_NAME_CHARS),
-      kind: readKind(raw.kind),
-      startUs,
-      durationUs: endNs / 1000n - startUs,
-      statusCode: readStatusCode(status.code),
-      statusMessage:
-        typeof status.message === "string" && status.message !== ""
-          ? cut(status.message, MAX_STATUS_MESSAGE_CHARS)
-          : null,
-      ...promoted,
-      attrs: Object.keys(attrs).length > 0 ? attrs : null,
-    },
+  const ts = new Date(startMs);
+  const { contentDays } = parent;
+  const owner: ContentOwner | null =
+    contentDays > 0 ? { traceId, spanId, spanTs: ts, expiresAt: new Date(now.getTime() + contentDays * DAY_MS) } : null;
+
+  const span: SpanRecord = {
+    ts,
+    service,
+    traceId,
+    spanId,
+    parentSpanId,
+    name: cut(raw.name, MAX_NAME_CHARS),
+    kind: readKind(raw.kind),
+    startUs,
+    durationUs: endNs / 1000n - startUs,
+    statusCode: readStatusCode(status.code),
+    // Content, so it is never kept beside the metadata — see `STATUS_MESSAGE_CONTENT_KEY`.
+    statusMessage: null,
+    ...promoted,
+    attrs: Object.keys(attrs).length > 0 ? attrs : null,
+    contentUntil: null,
+    contentDays: null,
   };
+
+  const parsed = parseEvents(raw.events, { span, parent, owner });
+  parsed.contents.unshift(...contentRows(owner, SPAN_LEVEL_INDEX, spanContent));
+  // Marked only when something was kept: no mark reads as "metadata only", a mark with no rows
+  // left as "expired" — the distinction the view draws once the purge has run.
+  if (owner !== null && parsed.contents.length > 0) {
+    span.contentUntil = owner.expiresAt;
+    span.contentDays = contentDays;
+  }
+  return { ok: true, ...parsed };
 }
 
 /**
@@ -294,12 +429,18 @@ export function parseTraces(body: unknown, ctx: ParseContext): ParseOutcome {
   }
 
   const spans: SpanRecord[] = [];
+  const events: SpanEventRecord[] = [];
+  const contents: SpanContentRecord[] = [];
   const reasons: string[] = [];
+  const budget = { events: MAX_EVENTS_PER_REQUEST };
   let rejected = 0;
 
   for (const rs of resourceSpans) {
+    const resourceAttrs = isObject(rs.resource) ? decodeAttributes(rs.resource.attributes) : {};
+    const contentDays = contentRetentionDays(resourceAttrs[CONTENT_RETENTION_ATTR], ctx.contentMaxDays);
+
     for (const ss of objectsAt(rs, "scopeSpans")) {
-      const parent: SpanParent = { ctx, inherited: inheritedAttrs(rs.resource, ss.scope) };
+      const parent: SpanParent = { ctx, inherited: inheritedAttrs(resourceAttrs, ss.scope), contentDays, budget };
 
       for (const raw of listAt(ss, "spans")) {
         const verdict = isObject(raw)
@@ -307,6 +448,8 @@ export function parseTraces(body: unknown, ctx: ParseContext): ParseOutcome {
           : { ok: false as const, reason: "a span must be an object" };
         if (verdict.ok) {
           spans.push(verdict.span);
+          events.push(...verdict.events);
+          contents.push(...verdict.contents);
         } else {
           rejected += 1;
           if (!reasons.includes(verdict.reason)) reasons.push(verdict.reason);
@@ -315,5 +458,5 @@ export function parseTraces(body: unknown, ctx: ParseContext): ParseOutcome {
     }
   }
 
-  return { spans, rejected, reasons };
+  return { spans, events, contents, rejected, reasons };
 }

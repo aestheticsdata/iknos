@@ -81,6 +81,21 @@ export const RunList = ({ service, range, list, selected, onSelect }: RunListPro
       ),
     },
     {
+      key: "review",
+      header: TRACES_TEXT.colReview,
+      render: (run) => {
+        const cell = TRACES_TEXT.reviewCell(run.failedEvaluations, run.humanFeedback);
+        return (
+          <span
+            className={cn("whitespace-nowrap", run.failedEvaluations > 0 ? "text-work-error" : "text-work-text-muted")}
+            title={TRACES_TEXT.reviewHint}
+          >
+            {cell || TRACES_TEXT.none}
+          </span>
+        );
+      },
+    },
+    {
       key: "status",
       header: TRACES_TEXT.colStatus,
       render: (run) => (

@@ -32,6 +32,8 @@ describe("MaintenanceService over the managed tables", () => {
     expect(MANAGED_TABLES).toContain("metric_rollup");
     // IKN-87: without this, OTLP spans pile up in `p_future` and are never pruned.
     expect(MANAGED_TABLES).toContain("span");
+    // IKN-87 v2: their events, partitioned on the span's `ts`.
+    expect(MANAGED_TABLES).toContain("span_event");
   });
 
   it("creates the day window in every managed table that reports partitions", async () => {
@@ -188,6 +190,8 @@ describe("the purge waits for the rollups (IKN-20)", () => {
   it("keeps spans on the log window, not the shorter sample one (IKN-87)", () => {
     const service = new MaintenanceService(makePrisma([]), { retentionDays: 14, metricRetentionDays: 3 });
     expect(service.retentionForTable("span")).toBe(14);
+    // Their events go with them, day for day (IKN-87 v2).
+    expect(service.retentionForTable("span_event")).toBe(14);
   });
 
   it("keeps metric_rollup on its own window, 90 days by default", () => {
