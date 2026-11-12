@@ -2,14 +2,14 @@ import { BadRequestException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 import { AllExceptionsFilter } from "./all-exceptions.filter";
 
-function mockHost() {
+function mockHost(url = "/api/logs") {
   const json = vi.fn();
   const status = vi.fn(() => ({ json }));
   return {
     host: {
       switchToHttp: () => ({
         getResponse: () => ({ status }),
-        getRequest: () => ({ url: "/api/logs", method: "GET" }),
+        getRequest: () => ({ url, method: "GET" }),
       }),
     },
     status,
@@ -32,6 +32,16 @@ describe("AllExceptionsFilter", () => {
     expect(body).toContain("internal error");
     // The detail must still reach the logs, or the outage is undebuggable.
     expect(logger.error).toHaveBeenCalled();
+  });
+
+  it("logs the failing URL without the OTLP beacon's write token (IKN-87)", () => {
+    const { host } = mockHost("/api/otlp/v1/traces?token=ikt_CANARY_Zq81");
+    const logger = { error: vi.fn() };
+
+    new AllExceptionsFilter(logger as never).catch(new Error("boom"), host as never);
+
+    expect(JSON.stringify(logger.error.mock.calls[0][0])).not.toContain("ikt_CANARY_Zq81");
+    expect(logger.error.mock.calls[0][0]).toMatchObject({ url: "/api/otlp/v1/traces?token=[redacted]" });
   });
 
   it("keeps the message of a deliberate client error", () => {

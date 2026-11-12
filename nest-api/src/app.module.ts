@@ -14,6 +14,7 @@ import { MetricsModule } from "@metrics/metrics.module";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
+import { OtlpModule } from "@otlp/otlp.module";
 import { RedisModule } from "@redis/redis.module";
 import { ScrapeModule } from "@src/scrape/scrape.module";
 import { TrafficModule } from "@src/traffic/traffic.module";
@@ -29,6 +30,7 @@ import { HealthController } from "./health.controller";
  * (IKN-11), the collector's own status (IKN-24), the service view's metrics (IKN-13) and grouped
  * errors with the routes that serve them (IKN-9, IKN-14) and the alert engine with its own
  * (IKN-10, IKN-15) are in. M3 is complete; on-demand whois for client addresses (IKN-73) is M4.
+ * OTLP traces from the Officina apps, with their per-application write tokens, are IKN-87.
  */
 @Module({
   imports: [
@@ -66,6 +68,7 @@ import { HealthController } from "./health.controller";
     AlertsModule,
     WhoisModule,
     TrafficModule,
+    OtlpModule,
   ],
   controllers: [HealthController],
   providers: [

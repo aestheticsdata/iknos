@@ -9,6 +9,8 @@ import { persistBatch } from "@ingest/writer";
 import { RollupService } from "@maintenance/rollup.service";
 import { ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { buildOtlpCors, OTLP_BODY_PARSER } from "@otlp/otlp-http";
+import { TokenRegistry } from "@otlp/token-registry.service";
 import { RedisService } from "@redis/redis.service";
 import { AppModule } from "@src/app.module";
 import request from "supertest";
@@ -58,10 +60,12 @@ export async function buildTestApp(): Promise<INestApplication> {
   // Same order as `main.ts`: CORS ahead of the session, reading the same environment the
   // controller reads its token from.
   app.use(buildIngestCors(parseIngestOrigins()));
+  app.use(buildOtlpCors(app.get(TokenRegistry)));
   app.use(buildSessionMiddleware(app.get(RedisService).getClient(), SECRET, false));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   // Ahead of `init`, exactly as `main.ts` puts it ahead of `listen` — a body ceiling the tests
   // assert and the program does not have would be worth nothing.
+  app.useBodyParser("text", OTLP_BODY_PARSER);
   app.useBodyParser("json", { limit: JSON_BODY_LIMIT });
 
   await app.init();

@@ -25,6 +25,12 @@ export const RECOVERY_LIMIT: Limit = { max: 5, windowSeconds: 15 * 60 };
  */
 export const INGEST_LIMIT: Limit = { max: 60, windowSeconds: 60 };
 
+/**
+ * The OTLP trace route's two ceilings (IKN-87), per minute — their sizes come from the environment
+ * (`IKNOS_OTLP_TOKEN_RATE_PER_MINUTE`, `IKNOS_OTLP_IP_RATE_PER_MINUTE`), the window does not.
+ */
+export const OTLP_WINDOW_SECONDS = 60;
+
 /** Kept for the login spec, which predates the second scope. */
 export const MAX_ATTEMPTS = LOGIN_LIMIT.max;
 export const WINDOW_SECONDS = LOGIN_LIMIT.windowSeconds;
@@ -79,6 +85,19 @@ export class RateLimitService {
   /** No `reset` counterpart: nothing a caller can do proves it deserves a fresh budget. */
   allowIngest(ip: string): Promise<boolean> {
     return this.hit("ingest", ip, INGEST_LIMIT);
+  }
+
+  /** Per OTLP write token, so one runaway app cannot spend another's budget (IKN-87). */
+  allowOtlpToken(tokenId: number, perMinute: number): Promise<boolean> {
+    return this.hit("otlp-token", String(tokenId), { max: perMinute, windowSeconds: OTLP_WINDOW_SECONDS });
+  }
+
+  /**
+   * Per client address on the OTLP route, counted before the token is even looked up — the ceiling
+   * on how many database reads a caller guessing tokens can cause (IKN-87).
+   */
+  allowOtlpIp(ip: string, perMinute: number): Promise<boolean> {
+    return this.hit("otlp-ip", ip, { max: perMinute, windowSeconds: OTLP_WINDOW_SECONDS });
   }
 
   resetRecovery(email: string): Promise<void> {

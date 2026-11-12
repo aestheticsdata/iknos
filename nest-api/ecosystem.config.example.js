@@ -83,6 +83,12 @@ const prodConfig = {
   // the machine's own hostname when unset — and set here because the box is called ks-b by the
   // people reading the badge, whatever `hostname` happens to print.
   IKNOS_HOST_LABEL: "ks-b",
+
+  // OTLP trace ingestion (IKN-87) — both optional, shown at their defaults. Requests a minute per
+  // write token, and per client address whatever token it presents. The tokens themselves are
+  // rows in `ingest_token`, made with `pnpm token:create` — never variables.
+  IKNOS_OTLP_TOKEN_RATE_PER_MINUTE: 120,
+  IKNOS_OTLP_IP_RATE_PER_MINUTE: 240,
 };
 
 module.exports = {

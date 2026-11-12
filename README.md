@@ -56,7 +56,7 @@ iknos-front (Next App Router) ── /api/* over localhost, session cookie forwa
 - **Self-observation** — Iknos logs through the same pino emitter it asks of everything else,
   so it is monitored by its own pipeline with no special casing.
 
-### Three ways in
+### Three ways in, and a fourth for spans
 
 Tailing covers everything with a stdout, which is every backend and every server-rendered page.
 It cannot reach a browser: a page has no stdout, so a JavaScript error never touches the host's
@@ -91,6 +91,41 @@ dealt in one record type and did not change.
 Which service a line belongs to comes from the **registry row**, not from the line: `combined`
 carries no `$host`, so each vhost writes its own file and `Service.logGlob` says whose it is.
 
+### And spans, over OTLP (IKN-87)
+
+The fleet's browser apps built on the Officina engine — Opifex, Vidar, Auscult, Groma, Auspex —
+run AI pipelines in the page, and a pipeline run is a tree: a run, its steps, the model calls
+inside them, each with a duration and a parent. That is what a log line cannot hold, so it does
+not go through the log path at all. The apps export **OpenTelemetry traces** following the GenAI
+semantic conventions, and Iknos accepts exactly that:
+
+`POST /api/otlp/v1/traces` — **OTLP/HTTP with a JSON body**, traces only. Not protobuf (415), not
+logs, not metrics. The body is read as text whether it arrives as `application/json` or as the
+`text/plain` a page's final `navigator.sendBeacon` is sent as, so the beacon stays a CORS-simple
+request. Spans land in `span`, day-partitioned like `log_entry` and dropped on the same
+`IKNOS_RETENTION_DAYS`, with the four GenAI usage fields (`gen_ai.operation.name`,
+`gen_ai.request.model`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`) promoted to
+columns and everything else kept in `attrs`. A resent batch is stored once.
+
+**One write token per application**, not one global one. A row in `ingest_token` holds the
+SHA-256 of the token — never the token — the one service it writes for, and the exact origins a
+browser may send it from. The token decides the service: `service.name` in the payload is
+dropped unread, so Opifex's token cannot file spans as Vidar, or as Iknos. It is sent as
+`X-Iknos-Token` on a `fetch`, or as `?token=` on the beacon, which cannot set a header — and
+that query parameter is redacted before any log line that could hold it is stored (nginx's
+access log, the API's own access line, the unhandled-error log). It grants nothing else: no read
+route accepts it. `pnpm token:create <service> --origin https://<app>.1991computer.com` prints a
+token once; `pnpm token:revoke <id>` ends it.
+
+CORS is answered for this route only, from the tokens: a preflight is allowed for any active
+token's origin (it carries no token), the POST is then held to its own token's list (403), and
+`Timing-Allow-Origin` follows the same rule so the apps can measure the bytes they send here
+with the Resource Timing API. Rate limits are per token (120 a minute) and per address (240),
+both in Redis, both configurable. The **Traces** view lists a service's runs over the range and
+opens one as a nested waterfall — the tree rebuilt from parent ids, every bar on the run's own
+clock, a span's attributes on hover or click. It is a different component from the log trace
+view, which stays flat on purpose. Design: `docs/superpowers/specs/2026-11-12-otlp-traces-design.md`.
+
 ### The read routes
 
 Every one of them sits behind the session guard, which is registered globally and denies by
@@ -105,7 +140,10 @@ default — a route is public only if someone wrote `@Public()` on it.
 | `GET /api/services` | The registry, for the filters and the service rail |
 | `GET /api/services/:service/runtime` | Header chips, health pills and the runtime gauges — the facts that are true now |
 | `GET /api/services/:service/signals` | Throughput, 5xx rate and p95 over a range, from raw samples or their hourly rollups |
-| `POST /api/ingest` | The one write route — see below |
+| `GET /api/traces` | One row per OTLP trace of a service over a range: root span, duration, span count, status, tokens, models (IKN-87) |
+| `GET /api/traces/:traceId` | Every span of one trace, in start order, for the waterfall (IKN-87) |
+| `POST /api/ingest` | The browser's log write route — see above |
+| `POST /api/otlp/v1/traces` | OTLP/HTTP JSON traces, with a per-application write token — see above |
 
 `from` and `to` are **required** on the log routes and on `signals`, and a request without both
 is a 400, never a widened default. That single rule is what the partitioning rests on: the range predicate lets
@@ -214,10 +252,20 @@ What stays ECS-only is small and mechanical:
 
 A collector renames those in a processor block. It is a config file, not a re-instrumentation.
 
-What Iknos does not have, and should not be read as having, is **distributed tracing**. Rows
-share a `trace.id` and the trace view assembles them, which answers *show me every line from
-this request across services*. It does not answer *where did the 300 ms go*, and no amount of
-log correlation ever will.
+For **logs**, that is still the answer: rows share a `trace.id` and the log trace view assembles
+them, which answers *show me every line from this request across services* — and not *where did
+the 300 ms go*, which no amount of log correlation ever will.
+
+For **traces**, the answer changed with IKN-87, because something in the fleet finally produces
+them. The Officina apps run AI pipelines in the browser, and a pipeline run *is* a tree of timed
+steps — the shape OTel exists for and ECS has no word for. So Iknos now accepts **OTLP traces**
+(OTLP/HTTP, JSON encoding) on `POST /api/otlp/v1/traces`, stores them as spans with their parents
+and durations, and draws the waterfall. It is deliberately narrow: traces only, JSON only, and
+only from senders holding a per-application write token. OTLP logs and metrics are still not
+accepted — logs stay ECS on stdout, metrics stay Prometheus text, and the founding principle for
+both is untouched. A trace exporter is the one place an application knowingly talks to its
+telemetry backend, and even there it speaks the standard protocol, not an Iknos client: pointing
+the exporter at any other OTLP backend is a URL change.
 
 ### What portability actually costs
 

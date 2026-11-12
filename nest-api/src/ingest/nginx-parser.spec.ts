@@ -9,6 +9,17 @@ const LINE =
   '203.0.113.5 - - [16/Sep/2026:14:02:31 +0200] "GET /shots/iknos/logs-960.avif HTTP/2.0" 200 31245 "https://1991computer.com/" "Mozilla/5.0 (Macintosh)"';
 
 describe("parseCombined", () => {
+  it("never stores the OTLP beacon's write token from the query string (IKN-87)", () => {
+    const line =
+      '203.0.113.5 - - [12/Nov/2026:14:02:31 +0100] "POST /api/otlp/v1/traces?token=ikt_CANARY_Zq81&x=1 HTTP/2.0" 200 18 "-" "Mozilla/5.0"';
+    const r = parseCombined(line, "iknos-api");
+
+    expect(JSON.stringify(r)).not.toContain("ikt_CANARY_Zq81");
+    expect(r?.attrs).toMatchObject({ query: "token=[redacted]&x=1" });
+    // The path is untouched — it never held the query in the first place.
+    expect(r?.route).toBe("/api/otlp/v1/traces");
+  });
+
   it("maps a combined line onto the promoted columns", () => {
     const r = parseCombined(LINE, "landing-page");
 

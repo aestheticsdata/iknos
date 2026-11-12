@@ -10,6 +10,12 @@ export const DEFAULT_SCRAPE_INTERVAL_SECONDS = 30;
 /** IKN-20 — see `IKNOS_ROLLUP_RETENTION_DAYS` below. */
 export const DEFAULT_ROLLUP_RETENTION_DAYS = 90;
 
+/** IKN-87 — see `IKNOS_OTLP_TOKEN_RATE_PER_MINUTE` below. */
+export const DEFAULT_OTLP_TOKEN_RATE_PER_MINUTE = 120;
+
+/** IKN-87 — see `IKNOS_OTLP_IP_RATE_PER_MINUTE` below. */
+export const DEFAULT_OTLP_IP_RATE_PER_MINUTE = 240;
+
 /**
  * Boot-time contract. Every variable the API needs is declared here, and a missing or malformed
  * one stops the process at startup instead of surfacing as a confusing failure three hours later
@@ -154,6 +160,34 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   IKNOS_NGINX_SHARED_LOG?: string;
+
+  /**
+   * Requests a minute one OTLP token may make on `POST /api/otlp/v1/traces` (IKN-87). Optional —
+   * 120 unless said otherwise.
+   *
+   * The Officina exporters batch: one flush every few seconds while a pipeline runs, plus the
+   * beacon on page hide. Two a second is a tab doing something wrong, and the cap is what turns a
+   * runaway loop in one demo into a bounded number of rows instead of a full disk. Per token, so
+   * one misbehaving app cannot spend another's budget.
+   */
+  @IsOptional()
+  @IsInt({ message: "IKNOS_OTLP_TOKEN_RATE_PER_MINUTE must be a whole number" })
+  @Min(1, { message: "IKNOS_OTLP_TOKEN_RATE_PER_MINUTE must be at least 1" })
+  IKNOS_OTLP_TOKEN_RATE_PER_MINUTE?: number;
+
+  /**
+   * Requests a minute one client address may make on the same route, valid token or not
+   * (IKN-87). Optional — 240.
+   *
+   * Counted **before** the token is looked up, so it is also what bounds a caller guessing tokens:
+   * every guess costs a database read, and this is the ceiling on how many of those an address
+   * gets. Twice the per-token budget, so an office behind one NAT running two demos side by side
+   * is not throttled by its neighbour.
+   */
+  @IsOptional()
+  @IsInt({ message: "IKNOS_OTLP_IP_RATE_PER_MINUTE must be a whole number" })
+  @Min(1, { message: "IKNOS_OTLP_IP_RATE_PER_MINUTE must be at least 1" })
+  IKNOS_OTLP_IP_RATE_PER_MINUTE?: number;
 }
 
 /** What the rest of the application injects. Nothing outside this file reads `process.env`. */
@@ -178,6 +212,10 @@ export type Config = {
   hostLabel: string;
   /** IKN-84. `null` when set blank — no shared access log on this machine. */
   nginxSharedLog: string | null;
+  /** IKN-87. Requests per minute per OTLP token. */
+  otlpTokenRatePerMinute: number;
+  /** IKN-87. Requests per minute per client address on the OTLP route. */
+  otlpIpRatePerMinute: number;
 };
 
 /**
@@ -229,6 +267,8 @@ export function parseEnv(source: Record<string, unknown>): Config {
     // `||`, not `??`: a label set to blank is a mistake in a config file, not a request for no name.
     hostLabel: parsed.IKNOS_HOST_LABEL?.trim() || hostname(),
     nginxSharedLog: sharedLog(parsed.IKNOS_NGINX_SHARED_LOG),
+    otlpTokenRatePerMinute: parsed.IKNOS_OTLP_TOKEN_RATE_PER_MINUTE ?? DEFAULT_OTLP_TOKEN_RATE_PER_MINUTE,
+    otlpIpRatePerMinute: parsed.IKNOS_OTLP_IP_RATE_PER_MINUTE ?? DEFAULT_OTLP_IP_RATE_PER_MINUTE,
   };
 }
 

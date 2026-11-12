@@ -15,3 +15,19 @@
   /* Two panes of JSON side by side — the log row detail (IKN-60). */
   --container-modal-wide: min(1120px, 100vw - 2rem);
 }
+
+/**
+ * The span waterfall (IKN-87).
+ *
+ * `--spacing-span-indent` is one level of nesting: the waterfall indents a span by its depth times
+ * this, so a child reads as under its parent without a tree of lines. Three-quarters of a rem keeps
+ * eight levels inside the name column before the names start to give way.
+ *
+ * `--container-span-names` is that column, and `--container-span-inspector` the attribute pane
+ * beside the waterfall — wide enough for `gen_ai.usage.output_tokens` and a value on one line.
+ */
+@theme {
+  --spacing-span-indent: 0.75rem; /* 12px */
+  --container-span-names: 18rem; /* 288px */
+  --container-span-inspector: 22rem; /* 352px */
+}

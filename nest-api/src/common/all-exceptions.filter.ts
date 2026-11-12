@@ -1,4 +1,5 @@
 import { Catch, HttpException } from "@nestjs/common";
+import { redactUrl } from "./redact-query";
 
 import type { ArgumentsHost, ExceptionFilter } from "@nestjs/common";
 
@@ -57,7 +58,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     // Anything else is unplanned. The client learns nothing; the logs learn all.
-    this.logger.error({ err: exception, url: req?.url, method: req?.method }, "unhandled exception");
+    this.logger.error(
+      { err: exception, url: req?.url === undefined ? undefined : redactUrl(req.url), method: req?.method },
+      "unhandled exception",
+    );
     res.status(500).json({ error: "internal error" });
   }
 }

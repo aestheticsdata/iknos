@@ -28,6 +28,7 @@
       "@logs/*": ["./src/logs/*"],
       "@maintenance/*": ["./src/maintenance/*"],
       "@metrics/*": ["./src/metrics/*"],
+      "@otlp/*": ["./src/otlp/*"],
       "@redis/*": ["./src/redis/*"],
       "@src/*": ["./src/*"],
       "@stream/*": ["./src/stream/*"],

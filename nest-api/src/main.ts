@@ -9,6 +9,8 @@ import { ROUTING_OPTIONS } from "@config/routing";
 import { buildIngestCors } from "@ingest/ingest-cors";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import { buildOtlpCors, OTLP_BODY_PARSER } from "@otlp/otlp-http";
+import { TokenRegistry } from "@otlp/token-registry.service";
 import { RedisService } from "@redis/redis.service";
 import { Logger } from "nestjs-pino";
 import { AppModule } from "./app.module";
@@ -42,6 +44,9 @@ async function bootstrap() {
   // Ahead of the session middleware: a preflight OPTIONS carries no cookie and must not touch
   // Redis, and the cross-origin POST it clears runs with `credentials: "omit"` anyway.
   app.use(buildIngestCors(ingestOrigins));
+  // The OTLP route's own CORS (IKN-87), answered from the write tokens' origins rather than from
+  // the environment. Ahead of the session for the same reason as the line above.
+  app.use(buildOtlpCors(app.get(TokenRegistry)));
 
   // Registered before listen and therefore ahead of every route, including /health, which
   // stores nothing and so still costs no Redis entry.
@@ -52,6 +57,10 @@ async function bootstrap() {
   // Registered before `listen`, which is what runs `init` and its default parsers: Nest applies
   // its own JSON parser only when none is on the stack yet, so putting one here is how the 100 kB
   // default is replaced rather than merely shadowed by a second, later one.
+  //
+  // The OTLP route's reader goes first (IKN-87): it keeps the body as text for both JSON and the
+  // `text/plain` a `sendBeacon` sends, and the JSON parser after it skips a request already read.
+  app.useBodyParser("text", OTLP_BODY_PARSER);
   app.useBodyParser("json", { limit: JSON_BODY_LIMIT });
 
   // Loopback only, never 0.0.0.0 — nginx is the sole thing that should reach this port, and

@@ -1,5 +1,6 @@
 import ecsFormat from "@elastic/ecs-pino-format";
 import pino from "pino";
+import { redactQuery } from "./redact-query";
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { DestinationStream, LoggerOptions } from "pino";
@@ -129,7 +130,9 @@ export const httpLoggerOptions = {
     return {
       "http.request.method": request.method,
       "url.path": path,
-      "url.query": query,
+      // Redacted (IKN-87): the OTLP beacon's `?token=` would otherwise be filed into Iknos's own
+      // logs by the collector that tails this very line.
+      "url.query": query === undefined ? undefined : redactQuery(query),
       // Real only because main.ts trusts the proxy; without that every caller is 127.0.0.1.
       "client.ip": request.ip ?? request.socket?.remoteAddress,
       "user_agent.original": request.headers["user-agent"],

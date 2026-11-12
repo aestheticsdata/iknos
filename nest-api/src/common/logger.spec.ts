@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildLogger, INGEST_SKIP_MARKER } from "./logger";
+import { buildLogger, httpLoggerOptions, INGEST_SKIP_MARKER } from "./logger";
+
+import type { IncomingMessage } from "node:http";
 
 function capture(fn: (write: (chunk: string) => void) => void): string[] {
   const lines: string[] = [];
@@ -100,5 +102,19 @@ describe("logger redaction", () => {
     // Redaction that swallowed the whole object would pass the tests above and leave nothing
     // to debug with. The address is what says which request failed.
     expect(JSON.parse(lines[0]).body.email).toBe("owner@example.com");
+  });
+
+  it("never writes the OTLP beacon's write token into the access line (IKN-87)", () => {
+    const req = {
+      method: "POST",
+      originalUrl: "/api/otlp/v1/traces?token=ikt_CANARY_Zq81&b=2",
+      headers: {},
+    } as unknown as IncomingMessage;
+
+    const props = httpLoggerOptions.customProps(req);
+
+    expect(props["url.path"]).toBe("/api/otlp/v1/traces");
+    expect(props["url.query"]).toBe("token=[redacted]&b=2");
+    expect(JSON.stringify(props)).not.toContain("ikt_CANARY_Zq81");
   });
 });

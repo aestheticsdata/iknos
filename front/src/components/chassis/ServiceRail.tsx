@@ -48,6 +48,7 @@ const VIEWS = [
   { key: "logs", label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs, short: "L", badge: "shortcut" },
   { key: "metrics", label: CHASSIS_TEXT.viewMetrics, href: ROUTES.metrics, short: "ME", badge: "none" },
   { key: "traffic", label: CHASSIS_TEXT.viewTraffic, href: ROUTES.traffic, short: "TR", badge: "none" },
+  { key: "traces", label: CHASSIS_TEXT.viewTraces, href: ROUTES.traces, short: "TC", badge: "none" },
   { key: "issues", label: CHASSIS_TEXT.viewIssues, href: ROUTES.issues, short: "IS", badge: "issues" },
   { key: "alerts", label: CHASSIS_TEXT.viewAlerts, href: ROUTES.alerts, short: "AL", badge: "alerts" },
 ] as const;

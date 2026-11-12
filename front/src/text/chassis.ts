@@ -18,6 +18,7 @@ export const CHASSIS_TEXT = {
   viewLogs: "logs",
   viewMetrics: "metrics",
   viewTraffic: "traffic",
+  viewTraces: "traces",
   viewIssues: "issues",
   viewAlerts: "alerts",
   paused: "paused",

@@ -1,3 +1,4 @@
+import { redactQuery } from "@common/redact-query";
 import { LEVELS } from "./parser";
 
 import type { LogRecord } from "./log-record";
@@ -160,7 +161,9 @@ export function parseCombined(line: string, service: string): LogRecord | null {
   if (referrer !== null) attrs.referrer = referrer;
   if (userAgent !== null) attrs.userAgent = userAgent;
   if (protocol !== null) attrs.protocol = protocol;
-  if (query !== null) attrs.query = query;
+  // Redacted before it is stored (IKN-87): the OTLP beacon carries its write token as `?token=`,
+  // because `sendBeacon` cannot set a header, and nginx writes that into `$request` verbatim.
+  if (query !== null) attrs.query = redactQuery(query);
   if (bytes !== null) attrs.bytes = bytes;
 
   return {

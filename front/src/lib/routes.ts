@@ -17,6 +17,8 @@ export const ROUTES = {
   metrics: "/metrics",
   /** Visitors per site, read from the nginx access logs (IKN-83). */
   traffic: "/traffic",
+  /** The AI pipeline runs received over OTLP, as span trees (IKN-87). */
+  traces: "/traces",
   /** What the collector's rule engine is saying about the fleet (IKN-15). */
   alerts: "/alerts",
   /**

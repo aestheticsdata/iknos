@@ -208,3 +208,79 @@ The seed's upsert leaves existing rows alone, so on ks-b a new `hosts` or `logGl
 - **The same 14-day window as everything else.** `log_entry` is day-partitioned and dropped
   wholesale by `IKNOS_RETENTION_DAYS`; these rows cannot have a shorter one without a separate
   table.
+
+## OTLP traces from the Officina apps (IKN-87)
+
+`POST /api/otlp/v1/traces` takes OTLP/HTTP JSON traces from Opifex, Vidar, Auscult, Groma and
+Auspex. Nothing changes in nginx: `location /api/` already proxies the route, and its default
+`client_max_body_size` of 1 MB is the same ceiling the API enforces. The steps below are one-time.
+
+### 1. Deploy — the migration runs by itself
+
+`./nest-api/deploy-api.sh` applies `20261112120000_otlp_traces` between the build and the reload,
+like every migration. It is purely additive: two new tables, `ingest_token` and `span`, nothing
+existing altered. `span` is created with only `p_future`; the partition pass at boot carves the
+daily window out of it, so check the boot line once:
+
+```bash
+ssh debian@ks-b 'pm2 logs iknos-api --lines 200 --nostream | grep "partition maintenance" | tail -1'
+```
+
+It should list `span` among the tables with partitions created.
+
+Two optional variables, shown at their defaults, may go in `env_production` (with
+`pm2 reload ecosystem.config.js --update-env`):
+
+```js
+IKNOS_OTLP_TOKEN_RATE_PER_MINUTE: 120, // per write token
+IKNOS_OTLP_IP_RATE_PER_MINUTE: 240,    // per client address, whatever token it presents
+```
+
+### 2. One token per app, with its origin
+
+On ks-b, from the API's directory — the script finds the production `DATABASE_URL` in the
+ecosystem file the way `seed:user` does:
+
+```bash
+ssh debian@ks-b
+cd /var/www/iknos/nest-api
+pnpm token:create opifex-front  --origin https://opifex.1991computer.com  --label "opifex prod"
+pnpm token:create vidar-front   --origin https://vidar.1991computer.com   --label "vidar prod"
+pnpm token:create auscult-front --origin https://auscult.1991computer.com --label "auscult prod"
+pnpm token:create groma-front   --origin https://groma.1991computer.com   --label "groma prod"
+pnpm token:create auspex-front  --origin https://auspex.1991computer.com  --label "auspex prod"
+```
+
+Each prints its token **once**; only the SHA-256 is stored, so write it right away where the app's
+pm2 file reads it: `/var/www/<app>/telemetry-token` on ks-b, alone, `chmod 600` (the Officina
+monorepo's DEPLOY.md, "AI telemetry"). Only apps whose level is not `off` need one. A lost token is replaced, not recovered. The service must already be a
+row in `service` (all five are, from `prisma/seed.ts`). An origin is the bare scheme and host,
+exactly as a browser sends it — no path, no trailing slash; the script refuses anything else.
+Add a second `--origin` for a staging host or `http://localhost:<port>` if the same token should
+work there.
+
+A token writes spans for its one service and nothing else: it is not a session, opens no read
+route, and the payload's `service.name` is ignored.
+
+### 3. Check one, end to end
+
+```bash
+TOKEN=ikt_...   # the one just printed
+NOW=$(date +%s)000000000
+curl -sS https://iknos.1991computer.com/api/otlp/v1/traces \
+  -H 'Content-Type: application/json' -H "X-Iknos-Token: $TOKEN" \
+  -d '{"resourceSpans":[{"scopeSpans":[{"spans":[{"traceId":"'$(openssl rand -hex 16)'","spanId":"'$(openssl rand -hex 8)'","name":"deploy.check","startTimeUnixNano":"'$NOW'","endTimeUnixNano":"'$NOW'"}]}]}]}'
+# → {"partialSuccess":{}}
+```
+
+The run then shows under **traces** with that service selected in the rail.
+
+### Listing and revoking
+
+```bash
+pnpm token:list          # id, service, active or revoked, last used, label, origins — never the token
+pnpm token:revoke <id>
+```
+
+A revoked token's POSTs stop at once; preflights from its origin may still be answered for up to
+30 seconds, which lets nothing through.

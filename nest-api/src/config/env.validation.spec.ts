@@ -66,6 +66,17 @@ describe("parseEnv", () => {
     expect(parseEnv({ ...full, IKNOS_NGINX_SHARED_LOG: "" }).nginxSharedLog).toBeNull();
   });
 
+  it("caps OTLP requests at 120 a minute per token and 240 per address unless told otherwise (IKN-87)", () => {
+    expect(parseEnv(full).otlpTokenRatePerMinute).toBe(120);
+    expect(parseEnv(full).otlpIpRatePerMinute).toBe(240);
+    expect(parseEnv({ ...full, IKNOS_OTLP_TOKEN_RATE_PER_MINUTE: "30" }).otlpTokenRatePerMinute).toBe(30);
+    expect(parseEnv({ ...full, IKNOS_OTLP_IP_RATE_PER_MINUTE: "600" }).otlpIpRatePerMinute).toBe(600);
+    // Zero would close the route while looking configured; that is what revoking a token is for.
+    expect(() => parseEnv({ ...full, IKNOS_OTLP_TOKEN_RATE_PER_MINUTE: "0" })).toThrow(
+      /IKNOS_OTLP_TOKEN_RATE_PER_MINUTE/,
+    );
+  });
+
   it("rejects an unknown log level", () => {
     expect(() => parseEnv({ ...full, IKNOS_LOG_LEVEL: "verbose" })).toThrow(/IKNOS_LOG_LEVEL/);
   });

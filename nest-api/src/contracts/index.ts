@@ -31,6 +31,7 @@ export type { LogPage } from "./log-page";
 export type { LogRow } from "./log-row";
 export type { Meta } from "./meta";
 export type { OccurrenceSeries } from "./occurrence-series";
+export type { OtlpExportResponse } from "./otlp";
 export type {
   LatencyBucket,
   RouteDetail,
@@ -52,6 +53,7 @@ export type {
 } from "./service-runtime";
 export type { MetricSource, ServiceSignals, Signal, SignalPoint } from "./service-signals";
 export type { Trace } from "./trace";
+export type { SpanRow, TraceDetail, TraceList, TraceStatus, TraceSummary } from "./traces";
 export type {
   BotRow,
   BrokenLink,

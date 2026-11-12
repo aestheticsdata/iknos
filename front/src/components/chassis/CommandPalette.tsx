@@ -39,6 +39,7 @@ import type { SearchHit, SearchHitType } from "@lib/searchTypes";
 const VIEWS: { label: string; href: string }[] = [
   { label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs },
   { label: CHASSIS_TEXT.viewMetrics, href: ROUTES.metrics },
+  { label: CHASSIS_TEXT.viewTraces, href: ROUTES.traces },
   { label: CHASSIS_TEXT.viewIssues, href: ROUTES.issues },
   { label: CHASSIS_TEXT.viewAlerts, href: ROUTES.alerts },
 ];

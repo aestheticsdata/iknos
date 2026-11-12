@@ -26,6 +26,7 @@ export const MANAGED_TABLES = [
   "issue_event",
   "alert_state_change",
   "metric_rollup",
+  "span",
 ] as const;
 
 type ManagedTable = (typeof MANAGED_TABLES)[number];
@@ -54,6 +55,9 @@ const RETENTION_WINDOW: Record<ManagedTable, "logs" | "metrics" | "rollups"> = {
   alert_state_change: "logs",
   // The long history the raw window gives up (IKN-20) — `IKNOS_ROLLUP_RETENTION_DAYS`, 90 days.
   metric_rollup: "rollups",
+  // OTLP spans (IKN-87) are the AI pipelines' equivalent of log lines — a run of Opifex is read
+  // beside the logs of the same afternoon — so they keep the log window, not the metric one.
+  span: "logs",
 };
 
 /** The one table whose partitions may not go before their hours are rolled up (IKN-20). */
