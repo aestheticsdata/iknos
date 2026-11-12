@@ -1,10 +1,12 @@
 "use client";
 
+import { BucketBars } from "@components/charts/BucketBars";
 import { Modal } from "@components/ui/Modal";
 import { MODAL_SIZE } from "@components/ui/modalSize";
 import { Pending } from "@components/ui/Pending";
-import { Sparkline } from "@components/ui/Sparkline";
 import { Tooltip } from "@components/ui/Tooltip";
+import { CHART_SURFACE } from "@lib/charts/chartSurface";
+import { METRIC } from "@lib/charts/metricTokens";
 import { formatBytes, formatCount } from "@lib/format";
 import { useCollectorStatus, useCollectorStorage } from "@lib/useCollector";
 import { CHASSIS_TEXT } from "@text/chassis";
@@ -53,17 +55,20 @@ export const IngestCard = () => {
           </span>
 
           {rate === null ? (
-            /* No reading yet. `Sparkline` already refuses to draw an empty series; this says why, so
+            /* No reading yet, so no bars to draw. This says why, so
                the gap reads as a state rather than as a component that failed to render. */
             <span className="text-micro text-chassis-text-dim max-rail:sr-only">{CHASSIS_TEXT.ingestNothingYet}</span>
           ) : (
             <>
-              <Sparkline
-                surface="chassis"
-                tone="ok"
-                values={rate.perMinute}
-                width={128}
-                height={24}
+              {/* A count per minute, so sixty bars of a minute (IKN-86); the newest is still filling. */}
+              <BucketBars
+                series={{
+                  values: rate.perMinute,
+                  metric: METRIC.sparkActive,
+                  partialIndex: rate.perMinute.length > 0 ? rate.perMinute.length - 1 : null,
+                }}
+                height={23}
+                surface={CHART_SURFACE.chassis}
                 label={CHASSIS_TEXT.ingestEvents(formatCount(rate.lines))}
                 className="w-full max-rail:hidden"
               />

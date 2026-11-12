@@ -67,7 +67,10 @@ export const SiteTrafficView = ({ service, range }: SiteScope) => {
         totals={data.totals}
         range={range}
       />
-      <TrafficChart traffic={data} />
+      <TrafficChart
+        traffic={data}
+        range={range}
+      />
       <div className="grid flex-none grid-cols-2 items-start gap-2.75 max-rail:grid-cols-1">
         <PagesTable
           title={TRAFFIC_TEXT.topPages}

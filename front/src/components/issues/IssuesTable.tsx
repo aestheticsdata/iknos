@@ -1,11 +1,12 @@
 "use client";
 
+import { BucketBars } from "@components/charts/BucketBars";
 import { sparkTip } from "@components/issues/sparkTip";
-import { BarSpark } from "@components/ui/BarSpark";
 import { DenseTable } from "@components/ui/DenseTable";
 import { Dot } from "@components/ui/Dot";
 import { TONE_TEXT } from "@components/ui/surface";
 import { Tooltip } from "@components/ui/Tooltip";
+import { METRIC } from "@lib/charts/metricTokens";
 import { formatCount } from "@lib/format";
 import {
   formatAgo,
@@ -109,10 +110,13 @@ export const IssuesTable = ({
             className="block h-3.5 w-13"
             data-testid="issue-spark"
           >
-            <BarSpark
-              values={row.spark}
-              tone={isHot(row, now) ? "error" : "neutral"}
-              height={14}
+            <BucketBars
+              series={{
+                values: row.spark,
+                metric: isHot(row, now) ? METRIC.errors : METRIC.neutral,
+                partialIndex: row.spark.length > 0 ? row.spark.length - 1 : null,
+              }}
+              height={13}
               label={ISSUES_TEXT.sparkLabel(issueTitle(row))}
               tip={sparkTip(spark, row.spark, tz)}
             />

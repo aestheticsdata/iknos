@@ -1,4 +1,5 @@
-import { MeterBar } from "@components/ui/MeterBar";
+import { ShareMeter } from "@components/charts/ShareMeter";
+import { METRIC } from "@lib/charts/metricTokens";
 import { formatShare } from "@lib/trafficFormat";
 import { TRAFFIC_TEXT } from "@text/traffic";
 
@@ -19,10 +20,10 @@ export const ShareList = ({ title, rows }: ShareListProps) => {
             key={row.name}
             className="flex items-center gap-2 text-row text-work-text"
           >
-            <span className="w-24 flex-none truncate">{row.name}</span>
-            <MeterBar
+            <span className="min-w-0 flex-1 truncate">{row.name}</span>
+            <ShareMeter
               share={total > 0 ? row.visitorDays / total : 0}
-              className="flex-1"
+              metric={METRIC.visitors}
             />
             <span className="w-8 flex-none text-right text-work-text-muted tabular-nums">
               {formatShare(total > 0 ? row.visitorDays / total : null)}

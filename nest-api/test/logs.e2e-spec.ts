@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { PrismaService } from "@db/prisma.service";
+import { MAX_BUCKETS } from "@logs/histogram.service";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildTestApp, deleteLogs, login, seedLogs } from "./helpers";
@@ -318,11 +319,11 @@ describe("GET /api/logs/histogram", () => {
     const service = await track(app, 1);
     const res = await get(`/api/logs/histogram?${HOUR}&service=${service}`).expect(200);
 
-    // Two hours in five-minute steps. A short array would let the chart's x-axis shrink to
+    // Two hours in one-minute steps (IKN-86). A short array would let the chart's x-axis shrink to
     // wherever the logs happen to be, which reads as "this is the whole range".
-    expect(res.body.bucketMs).toBe(300_000);
-    expect(res.body.buckets).toHaveLength(24);
-    expect((res.body.buckets as Bucket[]).filter((b) => b.error + b.warn + b.info === 0).length).toBe(23);
+    expect(res.body.bucketMs).toBe(60_000);
+    expect(res.body.buckets).toHaveLength(120);
+    expect((res.body.buckets as Bucket[]).filter((b) => b.error + b.warn + b.info === 0).length).toBe(119);
     expect(res.body.buckets[0].t).toBe("2026-08-09T11:00:00.000Z");
   });
 
@@ -337,7 +338,7 @@ describe("GET /api/logs/histogram", () => {
     ]) {
       const res = await get(`/api/logs/histogram?${range}&service=${empty}`).expect(200);
       expect(res.body.buckets.length).toBeGreaterThan(0);
-      expect(res.body.buckets.length).toBeLessThanOrEqual(60);
+      expect(res.body.buckets.length).toBeLessThanOrEqual(MAX_BUCKETS);
     }
   });
 });

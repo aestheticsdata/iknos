@@ -8,8 +8,24 @@ describe("chooseBucketMs", () => {
     expect(span(60 * 60_000)).toBe(60_000);
   });
 
-  it("gives an hour per bucket over a day", () => {
-    expect(span(24 * 60 * 60_000)).toBe(3_600_000);
+  it("gives ten minutes per bucket over a day", () => {
+    expect(span(24 * 60 * 60_000)).toBe(600_000);
+  });
+
+  it("lands every range the top bar offers between 60 and 170 bars (IKN-86)", () => {
+    const MIN = 60_000;
+    const expected: [number, number][] = [
+      [15 * MIN, 15_000],
+      [60 * MIN, 60_000],
+      [24 * 60 * MIN, 600_000],
+      [7 * 24 * 60 * MIN, 3_600_000],
+      [14 * 24 * 60 * MIN, 7_200_000],
+    ];
+    for (const [ms, bucketMs] of expected) {
+      expect(span(ms)).toBe(bucketMs);
+      expect(ms / bucketMs).toBeGreaterThanOrEqual(60);
+      expect(ms / bucketMs + 1).toBeLessThanOrEqual(MAX_BUCKETS);
+    }
   });
 
   it("never exceeds the ceiling, whatever the range", () => {

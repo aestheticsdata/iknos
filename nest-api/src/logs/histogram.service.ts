@@ -12,11 +12,21 @@ import type { LogFilters } from "./log-query";
  * database.
  */
 
-/** As many bars as a chart of this width can distinguish, and a hard ceiling on the GROUP BY. */
-export const MAX_BUCKETS = 60;
+/**
+ * A hard ceiling on the GROUP BY, and the top of the 60–170 bars every chart aims for (IKN-86).
+ *
+ * It was sixty, which held a week to 28 six-hour bars — a day was four bars and the shape of a day
+ * was gone. 170 is what lets every range the top bar offers land between 60 and 170 bars on a
+ * round step: 15m → 15 s, 1h → 1 min, 24h → 10 min, 7d → 1 h (168), 14d → 2 h (168). A rolling
+ * range rarely starts on a step, so the grid can hold one more bar than the arithmetic says; 168 + 1
+ * still fits.
+ */
+export const MAX_BUCKETS = 170;
 
-/** Round steps a human reads off an axis without doing arithmetic: 1s, 5s, 15s, 1m, 5m … 1d. */
-const STEPS_MS = [1_000, 5_000, 15_000, 60_000, 300_000, 900_000, 3_600_000, 21_600_000, 86_400_000];
+/** Round steps a human reads off an axis without doing arithmetic: 1s, 5s, 15s, 1m, 5m, 10m … 1d. */
+const STEPS_MS = [
+  1_000, 5_000, 15_000, 60_000, 300_000, 600_000, 900_000, 3_600_000, 7_200_000, 21_600_000, 86_400_000,
+];
 
 /**
  * The smallest round step that keeps the bucket count within the ceiling.

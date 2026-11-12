@@ -1,9 +1,10 @@
 "use client";
 
+import { ShareMeter } from "@components/charts/ShareMeter";
 import { DenseTable } from "@components/ui/DenseTable";
-import { MeterBar } from "@components/ui/MeterBar";
 import { TONE_TEXT } from "@components/ui/surface";
 import { Tooltip } from "@components/ui/Tooltip";
+import { METRIC } from "@lib/charts/metricTokens";
 import { costlyRoute, formatLatency, formatShare, hasSamples, p95Tone } from "@lib/metricsFormat";
 import { sameRoute } from "@lib/metricsState";
 import { ABSENT, formatPercent, formatRate } from "@lib/serviceFormat";
@@ -71,12 +72,11 @@ export const RoutesTable = ({ rows, thresholdMs, selected, onSelect }: RoutesTab
         <Tooltip
           mode="hover"
           content={METRICS_TEXT.shareLabel(formatShare(row.share))}
-          className="flex h-full w-18 items-center"
+          className="flex h-full w-25 items-center justify-end"
         >
-          <MeterBar
+          <ShareMeter
             share={row.share ?? 0}
-            tone={p95Tone(row.p95, thresholdMs) === "error" ? "error" : "info"}
-            className="w-full"
+            metric={p95Tone(row.p95, thresholdMs) === "error" ? METRIC.errors : METRIC.neutral}
           />
         </Tooltip>
       ),

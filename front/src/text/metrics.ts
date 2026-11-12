@@ -39,6 +39,7 @@ export const METRICS_TEXT = {
   chartLabel: (route: string) => `${route} latency percentiles over the range`,
   noChart: "No interval of this range can be quoted.",
   threshold: "alert threshold",
+  slo: (ms: string) => `SLO ${ms}`,
   toLogs: "logs →",
   toLogsHint: "Open this route's log lines for the selected range",
   distribution: "latency distribution",

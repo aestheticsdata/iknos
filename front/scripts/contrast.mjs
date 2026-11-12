@@ -16,12 +16,15 @@ import { readFileSync } from "node:fs";
 
 const AA_TEXT = 4.5;
 
-const css = readFileSync(new URL("../styles/tokens/colors.css", import.meta.url), "utf8");
+const css = ["colors.css", "charts.css"]
+  .map((file) => readFileSync(new URL(`../styles/tokens/${file}`, import.meta.url), "utf8"))
+  .join("\n");
 
+/** A token's hex, following `var(--color-…)` aliases — the chart tokens are mostly aliases (IKN-86). */
 const token = (name) => {
-  const match = css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`));
+  const match = css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6}|var\\(--color-([a-z0-9-]+)\\))`));
   if (!match) throw new Error(`token not found: --color-${name}`);
-  return match[1];
+  return match[2] ? token(match[2]) : match[1];
 };
 
 const toLinear = (channel) => {
@@ -89,6 +92,30 @@ for (const [ink, fill] of FILLS) {
   const ok = measured >= AA_TEXT;
   if (!ok) failed++;
   console.log(`  ${`${ink} on ${fill}`.padEnd(34)} ${measured.toFixed(2)}  ${ok ? "ok" : "FAIL"}`);
+}
+
+/**
+ * The chart language's inks (IKN-86): every label a chart prints on the work surface, the series
+ * colours its totals are printed in, and the three inks of the dark tooltip on its own ground.
+ */
+const CHART_TEXT = [
+  ["chart-ref", "work-surface"],
+  ["chart-label-muted", "work-surface"],
+  ["chart-visitors-ink", "work-surface"],
+  ["chart-views-ink", "work-surface"],
+  ["chart-bots-ink", "work-surface"],
+  ["chart-error-ink", "work-surface"],
+  ["chart-tip-fg", "chart-tip-bg"],
+  ["chart-tip-label", "chart-tip-bg"],
+  ["chart-tip-muted", "chart-tip-bg"],
+];
+
+console.log(`\nchart labels — ink on its ground (need ${AA_TEXT}:1 as text)`);
+for (const [ink, ground] of CHART_TEXT) {
+  const measured = ratio(token(ink), token(ground));
+  const ok = measured >= AA_TEXT;
+  if (!ok) failed++;
+  console.log(`  ${`${ink} on ${ground}`.padEnd(34)} ${measured.toFixed(2)}  ${ok ? "ok" : "FAIL"}`);
 }
 
 console.log("\ntext ramp — reported, not enforced (see the note at the top of this file)");

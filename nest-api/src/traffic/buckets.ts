@@ -16,15 +16,36 @@ import type { KeyCtx, Slot, TrafficWindow } from "./interfaces/traffic-types";
 
 export const DEFAULT_TIME_ZONE = "Europe/Paris";
 
-const HOUR_MS = 3_600_000;
+const SECOND_MS = 1_000;
+const MINUTE_MS = 60 * SECOND_MS;
+const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 /** Every real zone's offset is a multiple of fifteen minutes, so stepping by it finds each boundary. */
-const STEP_MS = 15 * 60_000;
-/** A day of range, plus a minute of slack for the edge moving between two requests. */
-const HOURLY_UP_TO_MS = DAY_MS + 60_000;
+const STEP_MS = 15 * MINUTE_MS;
+/** Slack for the edge moving between two requests. */
+const SLACK_MS = MINUTE_MS;
+
+/** The nominal width of each bucket. A clock change makes a local day or hour longer or shorter. */
+const WIDTH_MS: Record<TrafficBucket, number> = {
+  [BUCKET.s15]: 15 * SECOND_MS,
+  [BUCKET.m1]: MINUTE_MS,
+  [BUCKET.m10]: 10 * MINUTE_MS,
+  [BUCKET.h1]: HOUR_MS,
+  [BUCKET.h2]: 2 * HOUR_MS,
+  [BUCKET.day]: DAY_MS,
+};
+
+/** The widest range each bucket serves, smallest first (IKN-86: 60 to 170 bars per range). */
+const UP_TO_MS: [TrafficBucket, number][] = [
+  [BUCKET.s15, 15 * MINUTE_MS],
+  [BUCKET.m1, HOUR_MS],
+  [BUCKET.m10, DAY_MS],
+  [BUCKET.h1, 7 * DAY_MS],
+  [BUCKET.h2, 14 * DAY_MS],
+];
 
 export const bucketFor = (from: Date, to: Date): TrafficBucket =>
-  +to - +from <= HOURLY_UP_TO_MS ? BUCKET.hour : BUCKET.day;
+  UP_TO_MS.find(([, upTo]) => +to - +from <= upTo + SLACK_MS)?.[0] ?? BUCKET.day;
 
 /** The zone if `Intl` accepts it — a browser can send anything — else Paris, where the user is. */
 export const safeTimeZone = (tz: string | undefined): string => {
@@ -50,6 +71,8 @@ const formatterFor = (tz: string) => {
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
       hourCycle: "h23",
     });
     formatters.set(tz, formatter);
@@ -60,13 +83,40 @@ const formatterFor = (tz: string) => {
 const wallClock = (ts: Date, tz: string) => {
   const parts = formatterFor(tz).formatToParts(ts);
   const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "00";
-  return { day: `${part("year")}-${part("month")}-${part("day")}`, hour: part("hour") };
+  return {
+    day: `${part("year")}-${part("month")}-${part("day")}`,
+    hour: part("hour"),
+    minute: part("minute"),
+    second: part("second"),
+  };
 };
 
-/** `YYYY-MM-DD` for a daily bucket, `YYYY-MM-DDTHH` for an hourly one. */
+/** `n` floored to a multiple of `step`, two digits — the start of the slice of the clock it falls in. */
+const floorTo = (n: string, step: number): string => String(Math.floor(Number(n) / step) * step).padStart(2, "0");
+
+/**
+ * The bucket's key on the reader's wall clock: `YYYY-MM-DD` for a day, `YYYY-MM-DDTHH` for one or
+ * two hours, `…THH:MM` for ten minutes or one, `…THH:MM:SS` for fifteen seconds.
+ *
+ * From the wall clock rather than from epoch arithmetic, so a ten-minute bucket in a zone at
+ * UTC+5:45 still starts at :00, :10 and :20 local.
+ */
 export const localKey = (ts: Date, { tz, bucket }: KeyCtx): string => {
-  const { day, hour } = wallClock(ts, tz);
-  return bucket === BUCKET.day ? day : `${day}T${hour}`;
+  const { day, hour, minute, second } = wallClock(ts, tz);
+  switch (bucket) {
+    case BUCKET.day:
+      return day;
+    case BUCKET.h2:
+      return `${day}T${floorTo(hour, 2)}`;
+    case BUCKET.h1:
+      return `${day}T${hour}`;
+    case BUCKET.m10:
+      return `${day}T${hour}:${floorTo(minute, 10)}`;
+    case BUCKET.m1:
+      return `${day}T${hour}:${minute}`;
+    case BUCKET.s15:
+      return `${day}T${hour}:${minute}:${floorTo(second, 15)}`;
+  }
 };
 
 export const localHour = (ts: Date, tz: string): number => Number(wallClock(ts, tz).hour);
@@ -74,19 +124,20 @@ export const localHour = (ts: Date, tz: string): number => Number(wallClock(ts, 
 /**
  * Every bucket the range touches, oldest first, gap-filled.
  *
- * Found by walking the clock in fifteen-minute steps from a bucket before the range to one after
- * it, and keeping the first instant of each new key: that instant *is* the bucket's local start,
- * including on the 23- and 25-hour days of a clock change, which fixed-width arithmetic gets wrong.
- * Fourteen days is about 1 500 steps.
+ * Found by walking the clock from a bucket before the range to one after it, and keeping the first
+ * instant of each new key: that instant *is* the bucket's local start, including on the 23- and
+ * 25-hour days of a clock change, which fixed-width arithmetic gets wrong. The step is fifteen
+ * minutes, or the bucket's own width when that is narrower. Fourteen days is about 1 300 steps.
  */
 export const bucketGrid = ({ from, to, tz, retentionDays, now }: TrafficWindow): Slot[] => {
   const bucket = bucketFor(from, to);
-  const width = bucket === BUCKET.day ? DAY_MS : HOUR_MS;
+  const width = WIDTH_MS[bucket];
+  const step = Math.min(STEP_MS, width);
   const ctx = { tz, bucket };
 
   const starts: { key: string; start: number }[] = [];
-  const first = Math.floor((+from - width) / STEP_MS) * STEP_MS;
-  for (let at = first; at <= +to + width; at += STEP_MS) {
+  const first = Math.floor((+from - width) / step) * step;
+  for (let at = first; at <= +to + width; at += step) {
     const key = localKey(new Date(at), ctx);
     if (starts.at(-1)?.key !== key) starts.push({ key, start: at });
   }
@@ -101,7 +152,7 @@ export const bucketGrid = ({ from, to, tz, retentionDays, now }: TrafficWindow):
     slots.push({
       t: new Date(start).toISOString(),
       key,
-      partial: bucket === BUCKET.day && (start < +from || end > +to),
+      partial: start < +from || end > +to,
       available: end > cut,
     });
   }

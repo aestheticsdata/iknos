@@ -1,6 +1,6 @@
 import { BUCKET } from "@lib/interfaces/trafficTypes";
 import { describe, expect, it } from "vitest";
-import { bucketLabel, dailyAverage, formatShare, pagesPerVisit, retentionCut } from "./trafficFormat";
+import { bucketTitle, dailyAverage, formatShare, pagesPerVisit, retentionCut } from "./trafficFormat";
 
 import type { TrafficPoint, TrafficTotals } from "@lib/interfaces/trafficTypes";
 
@@ -46,19 +46,23 @@ describe("pagesPerVisit", () => {
   });
 });
 
-describe("bucketLabel", () => {
+describe("bucketTitle", () => {
   it("names a day in the reader's zone", () => {
-    expect(bucketLabel(point("2026-10-30T23:00:00.000Z"), BUCKET.day, "Europe/Paris")).toBe("Sat 31 Oct");
+    expect(bucketTitle(point("2026-10-30T23:00:00.000Z"), BUCKET.day, "Europe/Paris")).toBe("Sat 31");
   });
 
-  it("names an hour", () => {
-    expect(bucketLabel(point("2026-10-31T13:00:00.000Z"), BUCKET.hour, "Europe/Paris")).toBe("14:00");
+  it("names an hour as its day and its two ends", () => {
+    expect(bucketTitle(point("2026-11-07T13:00:00.000Z"), BUCKET.h1, "Europe/Paris")).toBe("Sat 7 · 14:00 → 15:00");
+  });
+
+  it("names fifteen seconds to the second", () => {
+    expect(bucketTitle(point("2026-11-07T13:00:15.000Z"), BUCKET.s15, "Europe/Paris")).toBe(
+      "Sat 7 · 14:00:15 → 14:00:30",
+    );
   });
 
   it("says when a day is cut by the range", () => {
-    expect(bucketLabel(point("2026-10-30T23:00:00.000Z", true), BUCKET.day, "Europe/Paris")).toBe(
-      "Sat 31 Oct (partial)",
-    );
+    expect(bucketTitle(point("2026-10-30T23:00:00.000Z", true), BUCKET.day, "Europe/Paris")).toBe("Sat 31 (partial)");
   });
 });
 

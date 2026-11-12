@@ -22,6 +22,8 @@ export const HOST_TEXT = {
   absent: "—",
   /* Under the disk chart: the alert rule's own lines, said out loud once so the dashes mean something. */
   diskLines: (warn: number, critical: number) => `alert at ${warn}% · critical at ${critical}%`,
+  markWarning: (pct: number) => `warning at ${pct}%`,
+  markCritical: (pct: number) => `critical at ${pct}%`,
   /* CPU and memory have no alert rule, so no colour — said once, so the grey reads as a decision. */
   unwatched: "no alert rule — not coloured",
   chartLabel: (name: string, range: string) => `${name} over the last ${range}`,

@@ -153,3 +153,10 @@ export const loopTone = (ms: number): Tone => {
  */
 export const hasSeries = (points: { v: number | null }[]): boolean =>
   points.filter((point) => point.v !== null).length >= 2;
+
+/**
+ * The 5xx share above which the error-rate rule fires — mirrors `ERROR_RATE_PCT` in
+ * `nest-api/src/alerts/thresholds.ts`. The error tile draws it as its dashed threshold (IKN-86),
+ * so a red bar on the tile means the same thing as a red alert.
+ */
+export const ERROR_RATE_ALERT_PCT = 5;

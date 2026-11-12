@@ -65,6 +65,26 @@ import type { ComponentPropsWithRef, FocusEvent, KeyboardEvent, ReactNode } from
 const SURFACE =
   "pointer-events-none z-60 inset-auto m-0 w-max max-w-60 whitespace-pre-line rounded-control border border-chassis-border-strong bg-chassis-raised/90 px-2 py-1.5 text-micro leading-hint text-chassis-text shadow-menu backdrop-blur-[3px]";
 
+/**
+ * The chart tooltip's skin (IKN-86): the darker ink of the chart language, a 6px corner and a
+ * shadow. No blur, because it sits beside a crosshair over bars rather than over the log stream.
+ * Its gap is 10px to the right of the crosshair and none below: the point it is handed is the top
+ * of the plot.
+ */
+const CHART_SURFACE =
+  "pointer-events-none z-60 inset-auto m-0 w-max whitespace-nowrap rounded-chart-tip bg-chart-tip-bg px-2.5 py-1.75 text-row leading-hint text-chart-tip-fg shadow-chart-tip";
+
+/** Which skin a cursor-mode bubble wears: the chrome's, or the chart language's (IKN-86). */
+export const TOOLTIP_SKIN = { chrome: "chrome", chart: "chart" } as const;
+
+type TooltipSkin = (typeof TOOLTIP_SKIN)[keyof typeof TOOLTIP_SKIN];
+
+/** The offset from the point, per skin: the chrome's bubble trails the pointer diagonally. */
+const SKIN_GAP: Record<TooltipSkin, CursorPoint> = {
+  [TOOLTIP_SKIN.chrome]: { x: 16, y: 16 },
+  [TOOLTIP_SKIN.chart]: { x: 10, y: 0 },
+};
+
 /** Measure-then-position has to run before paint, or the clamp at a viewport edge is a visible
  *  jump. `useLayoutEffect` warns on the server, so the effect degrades there rather than firing. */
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -86,6 +106,8 @@ type CursorModeProps = {
   children: ReactNode;
   /** In px. Widen past the 240 default for the few bubbles carrying a paragraph. */
   maxWidth?: number;
+  /** `chart` for the crosshair tooltip of the chart language (IKN-86). */
+  skin?: TooltipSkin;
 };
 
 type HoverModeProps = {
@@ -138,9 +160,11 @@ const Bubble = ({
   id,
   children,
   maxWidth,
+  skin = TOOLTIP_SKIN.chrome,
 }: {
   point: CursorPoint | null;
   gap: number;
+  skin?: TooltipSkin;
   /** Set in `hover` mode, where the trigger points its `aria-describedby` at this. */
   id?: string;
   children: ReactNode;
@@ -212,14 +236,15 @@ const Bubble = ({
     // Flipped to the other side of the point rather than slid along the edge: a bubble pinned to
     // the right margin while the pointer keeps moving reads as stuck.
     const { width, height } = element.getBoundingClientRect();
-    let left = snapshot.point.x + gap;
-    if (left + width + VIEWPORT_EDGE > window.innerWidth) left = snapshot.point.x - gap - width;
+    const offset = skin === TOOLTIP_SKIN.chrome ? { x: gap, y: gap } : SKIN_GAP[skin];
+    let left = snapshot.point.x + offset.x;
+    if (left + width + VIEWPORT_EDGE > window.innerWidth) left = snapshot.point.x - offset.x - width;
 
-    let top = snapshot.point.y + gap;
-    if (top + height + VIEWPORT_EDGE > window.innerHeight) top = snapshot.point.y - gap - height;
+    let top = snapshot.point.y + offset.y;
+    if (top + height + VIEWPORT_EDGE > window.innerHeight) top = snapshot.point.y - offset.y - height;
 
     setPos({ left: Math.max(VIEWPORT_EDGE, left), top: Math.max(VIEWPORT_EDGE, top) });
-  }, [snapshot, gap]);
+  }, [snapshot, gap, skin]);
 
   if (!snapshot) return null;
 
@@ -240,7 +265,11 @@ const Bubble = ({
          until `showPopover()`, so the two have to happen in the same frame the box is measured. */
       popover="manual"
       data-testid="tooltip"
-      className={cn(SURFACE, "fixed transition-opacity duration-150 ease-out", visible ? "opacity-100" : "opacity-0")}
+      className={cn(
+        skin === TOOLTIP_SKIN.chart ? CHART_SURFACE : SURFACE,
+        "fixed transition-opacity duration-150 ease-out",
+        visible ? "opacity-100" : "opacity-0",
+      )}
       style={{
         left: pos ? pos.left : snapshot.point.x + gap,
         top: pos ? pos.top : snapshot.point.y + gap,
@@ -346,6 +375,7 @@ export const Tooltip = (props: TooltipProps) =>
     <Bubble
       gap={CURSOR_GAP}
       maxWidth={props.maxWidth}
+      skin={props.skin}
       point={nothingToSay(props.children) ? null : props.point}
     >
       {props.children}

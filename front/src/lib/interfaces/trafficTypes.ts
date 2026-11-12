@@ -8,8 +8,8 @@
 
 import type { Meta } from "@lib/logTypes";
 
-/** Mirrors `contracts/traffic.ts`. Hourly up to a day of range, daily beyond. */
-export const BUCKET = { hour: "hour", day: "day" } as const;
+/** Mirrors `contracts/traffic.ts`: 15m → 15 s, 1h → 1 min, 24h → 10 min, 7d → 1 h, 14d → 2 h (IKN-86). */
+export const BUCKET = { s15: "15s", m1: "1m", m10: "10m", h1: "1h", h2: "2h", day: "day" } as const;
 export type TrafficBucket = (typeof BUCKET)[keyof typeof BUCKET];
 
 /** Mirrors `contracts/traffic.ts`. */
@@ -32,6 +32,7 @@ export type TrafficTotals = {
 /** Mirrors `contracts/traffic.ts`. `null` counts lie before the retention cut. */
 export type TrafficPoint = {
   t: string;
+  /** Cut by the range at either edge. The last one is the bucket in progress. */
   partial: boolean;
   available: boolean;
   visitorDays: number | null;

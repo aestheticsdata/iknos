@@ -497,3 +497,14 @@
     }
   }
 }
+
+/**
+ * The hatching of a bucket in progress, as a CSS swatch — the legend in a chart panel's header
+ * (IKN-86). The charts themselves draw it as an SVG `<pattern>` (`components/charts/Hatch.tsx`);
+ * the two are the same stripes, 1.5px of ink and 1.5px of nothing at 135°, with a 1px inner outline.
+ * The ink is `currentColor`, so the swatch takes a `text-*` class.
+ */
+@utility ik-chart-hatch {
+  background: repeating-linear-gradient(135deg, currentColor 0 1.5px, transparent 1.5px 3px);
+  box-shadow: inset 0 0 0 1px currentColor;
+}

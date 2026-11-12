@@ -1,15 +1,18 @@
 "use client";
 
+import { Hatch, HatchedRect } from "@components/charts/Hatch";
+import { useElementSize } from "@components/charts/hooks/useElementSize";
 import { Button } from "@components/ui/Button";
 import { Pending } from "@components/ui/Pending";
 import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
 import { useCursorHover } from "@components/ui/useCursorHover";
+import { barSpan } from "@lib/charts/barGeometry";
 import { formatCount } from "@lib/format";
 import { cn } from "@lib/utils";
 import { intervalLabel, timeLabel } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
 import { LOGS_TEXT } from "@text/logs";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import type { Bucket, Histogram } from "@lib/logTypes";
 
@@ -43,25 +46,20 @@ import type { Bucket, Histogram } from "@lib/logTypes";
  * invisible — it is **black**, so the failure would ship as a chart of black bars.
  */
 const SERIES = [
-  { key: "info", fill: "fill-histogram-info" },
-  { key: "warn", fill: "fill-histogram-warn" },
-  { key: "error", fill: "fill-histogram-error" },
-] as const satisfies readonly { key: keyof Omit<Bucket, "t">; fill: string }[];
+  { key: "info", ink: "text-histogram-info" },
+  { key: "warn", ink: "text-histogram-warn" },
+  { key: "error", ink: "text-histogram-error" },
+] as const satisfies readonly { key: keyof Omit<Bucket, "t">; ink: string }[];
 
 /**
- * The viewBox, in units that are **pixels vertically and bucket-widths horizontally**.
- *
- * `preserveAspectRatio="none"` is what lets the chart fill any container width, and the price is
- * that the two axes no longer share a scale. So the box is `0 0 <bucketCount> <CHART_UNITS>` and
- * the element is exactly `CHART_UNITS` pixels tall: y stays honest at 1 unit = 1px, and anything
- * horizontal has to be expressed as a fraction of a bucket rather than in pixels. That is why the
- * gap between bars is a proportion (it narrows as buckets multiply, which is what you want) instead
- * of the mockup's flat 1px, which stretching would have turned into a different width per range.
+ * The chart's pixels (IKN-86): a 6px lane on top for the anomaly tick, 33px of bars, and the 1px
+ * baseline under them. The width is measured, and every bar is placed on whole pixels with a 1px
+ * gap, the same as every other count chart in the app (`@lib/charts/barGeometry`). The chart used
+ * to be drawn in bucket units and stretched, and its gaps blurred into the bars.
  */
-const BAR_UNITS = 34;
-const MARKER_UNITS = 6;
-const CHART_UNITS = BAR_UNITS + MARKER_UNITS;
-const BAR_GAP = 0.18;
+const BAR_PX = 33;
+const MARKER_PX = 6;
+const CHART_PX = MARKER_PX + BAR_PX + 1;
 
 /**
  * A segment that has any lines in it never rounds away to nothing.
@@ -72,7 +70,7 @@ const BAR_GAP = 0.18;
  * top of the chart the whole stack is scaled back to fit rather than clipped — a clipped stack
  * would silently understate the tallest bucket, which is the one being compared against.
  */
-const MIN_SEGMENT = 1;
+const MIN_SEGMENT = 1.5;
 
 /**
  * **The anomaly rule, in full.** Deliberately arithmetic a reader can redo in their head — IKN-12
@@ -150,7 +148,8 @@ type Column = {
   name: string;
   /** The bucket's own three counts, so the bubble can tabulate what the bar's height is worth. */
   counts: Bucket;
-  segments: { fill: string; y: number; height: number }[];
+  /** Each level's height in pixels, bottom to top, in `SERIES` order. */
+  heights: number[];
 };
 
 /**
@@ -225,57 +224,54 @@ export const VolumeHistogram = ({
   /* One zone for the axis and the rows beneath it — see the note above `Column`. */
   const { tz } = useZone();
 
-  const columns = useMemo<Column[]>(() => {
-    if (!histogram) return [];
+  const { ref: plot, width } = useElementSize<HTMLDivElement>();
+  const hatchId = useId().replace(/:/g, "");
 
-    const peak = histogram.buckets.reduce((max, b) => Math.max(max, b.error + b.warn + b.info), 0);
-    const unit = peak > 0 ? BAR_UNITS / peak : 0;
+  const peak = histogram?.buckets.reduce((max, b) => Math.max(max, b.error + b.warn + b.info), 0) ?? 0;
+  const unit = peak > 0 ? BAR_PX / peak : 0;
 
-    return histogram.buckets.map((bucket) => {
-      const start = Date.parse(bucket.t);
-      const end = start + histogram.bucketMs;
-      const usable = Number.isFinite(start);
+  const columns: Column[] = (histogram?.buckets ?? []).map((bucket) => {
+    const bucketMs = histogram?.bucketMs ?? 0;
+    const start = Date.parse(bucket.t);
+    const end = start + bucketMs;
+    const usable = Number.isFinite(start);
 
-      const raw = SERIES.map(({ key }) => (bucket[key] === 0 ? 0 : Math.max(MIN_SEGMENT, bucket[key] * unit)));
-      const stack = raw.reduce((sum, height) => sum + height, 0);
-      const fit = stack > BAR_UNITS ? BAR_UNITS / stack : 1;
+    const raw = SERIES.map(({ key }) => (bucket[key] === 0 ? 0 : Math.max(MIN_SEGMENT, bucket[key] * unit)));
+    const stack = raw.reduce((sum, height) => sum + height, 0);
+    const fit = stack > BAR_PX ? BAR_PX / stack : 1;
 
-      // Walk up from the baseline, so `y` is where the segment just placed begins.
-      let y = CHART_UNITS;
-      const segments = SERIES.map((series, i) => {
-        const height = raw[i] * fit;
-        y -= height;
-        return { fill: series.fill, y, height };
-      });
+    const label = timeLabel(start, bucketMs, tz);
+    const span = intervalLabel(start, bucketMs, tz);
 
-      const label = timeLabel(start, histogram.bucketMs, tz);
-      const span = intervalLabel(start, histogram.bucketMs, tz);
+    return {
+      key: bucket.t,
+      bounds: usable ? { from: new Date(start).toISOString(), to: new Date(end).toISOString() } : null,
+      label,
+      span,
+      counts: bucket,
+      /*
+       * The counts are on the button rather than in the SVG's title: `role="img"` collapses
+       * everything under it to one string, so the only way per-bucket detail reaches a screen
+       * reader is through the controls layered over the chart. Errors are named first because
+       * that is the number the marker is about and the number anyone is here for.
+       */
+      name: `${span} · ${bucket.error} error · ${bucket.warn} warn · ${bucket.info} info · ${LOGS_TEXT.bucketHint}`,
+      heights: raw.map((height) => height * fit),
+    };
+  });
 
-      return {
-        key: bucket.t,
-        bounds: usable ? { from: new Date(start).toISOString(), to: new Date(end).toISOString() } : null,
-        label,
-        span,
-        counts: bucket,
-        /*
-         * The counts are on the button rather than in the SVG's title: `role="img"` collapses
-         * everything under it to one string, so the only way per-bucket detail reaches a screen
-         * reader is through the controls layered over the chart. Errors are named first because
-         * that is the number the marker is about and the number anyone is here for.
-         */
-        name: `${span} · ${bucket.error} error · ${bucket.warn} warn · ${bucket.info} info · ${LOGS_TEXT.bucketHint}`,
-        segments,
-      };
-    });
-  }, [histogram, tz]);
+  /* The newest bucket is still filling while the range ends now, and is hatched (IKN-86). */
+  const lastStart = histogram?.buckets.length ? Date.parse(histogram.buckets[histogram.buckets.length - 1].t) : null;
+  const partialIndex =
+    histogram && lastStart !== null && lastStart + histogram.bucketMs > Date.now() ? columns.length - 1 : null;
 
-  const anomaly = useMemo(() => (histogram ? findAnomaly(histogram.buckets) : null), [histogram]);
+  const anomaly = histogram ? findAnomaly(histogram.buckets) : null;
 
-  const focusBucket = useCallback((index: number, count: number) => {
+  const focusBucket = (index: number, count: number) => {
     const next = Math.max(0, Math.min(count - 1, index));
     setActive(next);
     buttons.current[next]?.focus();
-  }, []);
+  };
 
   // A window that shrank under the cursor must not leave the tab stop on a bucket that is gone.
   const roving = Math.min(active, Math.max(columns.length - 1, 0));
@@ -289,9 +285,8 @@ export const VolumeHistogram = ({
       data-testid="histogram"
     >
       {/*
-       * Fixed height, and exactly `CHART_UNITS` of it: the viewBox depends on that equality for its
-       * 1 unit = 1px vertical scale, and the table below depends on it for not jumping a row every
-       * time the chart swaps between loading, empty and drawn. Every state below fills this box.
+       * Fixed height, exactly `CHART_PX` of it: the table below depends on it for not jumping a row
+       * every time the chart swaps between loading, empty and drawn. Every state below fills this box.
        */}
       <div className="relative h-[40px]">
         {error ? (
@@ -333,48 +328,83 @@ export const VolumeHistogram = ({
           </div>
         ) : (
           <>
-            <svg
-              viewBox={`0 0 ${columns.length} ${CHART_UNITS}`}
-              preserveAspectRatio="none"
-              role="img"
-              /*
-               * Dimmed rather than replaced while a refetch is in flight. Every keystroke in the
-               * query bar refetches, and blanking a chart that is about to be redrawn with almost
-               * the same shape reads as breakage rather than as work in progress.
-               */
-              className={cn("pointer-events-none absolute inset-0 h-full w-full", loading && "opacity-60")}
+            <div
+              ref={plot}
+              className="pointer-events-none absolute inset-0"
             >
-              <title>{LOGS_TEXT.histogramLabel}</title>
-              {columns.map((column, index) => (
-                <g key={column.key}>
-                  {column.segments.map((segment) => (
-                    <rect
-                      key={segment.fill}
-                      x={index + BAR_GAP / 2}
-                      y={segment.y}
-                      width={1 - BAR_GAP}
-                      height={segment.height}
-                      className={segment.fill}
-                    />
+              {width > 0 && (
+                <svg
+                  width={width}
+                  height={CHART_PX}
+                  role="img"
+                  /*
+                   * Dimmed rather than replaced while a refetch is in flight. Every keystroke in the
+                   * query bar refetches, and blanking a chart that is about to be redrawn with almost
+                   * the same shape reads as breakage rather than as work in progress.
+                   */
+                  className={cn("block transition-opacity duration-150 ease-out", loading && "opacity-60")}
+                >
+                  <title>{LOGS_TEXT.histogramLabel}</title>
+                  {SERIES.map((series, level) => (
+                    <g
+                      key={series.key}
+                      className={series.ink}
+                      fill="currentColor"
+                    >
+                      {partialIndex !== null && (
+                        <Hatch
+                          id={`${hatchId}-${series.key}`}
+                          ink={series.ink}
+                        />
+                      )}
+                      {columns.map((column, index) => {
+                        const height = column.heights[level];
+                        if (height === 0) return null;
+                        const below = column.heights.slice(0, level).reduce((sum, h) => sum + h, 0);
+                        const span = barSpan(index, columns.length, width);
+                        const y = MARKER_PX + BAR_PX - below - height;
+                        return index === partialIndex ? (
+                          <HatchedRect
+                            key={column.key}
+                            x={span.x}
+                            y={y}
+                            width={span.width}
+                            height={height}
+                            patternId={`${hatchId}-${series.key}`}
+                          />
+                        ) : (
+                          <rect
+                            key={column.key}
+                            x={span.x}
+                            y={y}
+                            width={span.width}
+                            height={height}
+                          />
+                        );
+                      })}
+                    </g>
                   ))}
-                </g>
-              ))}
-              {anomaly && (
-                /*
-                 * A tick the width of the bar it belongs to, in the lane reserved above the bars, so
-                 * the words on the axis have something to point at. Not a triangle: horizontal units
-                 * are bucket-widths here, so any shape with a width would be sheared by a different
-                 * amount at every range. The ▲ lives in the label, where it is a glyph and safe.
-                 */
-                <rect
-                  x={anomaly.index + BAR_GAP / 2}
-                  y={1}
-                  width={1 - BAR_GAP}
-                  height={3}
-                  className="fill-chassis-info"
-                />
+                  <rect
+                    x={0}
+                    y={MARKER_PX + BAR_PX}
+                    width={width}
+                    height={1}
+                    className="fill-chart-spark-axis"
+                  />
+                  {anomaly && (
+                    /* A tick the width of the bar it belongs to, in the lane reserved above the bars,
+                       so the words on the axis have something to point at. */
+                    <rect
+                      x={barSpan(anomaly.index, columns.length, width).x}
+                      y={1}
+                      width={barSpan(anomaly.index, columns.length, width).width}
+                      height={3}
+                      className="fill-chassis-info"
+                    />
+                  )}
+                </svg>
               )}
-            </svg>
+            </div>
 
             {/*
              * The buckets are real buttons layered over the drawing, not `<rect>`s with handlers: a

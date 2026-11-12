@@ -1,9 +1,12 @@
 "use client";
 
+import { BucketBars } from "@components/charts/BucketBars";
 import { Pending } from "@components/ui/Pending";
-import { Sparkline } from "@components/ui/Sparkline";
 import { TONE_FILL, TONE_TEXT } from "@components/ui/surface";
 import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
+import { foldSum } from "@lib/charts/barGeometry";
+import { CHART_SURFACE } from "@lib/charts/chartSurface";
+import { METRIC } from "@lib/charts/metricTokens";
 import { useSelectedService } from "@lib/chassisState";
 import { ROUTES } from "@lib/routes";
 import { useAlertCounts } from "@lib/useAlertCounts";
@@ -160,13 +163,9 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
                 monogram={monogram(service.name)}
                 dot={service.health ? HEALTH_TONE[service.health.status] : null}
                 trailing={
-                  <Sparkline
-                    values={service.sparkline}
-                    tone="neutral"
-                    surface="chassis"
-                    width={40}
-                    height={12}
-                    label={CHASSIS_TEXT.sparklineLabel(service.name)}
+                  <RailSpark
+                    service={service}
+                    selected={selected === service.name}
                   />
                 }
                 hint={railHint(service)}
@@ -434,4 +433,34 @@ const UserMenu = () => {
       </button>
     </section>
   );
+};
+
+/** Three minutes a bar: the API's sixty one-minute slots, as twenty bars that fit 62px (IKN-86). */
+const RAIL_FOLD = 3;
+
+/**
+ * A service's log lines over the last hour, as bars (IKN-86): a count per bucket, on the dark rail.
+ * The selected service's bars take the accent, the rest stay grey, and the newest bar, still
+ * filling, is hatched.
+ */
+const RailSpark = ({ service, selected }: RailSparkProps) => {
+  const values = foldSum(service.sparkline, RAIL_FOLD);
+  return (
+    <BucketBars
+      series={{
+        values,
+        metric: selected ? METRIC.sparkActive : METRIC.spark,
+        partialIndex: values.length > 0 ? values.length - 1 : null,
+      }}
+      height={13}
+      surface={CHART_SURFACE.chassis}
+      label={CHASSIS_TEXT.sparklineLabel(service.name)}
+      className="w-15.5"
+    />
+  );
+};
+
+type RailSparkProps = {
+  service: Service;
+  selected: boolean;
 };

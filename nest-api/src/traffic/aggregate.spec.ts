@@ -121,10 +121,11 @@ describe("aggregate", () => {
   });
 
   it("places page views on the reader's clock and visitors in the bucket of their first view", () => {
-    expect(result.bucket).toBe(BUCKET.day);
+    expect(result.bucket).toBe(BUCKET.h1);
     expect(result.hourOfDay[11]).toBe(2); // 10:00 UTC is 11:00 in Paris
-    const day = result.series.find((point) => point.t === "2026-10-29T23:00:00.000Z");
-    expect(day).toMatchObject({ visitorDays: 1, pageViews: 2, botRequests: 2, scannerRequests: 2 });
+    // Hourly over a week (IKN-86): every count lands in the 11:00 Paris hour of the 30th.
+    const hour = result.series.find((point) => point.t === "2026-10-30T10:00:00.000Z");
+    expect(hour).toMatchObject({ visitorDays: 1, pageViews: 2, botRequests: 2, scannerRequests: 2 });
   });
 
   it("sums bandwidth across everyone", () => {
@@ -152,7 +153,8 @@ describe("aggregate", () => {
     const empty = aggregate([], WINDOW);
     expect(empty.totals.visitorDays).toBe(0);
     expect(empty.ownHost).toBeNull();
-    expect(empty.series).toHaveLength(8);
+    // 168 hours on the hour, less one: the repeated 02:00 of the 25 October clock change is one key.
+    expect(empty.series).toHaveLength(167);
     expect(empty.series.every((point) => point.visitorDays === 0)).toBe(true);
     expect(empty.hourOfDay).toHaveLength(24);
   });
@@ -183,7 +185,7 @@ describe("summarize", () => {
     const summary = summarize(aggregate(FIXTURE, WINDOW));
     expect(summary).toMatchObject({ visitorDays: 1, pageViews: 2, requests: 10, topSource: "Hacker News" });
     expect(summary.humanShare).toBeCloseTo(0.6);
-    expect(summary.series).toHaveLength(8);
+    expect(summary.series).toHaveLength(167);
   });
 
   it("falls back to direct when it is the only source, and to null with none", () => {

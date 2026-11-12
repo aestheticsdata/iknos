@@ -1,10 +1,11 @@
 "use client";
 
+import { BucketBars } from "@components/charts/BucketBars";
 import { sparkTip } from "@components/issues/sparkTip";
-import { BarSpark } from "@components/ui/BarSpark";
 import { Dot } from "@components/ui/Dot";
 import { SURFACE_TEXT, SURFACE_TEXT_DIM, SURFACE_TEXT_MUTED, TONE_TEXT } from "@components/ui/surface";
 import { Tooltip } from "@components/ui/Tooltip";
+import { METRIC } from "@lib/charts/metricTokens";
 import { formatCount } from "@lib/format";
 import { formatAgo, isHot, issueLine, issueTitle, recencyTone, shortFingerprint } from "@lib/issueFormat";
 import { cn } from "@lib/utils";
@@ -86,19 +87,21 @@ export const IssueRowCompact = ({
 
       <span className="flex items-center gap-2">
         <span className={cn("min-w-0 flex-1 truncate text-row", SURFACE_TEXT.work)}>{issueTitle(row)}</span>
-        {/* 52×14, the mockup's own box. Bars rather than the prototype's polyline: an occurrence
-            count per two-hour interval is a measurement of that interval and nothing lies between
-            two of them — the argument `BarSpark` makes for itself. */}
+        {/* 52×14, the mockup's own box. An occurrence count per interval is a count per bucket, so
+            bars (IKN-86); the newest interval is still filling, and hatched. */}
         {/* The same `issue-spark` as the table's column — the two lists are never on one screen,
             and the panel's are reached through `issues-panel` regardless. */}
         <span
           className="h-3.5 w-13 flex-none"
           data-testid="issue-spark"
         >
-          <BarSpark
-            values={row.spark}
-            tone={hot ? "error" : "neutral"}
-            height={14}
+          <BucketBars
+            series={{
+              values: row.spark,
+              metric: hot ? METRIC.errors : METRIC.neutral,
+              partialIndex: row.spark.length > 0 ? row.spark.length - 1 : null,
+            }}
+            height={13}
             label={ISSUES_TEXT.sparkLabel(issueTitle(row))}
             tip={sparkTip(spark, row.spark, tz)}
           />

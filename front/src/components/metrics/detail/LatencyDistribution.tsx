@@ -1,5 +1,6 @@
-import { MeterBar } from "@components/ui/MeterBar";
+import { ShareMeter } from "@components/charts/ShareMeter";
 import { Tooltip } from "@components/ui/Tooltip";
+import { TONE_METRIC } from "@lib/charts/metricTokens";
 import { formatCount } from "@lib/format";
 import { bucketLabel, bucketShares, bucketTone, formatShare } from "@lib/metricsFormat";
 import { METRICS_TEXT } from "@text/metrics";
@@ -35,11 +36,12 @@ export const LatencyDistribution = ({ buckets, thresholdMs }: LatencyDistributio
                 className="flex items-center gap-2 text-row text-work-text-muted"
               >
                 <span className="w-20 flex-none tabular-nums">{bucketLabel(bucket)}</span>
-                <MeterBar
-                  share={shares[index] ?? 0}
-                  tone={bucketTone(bucket, thresholdMs)}
-                  className="flex-1"
-                />
+                <span className="flex flex-1 justify-end">
+                  <ShareMeter
+                    share={shares[index] ?? 0}
+                    metric={TONE_METRIC[bucketTone(bucket, thresholdMs)]}
+                  />
+                </span>
                 <span className="w-9 flex-none text-right tabular-nums text-work-text">
                   {formatShare(shares[index])}
                 </span>

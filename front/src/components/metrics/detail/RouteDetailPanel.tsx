@@ -56,7 +56,7 @@ export const RouteDetailPanel = ({ service, route, range, detail }: RouteDetailP
           <span className="flex-none text-micro text-work-text-dim">
             {METRICS_TEXT.percentiles} · {METRICS_TEXT.rangeLabel(range)}
           </span>
-          <PercentileLegend />
+          <PercentileLegend sloMs={data?.p95ThresholdMs ?? null} />
           {data !== null && linksToLogs(data.summary) && (
             <Tooltip
               mode="hover"

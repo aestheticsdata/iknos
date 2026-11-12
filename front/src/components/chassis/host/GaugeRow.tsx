@@ -1,19 +1,25 @@
 "use client";
 
-import { AreaSpark } from "@components/ui/AreaSpark";
-import { MeterBar } from "@components/ui/MeterBar";
-import { BASELINE } from "@components/ui/series";
+import { ChartTip } from "@components/charts/ChartTip";
+import { GaugeCurve } from "@components/charts/GaugeCurve";
+import { ShareMeter } from "@components/charts/ShareMeter";
 import { TONE_TEXT } from "@components/ui/surface";
-import { TooltipBlock } from "@components/ui/Tooltip";
+import { seriesSummary } from "@lib/charts/chartFormat";
+import { CHART_SURFACE } from "@lib/charts/chartSurface";
+import { METRIC_INK, TONE_METRIC } from "@lib/charts/metricTokens";
 import { formatHostPct } from "@lib/hostFormat";
+import { isRangeKey, rangeMinutes } from "@lib/timeRange";
 import { cn } from "@lib/utils";
 import { intervalLabel } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
 import { HOST_TEXT } from "@text/host";
 
-import type { ChartMark } from "@components/ui/interfaces/chartTypes";
 import type { Tone } from "@components/ui/surface";
+import type { GaugeMark } from "@lib/charts/interfaces/chartTypes";
 import type { SignalPoint } from "@lib/serviceTypes";
+
+/** CPU, memory and disk are shares of something whole. */
+const PERCENT = { min: 0, max: 100 };
 
 type GaugeRowProps = {
   name: string;
@@ -25,7 +31,7 @@ type GaugeRowProps = {
   /** The range's points, or `null` while there is no chart to draw — the panel says why, once. */
   points: SignalPoint[] | null;
   bucketMs: number;
-  marks?: ChartMark[];
+  marks?: GaugeMark[];
   /** Under the chart: what its lines are, or why it has no colour. */
   note: string;
   range: string;
@@ -47,9 +53,15 @@ export const GaugeRow = ({ name, pct, tone, detail, points, bucketMs, marks, not
     if (point === undefined) return null;
 
     return (
-      <TooltipBlock
-        subject={intervalLabel(Date.parse(point.t), bucketMs, tz)}
-        rows={[{ label: name, value: HOST_TEXT.percent(formatHostPct(point.v)) }]}
+      <ChartTip
+        title={intervalLabel(Date.parse(point.t), bucketMs, tz)}
+        rows={[
+          {
+            label: name,
+            value: HOST_TEXT.percent(formatHostPct(point.v)),
+            swatch: METRIC_INK[TONE_METRIC[tone]].swatch,
+          },
+        ]}
       />
     );
   };
@@ -62,11 +74,13 @@ export const GaugeRow = ({ name, pct, tone, detail, points, bucketMs, marks, not
     >
       <div className="flex items-center gap-2 text-row">
         <span className="w-16 shrink-0 text-chassis-text">{name}</span>
-        <MeterBar
-          share={(pct ?? 0) / 100}
-          tone={tone}
-          surface="chassis"
-        />
+        <span className="flex flex-1 items-center">
+          <ShareMeter
+            share={(pct ?? 0) / 100}
+            metric={TONE_METRIC[tone]}
+            surface={CHART_SURFACE.chassis}
+          />
+        </span>
         <span
           className={cn(
             "w-14 shrink-0 text-right tabular-nums transition-colors duration-150 ease-out",
@@ -80,19 +94,26 @@ export const GaugeRow = ({ name, pct, tone, detail, points, bucketMs, marks, not
       </div>
 
       {points !== null && (
-        <div className="ml-18 h-8 animate-fade">
-          <AreaSpark
-            values={points.map((point) => point.v)}
-            tone={tone}
-            surface="chassis"
-            baseline={BASELINE.percent}
-            marks={marks}
-            width={480}
-            height={32}
-            label={HOST_TEXT.chartLabel(name, range)}
-            tip={tip}
-          />
-        </div>
+        /* A percentage of something whole, so the axis is pinned 0–100: the height of the curve
+           is how full it is (IKN-86). */
+        <GaugeCurve
+          values={points.map((point) => point.v)}
+          metric={TONE_METRIC[tone]}
+          height={40}
+          spanMs={isRangeKey(range) ? rangeMinutes(range) * 60_000 : bucketMs * points.length}
+          domain={PERCENT}
+          marks={marks}
+          surface={CHART_SURFACE.chassis}
+          label={seriesSummary({
+            series: HOST_TEXT.chartLabel(name, range),
+            span: range,
+            total: null,
+            values: points.map((point) => point.v),
+            bucketName: () => null,
+          })}
+          tip={tip}
+          className="ml-18 animate-fade"
+        />
       )}
 
       <p className="ml-18 text-micro text-chassis-text-dim">{note}</p>

@@ -1,172 +1,103 @@
 "use client";
 
-import { BASELINE, layoutOf, pointIndexAt, pointsOf, runsOf } from "@components/ui/series";
-import { TONE_TEXT } from "@components/ui/surface";
-import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
-import { useCursorHover } from "@components/ui/useCursorHover";
+import { ChartTip } from "@components/charts/ChartTip";
+import { useElementSize } from "@components/charts/hooks/useElementSize";
+import { RangeLegend, RangeStrips } from "@components/charts/RangeStrips";
+import { seriesSummary } from "@lib/charts/chartFormat";
+import { METRIC, METRIC_INK } from "@lib/charts/metricTokens";
 import { tickIndices } from "@lib/chartTicks";
 import { formatLatency, PERCENTILE } from "@lib/metricsFormat";
-import { formatMs } from "@lib/serviceFormat";
-import { cn } from "@lib/utils";
 import { intervalLabel, timeLabel } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
 import { METRICS_TEXT } from "@text/metrics";
 
-import type { Tone } from "@components/ui/surface";
-import type { Percentile, RouteDetail } from "@lib/metricsTypes";
-import type { MouseEvent } from "react";
+import type { PercentileBucket } from "@lib/charts/interfaces/chartTypes";
+import type { RouteDetail } from "@lib/metricsTypes";
 
-/**
- * p50, p95 and p99 over the range, on **one** scale (IKN-23 §2).
- *
- * One scale is the whole point of drawing them together: the gap between the p50 and the p99 is
- * the tail, and a chart that scaled each line to its own box would draw three identical curves.
- * The floor is zero for the same reason — a latency's magnitude is what is being compared.
- *
- * Holes stay holes: an interval the server could not quote is `null` and each line is cut there,
- * exactly as `Sparkline` cuts its own (`series.ts`).
- */
-
-/** The `viewBox`, in user units; stretched to the card with `preserveAspectRatio="none"`. */
-const W = 300;
-const H = 100;
 const X_TICKS = 5;
 
-/** Drawn back to front, so the p50 — the line most of the requests are on — is on top. */
-const LINES: { key: Percentile; tone: Tone }[] = [
-  { key: PERCENTILE.p99, tone: "error" },
-  { key: PERCENTILE.p95, tone: "warn" },
-  { key: PERCENTILE.p50, tone: "ok" },
-];
+/**
+ * What the box holds besides the strips' plot: the baseline (1), the gap (4) and the tick row (14).
+ * Exact on purpose: the plot is sized from the box, and a box whose height came from its content
+ * would otherwise grow by the difference on every measurement.
+ */
+const CHROME_PX = 19;
 
+/**
+ * p50, p95 and p99 over the range as range strips, on **one** scale (IKN-23 §2, IKN-86).
+ *
+ * Each bucket is one strip from its p50 to its p99, with its p95 as a tick across it. The length
+ * of the strip is the tail: how far the slow requests sit from the typical one. The SLO is the
+ * dashed red line. The floor is zero, because a latency's size is what is being compared.
+ *
+ * An interval the server could not quote is `null` and draws no strip.
+ */
 export const PercentileChart = ({ detail }: PercentileChartProps) => {
   const { tz } = useZone();
-  const { hover, show, clear } = useCursorHover<number>();
+  const { ref, height: box } = useElementSize<HTMLDivElement>();
+  // The strips take whatever the card leaves them, less the tick row and the baseline.
+  const height = Math.max(60, box - CHROME_PX);
 
-  const values: Record<Percentile, (number | null)[]> = {
-    p50: detail.p50.points.map((point) => point.v),
-    p95: detail.p95.points.map((point) => point.v),
-    p99: detail.p99.points.map((point) => point.v),
-  };
-  const count = detail.p95.points.length;
-
-  // The y of every line from one layout over all three, so the scale is shared; the x is the
-  // series' own, because the merged list is three times longer than any line.
-  const scale = layoutOf([...values.p50, ...values.p95, ...values.p99], W, H, BASELINE.zero);
-  const step = count > 1 ? W / (count - 1) : 0;
-  const layout = { ...scale, x: (index: number) => index * step };
-
-  const known = scale.max > 0 && [values.p50, values.p95, values.p99].some((line) => line.some((v) => v !== null));
-  const threshold = detail.p95ThresholdMs <= scale.max ? scale.y(detail.p95ThresholdMs) : null;
-
-  const track = (event: MouseEvent<SVGSVGElement>) =>
-    show(event.clientX, event.clientY, pointIndexAt(event.clientX, event.currentTarget.getBoundingClientRect(), count));
-
-  const tip = (index: number) => {
+  const buckets: PercentileBucket[] = detail.p95.points.map((point, index) => ({
+    p50: detail.p50.points[index]?.v ?? null,
+    p95: point.v,
+    p99: detail.p99.points[index]?.v ?? null,
+  }));
+  const count = buckets.length;
+  const known = buckets.some((bucket) => bucket.p95 !== null || bucket.p99 !== null);
+  const last = detail.p95.points.at(-1);
+  const partialIndex = last && Date.parse(last.t) + detail.bucketMs > Date.parse(detail.to) ? count - 1 : null;
+  const name = (index: number) => {
     const point = detail.p95.points[index];
-    if (point === undefined) return null;
-
-    return (
-      <TooltipBlock
-        subject={intervalLabel(Date.parse(point.t), detail.bucketMs, tz)}
-        rows={LINES.map(({ key }) => {
-          const value = values[key][index];
-          return { label: key, value: formatLatency(value) };
-        })}
-      />
-    );
+    return point ? intervalLabel(Date.parse(point.t), detail.bucketMs, tz) : null;
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-1">
-      <div className="relative min-h-0 flex-1">
-        {known ? (
-          <>
-            {/* The top of the scale, in words — the chart has no axis otherwise. */}
-            <span className="pointer-events-none absolute top-0 left-0 text-micro tabular-nums text-work-text-dim">
-              {formatMs(scale.max)}ms
-            </span>
-            <svg
-              viewBox={`0 0 ${W} ${H}`}
-              preserveAspectRatio="none"
-              role="img"
-              aria-label={METRICS_TEXT.chartLabel(`${detail.summary.method} ${detail.summary.route}`)}
-              onMouseMove={track}
-              onMouseLeave={clear}
-              className="h-full w-full overflow-visible"
-              data-testid="percentile-chart"
-            >
-              {[0.25, 0.5, 0.75].map((fraction) => (
-                <line
-                  key={fraction}
-                  x1={0}
-                  x2={W}
-                  y1={H * fraction}
-                  y2={H * fraction}
-                  className="stroke-work-border-strong"
-                  strokeWidth={1}
-                  strokeDasharray="3 4"
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
-              {threshold !== null && (
-                <line
-                  x1={0}
-                  x2={W}
-                  y1={threshold}
-                  y2={threshold}
-                  stroke="currentColor"
-                  strokeOpacity={0.6}
-                  strokeWidth={1}
-                  strokeDasharray="1 3"
-                  vectorEffect="non-scaling-stroke"
-                  className={TONE_TEXT.work.error}
-                >
-                  <title>{METRICS_TEXT.threshold}</title>
-                </line>
-              )}
-              {LINES.map(({ key, tone }) => (
-                <g
-                  key={key}
-                  className={cn("transition-colors duration-150 ease-out", TONE_TEXT.work[tone])}
-                >
-                  {runsOf(values[key]).map((run) =>
-                    run.values.length > 1 ? (
-                      <polyline
-                        key={run.start}
-                        points={pointsOf(run, layout)}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={key === PERCENTILE.p95 ? 1.4 : 1}
-                        strokeLinejoin="round"
-                        vectorEffect="non-scaling-stroke"
-                      />
-                    ) : (
-                      <circle
-                        key={run.start}
-                        cx={layout.x(run.start)}
-                        cy={layout.y(run.values[0])}
-                        r={1}
-                        fill="currentColor"
-                      />
-                    ),
-                  )}
-                </g>
-              ))}
-            </svg>
-            <Tooltip
-              mode="cursor"
-              point={hover}
-            >
-              {hover ? tip(hover.data) : null}
-            </Tooltip>
-          </>
-        ) : (
-          <p className="flex h-full items-center justify-center text-row text-work-text-dim">{METRICS_TEXT.noChart}</p>
-        )}
-      </div>
+    <div
+      ref={ref}
+      className="flex min-h-0 flex-1 flex-col gap-1"
+    >
+      {known ? (
+        <RangeStrips
+          buckets={buckets}
+          height={height}
+          sloMs={detail.p95ThresholdMs}
+          partialIndex={partialIndex}
+          label={seriesSummary({
+            series: METRICS_TEXT.chartLabel(`${detail.summary.method} ${detail.summary.route}`),
+            span: "p95",
+            total: null,
+            values: buckets.map((bucket) => bucket.p95),
+            bucketName: name,
+          })}
+          tip={(index) => (
+            <ChartTip
+              title={name(index) ?? ""}
+              rows={[
+                {
+                  label: PERCENTILE.p50,
+                  value: formatLatency(buckets[index]?.p50 ?? null),
+                  swatch: METRIC_INK[METRIC.range].swatch,
+                },
+                {
+                  label: PERCENTILE.p95,
+                  value: formatLatency(buckets[index]?.p95 ?? null),
+                  swatch: METRIC_INK[METRIC.p95].swatch,
+                },
+                {
+                  label: PERCENTILE.p99,
+                  value: formatLatency(buckets[index]?.p99 ?? null),
+                  swatch: METRIC_INK[METRIC.range].swatch,
+                },
+              ]}
+            />
+          )}
+        />
+      ) : (
+        <p className="flex flex-1 items-center justify-center text-row text-work-text-dim">{METRICS_TEXT.noChart}</p>
+      )}
       {/* Always rendered, so the card does not change height between a chart and its absence. */}
-      <div className="flex h-3.5 flex-none justify-between text-micro tabular-nums text-work-text-dim">
+      <div className="flex h-3.5 flex-none justify-between text-chart-label tabular-nums text-chart-ref">
         {tickIndices(count, X_TICKS).map((index) => (
           <span key={index}>{timeLabel(Date.parse(detail.p95.points[index].t), detail.bucketMs, tz)}</span>
         ))}
@@ -179,17 +110,11 @@ type PercentileChartProps = {
   detail: RouteDetail;
 };
 
-/** The legend, in the card header — the mockup's three swatches. */
-export const PercentileLegend = () => (
-  <span className="flex items-center gap-2.5 text-micro text-work-text-muted">
-    {[...LINES].reverse().map(({ key, tone }) => (
-      <span
-        key={key}
-        className="flex items-center gap-1"
-      >
-        <span className={cn("h-0.5 w-2.5", TONE_TEXT.work[tone], "bg-current")} />
-        {key}
-      </span>
-    ))}
-  </span>
+/** The legend, in the card header: the strip, the p95 tick, and the SLO. */
+export const PercentileLegend = ({ sloMs }: PercentileLegendProps) => (
+  <RangeLegend slo={sloMs === null ? null : METRICS_TEXT.slo(formatLatency(sloMs))} />
 );
+
+type PercentileLegendProps = {
+  sloMs: number | null;
+};

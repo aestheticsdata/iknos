@@ -11,8 +11,12 @@ import type { Meta } from "./meta";
  * and browser on one calendar day. The same person on two days is two, and the name says so.
  */
 
-/** Hourly up to a day of range, daily beyond. */
-export const BUCKET = { hour: "hour", day: "day" } as const;
+/**
+ * The width of one bar, chosen by the server from the range so every chart lands between 60 and
+ * 170 bars (IKN-86): 15m → 15 s, 1h → 1 min, 24h → 10 min, 7d → 1 h, 14d → 2 h. `day` is only
+ * reached past two weeks, which no range in the top bar asks for.
+ */
+export const BUCKET = { s15: "15s", m1: "1m", m10: "10m", h1: "1h", h2: "2h", day: "day" } as const;
 export type TrafficBucket = (typeof BUCKET)[keyof typeof BUCKET];
 
 export const STATUS_CLASS = { s2xx: "2xx", s3xx: "3xx", s4xx: "4xx", s5xx: "5xx" } as const;
@@ -38,7 +42,10 @@ export type TrafficTotals = {
 export type TrafficPoint = {
   /** ISO-8601 — the bucket's start in the reader's time zone, which may precede the range. */
   t: string;
-  /** A daily bucket the rolling range cuts at either edge. */
+  /**
+   * A bucket the rolling range cuts at either edge. The last one is the bucket in progress, and the
+   * chart hatches it (IKN-86).
+   */
   partial: boolean;
   available: boolean;
   /** Each visitor-day counted once, in the bucket of its first page view — so the bars sum to the total. */

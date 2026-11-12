@@ -1,8 +1,12 @@
 "use client";
 
-import { AreaSpark } from "@components/ui/AreaSpark";
-import { TooltipBlock } from "@components/ui/Tooltip";
+import { ChartTip } from "@components/charts/ChartTip";
+import { GaugeCurve } from "@components/charts/GaugeCurve";
+import { seriesSummary } from "@lib/charts/chartFormat";
+import { CHART_SURFACE } from "@lib/charts/chartSurface";
+import { METRIC, METRIC_INK } from "@lib/charts/metricTokens";
 import { formatLoad } from "@lib/hostFormat";
+import { isRangeKey, rangeMinutes } from "@lib/timeRange";
 import { intervalLabel } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
 import { HOST_TEXT } from "@text/host";
@@ -32,9 +36,15 @@ export const LoadRow = ({ reading, points, bucketMs, range }: LoadRowProps) => {
     if (point === undefined) return null;
 
     return (
-      <TooltipBlock
-        subject={intervalLabel(Date.parse(point.t), bucketMs, tz)}
-        rows={[{ label: HOST_TEXT.load, value: point.v === null ? HOST_TEXT.absent : formatLoad(point.v) }]}
+      <ChartTip
+        title={intervalLabel(Date.parse(point.t), bucketMs, tz)}
+        rows={[
+          {
+            label: HOST_TEXT.load,
+            value: point.v === null ? HOST_TEXT.absent : formatLoad(point.v),
+            swatch: METRIC_INK[METRIC.neutral].swatch,
+          },
+        ]}
       />
     );
   };
@@ -61,17 +71,22 @@ export const LoadRow = ({ reading, points, bucketMs, range }: LoadRowProps) => {
       </div>
 
       {points !== null && (
-        <div className="ml-18 h-8 animate-fade">
-          <AreaSpark
-            values={points.map((point) => point.v)}
-            tone="neutral"
-            surface="chassis"
-            width={480}
-            height={32}
-            label={HOST_TEXT.chartLabel(HOST_TEXT.load, range)}
-            tip={tip}
-          />
-        </div>
+        <GaugeCurve
+          values={points.map((point) => point.v)}
+          metric={METRIC.neutral}
+          height={40}
+          spanMs={isRangeKey(range) ? rangeMinutes(range) * 60_000 : bucketMs * points.length}
+          surface={CHART_SURFACE.chassis}
+          label={seriesSummary({
+            series: HOST_TEXT.chartLabel(HOST_TEXT.load, range),
+            span: range,
+            total: null,
+            values: points.map((point) => point.v),
+            bucketName: () => null,
+          })}
+          tip={tip}
+          className="ml-18 animate-fade"
+        />
       )}
     </section>
   );

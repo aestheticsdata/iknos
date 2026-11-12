@@ -1,15 +1,18 @@
 "use client";
 
-import { AreaSpark } from "@components/ui/AreaSpark";
-import { BarSpark } from "@components/ui/BarSpark";
-import { MeterBar } from "@components/ui/MeterBar";
+import { BucketBars } from "@components/charts/BucketBars";
+import { ChartTip } from "@components/charts/ChartTip";
+import { GaugeCurve } from "@components/charts/GaugeCurve";
+import { ShareMeter } from "@components/charts/ShareMeter";
 import { Pending } from "@components/ui/Pending";
-import { Sparkline } from "@components/ui/Sparkline";
 import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
+import { seriesSummary } from "@lib/charts/chartFormat";
+import { METRIC, METRIC_INK, TONE_METRIC } from "@lib/charts/metricTokens";
 import { formatBytes } from "@lib/format";
 import { logsHref } from "@lib/logsHref";
 import { metricsHref } from "@lib/metricsHref";
 import {
+  ERROR_RATE_ALERT_PCT,
   formatHeap,
   formatMs,
   formatPercent,
@@ -22,6 +25,7 @@ import {
   poolShare,
   poolTone,
 } from "@lib/serviceFormat";
+import { rangeMinutes } from "@lib/timeRange";
 import { cn } from "@lib/utils";
 import { intervalLabel } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
@@ -29,6 +33,7 @@ import { SERVICE_TEXT } from "@text/service";
 import { SignalTile, TileEmpty } from "./SignalTile";
 
 import type { Tone } from "@components/ui/surface";
+import type { Metric } from "@lib/charts/interfaces/chartTypes";
 import type { NodeRuntime, ServiceSignals, SignalPoint } from "@lib/serviceTypes";
 import type { RangeKey } from "@lib/timeRange";
 import type { ReactNode } from "react";
@@ -47,14 +52,7 @@ import type { ReactNode } from "react";
  * one that reads `— req/s`, which is the honest sentence.
  */
 const seriesTip =
-  (
-    points: SignalPoint[],
-    bucketMs: number,
-    tz: string,
-    unit: string,
-    format: (value: number | null) => string,
-    context?: string,
-  ) =>
+  ({ points, bucketMs, tz, unit, format, metric }: TileTip) =>
   (index: number): ReactNode => {
     const point = points[index];
     if (point === undefined) return null;
@@ -63,13 +61,33 @@ const seriesTip =
     if (!Number.isFinite(at)) return null;
 
     return (
-      <TooltipBlock
-        subject={intervalLabel(at, bucketMs, tz)}
-        context={context}
-        rows={[{ label: unit, value: format(point.v) }]}
+      <ChartTip
+        title={intervalLabel(at, bucketMs, tz)}
+        rows={[{ label: unit, value: format(point.v), swatch: METRIC_INK[metric].swatch }]}
       />
     );
   };
+
+/** What a tile's tooltip is written from. */
+type TileTip = {
+  points: SignalPoint[];
+  bucketMs: number;
+  tz: string;
+  unit: string;
+  format: (value: number | null) => string;
+  metric: Metric;
+};
+
+/** The bucket in progress: the last one, when it runs past the end of the range. */
+const partialOf = (signals: ServiceSignals | null, points: SignalPoint[]): number | null => {
+  const last = points.at(-1);
+  if (!signals || !last) return null;
+  return Date.parse(last.t) + signals.bucketMs > Date.parse(signals.to) ? points.length - 1 : null;
+};
+
+/** A tile's chart in one sentence, for a screen reader. */
+const tileSummary = (series: string, range: RangeKey, values: (number | null)[]): string =>
+  seriesSummary({ series, span: `last ${range}`, total: null, values, bucketName: () => null });
 
 /**
  * The four signal tiles — design doc §5.2, and the half of the view that answers "is it well".
@@ -112,7 +130,7 @@ export const Signals = ({
        The row's height is pinned rather than left to the content. A tile is 99.5px of fixed rows
        — kicker, value, a 26px chart box — so it would barely move; but "barely" is the whole
        failure mode, and the log panel below must not jump a line every time a range changes. */}
-    <div className="grid h-[100px] grid-cols-4 gap-2.75">
+    <div className="grid h-31 grid-cols-4 gap-2.75">
       <ThroughputTile
         service={service}
         signals={signals}
@@ -171,11 +189,25 @@ const ThroughputTile = ({ service, signals, range, loading, error }: RangedTileP
       href={signals?.scraped ? metricsHref({ service, range }) : null}
     >
       {hasSeries(points) ? (
-        <AreaSpark
+        <GaugeCurve
           values={points.map((point) => point.v)}
-          tone="ok"
-          label={SERVICE_TEXT.throughputChart(service)}
-          tip={seriesTip(points, signals?.bucketMs ?? 0, tz, SERVICE_TEXT.throughputUnit, formatRate)}
+          metric={METRIC.gauge}
+          height={36}
+          spanMs={rangeMinutes(range) * 60_000}
+          label={tileSummary(
+            SERVICE_TEXT.throughputChart(service),
+            range,
+            points.map((point) => point.v),
+          )}
+          tip={seriesTip({
+            points,
+            bucketMs: signals?.bucketMs ?? 0,
+            tz,
+            unit: SERVICE_TEXT.throughputUnit,
+            format: formatRate,
+            metric: METRIC.gauge,
+          })}
+          className="w-full"
           data-testid="tile-chart"
           data-tile="throughput"
         />
@@ -228,16 +260,32 @@ const ErrorRateTile = ({
       hint={known ? `${SERVICE_TEXT.errorRateHint} · ${SERVICE_TEXT.toErrorLogs}` : SERVICE_TEXT.errorRateHint}
     >
       {known ? (
-        <BarSpark
-          values={points.map((point) => point.v)}
-          tone="error"
-          /* A chart of a single 0.4% blip normalised to full height reads as a catastrophe, so the
-             scale starts at one percent and only grows past it when something real does. */
-          max={1}
-          label={SERVICE_TEXT.errorChart(service)}
-          /* The one chart whose bars are drawn against a fixed floor rather than their own peak,
-             which is exactly the kind of scale a reader cannot see and has to be told. */
-          tip={seriesTip(points, signals?.bucketMs ?? 0, tz, SERVICE_TEXT.errorRateUnit, formatPercent)}
+        /* A share of responses per bucket, drawn as bars against the alert rule's own line: red
+           above it, neutral below (IKN-86). The scale starts at one percent, so a single 0.4% blip
+           does not fill the box. */
+        <BucketBars
+          series={{
+            values: points.map((point) => point.v),
+            metric: METRIC.errors,
+            minTop: 1,
+            threshold: { value: ERROR_RATE_ALERT_PCT },
+            partialIndex: partialOf(signals, points),
+          }}
+          height={30}
+          label={tileSummary(
+            SERVICE_TEXT.errorChart(service),
+            range,
+            points.map((point) => point.v),
+          )}
+          tip={seriesTip({
+            points,
+            bucketMs: signals?.bucketMs ?? 0,
+            tz,
+            unit: SERVICE_TEXT.errorRateUnit,
+            format: formatPercent,
+            metric: METRIC.errors,
+          })}
+          className="w-full"
           data-testid="tile-chart"
           data-tile="error-rate"
         />
@@ -269,21 +317,27 @@ const LatencyTile = ({ service, signals, range, loading, error }: RangedTileProp
       href={signals?.scraped ? metricsHref({ service, range }) : null}
     >
       {hasSeries(points) ? (
-        <Sparkline
+        /* A p95 is a gauge over time, so a framed curve (IKN-86): its own min and max on the axis,
+           and the range's average dashed across it. */
+        <GaugeCurve
           values={points.map((point) => point.v)}
-          tone="warn"
-          width={120}
-          height={26}
-          /* The reference mark §5.2 asks for, pointing at something a reader can name: the window's own
-             p95. Every interval above the dash was worse than the range as a whole. The mockup's
-             dash sits at a fixed height and refers to nothing at all. */
-          reference={value}
-          label={SERVICE_TEXT.latencyChart(service)}
-          /* This one is drawn against its own minimum — a curve between 405 and 412ms fills the
-             box — so without a number the shape is unreadable in the one direction that matters:
-             how far up is "up". The dashed rule is named in the header's hint, the bars in this. */
-          tip={seriesTip(points, signals?.bucketMs ?? 0, tz, SERVICE_TEXT.latencyUnit, formatMs)}
-          className="h-full w-full"
+          metric={METRIC.p95}
+          height={36}
+          spanMs={rangeMinutes(range) * 60_000}
+          label={tileSummary(
+            SERVICE_TEXT.latencyChart(service),
+            range,
+            points.map((point) => point.v),
+          )}
+          tip={seriesTip({
+            points,
+            bucketMs: signals?.bucketMs ?? 0,
+            tz,
+            unit: SERVICE_TEXT.latencyUnit,
+            format: formatMs,
+            metric: METRIC.p95,
+          })}
+          className="w-full"
           data-testid="tile-chart"
           data-tile="latency"
         />
@@ -432,10 +486,10 @@ const MeterRow = ({
     {/* 60px, not 52: `event loop` is ten characters, and at 10px of JetBrains Mono that is exactly
         60. A column an em too narrow wraps it onto a second line, which is how two rows of meters
         became three and climbed over the heap figure above them. */}
-    <span className="w-[60px] flex-none whitespace-nowrap">{label}</span>
-    <MeterBar
+    <span className="w-15 flex-none whitespace-nowrap">{label}</span>
+    <ShareMeter
       share={share}
-      tone={tone}
+      metric={TONE_METRIC[tone]}
     />
     {/* The figure, always — the bar is `aria-hidden` and a colour alone is not a reading. */}
     <span

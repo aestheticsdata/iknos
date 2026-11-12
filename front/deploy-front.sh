@@ -126,11 +126,13 @@ require_clean_tree() {
 # Everything red before the first byte is uploaded. A check that ran after the atomic switch would
 # be a rollback trigger rather than a gate.
 #
-# No test step, unlike the API's: the front has no suite yet. When it gets one this list is where
-# it goes, and the omission is deliberate rather than forgotten.
+# The fast checks only, lint, types and the unit tests (the owner's call, 2026-11-08, for every
+# project: no slow verification gate before a deploy). The local `next build` that used to sit
+# here is gone: the server builds the release itself, and a failed build there never reaches the
+# switch, so building twice only cost minutes.
 run_preflight_checks() {
-  local names=("lint" "typecheck" "build")
-  local commands=("pnpm lint" "pnpm typecheck" "pnpm build")
+  local names=("lint" "typecheck" "test")
+  local commands=("pnpm lint" "pnpm typecheck" "pnpm test")
   local index output
 
   for index in "${!names[@]}"; do

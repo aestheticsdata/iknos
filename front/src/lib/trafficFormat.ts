@@ -22,25 +22,63 @@ export const pagesPerVisit = (totals: TrafficTotals): string =>
 /** The zone the reader counts days in — sent to the API so its days are the reader's days. */
 export const readerTimeZone = (): string => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+/** How long each bucket is, nominally: a clock change makes one local hour or day longer. */
+export const BUCKET_MS: Record<TrafficBucket, number> = {
+  [BUCKET.s15]: 15_000,
+  [BUCKET.m1]: 60_000,
+  [BUCKET.m10]: 600_000,
+  [BUCKET.h1]: 3_600_000,
+  [BUCKET.h2]: 7_200_000,
+  [BUCKET.day]: 86_400_000,
+};
+
+/** The words beside the hatched swatch: what the bucket in progress is. */
+export const CURRENT_BUCKET: Record<TrafficBucket, string> = {
+  [BUCKET.s15]: "current 15 s",
+  [BUCKET.m1]: "current minute",
+  [BUCKET.m10]: "current 10 min",
+  [BUCKET.h1]: "current hour",
+  [BUCKET.h2]: "current 2 h",
+  [BUCKET.day]: "today",
+};
+
+/** The three clocks a bucket title is written with. */
+const CLOCK = { day: "day", minutes: "minutes", seconds: "seconds" } as const;
+
+type Clock = (typeof CLOCK)[keyof typeof CLOCK];
+
 const formatters = new Map<string, Intl.DateTimeFormat>();
 
-const formatterFor = (bucket: TrafficBucket, tz: string) => {
-  const key = `${bucket} ${tz}`;
+const formatterFor = (kind: Clock, tz: string) => {
+  const key = `${kind} ${tz}`;
   let formatter = formatters.get(key);
   if (!formatter) {
     formatter =
-      bucket === BUCKET.day
-        ? new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: tz })
-        : new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: tz });
+      kind === CLOCK.day
+        ? new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", timeZone: tz })
+        : new Intl.DateTimeFormat("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+            ...(kind === CLOCK.seconds ? { second: "2-digit" } : {}),
+            hourCycle: "h23",
+            timeZone: tz,
+          });
     formatters.set(key, formatter);
   }
   return formatter;
 };
 
-/** `Sat 31 Oct` or `14:00` — what a bar covers, in the zone the server counted it in. */
-export const bucketLabel = (point: TrafficPoint, bucket: TrafficBucket, tz: string): string => {
-  const label = formatterFor(bucket, tz).format(new Date(point.t)).replace(",", "");
-  return point.partial ? `${label} (partial)` : label;
+/**
+ * What a bar covers, in the zone the server counted it in: `Sat 7 · 14:00 → 15:00`, or `Sat 31`
+ * for a whole day. The tooltip prints it in capitals.
+ */
+export const bucketTitle = (point: TrafficPoint, bucket: TrafficBucket, tz: string): string => {
+  const start = Date.parse(point.t);
+  const day = formatterFor(CLOCK.day, tz).format(start).replace(",", "");
+  if (bucket === BUCKET.day) return point.partial ? `${day} (partial)` : day;
+
+  const clock = formatterFor(bucket === BUCKET.s15 ? CLOCK.seconds : CLOCK.minutes, tz);
+  return `${day} · ${clock.format(start)} → ${clock.format(start + BUCKET_MS[bucket])}`;
 };
 
 /** Visitor-days per day of range — over the range's length, not the bucket count, which has two partial days. */

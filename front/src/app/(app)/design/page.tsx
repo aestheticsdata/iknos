@@ -1,23 +1,25 @@
 "use client";
 
-import { AreaSpark } from "@components/ui/AreaSpark";
+import { BucketBars } from "@components/charts/BucketBars";
+import { ChartTip } from "@components/charts/ChartTip";
+import { GaugeCurve } from "@components/charts/GaugeCurve";
+import { RangeStrips } from "@components/charts/RangeStrips";
+import { ShareMeter } from "@components/charts/ShareMeter";
 import { Badge } from "@components/ui/Badge";
-import { BarSpark } from "@components/ui/BarSpark";
 import { Button } from "@components/ui/Button";
 import { Card } from "@components/ui/Card";
 import { Chip } from "@components/ui/Chip";
 import { DenseTable } from "@components/ui/DenseTable";
 import { Dot } from "@components/ui/Dot";
 import { Field } from "@components/ui/Field";
-import { MeterBar } from "@components/ui/MeterBar";
 import { Modal } from "@components/ui/Modal";
 import { Pending } from "@components/ui/Pending";
 import { Select } from "@components/ui/Select";
-import { Sparkline } from "@components/ui/Sparkline";
 import { Spinner } from "@components/ui/Spinner";
 import { SURFACE_SCROLL, SURFACE_TEXT_MUTED } from "@components/ui/surface";
 import { useToast } from "@components/ui/Toast";
-import { Tooltip, TooltipBlock } from "@components/ui/Tooltip";
+import { formatChartValue } from "@lib/charts/chartFormat";
+import { METRIC, METRIC_INK } from "@lib/charts/metricTokens";
 import { cn } from "@lib/utils";
 import { useState } from "react";
 
@@ -59,11 +61,23 @@ const BARS = [0, 0, 0.4, 0, null, null, 1.8, 2.4, 0.9, 0, 0, 0];
  */
 const demoTip = (values: (number | null)[], unit: string) => (index: number) =>
   values[index] === undefined ? null : (
-    <TooltipBlock
-      subject={`minute ${index + 1}`}
-      rows={[{ label: unit, value: values[index] === null ? "—" : String(values[index]) }]}
+    <ChartTip
+      title={`minute ${index + 1}`}
+      rows={[
+        { label: unit, value: formatChartValue(values[index] ?? null), swatch: METRIC_INK[METRIC.neutral].swatch },
+      ]}
     />
   );
+
+/** Latency strips for the specimen: p50 / p95 / p99 per minute. */
+const LATENCY = [
+  { p50: 80, p95: 190, p99: 260 },
+  { p50: 72, p95: 210, p99: 300 },
+  { p50: 90, p95: 180, p99: 240 },
+  { p50: null, p95: null, p99: null },
+  { p50: 85, p95: 340, p99: 480 },
+  { p50: 78, p95: 220, p99: 310 },
+];
 
 /** Enough lines to overflow the box below and give the bar something to do. */
 const SCROLL_LINES = Array.from(
@@ -235,68 +249,48 @@ const SurfacePanel = ({ surface }: { surface: Surface }) => (
                 { value: "error", label: "error only" },
               ]}
             />
-            <div className="flex items-end gap-3">
-              {/* The two modes side by side: this one wraps a trigger and explains the whole chart,
-                  and the three below let each mark speak for itself. */}
-              <Tooltip
-                mode="hover"
-                content="Events per minute, last 20 minutes"
-              >
-                <Sparkline
-                  values={SERIES}
-                  surface={surface}
-                  tone="ok"
-                  label="Ingest rate, last 20 minutes"
-                />
-              </Tooltip>
-              {/* The empty series renders nothing at all — the rule the service rail depends on. */}
-              <Sparkline
-                values={[]}
+            {/* The chart language (IKN-86): the mark follows the data. Counts are bars, gauges are
+                framed curves, latency is range strips, and a share is a segmented meter. */}
+            <div className="grid grid-cols-2 items-end gap-3">
+              <BucketBars
+                series={{ values: SERIES, metric: METRIC.visitors, partialIndex: SERIES.length - 1 }}
                 surface={surface}
-                label="No series yet"
+                height={30}
+                showPeak
+                label="Visitors per minute, last 20 minutes, the newest still filling"
+                tip={demoTip(SERIES, "visitors")}
               />
-              {/* A hole in the middle stays a hole: two polylines, not one line walking across it. */}
-              <Sparkline
+              <BucketBars
+                series={{ values: BARS, metric: METRIC.errors, minTop: 1, threshold: { value: 1.2 } }}
+                surface={surface}
+                height={30}
+                label="Error rate against its threshold, with an unscraped interval"
+                tip={demoTip(BARS, "%")}
+              />
+              <GaugeCurve
                 values={GAPPED}
+                height={36}
+                spanMs={20 * 60_000}
                 surface={surface}
-                tone="warn"
-                reference={12}
-                label="A series with a gap, against a reference"
-                tip={demoTip(GAPPED, "lines/min")}
+                label="Throughput, with an interval nobody scraped"
+                tip={demoTip(GAPPED, "req/s")}
               />
-            </div>
-
-            {/* The three dataviz primitives the signal tiles are built from — IKN-13. */}
-            <div className="grid grid-cols-3 items-end gap-3">
-              <span className="h-[26px]">
-                <AreaSpark
-                  values={GAPPED}
-                  surface={surface}
-                  tone="ok"
-                  label="Throughput, with an interval nobody scraped"
-                  tip={demoTip(GAPPED, "req/s")}
-                />
-              </span>
-              <span className="h-[26px]">
-                <BarSpark
-                  values={BARS}
-                  surface={surface}
-                  tone="error"
-                  max={1}
-                  label="Error rate, with a measured zero and an unscraped interval"
-                  tip={demoTip(BARS, "%")}
-                />
-              </span>
-              <span className="flex items-center gap-1.5 text-micro">
-                <MeterBar
+              <RangeStrips
+                buckets={LATENCY}
+                height={50}
+                sloMs={300}
+                partialIndex={LATENCY.length - 1}
+                label="Latency, p50 to p99, against a 300ms SLO"
+              />
+              <span className="flex items-center gap-3 text-micro">
+                <ShareMeter
                   share={0.3}
                   surface={surface}
-                  tone="ok"
                 />
-                <MeterBar
+                <ShareMeter
                   share={1}
+                  metric={METRIC.errors}
                   surface={surface}
-                  tone="error"
                 />
               </span>
             </div>

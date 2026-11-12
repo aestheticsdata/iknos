@@ -8,7 +8,7 @@ import { HOST_TEXT } from "@text/host";
 import { GaugeRow } from "./GaugeRow";
 import { LoadRow } from "./LoadRow";
 
-import type { ChartMark } from "@components/ui/interfaces/chartTypes";
+import type { GaugeMark } from "@lib/charts/interfaces/chartTypes";
 import type { HostGauge, HostNow, HostSeries, HostThresholds } from "@lib/interfaces/hostTypes";
 import type { RangeKey } from "@lib/timeRange";
 import type { Polled } from "@lib/usePolledResource";
@@ -25,13 +25,13 @@ const usedOf = (gauge: HostGauge | undefined): string =>
     ? HOST_TEXT.absent
     : HOST_TEXT.usedOf(formatBinaryBytes(gauge.usedBytes), formatBinaryBytes(gauge.totalBytes));
 
-/** The disk rule's two lines, drawn across the disk chart in the tones they turn the bar. */
-const diskMarks = (thresholds: HostThresholds | null): ChartMark[] =>
+/** The disk rule's two lines, drawn dashed across the disk chart (IKN-86). */
+const diskMarks = (thresholds: HostThresholds | null): GaugeMark[] =>
   thresholds === null
     ? []
     : [
-        { value: thresholds.warnPct, tone: GAUGE_TONE[HOST_LEVEL.warning] },
-        { value: thresholds.criticalPct, tone: GAUGE_TONE[HOST_LEVEL.critical] },
+        { value: thresholds.warnPct, label: HOST_TEXT.markWarning(thresholds.warnPct) },
+        { value: thresholds.criticalPct, label: HOST_TEXT.markCritical(thresholds.criticalPct) },
       ];
 
 /**

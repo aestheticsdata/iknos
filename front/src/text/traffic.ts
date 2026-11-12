@@ -48,9 +48,11 @@ export const TRAFFIC_TEXT = {
   seriesVisitors: "visitors arriving",
   seriesPageViews: "page views",
   seriesAutomated: "bots and scanners",
-  chartLabel: (series: string) => `${series} per interval over the range`,
-  tip: (label: string, value: string, series: string) => `${label} · ${value} ${series}`,
-  tipGone: (label: string) => `${label} · older than the retention`,
+  panelLabel: (range: string) =>
+    `Visitors, page views and bots over the last ${range}. Arrow keys move along the buckets.`,
+  perDay: (n: string) => `${n} / day`,
+  inRange: "in range",
+  hits: "hits",
 
   /* ── Tables ───────────────────────────────────────────────────────────────────────────────── */
   topPages: "top pages",
@@ -63,7 +65,7 @@ export const TRAFFIC_TEXT = {
   devices: "devices",
   hourOfDay: "hour of day",
   hourOfDayLabel: "Page views by hour of day, in your time zone",
-  hourTip: (hour: number, views: string) => `${String(hour).padStart(2, "0")}:00 · ${views} page views`,
+  hourName: (hour: number) => `${String(hour).padStart(2, "0")}:00 → ${String((hour + 1) % 24).padStart(2, "0")}:00`,
   bots: "bots",
   scanners: (requests: string, addresses: string) => `scanners: ${requests} requests from ${addresses} addresses`,
   previewTag: "preview",

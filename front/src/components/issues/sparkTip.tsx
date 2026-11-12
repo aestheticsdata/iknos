@@ -1,7 +1,8 @@
 "use client";
 
-import { TooltipBlock } from "@components/ui/Tooltip";
-import { formatCount } from "@lib/format";
+import { ChartTip } from "@components/charts/ChartTip";
+import { formatChartValue } from "@lib/charts/chartFormat";
+import { METRIC, METRIC_INK } from "@lib/charts/metricTokens";
 import { intervalLabel } from "@lib/zone";
 import { ISSUES_TEXT } from "@text/issues";
 
@@ -23,7 +24,7 @@ import type { ReactNode } from "react";
  * stayed open.
  */
 export const sparkTip =
-  (window: { from: string; bucketMs: number } | null, counts: number[], tz: string) =>
+  (window: SparkWindow | null, counts: number[], tz: string) =>
   (index: number): ReactNode => {
     const count = counts[index];
     if (window === null || count === undefined) return null;
@@ -32,9 +33,14 @@ export const sparkTip =
     if (!Number.isFinite(start)) return null;
 
     return (
-      <TooltipBlock
-        subject={intervalLabel(start + index * window.bucketMs, window.bucketMs, tz)}
-        rows={[{ label: ISSUES_TEXT.sparkRow, value: formatCount(count) }]}
+      <ChartTip
+        title={intervalLabel(start + index * window.bucketMs, window.bucketMs, tz)}
+        rows={[
+          { label: ISSUES_TEXT.sparkRow, value: formatChartValue(count), swatch: METRIC_INK[METRIC.neutral].swatch },
+        ]}
       />
     );
   };
+
+/** The axis the counts sit on, as the server sent it. */
+type SparkWindow = { from: string; bucketMs: number };

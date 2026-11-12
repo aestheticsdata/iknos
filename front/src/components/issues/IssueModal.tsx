@@ -1,14 +1,16 @@
 "use client";
 
+import { BucketBars } from "@components/charts/BucketBars";
 import { sparkTip } from "@components/issues/sparkTip";
 import { Badge } from "@components/ui/Badge";
-import { BarSpark } from "@components/ui/BarSpark";
 import { Button } from "@components/ui/Button";
 import { Modal } from "@components/ui/Modal";
 import { MODAL_SIZE } from "@components/ui/modalSize";
 import { Pending } from "@components/ui/Pending";
 import { TONE_TEXT } from "@components/ui/surface";
 import { Tooltip } from "@components/ui/Tooltip";
+import { CHART_SURFACE } from "@lib/charts/chartSurface";
+import { METRIC } from "@lib/charts/metricTokens";
 import { useTimeRange } from "@lib/chassisState";
 import { formatCount } from "@lib/format";
 import { formatAgo, issueTitle, recencyTone } from "@lib/issueFormat";
@@ -245,15 +247,16 @@ const Body = ({
           data-testid="issue-occurrences"
         >
           {series !== null && series.counts.length > 0 ? (
-            <BarSpark
-              values={series.counts}
-              tone={tone === "error" ? "error" : "info"}
-              surface="chassis"
-              height={64}
+            <BucketBars
+              series={{
+                values: series.counts,
+                metric: tone === "error" ? METRIC.errors : METRIC.neutral,
+                partialIndex: series.counts.length - 1,
+              }}
+              surface={CHART_SURFACE.chassis}
+              height={51}
+              showPeak
               label={ISSUES_TEXT.sparkLabel(issueTitle(issue))}
-              /* The one chart in this product with room for a real axis and still without one —
-                 sixty-four pixels tall, full width, and until now the only number anywhere near it
-                 was the window's total. */
               tip={sparkTip(series, series.counts, tz)}
             />
           ) : (

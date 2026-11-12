@@ -1,7 +1,9 @@
 "use client";
 
-import { MeterBar } from "@components/ui/MeterBar";
-import { Sparkline } from "@components/ui/Sparkline";
+import { BucketBars } from "@components/charts/BucketBars";
+import { ShareMeter } from "@components/charts/ShareMeter";
+import { seriesSummary } from "@lib/charts/chartFormat";
+import { METRIC } from "@lib/charts/metricTokens";
 import { useSelectedService } from "@lib/chassisState";
 import { formatCount } from "@lib/format";
 import { formatShare } from "@lib/trafficFormat";
@@ -37,20 +39,30 @@ export const SiteCard = ({ site }: SiteCardProps) => {
               label={TRAFFIC_TEXT.pageViews}
             />
           </div>
-          <div className="h-6">
-            <Sparkline
-              values={site.series}
-              tone="ok"
-              label={TRAFFIC_TEXT.sparkLabel(site.service)}
-              className="h-full w-full"
-            />
-          </div>
+          {/* A count per bucket, so bars (IKN-86); the last bucket is the one in progress. */}
+          <BucketBars
+            series={{
+              values: site.series,
+              metric: METRIC.visitors,
+              partialIndex: site.series.length > 0 ? site.series.length - 1 : null,
+            }}
+            height={24}
+            label={seriesSummary({
+              series: TRAFFIC_TEXT.sparkLabel(site.service),
+              span: TRAFFIC_TEXT.visitors,
+              total: formatCount(site.visitorDays),
+              values: site.series,
+              bucketName: () => null,
+            })}
+          />
           <div className="flex items-center gap-2 text-row text-work-text-muted">
             <span className="w-12 flex-none">{TRAFFIC_TEXT.humanShare}</span>
-            <MeterBar
-              share={site.humanShare ?? 0}
-              className="flex-1"
-            />
+            <span className="flex flex-1 justify-end">
+              <ShareMeter
+                share={site.humanShare ?? 0}
+                metric={METRIC.visitors}
+              />
+            </span>
             <span className="w-8 flex-none text-right tabular-nums">{formatShare(site.humanShare)}</span>
           </div>
           {site.topSource !== null && (

@@ -216,8 +216,9 @@ describe("signal tiles", () => {
       error: null,
     });
 
-    expect(html).toContain("bg-work-error");
-    expect(html).toContain("width:100%");
+    // Every one of the pool meter's twenty segments lit, in the error ink (IKN-86).
+    const pool = html.slice(html.indexOf('data-meter="db-pool"'));
+    expect((pool.match(/text-chart-error/g) ?? []).length).toBe(20);
     expect(html).toContain("10/10 · 2 waiting");
     expect(html).toContain("140ms");
   });
@@ -253,21 +254,13 @@ describe("signal tiles", () => {
     expect(html).not.toContain("No samples in this range.");
   });
 
-  it("breaks the line at a hole instead of walking across it", () => {
+  it("puts every chart's summary on an <svg role=img> once it has a width to draw in", () => {
+    // Server-rendered, a chart has not measured its width yet and draws no bars (IKN-86): what it
+    // must still render is its frame, so the tile holds its height. The bars and their summary
+    // arrive on the first measurement, in the browser.
     const html = tiles({
       service: "pfa-nest-api",
-      signals: signals({
-        p95: {
-          value: 9.5,
-          points: [
-            { t: "a", v: 9 },
-            { t: "b", v: 10 },
-            { t: "c", v: null },
-            { t: "d", v: 8 },
-            { t: "e", v: 9 },
-          ],
-        },
-      }),
+      signals: signals(),
       runtime: null,
       range: "1h",
       loading: false,
@@ -275,7 +268,7 @@ describe("signal tiles", () => {
       error: null,
     });
 
-    // Two polylines for one series: the run before the hole and the run after it.
-    expect(html.match(/<polyline/g)?.length).toBe(2);
+    expect(html).toContain('data-tile="error-rate"');
+    expect(html).not.toContain("<polyline");
   });
 });
