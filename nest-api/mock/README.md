@@ -24,6 +24,16 @@ samples from, so the scraper never warns. Fill-only: the day an app gets real in
 alone — a probe at a dead port writes a failing row, and the loader must not paint the fleet
 red to decorate it.
 
+The AI pipeline runs (IKN-90) sit beside them in `spans.json`: fourteen days of runs for
+`fathom-front`, `gale-front` and `dovetail-front`, shaped exactly as Officina's `buildTrace` emits
+them, one run per line. The story: `fathom-front`'s spec prompt goes v13 → v14 (a canary nine days
+back, all traffic six days back) and human approval falls with it; its codegen model changes eleven
+days back; its newest run is still going; about a quarter of the runs carry their prompts. The
+loader expands each batch back into OTLP/JSON and writes it through the production `parseTraces`
+and `SpanWriter`, so a span the API would refuse is refused here too. Fourteen days because that is
+the production retention; a laptop on `IKNOS_RETENTION_DAYS=7` drops the older half at the next
+maintenance pass.
+
 Two commands, two verbs. **`pnpm mock`** loads the corpus: it seeds the service registry first
 (`pnpm seed`, idempotent), resets the data tables it fills — never `app_user`, never `service`,
 never `ingest_offset` — then shifts every timestamp by one delta so the newest row lands on the

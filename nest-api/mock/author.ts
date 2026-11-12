@@ -13,6 +13,7 @@ import {
   USER_AGENTS,
   USER_IDS,
 } from "./profiles";
+import { authorSpans } from "./spans-author";
 
 import type { ErrorTemplate, Profile, Route } from "./profiles";
 
@@ -1020,13 +1021,28 @@ writeFileSync(join(OUT_DIR, "processes.json"), stableJson(processes));
 writeFileSync(join(OUT_DIR, "issues.json"), stableJson(issues));
 writeFileSync(join(OUT_DIR, "alerts.json"), stableJson(alerts));
 
+/*
+ * The AI pipeline runs (IKN-90), one run per line: pretty-printed they would weigh ten times as much,
+ * and a line per run still diffs run by run.
+ */
+const spanCorpus = authorSpans(REFERENCE_MS);
+const spanBody = spanCorpus
+  .map(
+    (entry) =>
+      `  {"service":${JSON.stringify(entry.service)},"runs":[\n${entry.runs.map((run) => `    ${JSON.stringify(run)}`).join(",\n")}\n  ]}`,
+  )
+  .join(",\n");
+writeFileSync(join(OUT_DIR, "spans.json"), `[\n${spanBody}\n]\n`);
+const spanRuns = spanCorpus.reduce((a, entry) => a + entry.runs.length, 0);
+const spanRows = spanCorpus.reduce((a, entry) => a + entry.runs.reduce((b, run) => b + run.spans.length, 0), 0);
+
 const metricRows = metricSeries.reduce((a, s) => a + s.points.length, 0);
 const rollupRows = rollupSeries.reduce((a, s) => a + s.hours.length, 0);
 const healthRows = health.reduce((a, s) => a + s.rows.length, 0);
 console.log(
   `corpus written — ${logLines} log lines across ${linesByService.size} services, ` +
     `${metricRows} metric samples, ${rollupRows} rollup hours, ${healthRows} health probes, ` +
-    `${host.length} host samples, ${processes.length} process samples, ${issues.length} issues, ${alerts.length} alerts`,
+    `${host.length} host samples, ${processes.length} process samples, ${issues.length} issues, ${alerts.length} alerts, ${spanRuns} AI runs (${spanRows} spans)`,
 );
 
 /** Verified fingerprint sanity: sha256 backing both hashes, same as production. */

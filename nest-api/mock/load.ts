@@ -4,6 +4,7 @@ import { parse } from "@ingest/parser";
 import { persistBatch } from "@ingest/writer";
 import { loadDatabaseUrl, looksLikeProduction, openPrisma, refuseUnlessLoopback } from "./env";
 import { PROFILES } from "./profiles";
+import { loadSpans } from "./spans-load";
 
 import type { PrismaService } from "@db/prisma.service";
 import type { PrismaClient } from "@generated/prisma/client";
@@ -304,6 +305,9 @@ async function main(): Promise<void> {
       prisma.issue.deleteMany(),
       prisma.alertStateChange.deleteMany({ where: { alertId: { notIn: openIds } } }),
       prisma.alert.deleteMany({ where: { openKey: null } }),
+      prisma.spanContent.deleteMany(),
+      prisma.spanEvent.deleteMany(),
+      prisma.span.deleteMany(),
     ]),
   );
   const cleared = reset.reduce((a, r) => a + r.count, 0);
@@ -487,6 +491,9 @@ async function main(): Promise<void> {
     alertChanges += changes.length;
   }
 
+  /* The AI pipeline runs (IKN-90), through the production OTLP parser and span writer. */
+  const spans = await withRetry("span", () => loadSpans(db, MOCK_DIR, delta));
+
   const newest = new Date(referenceMs + delta);
   const oldest = logRecords.length > 0 ? logRecords[0].ts : newest;
   console.log(`cleared ${cleared} rows, then loaded:`);
@@ -498,6 +505,9 @@ async function main(): Promise<void> {
   console.log(`  process_sample     ${processRows.length}`);
   console.log(`  issue              ${issues.length} (+ ${issueEvents} events)`);
   console.log(`  alert              ${alerts.length} (+ ${alertChanges} state changes)`);
+  console.log(
+    `  span               ${spans.stored}${spans.rejected > 0 ? ` (${spans.rejected} refused by the parser)` : ""}`,
+  );
   console.log(`anchored on now: newest row ${newest.toISOString()}, oldest log ${oldest.toISOString()}`);
 }
 
