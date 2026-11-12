@@ -1,21 +1,19 @@
 import { readJsonColumn } from "@common/json-column";
-import { CONTENT_STATE, TRACE_STATUS } from "@contracts/traces";
+import { CONTENT_STATE } from "@contracts/traces";
 import { BadRequestException } from "@nestjs/common";
 import { SPAN_LEVEL_INDEX, STATUS_MESSAGE_CONTENT_KEY } from "./otlp-limits";
 
-import type { ContentState, SpanEventRow, SpanRow, TraceStatus, TraceSummary } from "@contracts/traces";
+import type { ContentState, SpanEventRow, SpanRow } from "@contracts/traces";
 import type { Span, SpanContent, SpanEvent } from "@generated/prisma/client";
-import type { RawTraceRow, TraceRows } from "./interfaces/otlp-types";
+import type { TraceRows } from "./interfaces/otlp-types";
 
 /**
  * Turning `span` rows into the Traces view's contracts (IKN-87). Pure, so the arithmetic and the
  * edge cases are tested without a database.
  */
 
-/** The separator `GROUP_CONCAT` joins names and models with — a control character no name contains. */
-export const CONCAT_SEPARATOR = "\u001f";
-
-export const DEFAULT_TRACE_LIMIT = 100;
+/** A page of the run list (IKN-91). */
+export const DEFAULT_TRACE_LIMIT = 50;
 export const MAX_TRACE_LIMIT = 500;
 
 /** A trace with more spans than this is a loop, not a run anyone reads span by span. */
@@ -27,40 +25,6 @@ export const MAX_CONTENT_PER_TRACE = 20_000;
 
 /** OTLP/W3C trace ids: 32 lower-case hex. A shape check before the index walk, not a security one. */
 export const TRACE_ID_SHAPE = /^[0-9a-f]{32}$/;
-
-/** `bigint`, `Decimal`, string or number, as the driver chose — or `null` for SQL NULL. */
-function num(value: unknown): number | null {
-  if (value === null || value === undefined) return null;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-}
-
-/** The trace's verdict: any failure wins, then any explicit success. */
-function statusOf(raw: RawTraceRow): TraceStatus {
-  if ((num(raw.anyError) ?? 0) > 0) return TRACE_STATUS.error;
-  if ((num(raw.anyOk) ?? 0) > 0) return TRACE_STATUS.ok;
-  return TRACE_STATUS.unset;
-}
-
-export function toSummary(raw: RawTraceRow): TraceSummary {
-  const startUs = num(raw.startUs) ?? 0;
-  const endUs = num(raw.endUs) ?? startUs;
-
-  return {
-    traceId: raw.traceId,
-    service: raw.service,
-    rootName: raw.rootName?.split(CONCAT_SEPARATOR)[0] ?? "",
-    startUs,
-    durationUs: Math.max(0, endUs - startUs),
-    spanCount: num(raw.spanCount) ?? 0,
-    status: statusOf(raw),
-    inputTokens: num(raw.inputTokens),
-    outputTokens: num(raw.outputTokens),
-    models: raw.models ? raw.models.split(CONCAT_SEPARATOR).filter((m) => m !== "") : [],
-    failedEvaluations: num(raw.failedEvaluations) ?? 0,
-    humanFeedback: num(raw.humanFeedback) ?? 0,
-  };
-}
 
 /** The key one span's rows are grouped under: its id, and its `ts`, as the unique keys have it. */
 const ownerKey = (spanId: string, ts: Date): string => `${spanId}@${ts.getTime()}`;
@@ -131,6 +95,7 @@ export function toSpanRow(span: Span, events: SpanEvent[], content: Map<number, 
     content: Object.keys(spanContent).length > 0 ? spanContent : null,
     contentState: contentStateOf(span, content !== undefined && content.size > 0),
     contentDays: span.contentDays,
+    contentUntilUs: span.contentUntil === null ? null : span.contentUntil.getTime() * 1000,
   };
   return row;
 }

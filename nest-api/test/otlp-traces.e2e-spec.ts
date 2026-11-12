@@ -314,23 +314,25 @@ describe("the read routes", () => {
     return `from=${from}&to=${to}`;
   };
 
-  it("lists one row per trace, with its root, its tokens and its model", async () => {
+  it("lists one row per run, with its pipeline, its tokens and its model", async () => {
     const res = await request(app.getHttpServer())
       .get(`/api/traces?service=${serviceA}&${window()}`)
       .set("Cookie", cookie)
       .expect(200);
 
-    const row = res.body.traces.find((t: { traceId: string }) => t.traceId === traceId);
+    const row = res.body.runs.find((t: { traceId: string }) => t.traceId === traceId);
     expect(row).toMatchObject({
       service: serviceA,
-      rootName: "pipeline.run",
+      pipeline: "pipeline.run",
       spanCount: 2,
       durationUs: 2_000_000,
-      status: "ok",
+      checks: "none",
+      review: "none",
       inputTokens: 40,
       outputTokens: 12,
-      models: ["test-model"],
+      model: "test-model",
     });
+    expect(res.body.kpis.runs).toBeGreaterThanOrEqual(1);
   });
 
   it("returns one trace's spans in start order", async () => {
@@ -341,11 +343,13 @@ describe("the read routes", () => {
 
     expect(res.body.spans.map((s: { name: string }) => s.name)).toEqual(["pipeline.run", "llm.generate"]);
     expect(res.body.spans[1].parentSpanId).toBe(res.body.spans[0].spanId);
+    expect(res.body.summary).toMatchObject({ traceId, pipeline: "pipeline.run" });
   });
 
-  it("requires a window and a service", async () => {
+  it("requires a window, and a service for quality and versions", async () => {
     await request(app.getHttpServer()).get(`/api/traces?service=${serviceA}`).set("Cookie", cookie).expect(400);
-    await request(app.getHttpServer()).get(`/api/traces?${window()}`).set("Cookie", cookie).expect(400);
+    await request(app.getHttpServer()).get(`/api/traces/quality?${window()}`).set("Cookie", cookie).expect(400);
+    await request(app.getHttpServer()).get(`/api/traces/versions?${window()}`).set("Cookie", cookie).expect(400);
   });
 });
 
@@ -449,7 +453,7 @@ describe("events and content (IKN-87 v2)", () => {
     expect(days).toBeLessThanOrEqual(3);
   });
 
-  it("reads events and retained content back on their span, and counts them in the list", async () => {
+  it("reads events and retained content back on their span, and reads the run's checks and review from them", async () => {
     const traceId = hex(16);
     await post(tokenA).send(fullRun(traceId, 3)).expect(200);
 
@@ -467,8 +471,8 @@ describe("events and content (IKN-87 v2)", () => {
       .get(`/api/traces?service=${serviceA}&${window()}`)
       .set("Cookie", cookie)
       .expect(200);
-    const row = list.body.traces.find((t: { traceId: string }) => t.traceId === traceId);
-    expect(row).toMatchObject({ spanCount: 2, failedEvaluations: 1, humanFeedback: 1 });
+    const row = list.body.runs.find((t: { traceId: string }) => t.traceId === traceId);
+    expect(row).toMatchObject({ spanCount: 2, checks: "failed", failedGates: 1, review: "edit", telemetry: "full" });
   });
 
   it("purges content past its expiry and keeps the span and its events readable", async () => {

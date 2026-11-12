@@ -116,41 +116,12 @@ export type OriginCheck = {
   isKnownOrigin: (origin: string) => Promise<boolean>;
 };
 
-/**
- * One row of the trace-list aggregate as `$queryRaw` returns it. Numeric columns arrive as
- * `bigint`, `Decimal` or `number` depending on the expression, so they are `unknown` here and
- * narrowed by `toSummary`.
- */
-export type RawTraceRow = {
-  traceId: string;
-  service: string;
-  rootName: string | null;
-  startUs: unknown;
-  endUs: unknown;
-  spanCount: unknown;
-  anyError: unknown;
-  anyOk: unknown;
-  inputTokens: unknown;
-  outputTokens: unknown;
-  models: string | null;
-  failedEvaluations: unknown;
-  humanFeedback: unknown;
-};
-
 /** One trace's rows from the three tables, as `TracesService.spans` reads them. */
 export type TraceRows = {
   spans: Span[];
   events: SpanEvent[];
   /** Only the rows not yet expired — an expired row the purge has not reached yet is not content. */
   contents: SpanContent[];
-};
-
-/** The trace list's question: one service, one window, a page size. */
-export type TraceListQuery = {
-  service: string;
-  from: Date;
-  to: Date;
-  limit: number;
 };
 
 /** `pnpm token:create <service> --origin … [--label …]`, parsed. */

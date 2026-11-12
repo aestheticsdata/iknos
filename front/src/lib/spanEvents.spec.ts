@@ -23,6 +23,7 @@ const span = (over: Partial<SpanRow> = {}): SpanRow => ({
   content: null,
   contentState: CONTENT_STATE.none,
   contentDays: null,
+  contentUntilUs: null,
   ...over,
 });
 

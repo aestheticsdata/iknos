@@ -1,6 +1,7 @@
 import { AuthModule } from "@auth/auth.module";
 import { Module } from "@nestjs/common";
 import { OtlpController } from "./otlp.controller";
+import { AiRunsService } from "./runs/ai-runs.service";
 import { SpanWriter } from "./span-writer.service";
 import { TokenRegistry } from "./token-registry.service";
 import { TracesController } from "./traces.controller";
@@ -19,7 +20,7 @@ import { TracesService } from "./traces.service";
   // For `RateLimitService`; `PrismaModule` and `RedisModule` are global.
   imports: [AuthModule],
   controllers: [OtlpController, TracesController],
-  providers: [TokenRegistry, SpanWriter, TracesService],
+  providers: [TokenRegistry, SpanWriter, TracesService, AiRunsService],
   exports: [TokenRegistry],
 })
 export class OtlpModule {}

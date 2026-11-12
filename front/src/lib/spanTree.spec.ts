@@ -23,6 +23,7 @@ const span = (spanId: string, parentSpanId: string | null, startUs: number): Spa
   content: null,
   contentState: CONTENT_STATE.none,
   contentDays: null,
+  contentUntilUs: null,
 });
 
 const shape = (spans: SpanRow[]) =>

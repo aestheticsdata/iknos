@@ -17,8 +17,12 @@ export const ROUTES = {
   metrics: "/metrics",
   /** Visitors per site, read from the nginx access logs (IKN-83). */
   traffic: "/traffic",
-  /** The AI pipeline runs received over OTLP, as span trees (IKN-87). */
+  /** The AI pipeline runs received over OTLP (IKN-87), listed with their checks and reviews (IKN-91). */
   traces: "/traces",
+  /** One service's AI quality over the range, against the range before (IKN-93). */
+  tracesQuality: "/traces/quality",
+  /** One service's step compared across prompt versions and models (IKN-94). */
+  tracesVersions: "/traces/versions",
   /** What the collector's rule engine is saying about the fleet (IKN-15). */
   alerts: "/alerts",
   /**
@@ -43,3 +47,6 @@ export const LOG_QUERY_VIEWS: readonly string[] = [ROUTES.logs];
 
 /** Where `/` sends a signed-in visitor: the work area, which answers with or without a selection. */
 export const HOME = ROUTES.logs;
+
+/** One run's page (IKN-92): `/traces/<trace id>`. */
+export const runPath = (traceId: string): string => `${ROUTES.traces}/${traceId}`;

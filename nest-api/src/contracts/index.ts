@@ -10,6 +10,28 @@
  * lives; that one is a transcription.
  */
 
+export type {
+  AiRunFacets,
+  AiRunKpis,
+  AiRunList,
+  AiRunSummary,
+  Checks,
+  FailurePattern,
+  MarkerKind,
+  Measure,
+  QualityBaseline,
+  QualityDay,
+  QualityKpis,
+  QualityMarker,
+  QualityReport,
+  Rate,
+  Review,
+  RunState,
+  Telemetry,
+  VersionColumn,
+  VersionReport,
+  VersionStep,
+} from "./ai-runs";
 export type { AlertHistory, AlertTransition } from "./alert-history";
 export type { AlertCounts, AlertPage } from "./alert-page";
 export type { AlertRow, AlertState, Severity } from "./alert-row";
@@ -54,7 +76,7 @@ export type {
 export type { MetricSource, ServiceSignals, Signal, SignalPoint } from "./service-signals";
 export type { SliWindow } from "./sli";
 export type { Trace } from "./trace";
-export type { SpanRow, TraceDetail, TraceList, TraceStatus, TraceSummary } from "./traces";
+export type { ContentState, SpanEventRow, SpanRow, TraceDetail } from "./traces";
 export type {
   BotRow,
   BrokenLink,

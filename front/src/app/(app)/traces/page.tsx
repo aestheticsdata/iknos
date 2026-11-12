@@ -1,13 +1,12 @@
-import { TracesView } from "@components/traces/TracesView";
+import { RunsView } from "@components/traces/runs/RunsView";
 
 /**
- * `/traces` — the AI pipeline runs the Officina apps report over OTLP, and the span tree of one
- * (IKN-87).
+ * `/traces` — the AI pipeline runs the Officina apps report over OTLP (IKN-87), with their checks,
+ * human reviews and versions (IKN-91).
  *
  * Under `(app)`, so it inherits the chassis, the session boundary and `force-dynamic`. Every read
- * is a client hook and the selection is in the URL, so this page is the mount point and nothing
- * more — the metrics page's shape.
+ * is a client hook and the filters are in the URL, so this page is the mount point and nothing more.
  */
 export default function TracesPage() {
-  return <TracesView />;
+  return <RunsView />;
 }

@@ -31,3 +31,21 @@
   --container-span-names: 18rem; /* 288px */
   --container-span-inspector: 22rem; /* 352px */
 }
+
+/**
+ * The AI traces screens (IKN-91 … IKN-94).
+ *
+ * `--container-run-inspector` is the run detail's right pane: the tabs and a prompt in a code block
+ * want more room than the IKN-87 attribute list did. `--container-filter` is one filter select of
+ * the run list, wide enough for a WebLLM model id cut to its name and quantisation.
+ * `--container-version-measure` is the versions grid's first column, `--container-version-col` the
+ * least a version column shrinks to before the grid scrolls sideways. `--spacing-quality-chart` is
+ * the daily rate chart's drawing height.
+ */
+@theme {
+  --container-run-inspector: 30rem; /* 480px */
+  --container-filter: 10rem; /* 160px */
+  --container-version-measure: 12rem; /* 192px */
+  --container-version-col: 12rem; /* 192px */
+  --spacing-quality-chart: 15rem; /* 240px */
+}

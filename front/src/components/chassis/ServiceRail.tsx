@@ -48,7 +48,9 @@ const VIEWS = [
   { key: "logs", label: CHASSIS_TEXT.viewLogs, href: ROUTES.logs, short: "L", badge: "shortcut" },
   { key: "metrics", label: CHASSIS_TEXT.viewMetrics, href: ROUTES.metrics, short: "ME", badge: "none" },
   { key: "traffic", label: CHASSIS_TEXT.viewTraffic, href: ROUTES.traffic, short: "TR", badge: "none" },
-  { key: "traces", label: CHASSIS_TEXT.viewTraces, href: ROUTES.traces, short: "TC", badge: "none" },
+  { key: "traces", label: CHASSIS_TEXT.viewTraces, href: ROUTES.traces, short: "AR", badge: "none" },
+  { key: "quality", label: CHASSIS_TEXT.viewQuality, href: ROUTES.tracesQuality, short: "AQ", badge: "none" },
+  { key: "versions", label: CHASSIS_TEXT.viewVersions, href: ROUTES.tracesVersions, short: "AV", badge: "none" },
   { key: "issues", label: CHASSIS_TEXT.viewIssues, href: ROUTES.issues, short: "IS", badge: "issues" },
   { key: "alerts", label: CHASSIS_TEXT.viewAlerts, href: ROUTES.alerts, short: "AL", badge: "alerts" },
 ] as const;
@@ -93,6 +95,13 @@ const monogram = (name: string) => {
 export const ServiceRail = ({ services }: { services: Service[] }) => {
   const [selected, setSelected] = useSelectedService();
   const pathname = usePathname();
+  /*
+   * The longest view path the address starts with: `/traces/quality` is the quality view, not the
+   * runs view whose path it also starts with (IKN-93).
+   */
+  const activeHref = VIEWS.map((view) => view.href as string)
+    .filter((href) => pathname.startsWith(href))
+    .sort((a, b) => b.length - a.length)[0];
   /*
    * The scope travels with the view.
    *
@@ -211,11 +220,11 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
             <li key={view.key}>
               <Link
                 href={withScope(view.href)}
-                aria-current={pathname.startsWith(view.href) ? "page" : undefined}
+                aria-current={view.href === activeHref ? "page" : undefined}
                 data-testid="rail-view-link"
                 data-view={view.key}
                 className={`flex items-center justify-between rounded-chip px-2 py-1.5 text-label transition-colors duration-150 ease-out max-rail:justify-center max-rail:px-0 ${
-                  pathname.startsWith(view.href)
+                  view.href === activeHref
                     ? "bg-chassis-raised text-chassis-text-bright"
                     : "text-chassis-text-muted hover:bg-chassis-raised/60 hover:text-chassis-text"
                 }`}

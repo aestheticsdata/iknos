@@ -1,3 +1,4 @@
+import type { AiRunSummary } from "@lib/interfaces/aiRunTypes";
 import type { Meta } from "@lib/logTypes";
 
 /**
@@ -8,10 +9,6 @@ import type { Meta } from "@lib/logTypes";
  * on purpose. These are real spans, each naming its parent, and they are drawn as the tree they are.
  * Times are Unix microseconds.
  */
-
-/** Mirrors `contracts/traces.ts`. */
-export const TRACE_STATUS = { unset: "unset", ok: "ok", error: "error" } as const;
-export type TraceStatus = (typeof TRACE_STATUS)[keyof typeof TRACE_STATUS];
 
 /** Mirrors `contracts/traces.ts` — what became of a span's content (IKN-87 v2). */
 export const CONTENT_STATE = { retained: "retained", expired: "expired", none: "none" } as const;
@@ -44,29 +41,6 @@ export type EvaluationVerdict = (typeof EVALUATION_VERDICT)[keyof typeof EVALUAT
 export const SPAN_STATUS_CODE = { unset: 0, ok: 1, error: 2 } as const;
 
 /** Mirrors `contracts/traces.ts`. */
-export type TraceSummary = {
-  traceId: string;
-  service: string;
-  rootName: string;
-  startUs: number;
-  durationUs: number;
-  spanCount: number;
-  status: TraceStatus;
-  inputTokens: number | null;
-  outputTokens: number | null;
-  models: string[];
-  failedEvaluations: number;
-  humanFeedback: number;
-};
-
-/** Mirrors `contracts/traces.ts`. */
-export type TraceList = {
-  traces: TraceSummary[];
-  truncated: boolean;
-  meta: Meta;
-};
-
-/** Mirrors `contracts/traces.ts`. */
 export type SpanRow = {
   spanId: string;
   parentSpanId: string | null;
@@ -86,6 +60,8 @@ export type SpanRow = {
   content: Record<string, unknown> | null;
   contentState: ContentState;
   contentDays: number | null;
+  /** When its content goes, Unix µs; `null` when none was kept (IKN-92). */
+  contentUntilUs: number | null;
 };
 
 /** Mirrors `contracts/traces.ts`. */
@@ -99,6 +75,8 @@ export type SpanEventRow = {
 /** Mirrors `contracts/traces.ts`. */
 export type TraceDetail = {
   traceId: string;
+  /** The run read for meaning (IKN-92); `null` when no span of it was found. */
+  summary: AiRunSummary | null;
   spans: SpanRow[];
   truncated: boolean;
   meta: Meta;

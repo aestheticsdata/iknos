@@ -1,6 +1,11 @@
-import { SpanInspector } from "@components/traces/SpanInspector";
+import { AttributesTab } from "@components/traces/detail/inspector/AttributesTab";
+import { ChecksTab } from "@components/traces/detail/inspector/ChecksTab";
+import { ContentTab } from "@components/traces/detail/inspector/ContentTab";
+import { EventsTab } from "@components/traces/detail/inspector/EventsTab";
+import { SpanInspector } from "@components/traces/detail/inspector/SpanInspector";
 import { SpanWaterfall } from "@components/traces/waterfall/SpanWaterfall";
 import { CONTENT_STATE, SPAN_STATUS_CODE, TRACE_EVENT } from "@lib/interfaces/traceSpanTypes";
+import { gatesFor, runEvents } from "@lib/runInsights";
 import { timelineOf } from "@lib/spanTimeline";
 import { waterfallLines } from "@lib/spanTree";
 import { createElement as h } from "react";
@@ -33,6 +38,7 @@ const span = (over: Partial<SpanRow>): SpanRow => ({
   content: null,
   contentState: CONTENT_STATE.none,
   contentDays: null,
+  contentUntilUs: null,
   ...over,
 });
 
@@ -132,52 +138,76 @@ describe("SpanWaterfall", () => {
   });
 });
 
+describe("WaterfallRow", () => {
+  it("names each span's kind and labels a failure in words, not colour alone", () => {
+    const html = render(null);
+    expect(html).toContain('data-testid="span-kind">llm<');
+    expect(html).toContain("✕ failed");
+  });
+});
+
 describe("SpanInspector", () => {
-  it("lists the promoted GenAI fields and every attribute, sorted", () => {
-    const html = renderToStaticMarkup(h(SpanInspector, { span: SPANS[1], timeline: timelineOf(SPANS) }));
+  it("opens on the info tab, with a model call's model, tokens and offset", () => {
+    const html = renderToStaticMarkup(
+      h(SpanInspector, { span: SPANS[1], spans: SPANS, timeline: timelineOf(SPANS), tz: "UTC" }),
+    );
 
     expect(html).toContain("test-model");
-    expect(html).toContain("412");
+    expect(html).toContain("412 in · 96 out");
     expect(html).toContain("+1s");
-    expect(html.indexOf("gen_ai.response.finish_reasons")).toBeLessThan(html.indexOf("officina.node"));
-    expect(html).toContain("[&quot;stop&quot;]");
-  });
-
-  it("shows evaluations, human feedback and retained content", () => {
-    const html = renderToStaticMarkup(h(SpanInspector, { span: SPANS[1], timeline: timelineOf(SPANS) }));
-
-    expect(html).toMatch(/data-verdict="fail"/);
-    expect(html).toContain("schema");
-    expect(html).toContain("missing &#x27;title&#x27;");
-    expect(html).toMatch(/data-verdict="pass"/);
-    expect(html).toContain("at review");
-    expect(html).toContain("add the title");
-    expect(html).toContain('data-content-state="retained"');
-    expect(html).toContain("gen_ai.input.messages");
-    expect(html).toContain("summarise");
-  });
-
-  it("says the content expired, after how long, and keeps the review", () => {
-    const expired = {
-      ...SPANS[1],
-      content: null,
-      contentState: CONTENT_STATE.expired,
-      events: SPANS[1].events.map((event) => ({ ...event, content: null })),
-    };
-    const html = renderToStaticMarkup(h(SpanInspector, { span: expired, timeline: timelineOf(SPANS) }));
-
-    expect(html).toContain("Content expired after 3 days.");
-    expect(html).toMatch(/data-verdict="fail"/);
-    expect(html).not.toContain("add the title");
-  });
-
-  it("says metadata only when no content was captured", () => {
-    const html = renderToStaticMarkup(h(SpanInspector, { span: SPANS[0], timeline: timelineOf(SPANS) }));
-    expect(html).toContain("Metadata only");
-    expect(html).not.toContain('data-testid="span-evaluations"');
+    expect(html).toContain('data-tab="content"');
   });
 
   it("asks for a span when none is shown", () => {
-    expect(renderToStaticMarkup(h(SpanInspector, { span: null, timeline: timelineOf([]) }))).toContain("Pick a span");
+    expect(
+      renderToStaticMarkup(h(SpanInspector, { span: null, spans: [], timeline: timelineOf([]), tz: "UTC" })),
+    ).toContain("Pick a span");
+  });
+});
+
+describe("inspector tabs", () => {
+  const timeline = timelineOf(SPANS);
+
+  it("reads a sender's evaluation events as gates, with the rule's own words while kept", () => {
+    const html = renderToStaticMarkup(h(ChecksTab, { gates: gatesFor(SPANS, SPANS[1]) }));
+
+    expect(html).toContain("1 passed · 1 failed");
+    expect(html).toContain("missing &#x27;title&#x27;");
+  });
+
+  it("shows retained content with its prompt", () => {
+    const html = renderToStaticMarkup(h(ContentTab, { span: SPANS[1], spans: SPANS, tz: "UTC" }));
+    expect(html).toContain('data-testid="span-content"');
+    expect(html).toContain("summarise");
+    expect(html).toContain("kept 3 days");
+  });
+
+  it("says the content expired, and after how long", () => {
+    const expired = { ...SPANS[1], content: null, contentState: CONTENT_STATE.expired };
+    const html = renderToStaticMarkup(h(ContentTab, { span: expired, spans: SPANS, tz: "UTC" }));
+    expect(html).toContain("Content expired");
+    expect(html).toContain("kept 3 days");
+    expect(html).not.toContain("summarise");
+  });
+
+  it("says the content was never captured at the metadata level", () => {
+    const bare = { ...SPANS[1], content: null, contentState: CONTENT_STATE.none, contentDays: null };
+    const html = renderToStaticMarkup(h(ContentTab, { span: bare, spans: [SPANS[0], bare], tz: "UTC" }));
+    expect(html).toContain("Content not captured");
+    expect(html).toContain("metadata level");
+  });
+
+  it("lists the human decision among the run's events", () => {
+    const html = renderToStaticMarkup(h(EventsTab, { events: runEvents(SPANS), timeline }));
+    expect(html).toContain("Decision: edit.");
+  });
+});
+
+describe("AttributesTab", () => {
+  it("lists every attribute, sorted, as text", () => {
+    const html = renderToStaticMarkup(h(AttributesTab, { span: SPANS[1] }));
+
+    expect(html.indexOf("gen_ai.response.finish_reasons")).toBeLessThan(html.indexOf("officina.node"));
+    expect(html).toContain("[&quot;stop&quot;]");
   });
 });

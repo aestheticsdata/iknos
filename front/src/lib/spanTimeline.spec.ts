@@ -23,6 +23,7 @@ const span = (startUs: number, durationUs: number, statusCode = 0): SpanRow => (
   content: null,
   contentState: CONTENT_STATE.none,
   contentDays: null,
+  contentUntilUs: null,
 });
 
 describe("timelineOf", () => {

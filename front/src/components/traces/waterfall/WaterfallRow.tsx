@@ -1,24 +1,24 @@
 "use client";
 
 import { TONE_FILL } from "@components/ui/surface";
-import { SPAN_STATUS_CODE } from "@lib/interfaces/traceSpanTypes";
-import { reviewMarks } from "@lib/spanEvents";
-import { barBox, formatMicros, spanTone } from "@lib/spanTimeline";
+import { SPAN_KIND } from "@lib/interfaces/spanKindTypes";
+import { EVALUATION_VERDICT } from "@lib/interfaces/traceSpanTypes";
+import { evaluationsOf, feedbackOf } from "@lib/spanEvents";
+import { attrNumber, isFailed, kindTone, OFFICINA, spanKindOf } from "@lib/spanKind";
+import { barBox, formatMicros } from "@lib/spanTimeline";
 import { cn } from "@lib/utils";
 import { TRACES_TEXT } from "@text/traces";
 
-import type { ReviewMarks, Timeline, WaterfallLine } from "@lib/interfaces/traceSpanTypes";
+import type { Timeline, WaterfallLine } from "@lib/interfaces/traceSpanTypes";
 
 /**
  * One span: its name indented by depth, its bar on the run's timeline, its duration in a column of
  * its own (IKN-87).
  *
- * A button, so the keyboard can pick a span; focus previews it like the pointer does. The bar's
- * colour is the span's status — error is the only loud one — and the name of a failed span is
- * red too, so the state never rests on a bar a few pixels wide.
- *
- * Gate evaluations and human decisions on the span (IKN-87 v2) are marked after its name — a glyph
- * and a count each, the words in the title — so a failed gate is found by scanning the names.
+ * A button, so the keyboard can pick a span; focus previews it like the pointer does. A chip says
+ * what the span stands for and the bar takes its kind's ink (IKN-92); a failed span turns red *and*
+ * says "failed", so the state never rests on a bar a few pixels wide or on colour alone. A retried
+ * attempt carries its number, and a human decision on the span (IKN-87 v2) its glyph and count.
  *
  * The duration is a right-aligned column rather than a label riding the bar: a label beside the
  * bar runs off the drawing for the spans that end the run, which are most of the interesting ones.
@@ -28,7 +28,14 @@ export const WaterfallRow = ({ line, timeline, selected, onPick, onHover }: Wate
   const box = barBox(span, timeline);
   const duration = formatMicros(span.durationUs);
   const hint = TRACES_TEXT.spanHint(span.name, duration);
-  const marks = reviewMarks(span);
+  const kind = spanKindOf(span);
+  const failed = isFailed(span);
+  const attempt = attrNumber(span, OFFICINA.attempt);
+  const decisions = feedbackOf(span).length;
+  /* A gate's overall verdicts only: the per-rule events of a failure would count it once per rule. */
+  const verdicts = evaluationsOf(span).filter((evaluation) => evaluation.ruleIndex === null);
+  const failedEvaluations = verdicts.filter((evaluation) => evaluation.verdict === EVALUATION_VERDICT.fail).length;
+  const passedEvaluations = verdicts.filter((evaluation) => evaluation.verdict === EVALUATION_VERDICT.pass).length;
 
   return (
     <button
@@ -62,16 +69,51 @@ export const WaterfallRow = ({ line, timeline, selected, onPick, onHover }: Wate
           </span>
         )}
         <span
-          className={cn("truncate", span.statusCode === SPAN_STATUS_CODE.error ? "text-work-error" : "text-work-text")}
+          className="w-11 flex-none rounded-chip border border-work-border-strong text-center text-kicker tracking-kicker text-work-text-dim uppercase"
+          data-testid="span-kind"
         >
-          {span.name}
+          {TRACES_TEXT.kind[kind]}
         </span>
-        <ReviewMarksBadge marks={marks} />
+        <span className={cn("truncate", failed ? "text-work-error" : "text-work-text")}>{span.name}</span>
+        {failed && <span className="flex-none text-micro text-work-error">✕ {TRACES_TEXT.failedLabel}</span>}
+        {kind === SPAN_KIND.attempt && attempt !== null && attempt > 1 && (
+          <span className="flex-none text-micro text-work-text-dim">{TRACES_TEXT.attemptShort(attempt)}</span>
+        )}
+        {failedEvaluations > 0 && (
+          <span
+            className="flex-none text-micro tabular-nums text-work-error"
+            title={TRACES_TEXT.markFailedHint(failedEvaluations)}
+            data-testid="mark-failed"
+          >
+            {TRACES_TEXT.markFailed}
+            {failedEvaluations}
+          </span>
+        )}
+        {passedEvaluations > 0 && (
+          <span
+            className="flex-none text-micro tabular-nums text-work-text-dim"
+            title={TRACES_TEXT.markPassedHint(passedEvaluations)}
+            data-testid="mark-passed"
+          >
+            {TRACES_TEXT.markPassed}
+            {passedEvaluations}
+          </span>
+        )}
+        {decisions > 0 && (
+          <span
+            className="flex-none text-micro tabular-nums text-work-warn"
+            title={TRACES_TEXT.markFeedbackHint(decisions)}
+            data-testid="mark-feedback"
+          >
+            {TRACES_TEXT.markFeedback}
+            {decisions}
+          </span>
+        )}
       </span>
 
       <span className="relative mx-3 h-full flex-1">
         <span
-          className={cn("absolute top-1/2 h-2.5 -translate-y-1/2 rounded-chip", TONE_FILL.work[spanTone(span)])}
+          className={cn("absolute top-1/2 h-2.5 -translate-y-1/2 rounded-chip", TONE_FILL.work[kindTone(span)])}
           style={{ left: `${box.leftPct}%`, width: `${box.widthPct}%` }}
         />
       </span>
@@ -79,46 +121,6 @@ export const WaterfallRow = ({ line, timeline, selected, onPick, onHover }: Wate
       <span className="w-16 flex-none pr-3 text-right text-micro tabular-nums text-work-text-muted">{duration}</span>
     </button>
   );
-};
-
-/** The span's review marks: failed gates loud, passed ones dim, human decisions in the warn hue. */
-const ReviewMarksBadge = ({ marks }: ReviewMarksBadgeProps) => (
-  <>
-    {marks.failed > 0 && (
-      <span
-        className="flex-none text-micro tabular-nums text-work-error"
-        title={TRACES_TEXT.markFailedHint(marks.failed)}
-        data-testid="mark-failed"
-      >
-        {TRACES_TEXT.markFailed}
-        {marks.failed}
-      </span>
-    )}
-    {marks.passed > 0 && (
-      <span
-        className="flex-none text-micro tabular-nums text-work-text-dim"
-        title={TRACES_TEXT.markPassedHint(marks.passed)}
-        data-testid="mark-passed"
-      >
-        {TRACES_TEXT.markPassed}
-        {marks.passed}
-      </span>
-    )}
-    {marks.feedback > 0 && (
-      <span
-        className="flex-none text-micro tabular-nums text-work-warn"
-        title={TRACES_TEXT.markFeedbackHint(marks.feedback)}
-        data-testid="mark-feedback"
-      >
-        {TRACES_TEXT.markFeedback}
-        {marks.feedback}
-      </span>
-    )}
-  </>
-);
-
-type ReviewMarksBadgeProps = {
-  marks: ReviewMarks;
 };
 
 type WaterfallRowProps = {
