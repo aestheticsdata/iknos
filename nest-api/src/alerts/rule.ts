@@ -27,6 +27,8 @@ export const RULE_KEYS = [
   "disk_space",
   "error_rate",
   "latency_p95",
+  "browser_errors",
+  "action_failures",
 ] as const;
 export type RuleKey = (typeof RULE_KEYS)[number];
 

@@ -1,5 +1,6 @@
 import { diskSpace } from "./disk-space";
 import { healthDown } from "./health-down";
+import { actionFailures, browserErrors } from "./log-content-rules";
 import { errorRate, latencyP95 } from "./metric-rules";
 import { noLogs } from "./no-logs";
 import { processRestart } from "./process-restart";
@@ -7,7 +8,7 @@ import { processRestart } from "./process-restart";
 import type { Rule } from "../rule";
 
 /**
- * The six rules, in the order a pass evaluates them (IKN-10). A function of the host's label
+ * The rules, in the order a pass evaluates them (IKN-10). A function of the host's label
  * because the disk rule opens its alert under that name (IKN-65).
  *
  * Critical first, which is only cosmetic here — each rule is isolated and the order of evaluation
@@ -21,9 +22,11 @@ import type { Rule } from "../rule";
  */
 export const rulesFor = (host: string): Rule[] => [
   healthDown,
+  actionFailures,
   processRestart,
   diskSpace(host),
   errorRate,
   latencyP95,
   noLogs,
+  browserErrors,
 ];

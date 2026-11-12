@@ -14,7 +14,7 @@ import { rulesFor } from "./rules";
  *
  * `MetricsModule` is imported for one thing: `SignalsService`, which already computes the error
  * rate and the p95 over a range — counter resets, missed scrapes and restart intervals included.
- * Two of the six rules read it, and a rule running its own `SUM` over `metric_sample` would be a
+ * Two of the rules read it, and a rule running its own `SUM` over `metric_sample` would be a
  * second answer to a question that already has one.
  *
  * The engine is built by a factory because two of its parameters are not injectables: the sink,

@@ -1,7 +1,7 @@
 import { HOST_LEVEL, type HostLevel } from "@contracts/host";
 
 /**
- * Every number the six rules test against, in one file (IKN-10).
+ * Every number the rules test against, in one file (IKN-10).
  *
  * **Consts, not configuration** — spec D3, and it reverses what the ticket asked for. The ticket
  * predates the convention: every threshold in this product is an exported const with a colocated
@@ -123,3 +123,21 @@ export const LATENCY_P95_MS = 1_000;
 
 /** Both metric rules wait this long. A single bad minute inside a ten-minute window is weather. */
 export const METRIC_FOR_MS = 5 * 60_000;
+
+/* ── browser_errors / action_failures ───────────────────────────────────────────────────────── */
+
+/** The window both log-content rules count over. */
+export const LOG_RULE_WINDOW_MS = 10 * 60_000;
+
+/**
+ * Browser errors relayed by an app (dataset `<app>.browser`) in ten minutes before it is a spike.
+ * The relaying app already sends each distinct failure once per page load, so ten is ten page
+ * loads failing, not one page failing ten times.
+ */
+export const BROWSER_ERRORS_SPIKE = 10;
+
+/** The dataset suffix of a browser error relayed through an app's own API (Tomos's TOM-72). */
+export const BROWSER_DATASET_SUFFIX = ".browser";
+
+/** One failed business action is already an incident: signing a report is not weather. */
+export const ACTION_FAILURES_MIN = 1;
