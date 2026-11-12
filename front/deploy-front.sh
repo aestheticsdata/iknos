@@ -458,7 +458,29 @@ check_pnpm_baseline() {
   log "➡️  pnpm baseline — local $local_v / server $remote_v"
 }
 
+# The laptop is short on disk: a deploy leaves no build output behind, whether it succeeds or not.
+# Nothing here builds locally any more (the server does), but a `next build` or a demo-film run
+# from an earlier session leaves hundreds of MB in `.next` and `test-results`. The one exception is
+# a `next dev` running from this checkout: its `.next/dev` is live, and pulling it out from under
+# the dev server breaks it, so `.next` is left alone while one is running.
+clean_local_build() {
+  local freed=()
+  if pgrep -f "next dev" > /dev/null 2>&1; then
+    log "ℹ️  next dev is running: local .next kept"
+  elif [ -d "$SCRIPT_DIR/.next" ]; then
+    freed+=("$(du -sh "$SCRIPT_DIR/.next" 2>/dev/null | cut -f1) .next")
+    rm -rf -- "$SCRIPT_DIR/.next"
+  fi
+  if [ -d "$SCRIPT_DIR/test-results" ]; then
+    freed+=("$(du -sh "$SCRIPT_DIR/test-results" 2>/dev/null | cut -f1) test-results")
+    rm -rf -- "$SCRIPT_DIR/test-results"
+  fi
+  [ ${#freed[@]} -gt 0 ] && log "🧹 Local build output removed: ${freed[*]}"
+  return 0
+}
+
 deploy() {
+  trap clean_local_build EXIT
   check_pnpm_baseline
   cd "$SCRIPT_DIR"
 

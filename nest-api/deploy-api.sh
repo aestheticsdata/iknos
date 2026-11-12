@@ -513,7 +513,21 @@ check_pnpm_baseline() {
   log "➡️  pnpm baseline — local $local_v / server $remote_v"
 }
 
+# The laptop is short on disk: a deploy leaves no build output behind, whether it succeeds or not.
+# The server builds the release; a local `dist` is only ever left over from an earlier build. A
+# `nest start --watch` running from this checkout lives in it, so it is kept while one is.
+clean_local_build() {
+  if pgrep -f "nest start" > /dev/null 2>&1; then
+    log "ℹ️  nest start is running: local dist kept"
+  elif [ -d "$SCRIPT_DIR/dist" ]; then
+    log "🧹 Local build output removed: $(du -sh "$SCRIPT_DIR/dist" 2>/dev/null | cut -f1) dist"
+    rm -rf -- "$SCRIPT_DIR/dist"
+  fi
+  return 0
+}
+
 deploy() {
+  trap clean_local_build EXIT
   check_pnpm_baseline
   cd "$SCRIPT_DIR"
 
