@@ -144,8 +144,9 @@ default — a route is public only if someone wrote `@Public()` on it.
 | `GET /api/traces/:traceId` | Every span of one trace, in start order, for the waterfall (IKN-87) |
 | `POST /api/ingest` | The browser's log write route — see above |
 | `POST /api/otlp/v1/traces` | OTLP/HTTP JSON traces, with a per-application write token — see above |
+| `GET /api/sli` | One service's requests, 5xx and p95 over a window, from the nginx lines, plus how far the collector has stored — Zeus's post-deploy verification, bearer token, loopback only (IKN-88) |
 
-`from` and `to` are **required** on the log routes and on `signals`, and a request without both
+`from` and `to` are **required** on the log routes, on `signals` and on `sli`, and a request without both
 is a 400, never a widened default. That single rule is what the partitioning rests on: the range predicate lets
 MySQL discard whole partitions before it evaluates a filter, and one forgotten parameter would
 otherwise turn a page load into a scan of the entire retention window.

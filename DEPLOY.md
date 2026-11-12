@@ -133,18 +133,25 @@ line names its site. In `/etc/nginx/nginx.conf`, inside `http`:
 ```
 log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
                   '$status $body_bytes_sent "$http_referer" '
-                  '"$http_user_agent" "$http_x_forwarded_for" "$host"';
+                  '"$http_user_agent" "$http_x_forwarded_for" '
+                  '$request_time "$upstream_status" "$host"';
 ```
 
-Only the last field is new. The start of the line is still `combined`, so nothing that already read
-the file has to change. Iknos files each line under the service whose `hosts` lists that domain
+The start of the line is still `combined`, so nothing that already read the file has to change.
+`"$host"` came with IKN-84 and stays the **last** field. `$request_time "$upstream_status"` came with
+IKN-88, deliberately *before* it: the request time is the latency Zeus's post-deploy verification
+reads through `GET /api/sli`, and the upstream status tells a 502 nginx wrote because the app was down
+from one the app sent. A line without the two (written before the switch, or by a vhost on
+`combined`) still parses, with no duration. Iknos files each line under the service whose `hosts` lists that domain
 (space-separated, as in `server_name`) and drops lines no row claims. **A new site is one
 `hosts` value on its row** — nothing in its own repository, nothing in its vhost. The collector
 reads the file from `IKNOS_NGINX_SHARED_LOG`, which defaults to that path.
 
 **A file of its own.** A vhost that declares `access_log` (bots, fiducia, folio, iknos, zeus)
 writes there and never to the shared file, so nothing is counted twice. Its row names the file in
-`logGlob`, character for character.
+`logGlob`, character for character. Since IKN-88 those declarations name the `main` format
+(`access_log /var/log/nginx/iknos.access.log main;`) rather than `combined`, or their requests have
+no duration and Zeus cannot judge their latency after a deploy.
 
 Either way, check and reload:
 
@@ -284,3 +291,45 @@ pnpm token:revoke <id>
 
 A revoked token's POSTs stop at once; preflights from its origin may still be answered for up to
 30 seconds, which lets nothing through.
+
+## Request indicators for Zeus (IKN-88)
+
+`GET /api/sli?service=&from=&to=[&pathPrefix=|&excludePathPrefix=]` answers one service's request
+count, 5xx count and p95 latency over a window, read from the nginx access lines, plus
+`ingestedThrough` — how far the collector has stored. Zeus's post-deploy verification (ZEU-93)
+compares the 30 minutes before a deploy with the 10 after. Three one-time steps on ks-b, in this order.
+
+### 1. nginx writes the request time
+
+The `main` format in `/etc/nginx/nginx.conf` gains `$request_time "$upstream_status"` before
+`"$host"` — the block in [§1 of the access-log section](#1-nginx-says-which-site-each-line-is-for-ikn-84)
+is the current one. The vhosts with a file of their own (bots, fiducia, folio, iknos, zeus) switch
+their `access_log` from `combined` to `main`. Then `sudo nginx -t && sudo systemctl reload nginx`.
+
+Lines written before the reload have no duration. Zeus's 30-minute baseline therefore has no p95
+for half an hour after the switch, and its latency rule stays silent until then — the counts and
+the probes still work.
+
+### 2. The token, on both sides
+
+```bash
+openssl rand -base64 24
+```
+
+The same value goes in Iknos's `env_production` as `IKNOS_SLI_TOKEN` and in Zeus's, then
+`pm2 reload ecosystem.config.js --update-env` in each. Unlike `IKNOS_INGEST_TOKEN` this one is a
+secret: it never leaves ks-b. Without it the route answers 503 and nothing else changes.
+
+### 3. The vhost refuses the route from outside
+
+`deploy/nginx/iknos.conf` carries `location ^~ /api/sli { deny all; }`. Install it as any vhost change
+(above), then check both sides:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://iknos.1991computer.com/api/sli          # 403
+ssh debian@ks-b "curl -s -H \"Authorization: Bearer \$TOKEN\" \
+  'http://127.0.0.1:6900/api/sli?service=pfa-front&from=$(date -u -d '-30 min' +%FT%TZ)&to=$(date -u +%FT%TZ)'"
+```
+
+The second answers a JSON object whose `timed` grows from zero once step 1 is live.
+

@@ -79,6 +79,12 @@ const prodConfig = {
   // and server-side senders.
   IKNOS_INGEST_ORIGINS: "",
 
+  // GET /api/sli — Zeus's post-deploy verification reads error rate and latency here (IKN-88).
+  // A real secret, unlike the ingest token: it never leaves ks-b. Empty, the route answers 503.
+  //
+  // openssl rand -base64 24
+  IKNOS_SLI_TOKEN: "",
+
   // The name the host badge shows, and the scope the disk alert opens under (IKN-65). Optional —
   // the machine's own hostname when unset — and set here because the box is called ks-b by the
   // people reading the badge, whatever `hostname` happens to print.

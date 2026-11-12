@@ -141,6 +141,21 @@ class EnvironmentVariables {
   IKNOS_INGEST_ORIGINS?: string;
 
   /**
+   * The bearer token Zeus presents on `GET /api/sli` (IKN-88), to read a service's error rate and
+   * latency around a deploy.
+   *
+   * Optional for the reason `IKNOS_INGEST_TOKEN` is: absent, the route answers 503 and nothing else
+   * changes. Unlike that one it **is** a secret — it never leaves ks-b, and it is the only check on
+   * the route besides nginx refusing it from outside the box. Zeus holds the same value.
+   */
+  @IsOptional()
+  @IsString()
+  @MinLength(24, {
+    message: "IKNOS_SLI_TOKEN must be at least 24 characters — generate one with `openssl rand -base64 24`",
+  })
+  IKNOS_SLI_TOKEN?: string;
+
+  /**
    * The name the host badge shows, and the scope a host-wide alert opens under (IKN-65).
    *
    * **Optional, and `os.hostname()` when unset** — so a laptop with nothing configured says its own
@@ -208,6 +223,8 @@ export type Config = {
   ingestToken: string | null;
   /** Empty means no origin restriction. */
   ingestOrigins: string[];
+  /** IKN-88. `null` when unset — `GET /api/sli` then answers 503. */
+  sliToken: string | null;
   /** IKN-65. `IKNOS_HOST_LABEL`, else the machine's own hostname — never empty. */
   hostLabel: string;
   /** IKN-84. `null` when set blank — no shared access log on this machine. */
@@ -264,6 +281,7 @@ export function parseEnv(source: Record<string, unknown>): Config {
       .split(",")
       .map((origin) => origin.trim())
       .filter((origin) => origin !== ""),
+    sliToken: parsed.IKNOS_SLI_TOKEN ?? null,
     // `||`, not `??`: a label set to blank is a mistake in a config file, not a request for no name.
     hostLabel: parsed.IKNOS_HOST_LABEL?.trim() || hostname(),
     nginxSharedLog: sharedLog(parsed.IKNOS_NGINX_SHARED_LOG),

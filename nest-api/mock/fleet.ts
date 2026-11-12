@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { rmSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { loadDatabaseUrl, looksLikeProduction, openPrisma, refuseUnlessLoopback } from "./env";
@@ -26,6 +26,15 @@ import { PROFILES } from "./profiles";
 
 export const MOCK_PM2_HOME = join(homedir(), ".iknos-mock", "pm2");
 export const MOCK_LOG_GLOB = join(MOCK_PM2_HOME, "logs", "*.log");
+
+/**
+ * The fleet's stand-in for ks-b's shared `/var/log/nginx/access.log` (IKN-88). Every dummy appends
+ * the access line nginx would have written for each request it answers, in ks-b's `main` format —
+ * `$host` last, `$request_time "$upstream_status"` before it — so the nginx source, Traffic and
+ * `GET /api/sli` have something real to read on a laptop. Beside the daemon rather than inside it,
+ * because the pm2 log glob must never pick it up as a process's stdout.
+ */
+export const MOCK_NGINX_LOG = join(homedir(), ".iknos-mock", "nginx", "access.log");
 const NAMESPACE = "iknos-mock";
 
 /** What `load.ts` writes into an uninstrumented service's `metricsUrl`; carries no path worth keeping. */
@@ -83,7 +92,10 @@ if (command === "stop") {
   const running = listed();
   if (running.length > 0) pm2Tolerant(["delete", "all"]);
   pm2Tolerant(["kill"]);
-  if (flush) rmSync(join(MOCK_PM2_HOME, "logs"), { recursive: true, force: true });
+  if (flush) {
+    rmSync(join(MOCK_PM2_HOME, "logs"), { recursive: true, force: true });
+    rmSync(MOCK_NGINX_LOG, { force: true });
+  }
   console.log(`fleet stopped — ${running.length} process(es) removed, daemon killed${flush ? ", logs flushed" : ""}`);
   process.exit(0);
 }
@@ -119,6 +131,7 @@ if (looksLikeProduction(discovered)) {
 const wiring = [
   ["IKNOS_PM2_LOG_GLOB", MOCK_LOG_GLOB],
   ["PM2_HOME", MOCK_PM2_HOME],
+  ["IKNOS_NGINX_SHARED_LOG", MOCK_NGINX_LOG],
 ] as const;
 const miswired = wiring.filter(([key, expected]) => process.env[key] !== expected);
 if (miswired.length > 0) {
@@ -137,6 +150,29 @@ const pathOf = (url: string | null, fallback: string): string => {
   }
 };
 
+/**
+ * The site a dummy's requests arrive under: `atlas-api` and `atlas-front` are both
+ * `atlas.example.net`, the way a real app's front and API share one vhost (`/api/` to Nest, the
+ * rest to Next). `.example.net` is reserved for exactly this and can never be somebody's site.
+ */
+const siteOf = (service: string): string => `${service.replace(/-(api|front)$/, "")}.example.net`;
+
+/**
+ * Which row claims a site in the registry's `hosts`. One row per domain, as on ks-b: the front when
+ * the app has one, its API otherwise. A line is filed under that row whichever dummy wrote it, so
+ * Zeus tells the halves apart by path (`pathPrefix=/api`), exactly as it must in production.
+ */
+function hostOwners(names: string[]): Map<string, string> {
+  const owners = new Map<string, string>();
+  for (const name of names) {
+    if (name === "juniper") continue;
+    const site = siteOf(name);
+    const current = owners.get(site);
+    if (current === undefined || name.endsWith("-front")) owners.set(site, name);
+  }
+  return new Map([...owners].map(([site, owner]) => [owner, site]));
+}
+
 const prisma = openPrisma(dsn);
 
 async function start(): Promise<void> {
@@ -148,6 +184,8 @@ async function start(): Promise<void> {
   );
 
   const tsx = join(process.cwd(), "node_modules", ".bin", "tsx");
+  const hosts = hostOwners(PROFILES.map((p) => p.name).filter((name) => registry.has(name)));
+  mkdirSync(join(MOCK_NGINX_LOG, ".."), { recursive: true });
   const plan: string[] = [];
 
   for (const [i, profile] of PROFILES.entries()) {
@@ -173,6 +211,8 @@ async function start(): Promise<void> {
         data: {
           healthUrl: `http://127.0.0.1:${port}${healthPath}`,
           metricsUrl: `http://127.0.0.1:${port}${metricsPath}`,
+          // The other half of the shared log: without a `hosts` value no line of it is filed anywhere.
+          hosts: hosts.get(profile.name) ?? null,
         },
       });
     }
@@ -200,6 +240,10 @@ async function start(): Promise<void> {
         healthPath,
         "--metrics",
         metricsPath,
+        "--host",
+        siteOf(profile.name),
+        "--nginx-log",
+        MOCK_NGINX_LOG,
       ],
       true,
     );
@@ -209,6 +253,7 @@ async function start(): Promise<void> {
   console.log(`fleet started under ${MOCK_PM2_HOME} (namespace ${NAMESPACE}):`);
   for (const line of plan) console.log(line);
   console.log("logs:", join(MOCK_PM2_HOME, "logs"), "— the API tails this directory and only this one.");
+  console.log("nginx:", MOCK_NGINX_LOG, "— the shared access log, in ks-b's `main` format.");
   console.log("restart `pnpm dev` once if the API was already running: it reads .env at boot.");
 }
 

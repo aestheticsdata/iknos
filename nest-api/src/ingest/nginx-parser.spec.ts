@@ -167,4 +167,52 @@ describe("trailingHost", () => {
     expect(r?.route).toBe("/shots/iknos/logs-960.avif");
     expect(r?.attrs).toMatchObject({ userAgent: "Mozilla/5.0 (Macintosh)" });
   });
+
+  it("still finds the host on a line carrying the IKN-88 timing", () => {
+    expect(trailingHost(`${MAIN} 0.012 "200" "atlas.example.net"`)).toBe("atlas.example.net");
+  });
+});
+
+/**
+ * IKN-88: `main` gains `$request_time "$upstream_status"` between `$http_x_forwarded_for` and
+ * `$host`, which is what post-deploy verification reads its latency from.
+ */
+describe("parseCombined — request timing", () => {
+  const timed = (time: string, upstream: string) => `${LINE} "-" ${time} "${upstream}" "atlas.example.net"`;
+
+  it("reads $request_time as whole milliseconds", () => {
+    expect(parseCombined(timed("0.012", "200"), "atlas-front")?.durationMs).toBe(12);
+    expect(parseCombined(timed("1.2346", "200"), "atlas-front")?.durationMs).toBe(1235);
+    expect(parseCombined(timed("0.000", "200"), "atlas-front")?.durationMs).toBe(0);
+  });
+
+  it("keeps $upstream_status in attrs, as nginx wrote it", () => {
+    expect(parseCombined(timed("0.031", "502, 200"), "atlas-front")?.attrs).toMatchObject({
+      upstreamStatus: "502, 200",
+    });
+  });
+
+  it("leaves upstreamStatus out when nothing was proxied", () => {
+    const r = parseCombined(timed("0.000", "-"), "atlas-front");
+    expect(r?.attrs).not.toHaveProperty("upstreamStatus");
+    expect(r?.durationMs).toBe(0);
+  });
+
+  it("knows no duration for a line written before the switch, or by a vhost still on combined", () => {
+    expect(parseCombined(`${LINE} "-" "atlas.example.net"`, "atlas-front")?.durationMs).toBeNull();
+    expect(parseCombined(LINE, "atlas-front")?.durationMs).toBeNull();
+  });
+
+  it("does not take a number from the wrong field", () => {
+    // A tail that is almost the timing shape but not quite is unknown, never a guess.
+    expect(parseCombined(`${LINE} "-" fast "200" "atlas.example.net"`, "atlas-front")?.durationMs).toBeNull();
+    expect(parseCombined(`${LINE} "-" 0.012 "200"`, "atlas-front")?.durationMs).toBeNull();
+  });
+
+  it("reads the rest of the line exactly as before", () => {
+    const r = parseCombined(timed("0.012", "200"), "atlas-front");
+    expect(r?.degraded).toBeUndefined();
+    expect(r?.statusCode).toBe(200);
+    expect(r?.route).toBe("/shots/iknos/logs-960.avif");
+  });
 });

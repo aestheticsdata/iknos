@@ -17,6 +17,7 @@ import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { OtlpModule } from "@otlp/otlp.module";
 import { RedisModule } from "@redis/redis.module";
 import { ScrapeModule } from "@src/scrape/scrape.module";
+import { SliModule } from "@src/sli/sli.module";
 import { TrafficModule } from "@src/traffic/traffic.module";
 import { WhoisModule } from "@src/whois/whois.module";
 import { LoggerModule } from "nestjs-pino";
@@ -30,7 +31,8 @@ import { HealthController } from "./health.controller";
  * (IKN-11), the collector's own status (IKN-24), the service view's metrics (IKN-13) and grouped
  * errors with the routes that serve them (IKN-9, IKN-14) and the alert engine with its own
  * (IKN-10, IKN-15) are in. M3 is complete; on-demand whois for client addresses (IKN-73) is M4.
- * OTLP traces from the Officina apps, with their per-application write tokens, are IKN-87.
+ * OTLP traces from the Officina apps, with their per-application write tokens, are IKN-87. The
+ * request indicators Zeus reads around a deploy (`GET /api/sli`) are IKN-88.
  */
 @Module({
   imports: [
@@ -69,6 +71,7 @@ import { HealthController } from "./health.controller";
     WhoisModule,
     TrafficModule,
     OtlpModule,
+    SliModule,
   ],
   controllers: [HealthController],
   providers: [

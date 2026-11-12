@@ -1,3 +1,4 @@
+import { appendFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { CLIENT_IPS, ERROR_TEMPLATES, HOSTNAME, HOUR_WEIGHT, PROFILES, USER_AGENTS, USER_IDS } from "./profiles";
 
@@ -35,6 +36,9 @@ const PORT = Number(arg("port"));
 const KIND = arg("kind", "api") as "api" | "front" | "stopped";
 const HEALTH_PATH = arg("health", "/health");
 const METRICS_PATH = arg("metrics", "/metrics");
+/** The site this dummy's requests arrive under, and the shared access log nginx would write (IKN-88). */
+const HOST = arg("host", "");
+const NGINX_LOG = arg("nginx-log", "");
 
 function characterOf(service: string): Profile {
   const found = PROFILES.find((p) => p.name === service);
@@ -84,6 +88,40 @@ function ecs(level: string, message: string, extra: Record<string, unknown> = {}
     "host.hostname": HOSTNAME,
     ...extra,
   });
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const pad = (n: number): string => String(n).padStart(2, "0");
+
+/** nginx's `$time_local`, offset included: `12/Nov/2026:16:02:31 +0100`. */
+function timeLocal(at: Date): string {
+  const offset = -at.getTimezoneOffset();
+  const sign = offset >= 0 ? "+" : "-";
+  const abs = Math.abs(offset);
+  return (
+    `${pad(at.getDate())}/${MONTHS[at.getMonth()]}/${at.getFullYear()}:` +
+    `${pad(at.getHours())}:${pad(at.getMinutes())}:${pad(at.getSeconds())} ${sign}${pad(Math.floor(abs / 60))}${pad(abs % 60)}`
+  );
+}
+
+/**
+ * The line nginx would have written for this request, in ks-b's `main` format since IKN-88:
+ * combined, `"$http_x_forwarded_for"`, `$request_time "$upstream_status"`, `"$host"`.
+ *
+ * Appended rather than buffered: one short `O_APPEND` write per request is atomic on a local disk,
+ * so nineteen dummies sharing the file never interleave half-lines.
+ */
+function accessLine(request: { method: string; path: string; status: number; durationMs: number }): void {
+  if (NGINX_LOG === "" || HOST === "") return;
+  const { method, path, status, durationMs } = request;
+  const line =
+    `${pick(CLIENT_IPS)} - - [${timeLocal(new Date())}] "${method} ${path} HTTP/1.1" ${status} ${int(120, 48_000)} ` +
+    `"-" "${pick(USER_AGENTS)}" "-" ${(durationMs / 1000).toFixed(3)} "${status}" "${HOST}"`;
+  try {
+    appendFileSync(NGINX_LOG, `${line}\n`);
+  } catch {
+    // A missing directory costs the access line and nothing else: the ECS line is already out.
+  }
 }
 
 function weightedRoute(routes: Route[]): Route {
@@ -179,6 +217,7 @@ function httpLine(): void {
   write(ecs(level, `${route.method} ${extra["url.path"]} ${status} in ${durationMs} ms`, extra));
 
   observe(route, status, durationMs);
+  accessLine({ method: route.method, path: String(extra["url.path"]), status, durationMs });
 }
 
 function eventLine(): void {

@@ -75,6 +75,15 @@ never listed, never touched: nothing but mock data reaches the database. Restart
 once after adding the lines; the API reads `.env` at boot. The corollary is deliberate: a real
 app you start under your everyday pm2 never shows up in a dev Iknos — only the fleet does.
 
+**nginx too (IKN-88).** Every request a dummy answers is also appended, in ks-b's `main` format,
+to `~/.iknos-mock/nginx/access.log` — the stand-in for the shared `/var/log/nginx/access.log`. A
+dummy writes under its app's site (`atlas-api` and `atlas-front` are both `atlas.example.net`, one
+vhost as on ks-b), and `fleet start` writes that site into the `hosts` of the app's front, or of its
+API when it has no front. So the nginx source files every line, Traffic fills, and `GET /api/sli`
+answers with real counts and latencies — `pathPrefix=/api` for the API half,
+`excludePathPrefix=/api` for the front. The fleet refuses to start until `.env` points
+`IKNOS_NGINX_SHARED_LOG` at that file; `--flush` empties it with the pm2 logs.
+
 ### Two daemons, and why `pm2 list` shows none of it
 
 `pm2` is not one program but two: a **CLI** (the client) and a **daemon** (which owns the

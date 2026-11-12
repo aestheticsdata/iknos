@@ -52,6 +52,7 @@ export type {
   ServiceRuntime,
 } from "./service-runtime";
 export type { MetricSource, ServiceSignals, Signal, SignalPoint } from "./service-signals";
+export type { SliWindow } from "./sli";
 export type { Trace } from "./trace";
 export type { SpanRow, TraceDetail, TraceList, TraceStatus, TraceSummary } from "./traces";
 export type {

@@ -20,6 +20,41 @@ import type { LogRecord } from "./log-record";
  */
 const COMBINED = /^(\S+) (\S+) (\S+) \[([^\]]+)\] "([^"]*)" (\d{3}) (\d+|-) "([^"]*)" "([^"]*)"/;
 
+/**
+ * What ks-b's `main` format writes after the combined fields since IKN-88:
+ *
+ * ```
+ * "$http_x_forwarded_for" $request_time "$upstream_status" "$host"
+ * ```
+ *
+ * The timing goes **before** `"$host"` rather than after it, so the host stays the last quoted field
+ * and `trailingHost` reads every line the way it always has. Anchored at both ends: a line written
+ * before IKN-88 (`"xff" "host"`) or by a vhost still on `combined` (nothing at all) does not match,
+ * and its duration stays unknown rather than being guessed from whichever field happens to sit there.
+ */
+const TIMING_TAIL = /^ "[^"]*" (\d+(?:\.\d+)?|-) "([^"]*)" "[^"]*"$/;
+
+type Timing = { durationMs: number | null; upstreamStatus: string | null };
+
+/**
+ * `$request_time` is seconds with millisecond resolution (`0.012`), from the first byte read off the
+ * client to the last byte written back — what the visitor waited, upstream included.
+ *
+ * `$upstream_status` stays a string: nginx writes `-` when nothing was proxied, and `502, 200` when
+ * it tried two upstreams, and neither is a number. It is the field that tells a 502 nginx produced
+ * because the app was down from one the app sent itself.
+ */
+function parseTiming(rest: string): Timing {
+  const m = TIMING_TAIL.exec(rest);
+  if (m === null) return { durationMs: null, upstreamStatus: null };
+
+  const seconds = m[1] === "-" ? Number.NaN : Number(m[1]);
+  return {
+    durationMs: Number.isFinite(seconds) ? Math.round(seconds * 1000) : null,
+    upstreamStatus: dashless(m[2]),
+  };
+}
+
 /** `16/Sep/2026:14:02:31 +0200` — nginx's own, which `new Date()` does not read. */
 const TIME_LOCAL = /^(\d{2})\/([A-Za-z]{3})\/(\d{4}):(\d{2}):(\d{2}):(\d{2}) ([+-])(\d{2})(\d{2})$/;
 
@@ -156,6 +191,7 @@ export function parseCombined(line: string, service: string): LogRecord | null {
   const referrer = dashless(m[8]);
   const userAgent = dashless(m[9]);
   const bytes = m[7] === "-" ? null : Number(m[7]);
+  const { durationMs, upstreamStatus } = parseTiming(clean.slice(m[0].length));
 
   const attrs: Record<string, unknown> = {};
   if (referrer !== null) attrs.referrer = referrer;
@@ -165,6 +201,7 @@ export function parseCombined(line: string, service: string): LogRecord | null {
   // because `sendBeacon` cannot set a header, and nginx writes that into `$request` verbatim.
   if (query !== null) attrs.query = redactQuery(query);
   if (bytes !== null) attrs.bytes = bytes;
+  if (upstreamStatus !== null) attrs.upstreamStatus = upstreamStatus;
 
   return {
     ts,
@@ -180,9 +217,9 @@ export function parseCombined(line: string, service: string): LogRecord | null {
     httpMethod: method,
     route,
     statusCode: status,
-    // combined has no $request_time. A log_format carrying one would be a change to every vhost
-    // that wants it — spec §10.
-    durationMs: null,
+    // `main` carries $request_time since IKN-88; `combined`, and any line written before the switch,
+    // does not, and stays null. Post-deploy verification reads its p95 off this column.
+    durationMs,
     clientIp: m[1],
     userId: dashless(m[3]),
     // The machine, not the site: `$host` is read by `trailingHost` and decides the service instead.
@@ -197,8 +234,8 @@ const HOST = /^[a-z0-9.-]+$/;
 /**
  * The site a line of the shared `access.log` was for (IKN-84).
  *
- * ks-b's global `main` format is combined, then `"$http_x_forwarded_for"`, then `"$host"` — the
- * last quoted field. The pattern above is anchored at the start only, so the extra fields leave
+ * ks-b's global `main` format is combined, then `"$http_x_forwarded_for"`, then since IKN-88
+ * `$request_time "$upstream_status"`, then `"$host"` — always the last quoted field. The pattern above is anchored at the start only, so the extra fields leave
  * `parseCombined` reading the same line it always read.
  *
  * String search rather than a regex over the line: it runs on every line of the busiest file on
