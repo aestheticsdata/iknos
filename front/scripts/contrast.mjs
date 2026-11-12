@@ -16,15 +16,22 @@ import { readFileSync } from "node:fs";
 
 const AA_TEXT = 4.5;
 
-const css = ["colors.css", "charts.css"]
-  .map((file) => readFileSync(new URL(`../styles/tokens/${file}`, import.meta.url), "utf8"))
-  .join("\n");
+const read = (file) => readFileSync(new URL(`../styles/tokens/${file}`, import.meta.url), "utf8");
 
-/** A token's hex, following `var(--color-…)` aliases — the chart tokens are mostly aliases (IKN-86). */
+/** The dark theme is the default set; the light theme is the same set with `light.css` laid over it. */
+const base = ["colors.css", "charts.css"].map(read).join("\n");
+const SHEETS = { dark: [base], light: [read("light.css"), base] };
+
+let sheets = SHEETS.dark;
+
+/** A token's hex in the theme being checked, following `var(--color-…)` aliases (IKN-86). */
 const token = (name) => {
-  const match = css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6}|var\\(--color-([a-z0-9-]+)\\))`));
-  if (!match) throw new Error(`token not found: --color-${name}`);
-  return match[2] ? token(match[2]) : match[1];
+  const pattern = new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6}|var\\(--color-([a-z0-9-]+)\\))`);
+  for (const css of sheets) {
+    const match = css.match(pattern);
+    if (match) return match[2] ? token(match[2]) : match[1];
+  }
+  throw new Error(`token not found: --color-${name}`);
 };
 
 const toLinear = (channel) => {
@@ -51,81 +58,86 @@ const RAMPS = {
 
 let failed = 0;
 
-for (const [ramp, backgrounds] of Object.entries(RAMPS)) {
-  console.log(`\n${ramp} — state colours (need ${AA_TEXT}:1 as text)`);
-  for (const state of STATES) {
-    const fg = token(`${ramp}-${state}`);
-    // The worst background is the one the eye has least room against, and it is the only one
-    // worth asserting: clearing it clears the others by construction.
-    const worst = Math.min(...backgrounds.map((bg) => ratio(fg, token(bg))));
-    const ok = worst >= AA_TEXT;
-    if (!ok) failed++;
-    console.log(`  ${`${ramp}-${state}`.padEnd(16)} ${fg}  worst ${worst.toFixed(2)}  ${ok ? "ok" : "FAIL"}`);
+for (const theme of Object.keys(SHEETS)) {
+  sheets = SHEETS[theme];
+  console.log(`\n══ ${theme} theme ══`);
+
+  for (const [ramp, backgrounds] of Object.entries(RAMPS)) {
+    console.log(`\n${ramp} — state colours (need ${AA_TEXT}:1 as text)`);
+    for (const state of STATES) {
+      const fg = token(`${ramp}-${state}`);
+      // The worst background is the one the eye has least room against, and it is the only one
+      // worth asserting: clearing it clears the others by construction.
+      const worst = Math.min(...backgrounds.map((bg) => ratio(fg, token(bg))));
+      const ok = worst >= AA_TEXT;
+      if (!ok) failed++;
+      console.log(`  ${`${ramp}-${state}`.padEnd(16)} ${fg}  worst ${worst.toFixed(2)}  ${ok ? "ok" : "FAIL"}`);
+    }
   }
-}
 
-/**
- * The tinted fills, and the ink each one actually carries — IKN-13.
- *
- * The loop above checks the four state colours against the *ramp's own* backgrounds, which is the
- * right question for text on a card and the wrong one for the service header's pills: those are the
- * one place on the work surface where a state is read as an area, so their ink sits on a tint the
- * gate had never heard of. `work-error` on `work-error-bg` measures 3.98:1 — below the bar, on a
- * pairing nothing was checking, which is exactly how a gate stops being a gate.
- *
- * Listed as pairs rather than derived, because the pairing is a design decision: the ink on a tint
- * is `work-text`, and the hue is carried by the fill and by the dot beside it.
- *
- * Only `work-text` is enforced, deliberately. The dimmed key of a chip is `work-text-dim`, which is
- * below AA on every background in the product and is the same design decision the text ramp below
- * records — a hierarchy the design asked for, not a lint failure. What has to be readable is the
- * value, and the value is `work-text`.
- */
-const FILLS = [
-  ["work-text", "work-ok-bg"],
-  ["work-text", "work-error-bg"],
-];
+  /**
+   * The tinted fills, and the ink each one actually carries — IKN-13.
+   *
+   * The loop above checks the four state colours against the *ramp's own* backgrounds, which is the
+   * right question for text on a card and the wrong one for the service header's pills: those are the
+   * one place on the work surface where a state is read as an area, so their ink sits on a tint the
+   * gate had never heard of. `work-error` on `work-error-bg` measures 3.98:1 — below the bar, on a
+   * pairing nothing was checking, which is exactly how a gate stops being a gate.
+   *
+   * Listed as pairs rather than derived, because the pairing is a design decision: the ink on a tint
+   * is `work-text`, and the hue is carried by the fill and by the dot beside it.
+   *
+   * Only `work-text` is enforced, deliberately. The dimmed key of a chip is `work-text-dim`, which is
+   * below AA on every background in the product and is the same design decision the text ramp below
+   * records — a hierarchy the design asked for, not a lint failure. What has to be readable is the
+   * value, and the value is `work-text`.
+   */
+  const FILLS = [
+    ["work-text", "work-ok-bg"],
+    ["work-text", "work-error-bg"],
+  ];
 
-console.log(`\ntinted fills — ink on a state background (need ${AA_TEXT}:1 as text)`);
-for (const [ink, fill] of FILLS) {
-  const measured = ratio(token(ink), token(fill));
-  const ok = measured >= AA_TEXT;
-  if (!ok) failed++;
-  console.log(`  ${`${ink} on ${fill}`.padEnd(34)} ${measured.toFixed(2)}  ${ok ? "ok" : "FAIL"}`);
-}
+  console.log(`\ntinted fills — ink on a state background (need ${AA_TEXT}:1 as text)`);
+  for (const [ink, fill] of FILLS) {
+    const measured = ratio(token(ink), token(fill));
+    const ok = measured >= AA_TEXT;
+    if (!ok) failed++;
+    console.log(`  ${`${ink} on ${fill}`.padEnd(34)} ${measured.toFixed(2)}  ${ok ? "ok" : "FAIL"}`);
+  }
 
-/**
- * The chart language's inks (IKN-86): every label a chart prints on the work surface, the series
- * colours its totals are printed in, and the three inks of the dark tooltip on its own ground.
- */
-const CHART_TEXT = [
-  ["chart-ref", "work-surface"],
-  ["chart-label-muted", "work-surface"],
-  ["chart-visitors-ink", "work-surface"],
-  ["chart-views-ink", "work-surface"],
-  ["chart-bots-ink", "work-surface"],
-  ["chart-error-ink", "work-surface"],
-  ["chart-tip-fg", "chart-tip-bg"],
-  ["chart-tip-label", "chart-tip-bg"],
-  ["chart-tip-muted", "chart-tip-bg"],
-];
+  /**
+   * The chart language's inks (IKN-86): every label a chart prints on the work surface, the series
+   * colours its totals are printed in, and the three inks of the dark tooltip on its own ground.
+   */
+  const CHART_TEXT = [
+    ["chart-ref", "work-surface"],
+    ["chart-label-muted", "work-surface"],
+    ["chart-visitors-ink", "work-surface"],
+    ["chart-views-ink", "work-surface"],
+    ["chart-bots-ink", "work-surface"],
+    ["chart-error-ink", "work-surface"],
+    ["chart-tip-fg", "chart-tip-bg"],
+    ["chart-tip-label", "chart-tip-bg"],
+    ["chart-tip-muted", "chart-tip-bg"],
+  ];
 
-console.log(`\nchart labels — ink on its ground (need ${AA_TEXT}:1 as text)`);
-for (const [ink, ground] of CHART_TEXT) {
-  const measured = ratio(token(ink), token(ground));
-  const ok = measured >= AA_TEXT;
-  if (!ok) failed++;
-  console.log(`  ${`${ink} on ${ground}`.padEnd(34)} ${measured.toFixed(2)}  ${ok ? "ok" : "FAIL"}`);
-}
+  console.log(`\nchart labels — ink on its ground (need ${AA_TEXT}:1 as text)`);
+  for (const [ink, ground] of CHART_TEXT) {
+    const measured = ratio(token(ink), token(ground));
+    const ok = measured >= AA_TEXT;
+    if (!ok) failed++;
+    console.log(`  ${`${ink} on ${ground}`.padEnd(34)} ${measured.toFixed(2)}  ${ok ? "ok" : "FAIL"}`);
+  }
 
-console.log("\ntext ramp — reported, not enforced (see the note at the top of this file)");
-for (const [ramp, backgrounds] of Object.entries(RAMPS)) {
-  for (const name of ["text", "text-muted", "text-dim"]) {
-    const fg = token(`${ramp}-${name}`);
-    const worst = Math.min(...backgrounds.map((bg) => ratio(fg, token(bg))));
-    console.log(
-      `  ${`${ramp}-${name}`.padEnd(20)} ${fg}  worst ${worst.toFixed(2)}  ${worst >= AA_TEXT ? "ok" : "below AA"}`,
-    );
+  console.log("\ntext ramp — reported, not enforced (see the note at the top of this file)");
+  for (const [ramp, backgrounds] of Object.entries(RAMPS)) {
+    for (const name of ["text", "text-muted", "text-dim"]) {
+      const fg = token(`${ramp}-${name}`);
+      const worst = Math.min(...backgrounds.map((bg) => ratio(fg, token(bg))));
+      console.log(
+        `  ${`${ramp}-${name}`.padEnd(20)} ${fg}  worst ${worst.toFixed(2)}  ${worst >= AA_TEXT ? "ok" : "below AA"}`,
+      );
+    }
   }
 }
 
@@ -133,4 +145,6 @@ if (failed > 0) {
   console.error(`\n${failed} pairing(s) below ${AA_TEXT}:1.`);
   process.exit(1);
 }
-console.log("\nAll state colours clear AA on both surfaces of their ramp, and on the tints they are used over.");
+console.log(
+  "\nAll state colours clear AA on both surfaces of their ramp, and on the tints they are used over, in both themes.",
+);

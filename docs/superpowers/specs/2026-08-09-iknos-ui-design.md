@@ -27,7 +27,7 @@ backend design, §8 records which one won.
 |---|---|---|
 | U1 | Iknos gets its own visual language, built on PFA's CSS architecture | The exploration explicitly rejected PFA's look — "zéro dégradé, monospace partout". Keeping PFA's `globals.css` split, Tailwind v4 token layer and primitive inventory preserves the copy-and-own saving; the token *values* and the component skins are Iknos'. |
 | U2 | The app is service-scoped | A PM2 service rail drives every view. There is no fleet-wide Overview: you pick a service and the whole screen answers about that service. Fleet-level facts (host, storage, collector) live in the chassis, not in a page. |
-| U3 | Dark chassis, light work surface, dark log window | The chassis is the tool and never moves. The work surface is data you read for an hour. The log stream is the one place you are genuinely in a terminal, so it is a dark window inset into the light surface. |
+| U3 | Dark chassis, work surface dark by default with a light theme, dark log window | The chassis is the tool and never moves. The work surface is data you read for an hour. *Revised 2026-11-12:* it is dark by default, as the AI-traces mockups draw every screen, and the original light surface is kept as a theme behind the top bar's switch. The log stream is a dark window inset into the work surface in both themes. |
 | U4 | Accounts are provisioned, but recoverable | Registration is open only while no account exists and seals itself afterwards — Zeus's mechanism, enforced by a `UNIQUE` column rather than a flag. The sealed state is shown, not 404'd. Recovery is a passphrase chosen at creation: there is no mail infrastructure on ks-b and there is not going to be any. |
 | U5 | Keyboard is a first-class input | `j/k`, `⏎`, `⌥⏎`, `/`, `⌘K`, `⌘L`, `⌘I`, `⌘C`, `⌘⇧L`. The status bar advertises them permanently. This is the difference between a dashboard you look at and a tool you use. |
 | U6 | One screen, no page scroll | 1440×900 is the design frame. The page never scrolls; individual lists do. A monitoring screen you have to scroll to read has already failed at its job. |
@@ -37,7 +37,7 @@ backend design, §8 records which one won.
 ### 3.1 Two surfaces
 
 **Chassis (dark)** — top bar, service rail, status bar, modals, auth screens.
-**Work surface (light)** — cards, tables, signal tiles, route lists.
+**Work surface (dark by default, light as a theme)** — cards, tables, signal tiles, route lists.
 **Log window (darkest)** — the log panel, inset into the work surface with an inner ring.
 
 A card never floats on a shadow on the light surface: it is a 1px border and a flat fill.
@@ -67,6 +67,25 @@ two tokens and the component picks by surface, never by luck.
 | `error` | `#E4736B` | `#8E2F2A` | error level, firing |
 | `info` | `#7FA8C4` | `#4E7B96` | trace ids, links |
 | `error-bg` | `#22191C` | `#C4A9A6` | error row / hot issue background |
+
+**Revised 2026-11-12 — the work surface has two themes.** The Light column above is now the
+`light` theme (`styles/tokens/light.css`, applied by `<html data-theme="light">`). The default is
+the dark theme from the AI-traces mockups, in `styles/tokens/colors.css`:
+
+| Work token | Dark theme | Use |
+|---|---|---|
+| `work-ground` | `#0A0F14` | the area the cards sit on |
+| `work-surface` | `#121820` | cards |
+| `work-inset` | `#1C2634` | table headers, hover, selected row |
+| `work-border` | `#27313D` | default |
+| `work-border-strong` | `#33404E` | inputs, dividers |
+| `work-text` | `#CBD8D0` | primary |
+| `work-text-muted` | `#A3B6BF` | secondary |
+| `work-text-dim` | `#8496A6` | labels, kickers |
+| `work-accent` / `warn` / `error` / `info` | the chassis's four | states |
+
+The chassis ramp is not themed. The names stay `chassis-*` and `work-*` because the light theme
+still shows both surfaces at once. `pnpm run contrast` checks both themes.
 
 Histogram bars have their own three: error `#C1504A`, warn `#C89A3E`, info `#3E5A50`.
 

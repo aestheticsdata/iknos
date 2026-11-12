@@ -1,13 +1,17 @@
 /**
- * The palette — §3.2 of the UI design doc.
+ * The palette — §3.2 of the UI design doc, re-themed 2026-11-12.
  *
- * **Two separate ramps, not one ramp with a dark mode.** A level colour that reads on the chassis
- * (`#10151C`) is unreadable on the work surface (`#BFCDD4`), so every state exists twice and the
- * component picks by the surface it sits on. That is why these are `chassis-*` and `work-*` rather
- * than a single set flipped by a `.dark` class: both surfaces are on screen at the same time.
+ * **Two ramps, and the work ramp has two themes.** `chassis-*` is the bars, the rail and the
+ * modals, and it is dark always. `work-*` is the cards and tables. It is dark by default, as the
+ * AI-traces mockups draw every screen, and `tokens/light.css` holds the original light values,
+ * which `:root[data-theme="light"]` swaps back in from the top bar's switch.
  *
- * Green is the **identity**, not "everything is fine" — dropping the navy direction is the whole
- * reason the exploration happened. No chart may use `accent` as a neutral series colour.
+ * The two ramps stay separate names because the light theme still puts both surfaces on screen at
+ * once, and a state colour that reads on the chassis is unreadable on a light card. A component
+ * therefore still picks by the surface it sits on, never by the theme.
+ *
+ * Green is the **identity**, not "everything is fine". No chart may use `accent` as a neutral
+ * series colour.
  */
 @theme {
   /* ── Chassis (dark) — bars, rail, status bar, modals, auth screens ─────────────────────────── */
@@ -35,27 +39,29 @@
   --color-chassis-scrollbar: var(--color-chassis-border-strong);
   --color-chassis-scrollbar-hover: var(--color-chassis-border-focus);
 
-  /* ── Work surface (light) — cards, tables, signal tiles, route lists ───────────────────────── */
-  --color-work-surface: #bfcdd4;
-  --color-work-inset: #aebfc7;
-  --color-work-border: #93a8b3;
-  --color-work-border-strong: #a3b6bf;
-  --color-work-text: #131e24;
-  --color-work-text-muted: #3f535f;
-  --color-work-text-dim: #556a76;
+  /* ── Work surface (dark by default; light in tokens/light.css) — cards, tables, tiles ──────── */
+  --color-work-surface: #121820;
   /*
-   * The four states, darkened until they clear 4.5:1 as *text* — the mockup's originals sat
-   * between 2.41 and 4.28 against `work-inset` and were unreadable at 10.5px. Hue and saturation
-   * are the mockup's; only lightness moved, which is why they still read as the same four colours.
-   *
-   * Measured against the worse of the two work backgrounds (`work-inset`, the darker one, where
-   * dark text has less room). `pnpm run contrast` re-checks this and fails if an edit regresses it.
+   * Lighter than the card, where the light theme's inset is darker. It is the hover, the selected
+   * row and the table-header band, and on a ground this dark a darker step is too close to the
+   * card to be seen as a hover. The mockups' `--sel`.
    */
-  --color-work-accent: #2e523f; /* 5.39 on surface, 4.63 on inset */
-  --color-work-warn: #634511; /* 5.40 / 4.63 */
-  --color-work-error: #862c28; /* 5.36 / 4.61 */
-  --color-work-info: #324e60; /* 5.39 / 4.63 */
-  --color-work-error-bg: #c4a9a6;
+  --color-work-inset: #1c2634;
+  --color-work-border: #27313d;
+  --color-work-border-strong: #33404e;
+  --color-work-text: #cbd8d0;
+  --color-work-text-muted: #a3b6bf;
+  --color-work-text-dim: #8496a6;
+  /*
+   * The four states, as *text*. On the dark theme they are the chassis's own four, which already
+   * clear 4.5:1 on a ground this dark. The light theme's are darker inks of the same hues
+   * (`tokens/light.css`). `pnpm run contrast` checks both themes and fails if an edit regresses.
+   */
+  --color-work-accent: #86b99a;
+  --color-work-warn: #e0ae55;
+  --color-work-error: #e4736b;
+  --color-work-info: #7fa8c4;
+  --color-work-error-bg: #2d242a;
   /*
    * The health pill's two fills — IKN-13.
    *
@@ -71,7 +77,7 @@
    * backgrounds; what has to clear the bar is the text on them, and that text is `work-text` and
    * `work-error`, both of which the gate already covers against the darker `work-inset`.
    */
-  --color-work-ok-bg: #9cbcaa;
+  --color-work-ok-bg: #202b2f;
   /*
    * The ground the cards sit on.
    *
@@ -84,15 +90,13 @@
    *
    * No text ever sits on it, so it is outside the contrast gate's remit by construction.
    */
-  --color-work-ground: #8fa5b0;
+  --color-work-ground: #0a0f14;
   /*
-   * The same idea on the light ground, and the direction reverses with it: the thumb is the work
-   * border and it *darkens* under the pointer instead of lightening. This is the reason the
-   * scrollbar is two tokens and not one — `chassis-scrollbar` on `work-surface` is a hard slate
-   * bar across a pale card, which reads as a piece of the content rather than as chrome.
+   * The work surface's scrollbar. On the dark theme the thumb lightens under the pointer, as the
+   * chassis's does. On the light theme the direction reverses and it darkens (`tokens/light.css`).
    */
-  --color-work-scrollbar: var(--color-work-border);
-  --color-work-scrollbar-hover: var(--color-work-text-dim);
+  --color-work-scrollbar: var(--color-work-border-strong);
+  --color-work-scrollbar-hover: #4a5f72;
 
   /**
    * The histogram's own three. Deliberately not the state colours: these are read as areas of

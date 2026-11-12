@@ -1,0 +1,52 @@
+/**
+ * The light theme: the work surface as it shipped until 2026-11-12, kept behind the top bar's
+ * switch. Dark is the default and lives in `colors.css` and `charts.css`; this file only overrides.
+ *
+ * The chassis is not themed. Bars, rail and modals are dark in both.
+ *
+ * Plain custom properties on `:root`, not a second `@theme`: the utilities already read
+ * `var(--color-work-*)`, so swapping the value is the whole mechanism. `scripts/contrast.mjs` reads
+ * this file to check the light theme, so a token added here is checked without being listed twice.
+ */
+:root[data-theme="light"] {
+  /* ── Work surface ────────────────────────────────────────────────────────────────────────── */
+  --color-work-surface: #bfcdd4;
+  --color-work-inset: #aebfc7;
+  --color-work-border: #93a8b3;
+  --color-work-border-strong: #a3b6bf;
+  --color-work-text: #131e24;
+  --color-work-text-muted: #3f535f;
+  --color-work-text-dim: #556a76;
+  /*
+   * The four states, darkened until they clear 4.5:1 as text on the worse of the two light
+   * backgrounds (`work-inset`). Hue and saturation are the original mockup's; only lightness moved.
+   */
+  --color-work-accent: #2e523f; /* 5.39 on surface, 4.63 on inset */
+  --color-work-warn: #634511; /* 5.40 / 4.63 */
+  --color-work-error: #862c28; /* 5.36 / 4.61 */
+  --color-work-info: #324e60; /* 5.39 / 4.63 */
+  --color-work-error-bg: #c4a9a6;
+  --color-work-ok-bg: #9cbcaa;
+  --color-work-ground: #8fa5b0;
+  /* The thumb darkens under the pointer here, where the dark theme's lightens. */
+  --color-work-scrollbar: var(--color-work-border);
+  --color-work-scrollbar-hover: var(--color-work-text-dim);
+
+  /* ── Charts ──────────────────────────────────────────────────────────────────────────────── */
+  --color-chart-visitors: #3c6b52;
+  --color-chart-visitors-strong: #1d3f2c;
+  --color-chart-visitors-tint: #86a893;
+  --color-chart-views: #2f5878;
+  --color-chart-views-strong: #163a57;
+  --color-chart-views-tint: #8aa2b8;
+  --color-chart-bots: #8a6118;
+  --color-chart-bots-strong: #5a3c08;
+  --color-chart-error: #8e2f2a;
+  --color-chart-range: #7f96a2;
+  --color-chart-visitors-ink: #345d47; /* 4.60 on work-surface */
+  --color-chart-views-ink: #2f5878;
+  --color-chart-bots-ink: #704f13; /* 4.58 */
+  --color-chart-label-muted: #465761; /* 4.61 */
+  --color-chart-crosshair: rgb(19 30 36 / 0.5);
+  --color-chart-tip-bg: #131e24;
+}

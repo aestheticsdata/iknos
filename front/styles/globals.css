@@ -3,6 +3,7 @@
 /* Design tokens — by type, the split PFA settled on. Values are Iknos's own. */
 @import "./tokens/colors.css";
 @import "./tokens/charts.css";
+@import "./tokens/light.css";
 @import "./tokens/typography.css";
 @import "./tokens/radius.css";
 @import "./tokens/elevation.css";

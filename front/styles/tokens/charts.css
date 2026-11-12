@@ -10,37 +10,36 @@
  *
  * Where a value already exists in the palette under another name it is an alias, not a second copy,
  * so the two can never drift apart.
+ *
+ * These are the dark theme's values (2026-11-12). The originals, tuned for the light work surface,
+ * are in `tokens/light.css`.
  */
 @theme {
   /* ── Series ──────────────────────────────────────────────────────────────────────────────── */
-  --color-chart-visitors: #3c6b52;
-  --color-chart-visitors-strong: #1d3f2c;
-  --color-chart-visitors-tint: #86a893;
-  --color-chart-views: #2f5878;
-  --color-chart-views-strong: #163a57;
-  --color-chart-views-tint: #8aa2b8;
-  --color-chart-bots: #8a6118;
-  --color-chart-bots-strong: #5a3c08;
+  --color-chart-visitors: #6fa385;
+  --color-chart-visitors-strong: #a5d1b6;
+  --color-chart-visitors-tint: #2f4a3c;
+  --color-chart-views: #6a9bc0;
+  --color-chart-views-strong: #a3c6e0;
+  --color-chart-views-tint: #2a4257;
+  --color-chart-bots: #c89a3e;
+  --color-chart-bots-strong: #e6bd6a;
   /* Above a threshold, and the SLO line. */
-  --color-chart-error: #8e2f2a;
+  --color-chart-error: #e4736b;
   /* "ok" bars under a threshold, and any count with no metric of its own. */
   --color-chart-neutral: #5c7886;
   /* The p50 → p99 strip. */
-  --color-chart-range: #7f96a2;
+  --color-chart-range: #3d4f5b;
   --color-chart-p95: var(--color-chart-bots);
   --color-chart-gauge: var(--color-chart-visitors);
 
   /*
-   * The same series as **text**: the totals a panel prints in its series' colour.
-   *
-   * The handoff's green and amber are fills, and as 16px text on the panel they measure 3.77:1 and
-   * 3.39:1, below the 4.5:1 its own §6 asks of every label. The hue is kept and only the lightness
-   * moves, as the state ramp did (`colors.css`). Blue and red clear the bar as they are.
-   * `pnpm run contrast` holds all four.
+   * The same series as **text**: the totals a panel prints in its series' colour. `pnpm run
+   * contrast` holds all four at 4.5:1 on the work surface, in both themes.
    */
-  --color-chart-visitors-ink: #345d47; /* 4.60 on work-surface */
-  --color-chart-views-ink: var(--color-chart-views);
-  --color-chart-bots-ink: #704f13; /* 4.58 */
+  --color-chart-visitors-ink: #86b99a;
+  --color-chart-views-ink: #7fa8c4;
+  --color-chart-bots-ink: #e0ae55;
   --color-chart-error-ink: var(--color-chart-error);
 
   /* ── Structure ───────────────────────────────────────────────────────────────────────────── */
@@ -50,14 +49,13 @@
   --color-chart-grid: var(--color-work-border-strong);
   /* The dashed average and the peak/avg label. */
   --color-chart-ref: var(--color-work-text-muted);
-  /* The handoff's #556A76 is 3.48:1 on the panel; darkened in its own hue to clear §6's 4.5:1. */
-  --color-chart-label-muted: #465761; /* 4.61 */
-  --color-chart-crosshair: rgb(19 30 36 / 0.5);
+  --color-chart-label-muted: #8496a6;
+  --color-chart-crosshair: rgb(203 216 208 / 0.5);
   /* The panel ground: the halo around the "now" dot and the backing behind the `avg` label. */
   --color-chart-ground: var(--color-work-surface);
 
   /* ── Tooltip ─────────────────────────────────────────────────────────────────────────────── */
-  --color-chart-tip-bg: var(--color-work-text);
+  --color-chart-tip-bg: #1e2733;
   --color-chart-tip-fg: #e3ebe6;
   --color-chart-tip-muted: #9fb3bf;
   --color-chart-tip-label: #b8c7cf;

@@ -9,6 +9,7 @@ import { CHASSIS_TEXT } from "@text/chassis";
 import { useEffect, useState } from "react";
 import { CollectorPill } from "./CollectorPill";
 import { HostBadge } from "./host/HostBadge";
+import { ThemeToggle } from "./ThemeToggle";
 import { ZoneToggle } from "./ZoneToggle";
 
 /**
@@ -85,6 +86,8 @@ export const TopBar = () => {
             </button>
           ))}
         </fieldset>
+        {/* Before the clock, as the mockups place it: the clock and its zone stay the last pair. */}
+        <ThemeToggle />
         <Clock />
         <ZoneToggle />
       </div>

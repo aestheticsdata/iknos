@@ -2,8 +2,10 @@
  * The two surfaces, and the classes each one resolves to — §3.1 and §3.2.
  *
  * Every primitive that can appear on both takes a `surface` and looks its colours up here. That is
- * the whole point of two ramps: a state colour legible on `#10151C` is not legible on `#BFCDD4`,
- * so the component is told which ground it is standing on rather than guessing.
+ * the whole point of two ramps: on the light theme a state colour legible on the chassis is not
+ * legible on a card, so the component is told which ground it is standing on rather than guessing.
+ * The work ramp is dark by default and light under `data-theme="light"`; the classes are the same
+ * in both, only the token values change (`styles/tokens/light.css`).
  *
  * **Written out, never interpolated.** `bg-${surface}-surface` produces a class Tailwind's scanner
  * cannot see, so it is never emitted and the element renders unstyled — the failure looks like a

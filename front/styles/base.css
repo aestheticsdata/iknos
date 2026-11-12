@@ -16,8 +16,8 @@
   }
 
   /**
-   * The document is chassis-dark. Every screen shipped so far — the four auth pages — is chassis,
-   * and the work surface arrives as light *cards on top of it*, never as a light page. Painting
+   * The document is chassis-dark in both themes. The auth pages are chassis, and the work surface
+   * arrives as *cards on top of it* — dark by default, light under `data-theme="light"`. Painting
    * the root anything else would mean every screen starting by covering it up.
    */
   html {

@@ -1,3 +1,4 @@
+import { THEME_BOOT_SCRIPT } from "@lib/theme";
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
@@ -107,7 +108,14 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => (
   <html
     className={`${jetbrainsMono.variable} ${ibmPlexSans.variable}`}
     lang="en"
+    // The boot script below sets `data-theme` before React hydrates, so the attribute differs from
+    // the server's HTML on purpose.
+    suppressHydrationWarning
   >
+    <head>
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: a constant string from `lib/theme`, no input reaches it */}
+      <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+    </head>
     <body>
       {/*
        * The chassis keeps the selected service and the time range in the query string, and nuqs
