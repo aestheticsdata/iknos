@@ -153,10 +153,18 @@ export class MaintenanceService implements OnApplicationBootstrap {
   /**
    * Once at boot, so a fresh deploy is correct immediately rather than at three tomorrow morning —
    * then, and only then, the rollups' own catch-up, in the background (IKN-20).
+   *
+   * Then the gated pass, in the background too. The boot pass may not drop a raw day, and the 3 a.m.
+   * cron only fires in a process that is up at 3 a.m. — on ks-b the fleet is stopped overnight and
+   * started in the morning, so from 2026-10-31 to 2026-11-12 that cron never ran and `metric_sample`
+   * reached 9 GB against a three-day window. Its `catchUp` joins the one just started rather than
+   * starting a second, and `run` keeps it from overlapping a 3 a.m. pass.
    */
   async onApplicationBootstrap(): Promise<void> {
     await this.safeRun(PASS.boot);
-    this.rollups?.catchUpInBackground();
+    if (this.rollups === null) return;
+    this.rollups.catchUpInBackground();
+    void this.safeRun(PASS.scheduled);
   }
 
   // Kept in step with `PURGE_AT`, which is what the storage panel tells the reader (IKN-24).
@@ -285,7 +293,7 @@ export class MaintenanceService implements OnApplicationBootstrap {
   private async rolledUpOnly(toDrop: string[], pass: Pass): Promise<string[]> {
     if (this.rollups === null || toDrop.length === 0) return toDrop;
     // The boot pass is awaited by the boot, and a catch-up can take a minute: the raw days wait for
-    // the 3 a.m. pass rather than holding `/health` hostage. A day late, never a hole.
+    // the gated pass that follows it in the background rather than holding `/health` hostage.
     if (pass === PASS.boot) return [];
 
     let through: Date | null = null;

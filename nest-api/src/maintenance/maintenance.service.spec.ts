@@ -190,16 +190,22 @@ describe("the purge waits for the rollups (IKN-20)", () => {
 });
 
 describe("the boot pass never waits on the rollups (IKN-20)", () => {
-  it("keeps raw days for the 3 a.m. pass, then starts the catch-up in the background", async () => {
-    const day = partitionName(new Date(Date.now() - 10 * 86_400_000));
-    const prisma = {
+  const day = partitionName(new Date(Date.now() - 10 * 86_400_000));
+  const makePrisma = () =>
+    ({
       $queryRaw: vi.fn().mockResolvedValue([
         { TABLE_NAME: "metric_sample", PARTITION_NAME: day },
         { TABLE_NAME: "metric_sample", PARTITION_NAME: "p_future" },
       ]),
       $executeRawUnsafe: vi.fn().mockResolvedValue(0),
-    } as unknown as PrismaService & { $executeRawUnsafe: ReturnType<typeof vi.fn> };
-    const catchUp = vi.fn();
+    }) as unknown as PrismaService & { $executeRawUnsafe: ReturnType<typeof vi.fn> };
+  const drops = (prisma: { $executeRawUnsafe: ReturnType<typeof vi.fn> }) =>
+    prisma.$executeRawUnsafe.mock.calls.map((c) => c[0] as string).filter((sql) => sql.includes("DROP PARTITION"));
+
+  it("returns before the rollups answer, with every raw day still there", async () => {
+    const prisma = makePrisma();
+    // A catch-up that never ends: the boot must not be the one waiting for it.
+    const catchUp = vi.fn().mockReturnValue(new Promise(() => undefined));
     const catchUpInBackground = vi.fn();
     const service = new MaintenanceService(prisma, {
       retentionDays: 3,
@@ -209,9 +215,29 @@ describe("the boot pass never waits on the rollups (IKN-20)", () => {
 
     await service.onApplicationBootstrap();
 
-    expect(catchUp).not.toHaveBeenCalled();
     expect(catchUpInBackground).toHaveBeenCalledOnce();
-    const statements = prisma.$executeRawUnsafe.mock.calls.map((c) => c[0] as string);
-    expect(statements.some((sql) => sql.includes("DROP PARTITION"))).toBe(false);
+    expect(drops(prisma)).toEqual([]);
+  });
+
+  /**
+   * ks-b stops its whole fleet overnight and starts it in the morning, so a process that only
+   * purges at 3 a.m. never purged at all: from 2026-10-31 to 2026-11-12 not one raw day went and
+   * `metric_sample` reached 9 GB against a three-day window. The gated pass follows every boot.
+   */
+  it("then runs the gated purge in the background, so a process asleep at 3 a.m. still purges", async () => {
+    const prisma = makePrisma();
+    let finish: (report: { through: Date }) => void = () => undefined;
+    const catchUp = vi.fn().mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    const service = new MaintenanceService(prisma, {
+      retentionDays: 3,
+      daysAhead: 0,
+      rollups: { catchUp, catchUpInBackground: vi.fn() },
+    });
+
+    await service.onApplicationBootstrap();
+    await vi.waitFor(() => expect(catchUp).toHaveBeenCalledOnce());
+    finish({ through: new Date() });
+
+    await vi.waitFor(() => expect(drops(prisma)).toEqual([`ALTER TABLE metric_sample DROP PARTITION ${day}`]));
   });
 });
