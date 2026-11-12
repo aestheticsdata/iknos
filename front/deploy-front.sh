@@ -474,23 +474,23 @@ ensure_local_deps() {
 # the dev server breaks it, so `.next` is left alone while one is running.
 clean_local_build() {
   local freed=()
-  if pgrep -f "next dev" > /dev/null 2>&1; then
+  if pgrep -f "$SCRIPT_DIR/node_modules/.*next dev" > /dev/null 2>&1; then
     log "ℹ️  next dev is running: local .next kept"
   elif [ -d "$SCRIPT_DIR/.next" ]; then
-    freed+=("$(du -sh "$SCRIPT_DIR/.next" 2>/dev/null | cut -f1) .next")
+    freed+=("$(du -sh "$SCRIPT_DIR/.next" 2>/dev/null | cut -f1 || true) .next")
     rm -rf -- "$SCRIPT_DIR/.next"
   fi
   if [ -d "$SCRIPT_DIR/test-results" ]; then
-    freed+=("$(du -sh "$SCRIPT_DIR/test-results" 2>/dev/null | cut -f1) test-results")
+    freed+=("$(du -sh "$SCRIPT_DIR/test-results" 2>/dev/null | cut -f1 || true) test-results")
     rm -rf -- "$SCRIPT_DIR/test-results"
   fi
   [ ${#freed[@]} -gt 0 ] && log "🧹 Local build output removed: ${freed[*]}"
   # node_modules too: the next deploy reinstalls it from the lockfile (`ensure_local_deps`). Kept
   # while a `next dev` runs from here, which loads from it.
-  if pgrep -f "next dev" > /dev/null 2>&1; then
+  if pgrep -f "$SCRIPT_DIR/node_modules/.*next dev" > /dev/null 2>&1; then
     log "ℹ️  next dev is running: local node_modules kept"
   elif [ -d "$SCRIPT_DIR/node_modules" ]; then
-    log "🧹 Removing $(du -sh "$SCRIPT_DIR/node_modules" 2>/dev/null | cut -f1) node_modules"
+    log "🧹 Removing $(du -sh "$SCRIPT_DIR/node_modules" 2>/dev/null | cut -f1 || true) node_modules"
     rm -rf -- "$SCRIPT_DIR/node_modules"
   fi
   return 0

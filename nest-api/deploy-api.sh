@@ -526,18 +526,18 @@ ensure_local_deps() {
 # The server builds the release; a local `dist` is only ever left over from an earlier build. A
 # `nest start --watch` running from this checkout lives in it, so it is kept while one is.
 clean_local_build() {
-  if pgrep -f "nest start" > /dev/null 2>&1; then
+  if pgrep -f "$SCRIPT_DIR/node_modules/.*nest.js start" > /dev/null 2>&1; then
     log "ℹ️  nest start is running: local dist kept"
   elif [ -d "$SCRIPT_DIR/dist" ]; then
-    log "🧹 Local build output removed: $(du -sh "$SCRIPT_DIR/dist" 2>/dev/null | cut -f1) dist"
+    log "🧹 Local build output removed: $(du -sh "$SCRIPT_DIR/dist" 2>/dev/null | cut -f1 || true) dist"
     rm -rf -- "$SCRIPT_DIR/dist"
   fi
   # node_modules too: the next deploy reinstalls it from the lockfile (`ensure_local_deps`). Kept
   # while a `nest start` runs from here, which loads from it.
-  if pgrep -f "nest start" > /dev/null 2>&1; then
+  if pgrep -f "$SCRIPT_DIR/node_modules/.*nest.js start" > /dev/null 2>&1; then
     log "ℹ️  nest start is running: local node_modules kept"
   elif [ -d "$SCRIPT_DIR/node_modules" ]; then
-    log "🧹 Removing $(du -sh "$SCRIPT_DIR/node_modules" 2>/dev/null | cut -f1) node_modules"
+    log "🧹 Removing $(du -sh "$SCRIPT_DIR/node_modules" 2>/dev/null | cut -f1 || true) node_modules"
     rm -rf -- "$SCRIPT_DIR/node_modules"
   fi
   return 0
