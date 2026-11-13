@@ -5,6 +5,7 @@ import { Tooltip } from "@components/ui/Tooltip";
 import { useTimeRange } from "@lib/chassisState";
 import { BADGE_TONE, badgeHint } from "@lib/hostFormat";
 import { HOST_LEVEL } from "@lib/interfaces/hostTypes";
+import { TOUR_ANCHOR } from "@lib/tourState";
 import { useHostNow, useHostSeries } from "@lib/useHost";
 import { cn } from "@lib/utils";
 import { timeLabel } from "@lib/zone";
@@ -66,6 +67,7 @@ export const HostBadge = () => {
             BADGE_CLASS[BADGE_TONE[level]],
           )}
           data-testid="host-badge"
+          data-tour={TOUR_ANCHOR.host}
           data-level={level}
         >
           {label}

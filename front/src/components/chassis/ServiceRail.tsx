@@ -9,6 +9,7 @@ import { CHART_SURFACE } from "@lib/charts/chartSurface";
 import { METRIC } from "@lib/charts/metricTokens";
 import { useSelectedService } from "@lib/chassisState";
 import { ROUTES } from "@lib/routes";
+import { TOUR_ANCHOR } from "@lib/tourState";
 import { useAlertCounts } from "@lib/useAlertCounts";
 import { useIssueCounts } from "@lib/useIssueCounts";
 import { useLogout } from "@lib/useLogout";
@@ -149,6 +150,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
       <section
         className="flex min-h-0 flex-col"
         data-testid="rail-services"
+        data-tour={TOUR_ANCHOR.services}
       >
         <RailHeading>{CHASSIS_TEXT.services}</RailHeading>
         {/* Pulled out to the nav's edge by its own padding, so the bar sits where the nav's did
@@ -214,6 +216,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
       <section
         className="flex-none max-rail:border-t max-rail:border-chassis-border max-rail:pt-2"
         data-testid="rail-views"
+        data-tour={TOUR_ANCHOR.views}
       >
         <RailHeading>{CHASSIS_TEXT.views}</RailHeading>
         <ul className="flex flex-col">

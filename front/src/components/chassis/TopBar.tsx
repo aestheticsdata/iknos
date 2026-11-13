@@ -2,6 +2,7 @@
 
 import { useSelectedService, useTimeRange } from "@lib/chassisState";
 import { RANGE_KEYS } from "@lib/timeRange";
+import { TOUR_ANCHOR } from "@lib/tourState";
 import { cn } from "@lib/utils";
 import { timeLabel } from "@lib/zone";
 import { useZone } from "@lib/zoneState";
@@ -64,6 +65,7 @@ export const TopBar = () => {
           className="flex items-center gap-0.5"
           aria-label={CHASSIS_TEXT.rangeLabel}
           data-testid="range-group"
+          data-tour={TOUR_ANCHOR.range}
         >
           {RANGE_KEYS.map((key) => (
             <button

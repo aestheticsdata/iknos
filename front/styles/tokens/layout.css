@@ -33,6 +33,16 @@
 }
 
 /**
+ * The first-run tour's card: one short title and three lines of prose beside a control. A fixed
+ * box, because the card is placed from its size before it is drawn — `TourCard` holds the same two
+ * numbers in px.
+ */
+@theme {
+  --container-tour-card: 20rem; /* 320px */
+  --spacing-tour-card-height: 11.5rem; /* 184px */
+}
+
+/**
  * The AI traces screens (IKN-91 … IKN-94).
  *
  * `--container-run-inspector` is the run detail's right pane: the tabs and a prompt in a code block

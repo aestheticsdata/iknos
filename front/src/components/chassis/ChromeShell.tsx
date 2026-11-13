@@ -8,6 +8,7 @@ import { ViewStatusProvider } from "@lib/viewStatus";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { CommandPalette } from "./CommandPalette";
+import { TourCard } from "./tour/TourCard";
 
 import type { ChromeAction } from "@lib/keymap";
 
@@ -57,6 +58,9 @@ export const ChromeShell = ({ children }: { children: React.ReactNode }) => {
   return (
     <CommandProvider onChromeAction={onChromeAction}>
       <ViewStatusProvider>
+        {/* The first-run tour, ahead of the chassis so its buttons are the first tab stops. It is
+            positioned on the viewport, so where it sits in the document is only about focus. */}
+        <TourCard />
         {children}
         {/* Outside the layout div: it is a native `<dialog>` and belongs to the top layer, not to
             a flex column that clips its overflow. */}

@@ -8,6 +8,7 @@ import { Tooltip } from "@components/ui/Tooltip";
 import { CHART_SURFACE } from "@lib/charts/chartSurface";
 import { METRIC } from "@lib/charts/metricTokens";
 import { formatBytes, formatCount } from "@lib/format";
+import { TOUR_ANCHOR } from "@lib/tourState";
 import { useCollectorStatus, useCollectorStorage } from "@lib/useCollector";
 import { CHASSIS_TEXT } from "@text/chassis";
 import { useState } from "react";
@@ -36,6 +37,7 @@ export const IngestCard = () => {
     <section
       className="mx-1 rounded-card border border-chassis-border bg-chassis-inset px-2.5 py-2 max-rail:mx-0 max-rail:px-1"
       data-testid="ingest-card"
+      data-tour={TOUR_ANCHOR.ingest}
     >
       <Tooltip
         mode="hover"

@@ -1,3 +1,4 @@
+import { TOUR_DONE, TOUR_STORAGE_KEY } from "@lib/tourPlacement";
 import { expect, test as setup } from "@playwright/test";
 
 /**
@@ -28,5 +29,9 @@ setup("sign in as the demo operator", async ({ page }) => {
   // the saved session has to be good for. `trailingSlash: true` makes the landing URL `/logs/`.
   await expect(page.locator('nav[aria-label="Services and views"]')).toBeVisible({ timeout: 15_000 });
   await expect(page).toHaveURL(/\/logs\/$/);
+
+  // A fresh profile is a first visit, and a first visit opens the tour over the rail the take is
+  // about to film. The saved session carries the flag that says it was already seen.
+  await page.evaluate(([key, done]) => window.localStorage.setItem(key, done), [TOUR_STORAGE_KEY, TOUR_DONE]);
   await page.context().storageState({ path: STORAGE_STATE });
 });
