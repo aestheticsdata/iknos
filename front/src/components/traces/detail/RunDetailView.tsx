@@ -34,7 +34,8 @@ export const RunDetailView = ({ traceId }: RunDetailViewProps) => {
   const spans = detail.data?.spans ?? [];
   const lines = waterfallLines(spans);
   const timeline = timelineOf(spans);
-  const shownId = hovered ?? picked ?? lines[0]?.span.spanId ?? null;
+  const pinnedId = picked ?? lines[0]?.span.spanId ?? null;
+  const shownId = hovered ?? pinnedId;
   const shown = spans.find((span) => span.spanId === shownId) ?? null;
   const summary = detail.data?.summary ?? null;
 
@@ -85,7 +86,7 @@ export const RunDetailView = ({ traceId }: RunDetailViewProps) => {
               <SpanWaterfall
                 lines={lines}
                 timeline={timeline}
-                selected={shownId}
+                selected={pinnedId}
                 onPick={setPicked}
                 onHover={setHovered}
               />

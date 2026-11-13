@@ -15,7 +15,8 @@ import type { Timeline, WaterfallLine } from "@lib/interfaces/traceSpanTypes";
  * One span: its name indented by depth, its bar on the run's timeline, its duration in a column of
  * its own (IKN-87).
  *
- * A button, so the keyboard can pick a span; focus previews it like the pointer does. A chip says
+ * A button, so the keyboard can pick a span; focus previews it like the pointer does, and the
+ * pinned span alone is `selected`, marked apart from a previewed one. A chip says
  * what the span stands for and the bar takes its kind's ink (IKN-92); a failed span turns red *and*
  * says "failed", so the state never rests on a bar a few pixels wide or on colour alone. A retried
  * attempt carries its number, and a human decision on the span (IKN-87 v2) its glyph and count.
@@ -49,8 +50,9 @@ export const WaterfallRow = ({ line, timeline, selected, onPick, onHover }: Wate
       onFocus={() => onHover(span.spanId)}
       onBlur={() => onHover(null)}
       className={cn(
-        "flex h-6 w-full items-center border-b border-work-border text-left text-row transition-colors duration-150 ease-out last:border-0 hover:bg-work-inset",
-        selected && "bg-work-inset",
+        "flex h-6 w-full items-center border-b border-l-2 border-work-border text-left text-row transition-colors duration-150 ease-out last:border-b-0 hover:bg-work-inset focus-visible:bg-work-inset",
+        // The pinned span wears an accent edge and tint; hover and focus only preview, in the plain inset.
+        selected ? "border-l-work-accent bg-work-accent/12 hover:bg-work-accent/12" : "border-l-transparent",
       )}
       data-testid="span-row"
       data-span-id={span.spanId}
