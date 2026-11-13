@@ -46,6 +46,15 @@ const isTyping = (target: EventTarget | null): boolean => {
   return target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT";
 };
 
+/** The elements `⏎` activates on its own. */
+const CONTROLS = 'button, a[href], summary, [role="button"], [role="link"]';
+
+/** A focused control keeps its `⏎`; see `KeyContext.onControl`. */
+const isControl = (target: EventTarget | null): boolean => target instanceof HTMLElement && target.matches(CONTROLS);
+
+/** The commands that move the list's selection — after one, the keyboard is in the list. */
+const MOVES: readonly string[] = ["selection.next", "selection.prev"];
+
 const hasTextSelection = (): boolean => (window.getSelection()?.toString().length ?? 0) > 0;
 
 export const CommandProvider = ({
@@ -107,6 +116,7 @@ export const CommandProvider = ({
       const action = actionFor(event, {
         modalOpen: modalRef.current,
         typing: isTyping(event.target),
+        onControl: isControl(event.target),
         hasTextSelection: hasTextSelection(),
       });
       if (action === null) return;
@@ -124,6 +134,15 @@ export const CommandProvider = ({
       }
 
       handlers.current.get(action.name)?.();
+
+      /*
+       * `j`/`k` from a control that was only clicked — a range button, `LIVE` — hands the keyboard
+       * to the list, so the `⏎` that follows opens the selected row, as the legend says, instead
+       * of pressing that control again. Only when a view answered: elsewhere nothing moved.
+       */
+      if (MOVES.includes(action.name) && handlers.current.has(action.name) && isControl(event.target)) {
+        (event.target as HTMLElement).blur();
+      }
     };
 
     window.addEventListener("keydown", onKeyDown);

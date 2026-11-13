@@ -42,6 +42,11 @@ export type KeyContext = {
   /** Focus is in an input, textarea, select or contenteditable. Only `esc` acts. */
   typing: boolean;
   /**
+   * Focus is on a button, a link or a `summary`. `⏎` is that control's own key and is left to it;
+   * every other shortcut still acts, since a control has no use for `j` or `⌘K`.
+   */
+  onControl: boolean;
+  /**
    * There is a text selection on the page.
    *
    * `⌘C` is the one shortcut that collides with something the browser does well. Taking it while
@@ -83,7 +88,10 @@ export function actionFor(e: KeyLike, ctx: KeyContext): KeyAction {
 
   // A bare modifier-less table. `altKey` is the exception, and it is checked before plain Enter
   // for the same reason `shift` is checked before plain `⌘L`.
-  if (e.key === "Enter") return e.altKey ? command("selection.trace") : command("selection.open");
+  if (e.key === "Enter" && e.altKey) return command("selection.trace");
+  // Plain `⏎` on a focused control activates it — taking it here would cancel the click the
+  // browser is about to send, and leave every button dead under a keyboard.
+  if (e.key === "Enter") return ctx.onControl ? null : command("selection.open");
   if (e.altKey) return null;
 
   if (e.key === "j" || e.key === "ArrowDown") return command("selection.next");

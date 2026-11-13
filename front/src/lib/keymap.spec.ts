@@ -12,7 +12,7 @@ const key = (over: Partial<KeyLike>): KeyLike => ({
   ...over,
 });
 
-const IDLE: KeyContext = { modalOpen: false, typing: false, hasTextSelection: false };
+const IDLE: KeyContext = { modalOpen: false, typing: false, onControl: false, hasTextSelection: false };
 
 describe("actionFor — the table of §6", () => {
   it("moves the selection on j/k and the arrows alike", () => {
@@ -25,6 +25,19 @@ describe("actionFor — the table of §6", () => {
   it("opens the row on enter and opens the trace on ⌥⏎", () => {
     expect(actionFor(key({ key: "Enter" }), IDLE)).toEqual({ kind: "command", name: "selection.open" });
     expect(actionFor(key({ key: "Enter", altKey: true }), IDLE)).toEqual({ kind: "command", name: "selection.trace" });
+  });
+
+  it("leaves ⏎ to a focused button or link, and nothing else", () => {
+    const ON_CONTROL: KeyContext = { ...IDLE, onControl: true };
+    expect(actionFor(key({ key: "Enter" }), ON_CONTROL)).toBeNull();
+    // A control has no use for these, so the shortcuts still act from it.
+    expect(actionFor(key({ key: "Enter", altKey: true }), ON_CONTROL)).toEqual({
+      kind: "command",
+      name: "selection.trace",
+    });
+    expect(actionFor(key({ key: "j" }), ON_CONTROL)).toEqual({ kind: "command", name: "selection.next" });
+    expect(actionFor(key({ key: "k", metaKey: true }), ON_CONTROL)).toEqual({ kind: "chrome", action: "palette" });
+    expect(actionFor(key({ key: "Escape" }), ON_CONTROL)).toEqual({ kind: "chrome", action: "close" });
   });
 
   it("focuses the query bar on /", () => {
