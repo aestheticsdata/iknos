@@ -17,14 +17,32 @@ import type { ClassValue } from "clsx";
  * five instances in one file rather than by anything failing — which is why the fix belongs here,
  * in the one function every component composes classes through, and not in the five call sites.
  *
- * The three lists below must stay equal to `styles/tokens/typography.css`. A token added there and
- * not here is a token that starts disappearing.
+ * The three lists below must stay equal to `styles/tokens/typography.css` — plus the chart type
+ * steps of `styles/tokens/charts.css` (`chart-label`, `chart-tick`, `chart-tip`), which are type
+ * tokens too and vanished the same way beside a chart colour. A token added there and not here is
+ * a token that starts disappearing.
  */
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
-      "font-size": [{ text: ["kicker", "micro", "row", "label", "dense", "ui", "signal", "title", "display"] }],
-      tracking: [{ tracking: ["kicker", "chrome", "control", "title", "display"] }],
+      "font-size": [
+        {
+          text: [
+            "kicker",
+            "micro",
+            "row",
+            "label",
+            "dense",
+            "ui",
+            "signal",
+            "title",
+            "display",
+            "chart-label",
+            "chart-tick",
+          ],
+        },
+      ],
+      tracking: [{ tracking: ["kicker", "chrome", "control", "title", "display", "chart-tip"] }],
       leading: [{ leading: ["hint", "prose", "display"] }],
     },
   },
