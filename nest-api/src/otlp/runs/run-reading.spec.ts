@@ -1,6 +1,6 @@
 import { CHECKS, REVIEW, RUN_STATE, TELEMETRY } from "@contracts/ai-runs";
 import { describe, expect, it } from "vitest";
-import { readRun, readRuns } from "./run-reading";
+import { IN_FLIGHT_QUIET_US, readRun, readRuns } from "./run-reading";
 
 import type { EventFact, SpanFact } from "../interfaces/ai-run-types";
 
@@ -182,6 +182,21 @@ describe("readRun", () => {
       state: RUN_STATE.running,
       checks: CHECKS.pending,
     });
+  });
+
+  it("reads a run whose step spans have not arrived as still going: Officina sends them last", () => {
+    // What Iknos holds mid-run: the settled attempts and verdicts, neither the steps nor the run above them.
+    const settled = officinaRun().filter((span) => span.nodeId === null && span.spanId !== "root");
+    const lastEnd = Math.max(...settled.map((span) => span.startUs + span.durationUs));
+    const reading = readRun(settled, [], lastEnd + 1);
+    expect(reading.summary.state).toBe(RUN_STATE.running);
+    expect(reading.summary.checks).toBe(CHECKS.pending);
+  });
+
+  it("reads that partial run as it stands once it has been quiet too long: the tab is gone", () => {
+    const settled = officinaRun().filter((span) => span.nodeId === null && span.spanId !== "root");
+    const lastEnd = Math.max(...settled.map((span) => span.startUs + span.durationUs));
+    expect(readRun(settled, [], lastEnd + IN_FLIGHT_QUIET_US).summary.state).toBe(RUN_STATE.completed);
   });
 
   it("does not count the human gate as an automated check, even if it emits a verdict", () => {

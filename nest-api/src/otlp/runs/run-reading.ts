@@ -27,6 +27,12 @@ export const OFFICINA_RUNNING = "running";
 
 const REVIEWS: readonly string[] = [REVIEW.approve, REVIEW.edit, REVIEW.reject];
 
+/**
+ * How long a run whose steps never arrived is still taken to be going. Past it the tab is gone (closed
+ * without a goodbye) and what arrived is all there will be: it is read as it stands.
+ */
+export const IN_FLIGHT_QUIET_US = 30 * 60 * 1_000_000;
+
 /** Parent chains longer than this are a cycle or garbage; the walk stops rather than loops. */
 const MAX_DEPTH = 64;
 
@@ -175,8 +181,19 @@ function rootOf(tree: Tree, spans: SpanFact[]): SpanFact {
   return sorted.find((span) => !span.parentSpanId || !tree.byId.has(span.parentSpanId)) ?? sorted[0];
 }
 
-/** One run. `spans` are every span of one trace, in any order, at least one; `events` its evaluations and feedback. */
-export function readRun(spans: SpanFact[], events: EventFact[] = []): RunReading {
+/**
+ * A run still going, told from what has arrived: an attempt whose step is not here. Officina sends the
+ * settled spans as the run goes (attempts, calls, verdicts) and the steps and the run only when it
+ * ends, so until then the trace is a part of the run: its verdicts so far are not the run's checks.
+ */
+const lacksSteps = (tree: Tree, spans: SpanFact[]): boolean =>
+  spans.some((span) => span.attempt !== null && span.parentSpanId !== null && !tree.byId.has(span.parentSpanId));
+
+/**
+ * One run. `spans` are every span of one trace, in any order, at least one; `events` its evaluations and
+ * feedback; `nowUs` the moment of the reading, which decides whether a partial trace is still going.
+ */
+export function readRun(spans: SpanFact[], events: EventFact[] = [], nowUs: number = Date.now() * 1000): RunReading {
   const tree: Tree = {
     byId: new Map(spans.map((span) => [span.spanId, span])),
     callParents: new Set(
@@ -202,7 +219,8 @@ export function readRun(spans: SpanFact[], events: EventFact[] = []): RunReading
 
   const start = Math.min(...spans.map((span) => span.startUs));
   const end = Math.max(...spans.map((span) => span.startUs + span.durationUs));
-  const running = root.runStatus === OFFICINA_RUNNING;
+  const inFlight = lacksSteps(tree, spans) && nowUs - end < IN_FLIGHT_QUIET_US;
+  const running = root.runStatus === OFFICINA_RUNNING || inFlight;
   const chats = spans.filter((span) => isCall(tree, span));
 
   return {
@@ -244,9 +262,9 @@ function groupByTrace<T extends { traceId: string }>(items: T[]): Map<string, T[
 }
 
 /** Facts of many traces → one reading per trace, newest first. */
-export function readRuns(facts: SpanFact[], events: EventFact[] = []): RunReading[] {
+export function readRuns(facts: SpanFact[], events: EventFact[] = [], nowUs: number = Date.now() * 1000): RunReading[] {
   const eventsByTrace = groupByTrace(events);
   return [...groupByTrace(facts).entries()]
-    .map(([traceId, spans]) => readRun(spans, eventsByTrace.get(traceId) ?? []))
+    .map(([traceId, spans]) => readRun(spans, eventsByTrace.get(traceId) ?? [], nowUs))
     .sort((a, b) => b.summary.startUs - a.summary.startUs);
 }
