@@ -9,6 +9,7 @@ import { CHART_SURFACE } from "@lib/charts/chartSurface";
 import { METRIC } from "@lib/charts/metricTokens";
 import { useSelectedService } from "@lib/chassisState";
 import { ROUTES } from "@lib/routes";
+import { filterServices } from "@lib/serviceFilter";
 import { TOUR_ANCHOR } from "@lib/tourState";
 import { useAlertCounts } from "@lib/useAlertCounts";
 import { useIssueCounts } from "@lib/useIssueCounts";
@@ -18,6 +19,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { IngestCard } from "./IngestCard";
+import { RailSearch } from "./RailSearch";
 
 import type { Tone } from "@components/ui/surface";
 import type { Service, ServiceHealth } from "@lib/services";
@@ -96,6 +98,9 @@ const monogram = (name: string) => {
  */
 export const ServiceRail = ({ services }: { services: Service[] }) => {
   const [selected, setSelected] = useSelectedService();
+  // What the search field holds. Local and unshared: it narrows this list, not the scope.
+  const [query, setQuery] = useState("");
+  const shown = filterServices(services, query);
   const pathname = usePathname();
   /*
    * The longest view path the address starts with: `/traces/quality` is the quality view, not the
@@ -153,6 +158,14 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
         data-tour={TOUR_ANCHOR.services}
       >
         <RailHeading>{CHASSIS_TEXT.services}</RailHeading>
+        {/* No field over an empty registry: there is nothing to search, and the sentence below
+            already says why. */}
+        {services.length > 0 && (
+          <RailSearch
+            query={query}
+            onChange={setQuery}
+          />
+        )}
         {/* Pulled out to the nav's edge by its own padding, so the bar sits where the nav's did
             rather than over the sparklines. */}
         {/* `relative` is load-bearing: each row's health word is `sr-only`, i.e. absolutely
@@ -169,7 +182,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
               {CHASSIS_TEXT.allServices}
             </RailRow>
           </li>
-          {services.map((service) => (
+          {shown.map((service) => (
             <li key={service.name}>
               <RailRow
                 service={service.name}
@@ -199,6 +212,15 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
               </RailRow>
             </li>
           ))}
+          {services.length > 0 && shown.length === 0 && (
+            // Same collapse rule as the empty registry below: a sentence has no monogram.
+            <li
+              className="animate-fade px-2 py-1.5 text-micro leading-relaxed text-chassis-text-dim max-rail:sr-only"
+              data-testid="rail-no-match"
+            >
+              {CHASSIS_TEXT.noServiceMatch}
+            </li>
+          )}
           {services.length === 0 && (
             /*
              * A sentence has no monogram. Collapsed, the rail says nothing rather than saying it

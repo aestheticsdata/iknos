@@ -31,6 +31,11 @@ export const CHASSIS_TEXT = {
   healthWord: { ok: "healthy", error: "failing", stale: "stale" } as Record<string, string>,
   sparklineLabel: (name: string) => `${name} log volume, last hour`,
   noServices: "No services — the API is unreachable or the registry is empty.",
+  /* The rail's search. The placeholder is the visible label, so the accessible one is spelled out. */
+  railSearchPlaceholder: "search…",
+  railSearchLabel: "Search services",
+  railSearchClear: "Clear search",
+  noServiceMatch: "No service matches.",
   logOut: "log out",
   /* Stem only; `<Pending>` draws the dots — see `SERVICE_TEXT.loading` (IKN-57). */
   loggingOut: "signing out",
