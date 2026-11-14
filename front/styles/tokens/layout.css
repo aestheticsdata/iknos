@@ -59,3 +59,13 @@
   --container-version-col: 12rem; /* 192px */
   --spacing-quality-chart: 15rem; /* 240px */
 }
+
+/**
+ * The service rail. `--container-rail` is its full width — 282px, half again the 188px it started
+ * at, which cut every service name past ten characters and left the sparkline no room.
+ * `--container-rail-collapsed` is the monogram column it folds to below `--breakpoint-rail`.
+ */
+@theme {
+  --container-rail: 17.625rem; /* 282px */
+  --container-rail-collapsed: 3.25rem; /* 52px */
+}

@@ -142,7 +142,7 @@ export const ServiceRail = ({ services }: { services: Service[] }) => {
     // the one part that grows with the fleet — scrolls under its heading.
     <nav
       aria-label={CHASSIS_TEXT.railLabel}
-      className="flex w-[188px] flex-none flex-col gap-4 border-r border-chassis-border bg-chassis-surface px-2 py-3 max-rail:w-[52px] max-rail:px-1"
+      className="flex w-rail flex-none flex-col gap-4 border-r border-chassis-border bg-chassis-surface px-2 py-3 max-rail:w-rail-collapsed max-rail:px-1"
       data-testid="service-rail"
     >
       {/* `min-h-0` lets the section shrink below its content so the list overflows instead of the
