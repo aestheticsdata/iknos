@@ -280,6 +280,7 @@ pnpm token:create vidar-front   --origin https://vidar.1991computer.com   --labe
 pnpm token:create auscult-front --origin https://auscult.1991computer.com --label "auscult prod"
 pnpm token:create groma-front   --origin https://groma.1991computer.com   --label "groma prod"
 pnpm token:create auspex-front  --origin https://auspex.1991computer.com  --label "auspex prod"
+pnpm token:create hodos-front   --origin https://hodos.1991computer.com   --label "hodos prod"
 ```
 
 Each prints its token **once**; only the SHA-256 is stored, so write it right away where the app's

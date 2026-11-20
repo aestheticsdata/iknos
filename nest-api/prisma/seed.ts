@@ -428,6 +428,24 @@ const SERVICES: {
     metricsUrl: "http://127.0.0.1:8300/api/metrics",
     healthUrl: "http://127.0.0.1:8300/api/health",
   },
+  // Hodos (HOD-8), Officina's sixth app: an agent-run IP network on a digital twin. A Next front on 3029 and
+  // a Nest simulation engine API on 8200 (its `/api/metrics` in Prometheus text, on loopback), one release
+  // for both; the vhost writes its own access log. Its agents' spans arrive through `hodos-front`'s token.
+  {
+    name: "hodos-front",
+    pm2Name: "hodos-front",
+    spiraProject: "HOD",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:3029/",
+    logGlob: "/var/log/nginx/hodos.access.log",
+  },
+  {
+    name: "hodos-api",
+    pm2Name: "hodos-api",
+    spiraProject: "HOD",
+    metricsUrl: "http://127.0.0.1:8200/api/metrics",
+    healthUrl: "http://127.0.0.1:8200/api/health",
+  },
   // Probatio (its PRB-29): a lab validation console. ECS logs on stdout, `/api/metrics` in Prometheus
   // text on loopback only, a health that counts today's files and connected analyzers and answers
   // 503 when PostgreSQL is down. The two simulators (analyzers over ASTM, the HIS over MLLP) are pm2
