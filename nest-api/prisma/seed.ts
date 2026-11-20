@@ -410,6 +410,24 @@ const SERVICES: {
     healthUrl: "http://127.0.0.1:3028/",
     logGlob: "/var/log/nginx/auspex.access.log",
   },
+  // Castellum (CAS-8), Officina's seventh app: an agent-run infrastructure simulator. A Next front on 3030
+  // and a Nest simulation API on 8300 (its `/api/metrics` in Prometheus text, on loopback), one release for
+  // both; the vhost writes its own access log. Its agents' spans arrive through `castellum-front`'s token.
+  {
+    name: "castellum-front",
+    pm2Name: "castellum-front",
+    spiraProject: "CAS",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:3030/",
+    logGlob: "/var/log/nginx/castellum.access.log",
+  },
+  {
+    name: "castellum-api",
+    pm2Name: "castellum-api",
+    spiraProject: "CAS",
+    metricsUrl: "http://127.0.0.1:8300/api/metrics",
+    healthUrl: "http://127.0.0.1:8300/api/health",
+  },
   // Probatio (its PRB-29): a lab validation console. ECS logs on stdout, `/api/metrics` in Prometheus
   // text on loopback only, a health that counts today's files and connected analyzers and answers
   // 503 when PostgreSQL is down. The two simulators (analyzers over ASTM, the HIS over MLLP) are pm2
