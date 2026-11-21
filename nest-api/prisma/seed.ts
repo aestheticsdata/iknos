@@ -446,6 +446,16 @@ const SERVICES: {
     metricsUrl: "http://127.0.0.1:8200/api/metrics",
     healthUrl: "http://127.0.0.1:8200/api/health",
   },
+  // Origo Dx (ODX-47), Officina's eighth app: genomic diagnosis in the visitor's browser. Until its v1 a Next
+  // front on 3031 serves a holding page; no API, no telemetry token yet. The vhost writes its own access log.
+  {
+    name: "origodx-front",
+    pm2Name: "origodx-front",
+    spiraProject: "ODX",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:3031/",
+    logGlob: "/var/log/nginx/origodx.access.log",
+  },
   // Probatio (its PRB-29): a lab validation console. ECS logs on stdout, `/api/metrics` in Prometheus
   // text on loopback only, a health that counts today's files and connected analyzers and answers
   // 503 when PostgreSQL is down. The two simulators (analyzers over ASTM, the HIS over MLLP) are pm2
