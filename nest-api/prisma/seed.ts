@@ -456,6 +456,31 @@ const SERVICES: {
     healthUrl: "http://127.0.0.1:3031/",
     logGlob: "/var/log/nginx/origodx.access.log",
   },
+  // Concordis (its CCD-43): a payments ledger and reconciliation console. ECS logs on stdout,
+  // `/api/metrics` in Prometheus text on loopback only (nginx answers 404 for it) with the business
+  // gauges beside the process ones — trial balance difference, running-balance drift, payments by
+  // state, open breaks, match rate, outbox pending and lag, inbox duplicates — and a health that
+  // answers 503 when PostgreSQL is down. The Bank of Arden simulator is a pm2 app of its own with a
+  // loopback `/health`, never proxied. Front and API share one vhost, logged without query strings.
+  {
+    name: "concordis-front",
+    pm2Name: "concordis-front",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:3032/",
+    logGlob: "/var/log/nginx/concordis.access.log",
+  },
+  {
+    name: "concordis-nest-api",
+    pm2Name: "concordis-nest-api",
+    metricsUrl: "http://127.0.0.1:8400/api/metrics",
+    healthUrl: "http://127.0.0.1:8400/api/health",
+  },
+  {
+    name: "concordis-bank",
+    pm2Name: "concordis-bank",
+    metricsUrl: null,
+    healthUrl: "http://127.0.0.1:8401/health",
+  },
   // Probatio (its PRB-29): a lab validation console. ECS logs on stdout, `/api/metrics` in Prometheus
   // text on loopback only, a health that counts today's files and connected analyzers and answers
   // 503 when PostgreSQL is down. The two simulators (analyzers over ASTM, the HIS over MLLP) are pm2
